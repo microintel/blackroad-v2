@@ -1,0 +1,314 @@
+.br-app {
+    min-height: 100vh;
+    display: flex;
+}
+
+
+/* ========================================
+   SIDEBAR
+======================================== */
+
+.br-sidebar {
+    position: fixed;
+
+    inset: 0 auto 0 0;
+
+    width: var(--br-sidebar-width);
+
+    padding: var(--br-space-5);
+
+    background: var(--br-surface);
+
+    border-right:
+        1px solid var(--br-border);
+
+    overflow-y: auto;
+
+    z-index: 100;
+}
+
+
+/* ========================================
+   MAIN
+======================================== */
+
+.br-main {
+    width: 100%;
+
+    min-width: 0;
+
+    margin-left: var(--br-sidebar-width);
+}
+
+
+/* ========================================
+   HEADER
+======================================== */
+
+.br-header {
+    position: sticky;
+
+    top: 0;
+
+    height: var(--br-header-height);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding:
+        0 var(--br-space-7);
+
+    background:
+        rgba(255, 255, 255, 0.92);
+
+    border-bottom:
+        1px solid var(--br-border);
+
+    backdrop-filter: blur(14px);
+
+    z-index: 50;
+}
+
+
+/* ========================================
+   CONTENT
+======================================== */
+
+.br-content {
+    width: 100%;
+
+    max-width:
+        var(--br-content-max-width);
+
+    margin: 0 auto;
+
+    padding:
+        var(--br-space-7);
+}
+
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 768px) {
+
+    .br-sidebar {
+        display: none;
+    }
+
+    .br-main {
+        margin-left: 0;
+    }
+
+    .br-header {
+        padding:
+            0 var(--br-space-4);
+    }
+
+    .br-content {
+        padding:
+            var(--br-space-5)
+            var(--br-space-4);
+    }
+}
+
+
+
+.br-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-6);
+}
+
+.br-page-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.br-page-heading h2 {
+    margin-bottom: var(--br-space-2);
+}
+
+.br-page-heading p {
+    margin: 0;
+    color: var(--br-text-secondary);
+}
+
+.br-muted {
+    color: var(--br-text-secondary);
+}
+
+
+/* BRAND */
+
+.br-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    margin-bottom: 32px;
+}
+
+.br-brand-mark {
+    width: 34px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 10px;
+
+    background: var(--br-primary);
+    color: white;
+
+    font-weight: 800;
+}
+
+
+/* NAVIGATION */
+
+.br-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.br-nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.br-nav-title {
+    padding: 0 10px 7px;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: .08em;
+
+    color: var(--br-text-muted);
+}
+
+.br-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding: 10px 11px;
+
+    border-radius: var(--br-radius-md);
+
+    color: var(--br-text-secondary);
+
+    transition: var(--br-transition);
+}
+
+.br-nav-item:hover {
+    background: var(--br-surface-soft);
+    color: var(--br-text);
+}
+
+.br-nav-item.is-active {
+    background: var(--br-surface-soft);
+    color: var(--br-text);
+    font-weight: 600;
+}
+
+.br-nav-icon {
+    width: 20px;
+
+    display: inline-flex;
+    justify-content: center;
+
+    font-size: 15px;
+}
+
+
+/* HEADER */
+
+.br-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.br-page-title {
+    margin: 0;
+
+    font-size: 16px;
+    font-weight: 650;
+}
+
+.br-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.br-icon-button,
+.br-account-button,
+.br-mobile-menu {
+    border: 0;
+    background: transparent;
+}
+
+.br-icon-button {
+    width: 38px;
+    height: 38px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 10px;
+}
+
+.br-icon-button:hover {
+    background: var(--br-surface-soft);
+}
+
+.br-account-button {
+    padding: 9px 13px;
+
+    border: 1px solid var(--br-border);
+
+    border-radius: 10px;
+}
+
+.br-mobile-menu {
+    display: none;
+}
+
+
+
+
+@media (max-width: 768px) {
+
+    .br-mobile-menu {
+        display: grid;
+
+        place-items: center;
+
+        width: 36px;
+        height: 36px;
+
+        border-radius: 9px;
+    }
+
+    .br-account-button {
+        display: none;
+    }
+
+    .br-header-actions {
+        gap: 2px;
+    }
+}
