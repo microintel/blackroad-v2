@@ -1,67 +1,82 @@
 :root {
+    /* =========================================================
+       BLACKROAD DESIGN TOKENS
+       ========================================================= */
 
-    /* ========================================
-       BLACKROAD COLORS
-    ======================================== */
+    /* ---------- Colors ---------- */
 
-    --br-bg: #f6f7f9;
+    --br-bg: #f5f6f8;
     --br-surface: #ffffff;
-    --br-surface-soft: #f0f2f5;
+    --br-surface-soft: #f8f9fb;
+    --br-surface-hover: #f1f3f6;
 
-    --br-text: #111318;
-    --br-text-secondary: #626975;
-    --br-text-muted: #8a919d;
+    --br-text: #15171b;
+    --br-text-secondary: #626873;
+    --br-text-muted: #9298a3;
+    --br-text-inverse: #ffffff;
 
     --br-border: #e4e7eb;
-    --br-border-strong: #d6dae0;
+    --br-border-strong: #d5d9df;
 
-    --br-primary: #111318;
-    --br-primary-hover: #252932;
+    --br-primary: #17191d;
+    --br-primary-hover: #292c32;
+    --br-primary-soft: #eceef1;
 
     --br-success: #16845b;
+    --br-success-soft: #e9f7f1;
+
     --br-danger: #d64545;
+    --br-danger-soft: #fcecec;
+
     --br-warning: #b7791f;
+    --br-warning-soft: #fff6df;
+
     --br-info: #3867d6;
+    --br-info-soft: #edf2ff;
 
 
-    /* ========================================
-       DARK MODE
-    ======================================== */
+    /* ---------- Dark Theme ---------- */
 
     --br-dark-bg: #0d0f12;
     --br-dark-surface: #15181d;
     --br-dark-surface-soft: #1c2026;
+    --br-dark-surface-hover: #232830;
 
     --br-dark-text: #f4f5f7;
     --br-dark-text-secondary: #a7adb7;
     --br-dark-text-muted: #777e89;
 
     --br-dark-border: #292e36;
+    --br-dark-border-strong: #363c46;
 
 
-    /* ========================================
-       TYPOGRAPHY
-    ======================================== */
+    /* ---------- Typography ---------- */
 
     --br-font:
         Inter,
+        ui-sans-serif,
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
         sans-serif;
 
     --br-font-size-xs: 12px;
-    --br-font-size-sm: 14px;
-    --br-font-size-md: 15px;
-    --br-font-size-lg: 17px;
+    --br-font-size-sm: 13px;
+    --br-font-size-md: 14px;
+    --br-font-size-lg: 16px;
     --br-font-size-xl: 20px;
     --br-font-size-2xl: 24px;
     --br-font-size-3xl: 32px;
 
+    --br-line-tight: 1.2;
+    --br-line-normal: 1.5;
+    --br-line-relaxed: 1.65;
 
-    /* ========================================
-       SPACING
-    ======================================== */
+
+    /* ---------- Spacing ---------- */
 
     --br-space-1: 4px;
     --br-space-2: 8px;
@@ -72,43 +87,81 @@
     --br-space-7: 32px;
     --br-space-8: 40px;
     --br-space-9: 48px;
+    --br-space-10: 64px;
 
 
-    /* ========================================
-       RADIUS
-    ======================================== */
+    /* ---------- Radius ---------- */
 
-    --br-radius-sm: 8px;
-    --br-radius-md: 12px;
-    --br-radius-lg: 16px;
-    --br-radius-xl: 20px;
+    --br-radius-sm: 7px;
+    --br-radius-md: 10px;
+    --br-radius-lg: 14px;
+    --br-radius-xl: 18px;
+    --br-radius-2xl: 22px;
+    --br-radius-full: 999px;
 
 
-    /* ========================================
-       SHADOWS
-    ======================================== */
+    /* ---------- Shadows ---------- */
+
+    --br-shadow-xs:
+        0 1px 2px rgba(15, 23, 42, 0.04);
 
     --br-shadow-sm:
-        0 1px 3px rgba(0, 0, 0, 0.06);
+        0 2px 8px rgba(15, 23, 42, 0.05);
 
     --br-shadow-md:
-        0 8px 24px rgba(0, 0, 0, 0.08);
+        0 8px 24px rgba(15, 23, 42, 0.08);
+
+    --br-shadow-lg:
+        0 16px 40px rgba(15, 23, 42, 0.12);
 
 
-    /* ========================================
-       LAYOUT
-    ======================================== */
+    /* ---------- Layout ---------- */
 
     --br-sidebar-width: 250px;
+    --br-sidebar-collapsed-width: 72px;
+
     --br-header-height: 64px;
 
     --br-content-max-width: 1440px;
 
+    --br-page-padding-x: 32px;
+    --br-page-padding-y: 32px;
 
-    /* ========================================
-       MOTION
-    ======================================== */
 
-    --br-transition:
-        160ms ease;
+    /* ---------- Controls ---------- */
+
+    --br-control-height-sm: 34px;
+    --br-control-height-md: 40px;
+    --br-control-height-lg: 46px;
+
+
+    /* ---------- Motion ---------- */
+
+    --br-transition-fast: 120ms ease;
+    --br-transition: 160ms ease;
+    --br-transition-slow: 240ms ease;
+}
+
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+[data-theme="dark"] {
+    --br-bg: var(--br-dark-bg);
+    --br-surface: var(--br-dark-surface);
+    --br-surface-soft: var(--br-dark-surface-soft);
+    --br-surface-hover: var(--br-dark-surface-hover);
+
+    --br-text: var(--br-dark-text);
+    --br-text-secondary: var(--br-dark-text-secondary);
+    --br-text-muted: var(--br-dark-text-muted);
+    --br-text-inverse: #111318;
+
+    --br-border: var(--br-dark-border);
+    --br-border-strong: var(--br-dark-border-strong);
+
+    --br-primary: #f4f5f7;
+    --br-primary-hover: #ffffff;
+    --br-primary-soft: #252a31;
 }

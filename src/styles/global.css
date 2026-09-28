@@ -1,24 +1,47 @@
-* {
+/* =========================================================
+   GLOBAL RESET
+   ========================================================= */
+
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
 html {
+    margin: 0;
+    padding: 0;
+
     font-size: 16px;
+
     scroll-behavior: smooth;
+
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
     margin: 0;
+    padding: 0;
+
+    min-height: 100vh;
 
     font-family: var(--br-font);
     font-size: var(--br-font-size-md);
+    line-height: var(--br-line-normal);
 
     color: var(--br-text);
     background: var(--br-bg);
 
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
     text-rendering: optimizeLegibility;
 }
+
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
 
 button,
 input,
@@ -31,33 +54,193 @@ button {
     cursor: pointer;
 }
 
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 a {
     color: inherit;
     text-decoration: none;
 }
 
-img {
-    max-width: 100%;
+img,
+svg {
     display: block;
+    max-width: 100%;
+}
+
+img {
+    height: auto;
+}
+
+hr {
+    margin: 0;
+
+    border: 0;
+    border-top: 1px solid var(--br-border);
+}
+
+
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    margin-top: 0;
 }
 
 h1,
 h2,
 h3,
 h4,
-p {
-    margin-top: 0;
+h5,
+h6 {
+    color: var(--br-text);
+    font-weight: 650;
 }
 
 h1 {
+    margin-bottom: var(--br-space-4);
+
     font-size: var(--br-font-size-3xl);
-    line-height: 1.15;
+    line-height: var(--br-line-tight);
 }
 
 h2 {
+    margin-bottom: var(--br-space-3);
+
     font-size: var(--br-font-size-2xl);
+    line-height: var(--br-line-tight);
 }
 
 h3 {
+    margin-bottom: var(--br-space-3);
+
     font-size: var(--br-font-size-xl);
+    line-height: var(--br-line-tight);
+}
+
+h4 {
+    margin-bottom: var(--br-space-2);
+
+    font-size: var(--br-font-size-lg);
+}
+
+p {
+    color: var(--br-text-secondary);
+}
+
+strong {
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   FORM ELEMENTS
+   ========================================================= */
+
+input,
+textarea,
+select {
+    color: var(--br-text);
+    background: var(--br-surface);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--br-text-muted);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--br-primary);
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+:focus-visible {
+    outline: 2px solid var(--br-info);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: var(--br-primary);
+    color: var(--br-text-inverse);
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--br-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--br-border-strong);
+    border-radius: var(--br-radius-full);
+}
+
+
+/* =========================================================
+   UTILITY
+   ========================================================= */
+
+[hidden] {
+    display: none !important;
+}
+
+.br-muted {
+    color: var(--br-text-secondary);
+}
+
+.br-text-muted {
+    color: var(--br-text-muted);
+}
+
+.br-text-secondary {
+    color: var(--br-text-secondary);
+}
+
+.br-text-success {
+    color: var(--br-success);
+}
+
+.br-text-danger {
+    color: var(--br-danger);
+}
+
+.br-text-warning {
+    color: var(--br-warning);
+}
+
+.br-text-info {
+    color: var(--br-info);
 }

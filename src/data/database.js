@@ -4,23 +4,34 @@ const ACTIVE_SCOPE_KEY = "br_active_scope";
 
 function getScopeSuffix() {
     try {
-        const scope = localStorage.getItem(ACTIVE_SCOPE_KEY);
+        const scope = localStorage.getItem(
+            ACTIVE_SCOPE_KEY
+        );
 
         if (!scope) {
             return "anon";
         }
 
-        return scope.replace(/[^a-z0-9@._-]/gi, "_");
-    } catch (error) {
+        return scope.replace(
+            /[^a-z0-9@._-]/gi,
+            "_"
+        );
+    } catch {
         return "anon";
     }
+}
+
+export function getCurrentScope() {
+    return getScopeSuffix();
 }
 
 export function getDatabaseName(moduleName) {
     const config = DATABASES[moduleName];
 
     if (!config) {
-        throw new Error(`Unknown database module: ${moduleName}`);
+        throw new Error(
+            `Unknown database module: ${moduleName}`
+        );
     }
 
     return `${config.baseName}::${getScopeSuffix()}`;
@@ -30,164 +41,447 @@ export function getDatabaseConfig(moduleName) {
     const config = DATABASES[moduleName];
 
     if (!config) {
-        throw new Error(`Unknown database module: ${moduleName}`);
+        throw new Error(
+            `Unknown database module: ${moduleName}`
+        );
     }
 
     return config;
 }
 
-export function getCurrentScope() {
-    return getScopeSuffix();
+function createIncomeStores(db) {
+    if (!db.objectStoreNames.contains("entries")) {
+        db.createObjectStore("entries", {
+            keyPath: "id",
+            autoIncrement: true
+        });
+    }
+
+    if (!db.objectStoreNames.contains("meta")) {
+        db.createObjectStore("meta", {
+            keyPath: "key"
+        });
+    }
 }
 
-export function openDatabase(moduleName) {
-    const config = getDatabaseConfig(moduleName);
-    const databaseName = getDatabaseName(moduleName);
+function createModuleStores(
+    moduleName,
+    db
+) {
+    switch (moduleName) {
+        case "income":
+            createIncomeStores(db);
+            break;
 
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(
-            databaseName,
-            config.version
-        );
+        case "stocks":
+            if (!db.objectStoreNames.contains("state")) {
+                db.createObjectStore("state", {
+                    keyPath: "key"
+                });
+            }
+            break;
 
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
+        case "lending":
+            if (!db.objectStoreNames.contains("parties")) {
+                db.createObjectStore("parties", {
+                    keyPath: "id",
+                    autoIncrement: true
+                });
+            }
 
-            /*
-             * Income & Expenses
-             *
-             * This exactly follows the legacy database structure:
-             *
-             * entries:
-             * {
-             *   id,
-             *   income,
-             *   date,
-             *   from,
-             *   category,
-             *   expense,
-             *   investment,
-             *   investmentSale,
-             *   realizedGainLoss,
-             *   balance,
-             *   transactions: []
-             * }
-             */
-            if (
-                moduleName === "income" &&
-                !db.objectStoreNames.contains("entries")
-            ) {
+            if (!db.objectStoreNames.contains("entries")) {
                 db.createObjectStore("entries", {
                     keyPath: "id",
                     autoIncrement: true
                 });
             }
 
-            if (
-                moduleName === "income" &&
-                !db.objectStoreNames.contains("meta")
-            ) {
-                db.createObjectStore("meta", {
-                    keyPath: "key"
+            if (!db.objectStoreNames.contains("loans")) {
+                db.createObjectStore("loans", {
+                    keyPath: "id",
+                    autoIncrement: true
                 });
             }
+            break;
 
-            /*
-             * Other databases are created only with their
-             * known legacy structure.
-             */
-            if (
-                moduleName === "stocks" &&
-                !db.objectStoreNames.contains("state")
-            ) {
-                db.createObjectStore("state", {
-                    keyPath: "key"
-                });
-            }
-
-            if (moduleName === "lending") {
-                if (!db.objectStoreNames.contains("parties")) {
-                    db.createObjectStore("parties", {
-                        keyPath: "id",
-                        autoIncrement: true
-                    });
-                }
-
-                if (!db.objectStoreNames.contains("entries")) {
-                    db.createObjectStore("entries", {
-                        keyPath: "id",
-                        autoIncrement: true
-                    });
-                }
-
-                if (!db.objectStoreNames.contains("loans")) {
-                    db.createObjectStore("loans", {
-                        keyPath: "id",
-                        autoIncrement: true
-                    });
-                }
-            }
-
-            if (
-                moduleName === "deposits" &&
-                !db.objectStoreNames.contains("deposits")
-            ) {
+        case "deposits":
+            if (!db.objectStoreNames.contains("deposits")) {
                 db.createObjectStore("deposits", {
                     keyPath: "id",
                     autoIncrement: true
                 });
             }
+            break;
 
-            if (moduleName === "stepup") {
-                if (!db.objectStoreNames.contains("settings")) {
-                    db.createObjectStore("settings", {
-                        keyPath: "key"
-                    });
-                }
-
-                if (!db.objectStoreNames.contains("entries")) {
-                    db.createObjectStore("entries", {
-                        keyPath: "id",
-                        autoIncrement: true
-                    });
-                }
-
-                if (!db.objectStoreNames.contains("profiles")) {
-                    db.createObjectStore("profiles", {
-                        keyPath: "id",
-                        autoIncrement: true
-                    });
-                }
+        case "stepup":
+            if (!db.objectStoreNames.contains("settings")) {
+                db.createObjectStore("settings", {
+                    keyPath: "key"
+                });
             }
 
-            if (
-                moduleName === "accounting" &&
-                !db.objectStoreNames.contains("sst")
-            ) {
+            if (!db.objectStoreNames.contains("entries")) {
+                db.createObjectStore("entries", {
+                    keyPath: "id",
+                    autoIncrement: true
+                });
+            }
+
+            if (!db.objectStoreNames.contains("profiles")) {
+                db.createObjectStore("profiles", {
+                    keyPath: "id",
+                    autoIncrement: true
+                });
+            }
+            break;
+
+        case "accounting":
+            if (!db.objectStoreNames.contains("sst")) {
                 db.createObjectStore("sst", {
                     keyPath: "key"
                 });
             }
-        };
+            break;
+    }
+}
 
-        request.onsuccess = (event) => {
-            const db = event.target.result;
+async function migrateLegacyIncomeData(
+    scopedDb,
+    moduleName
+) {
+    if (moduleName !== "income") {
+        return scopedDb;
+    }
 
-            db.onversionchange = () => {
-                db.close();
-            };
+    const baseName =
+        DATABASES.income.baseName;
 
-            resolve(db);
-        };
+    const scopedName =
+        getDatabaseName("income");
 
-        request.onerror = () => {
-            reject(request.error);
-        };
+    if (scopedName === baseName) {
+        return scopedDb;
+    }
 
-        request.onblocked = () => {
-            console.warn(
-                `BlackRoad: database "${databaseName}" is blocked.`
+    const migrationKey =
+        `br_migrated::${scopedName}`;
+
+    try {
+        if (
+            localStorage.getItem(
+                migrationKey
+            )
+        ) {
+            return scopedDb;
+        }
+    } catch {
+        // Continue safely.
+    }
+
+    /*
+     * If the scoped database already contains data,
+     * never overwrite it.
+     */
+    const scopedCount =
+        await new Promise(
+            (resolve) => {
+                try {
+                    const transaction =
+                        scopedDb.transaction(
+                            "entries",
+                            "readonly"
+                        );
+
+                    const request =
+                        transaction
+                            .objectStore("entries")
+                            .count();
+
+                    request.onsuccess = () => {
+                        resolve(
+                            request.result || 0
+                        );
+                    };
+
+                    request.onerror = () => {
+                        resolve(0);
+                    };
+                } catch {
+                    resolve(0);
+                }
+            }
+        );
+
+    if (scopedCount > 0) {
+        try {
+            localStorage.setItem(
+                migrationKey,
+                "1"
             );
-        };
-    });
+        } catch {}
+
+        return scopedDb;
+    }
+
+    /*
+     * Open the old unscoped database.
+     */
+    const legacyDb =
+        await new Promise(
+            (resolve) => {
+                const request =
+                    indexedDB.open(
+                        baseName
+                    );
+
+                request.onsuccess = () => {
+                    resolve(
+                        request.result
+                    );
+                };
+
+                request.onerror = () => {
+                    resolve(null);
+                };
+
+                /*
+                 * Do not create the old DB accidentally.
+                 */
+                request.onupgradeneeded = (
+                    event
+                ) => {
+                    event.target.transaction.abort();
+                };
+            }
+        );
+
+    if (!legacyDb) {
+        return scopedDb;
+    }
+
+    try {
+        if (
+            !legacyDb.objectStoreNames.contains(
+                "entries"
+            )
+        ) {
+            legacyDb.close();
+
+            try {
+                localStorage.setItem(
+                    migrationKey,
+                    "1"
+                );
+            } catch {}
+
+            return scopedDb;
+        }
+
+        const entries =
+            await new Promise(
+                (resolve) => {
+                    const request =
+                        legacyDb
+                            .transaction(
+                                "entries",
+                                "readonly"
+                            )
+                            .objectStore(
+                                "entries"
+                            )
+                            .getAll();
+
+                    request.onsuccess =
+                        () => {
+                            resolve(
+                                request.result ||
+                                []
+                            );
+                        };
+
+                    request.onerror =
+                        () => {
+                            resolve([]);
+                        };
+                }
+            );
+
+        if (entries.length) {
+            await new Promise(
+                (resolve) => {
+                    const transaction =
+                        scopedDb.transaction(
+                            "entries",
+                            "readwrite"
+                        );
+
+                    const store =
+                        transaction.objectStore(
+                            "entries"
+                        );
+
+                    entries.forEach(
+                        (entry) => {
+                            store.put(entry);
+                        }
+                    );
+
+                    transaction.oncomplete =
+                        () => resolve();
+
+                    transaction.onerror =
+                        () => resolve();
+
+                    transaction.onabort =
+                        () => resolve();
+                }
+            );
+        }
+
+        /*
+         * Migrate meta/update date too.
+         */
+        if (
+            legacyDb.objectStoreNames.contains(
+                "meta"
+            ) &&
+            scopedDb.objectStoreNames.contains(
+                "meta"
+            )
+        ) {
+            const meta =
+                await new Promise(
+                    (resolve) => {
+                        const request =
+                            legacyDb
+                                .transaction(
+                                    "meta",
+                                    "readonly"
+                                )
+                                .objectStore(
+                                    "meta"
+                                )
+                                .getAll();
+
+                        request.onsuccess =
+                            () => {
+                                resolve(
+                                    request.result ||
+                                    []
+                                );
+                            };
+
+                        request.onerror =
+                            () => {
+                                resolve([]);
+                            };
+                    }
+                );
+
+            if (meta.length) {
+                await new Promise(
+                    (resolve) => {
+                        const transaction =
+                            scopedDb.transaction(
+                                "meta",
+                                "readwrite"
+                            );
+
+                        const store =
+                            transaction.objectStore(
+                                "meta"
+                            );
+
+                        meta.forEach(
+                            (item) => {
+                                store.put(item);
+                            }
+                        );
+
+                        transaction.oncomplete =
+                            () => resolve();
+
+                        transaction.onerror =
+                            () => resolve();
+                    }
+                );
+            }
+        }
+
+        try {
+            localStorage.setItem(
+                migrationKey,
+                "1"
+            );
+        } catch {}
+    } finally {
+        legacyDb.close();
+    }
+
+    return scopedDb;
+}
+
+export async function openDatabase(
+    moduleName
+) {
+    const config =
+        getDatabaseConfig(
+            moduleName
+        );
+
+    const databaseName =
+        getDatabaseName(
+            moduleName
+        );
+
+    const database =
+        await new Promise(
+            (resolve, reject) => {
+                const request =
+                    indexedDB.open(
+                        databaseName,
+                        config.version
+                    );
+
+                request.onupgradeneeded =
+                    (event) => {
+                        createModuleStores(
+                            moduleName,
+                            event.target.result
+                        );
+                    };
+
+                request.onsuccess =
+                    () => {
+                        const db =
+                            request.result;
+
+                        db.onversionchange =
+                            () => {
+                                db.close();
+                            };
+
+                        resolve(db);
+                    };
+
+                request.onerror =
+                    () => {
+                        reject(
+                            request.error
+                        );
+                    };
+
+                request.onblocked =
+                    () => {
+                        console.warn(
+                            `BlackRoad database blocked: ${databaseName}`
+                        );
+                    };
+            }
+        );
+
+    return migrateLegacyIncomeData(
+        database,
+        moduleName
+    );
 }
