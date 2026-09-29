@@ -1,0 +1,81 @@
+/* =========================================================
+   STEPUP — small additions on top of the shared design system
+   ========================================================= */
+
+.su-pos { color: var(--br-success, #16845b); }
+.su-neg { color: var(--br-danger, #d64545); }
+
+.su-inline-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.su-inline-form label,
+.su-stack label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: var(--br-font-size-sm);
+    font-weight: 600;
+}
+
+.su-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.su-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.su-list { display: flex; flex-direction: column; gap: 8px; }
+
+.su-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--br-border, rgba(0, 0, 0, 0.08));
+}
+
+.su-row:last-child { border-bottom: 0; }
+
+.su-pending-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--br-border, rgba(0, 0, 0, 0.08));
+}
+
+.su-pending-row:last-child { border-bottom: 0; }
+
+@media (max-width: 760px) {
+    .su-settings-grid { grid-template-columns: 1fr; }
+}
+
+.su-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--br-text-muted);
+}
+
+.su-legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}

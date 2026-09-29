@@ -66,6 +66,12 @@ export const navigation = [
             },
 
             {
+                label: "Data Management",
+                path: "/data",
+                icon: "⇅"
+            },
+
+            {
                 label: "Notifications",
                 path: "/notifications",
                 icon: "♢"

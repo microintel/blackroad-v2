@@ -74,6 +74,13 @@ export function Sidebar() {
 
             link.className = "br-nav-item";
 
+            const here = window.location.pathname === "/" ? "/dashboard" : window.location.pathname;
+
+            if (here === item.path) {
+                link.classList.add("is-active");
+                link.setAttribute("aria-current", "page");
+            }
+
 
             link.innerHTML = `
 

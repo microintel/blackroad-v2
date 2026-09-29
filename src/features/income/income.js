@@ -19,6 +19,11 @@ import {
 } from "./income-statement.js";
 
 import { renderIncomeStatistics } from "./income-statistics.js";
+import { mountIncomeSearch } from "./income-search.js";
+import { renderIncomeCompare, handleCompareEvent } from "./income-compare.js";
+import { renderIncomeExpand } from "./income-expand.js";
+import { renderIncomeJumpTo } from "./income-jumpto.js";
+let currentExpandPanel = "expense";
 let currentEntries = [];
 let currentSearch = "";
 let editingEntryId = null;
@@ -85,6 +90,34 @@ export async function Income() {
         data-income-tab="statistics"
     >
         Statistics
+    </button>
+    <button
+        type="button"
+        class="br-income-tab"
+        data-income-tab="search"
+    >
+        Search
+    </button>
+    <button
+        type="button"
+        class="br-income-tab"
+        data-income-tab="compare"
+    >
+        Compare
+    </button>
+    <button
+        type="button"
+        class="br-income-tab"
+        data-income-tab="expand"
+    >
+        Expand
+    </button>
+    <button
+        type="button"
+        class="br-income-tab"
+        data-income-tab="jumpto"
+    >
+        Jump to
     </button>
 </div>
 
@@ -207,6 +240,10 @@ export async function Income() {
             hidden
         ></div>
         <div data-income-view-container="statistics" hidden></div>
+        <div data-income-view-container="search" hidden></div>
+        <div data-income-view-container="compare" hidden></div>
+        <div data-income-view-container="expand" hidden></div>
+        <div data-income-view-container="jumpto" hidden></div>
 
 
         <!-- ========================= -->
@@ -416,6 +453,15 @@ export async function Income() {
 
 function attachEvents(page) {
 
+    page.addEventListener("change", (event) => {
+        if (
+            event.target.closest("[data-compare-select]") &&
+            handleCompareEvent(event.target)
+        ) {
+            renderActiveView(page);
+        }
+    });
+
     page.addEventListener(
         "click",
         async (event) => {
@@ -441,6 +487,29 @@ function attachEvents(page) {
                 return;
             }
 
+
+            const expandBtn = event.target.closest("[data-expand-panel]");
+            if (expandBtn) {
+                currentExpandPanel = expandBtn.dataset.expandPanel;
+                renderActiveView(page);
+                return;
+            }
+
+            const jumpBtn = event.target.closest("[data-jump-month]");
+            if (jumpBtn) {
+                jumpToMonth(page, jumpBtn.dataset.jumpMonth);
+                return;
+            }
+
+            const compareBox = page.querySelector('[data-income-view-container="compare"]');
+            if (
+                compareBox &&
+                compareBox.contains(event.target) &&
+                handleCompareEvent(event.target)
+            ) {
+                renderActiveView(page);
+                return;
+            }
 
             /*
              * Actions
@@ -702,28 +771,63 @@ function switchIncomeView(page, view) {
             container.dataset.incomeViewContainer !== view;
     });
 
+    renderActiveView(page);
+}
+
+/*
+ * Render the non-ledger view that is currently open.
+ * Used when switching tabs AND after data reloads.
+ */
+function renderActiveView(page) {
+    const view = currentIncomeView;
+    const container = page.querySelector(
+        `[data-income-view-container="${view}"]`
+    );
+
+    if (!container) return;
+
     if (view === "statement") {
-        const container = page.querySelector(
-            '[data-income-view-container="statement"]'
-        );
-
-        if (container) {
-            container.innerHTML =
-                renderIncomeStatement(currentEntries);
-        }
-    }
-
-    if (view === "statistics") {
-        const container = page.querySelector(
-            '[data-income-view-container="statistics"]'
-        );
-
-        if (container) {
-            container.innerHTML =
-                renderIncomeStatistics(currentEntries);
-        }
+        container.innerHTML = renderIncomeStatement(currentEntries);
+    } else if (view === "statistics") {
+        container.innerHTML = renderIncomeStatistics(currentEntries);
+    } else if (view === "search") {
+        mountIncomeSearch(container, currentEntries, {
+            onOpenEntry: (id) => openEntryInLedger(page, id)
+        });
+    } else if (view === "compare") {
+        container.innerHTML = renderIncomeCompare(currentEntries);
+    } else if (view === "expand") {
+        container.innerHTML = renderIncomeExpand(currentEntries, currentExpandPanel);
+    } else if (view === "jumpto") {
+        container.innerHTML = renderIncomeJumpTo(currentEntries);
     }
 }
+
+function openEntryInLedger(page, entryId) {
+    currentSearch = "";
+    const box = page.querySelector("[data-income-search]");
+    if (box) box.value = "";
+    switchIncomeView(page, "ledger");
+    renderLedger(page);
+
+    const el = page.querySelector(`[data-entry-id="${entryId}"]`);
+    if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("br-flash");
+        setTimeout(() => el.classList.remove("br-flash"), 2000);
+    }
+}
+
+function jumpToMonth(page, monthKey) {
+    switchIncomeView(page, "statement");
+    const row = page.querySelector(`[data-month-key="${monthKey}"]`);
+    if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("br-flash");
+        setTimeout(() => row.classList.remove("br-flash"), 2000);
+    }
+}
+
 /* =========================================
    LOAD ENTRIES
 ========================================= */
@@ -812,27 +916,9 @@ async function loadEntries(
          * open, refresh it too.
          */
 
-        if (currentIncomeView === "statement") {
-    const container = page.querySelector(
-        '[data-income-view-container="statement"]'
-    );
-
-    if (container) {
-        container.innerHTML =
-            renderIncomeStatement(currentEntries);
-    }
-}
-
-if (currentIncomeView === "statistics") {
-    const container = page.querySelector(
-        '[data-income-view-container="statistics"]'
-    );
-
-    if (container) {
-        container.innerHTML =
-            renderIncomeStatistics(currentEntries);
-    }
-}
+        if (currentIncomeView !== "ledger") {
+            renderActiveView(page);
+        }
 
     } catch (error) {
 

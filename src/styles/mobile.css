@@ -1,0 +1,124 @@
+/* =========================================================
+   MOBILE LAYER (loaded last)
+   Phones <= 768px: drawer sidebar, bottom tab bar, full-width
+   sheets, 44px tap targets, no sideways page scroll, safe areas.
+   ========================================================= */
+
+html { -webkit-text-size-adjust: 100%; }
+body { overflow-x: hidden; }
+body.br-no-scroll { overflow: hidden; }
+
+.br-drawer-backdrop,
+.br-bottom-nav { display: none; }
+
+@media (max-width: 768px) {
+
+    :root { --br-header-height: 56px; --br-bottom-nav-height: 60px; }
+
+    /* ---------- Topbar ---------- */
+    .br-header {
+        padding-top: env(safe-area-inset-top);
+        padding-left: max(var(--br-space-3), env(safe-area-inset-left));
+        padding-right: max(var(--br-space-3), env(safe-area-inset-right));
+        min-height: calc(var(--br-header-height) + env(safe-area-inset-top));
+    }
+    .br-header-left { flex: 1; min-width: 0; }
+    .br-page-title { overflow: hidden; text-overflow: ellipsis; }
+    .br-icon-button, .br-mobile-menu { width: 44px; height: 44px; }
+
+    /* ---------- Drawer ---------- */
+    .br-sidebar {
+        width: min(82vw, 300px);
+        padding-top: calc(var(--br-space-5) + env(safe-area-inset-top));
+        padding-bottom: calc(var(--br-space-5) + env(safe-area-inset-bottom));
+        z-index: 300;
+    }
+    .br-drawer-backdrop {
+        display: block;
+        position: fixed; inset: 0;
+        background: rgba(0, 0, 0, .55);
+        opacity: 0; pointer-events: none;
+        transition: opacity var(--br-transition);
+        z-index: 250;
+    }
+    .br-drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+    .br-nav-item { min-height: 46px; }
+
+    /* ---------- Bottom tab bar ---------- */
+    .br-bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        position: fixed; left: 0; right: 0; bottom: 0;
+        height: calc(var(--br-bottom-nav-height) + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: var(--br-surface);
+        border-top: 1px solid var(--br-border);
+        z-index: 200;
+    }
+    .br-bottom-item {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 2px;
+        border: 0; background: transparent; font: inherit;
+        color: var(--br-text-muted);
+        text-decoration: none;
+        min-width: 0;
+    }
+    .br-bottom-icon { font-size: 19px; line-height: 1; }
+    .br-bottom-label { font-size: 11px; font-weight: 600; }
+    .br-bottom-item.is-active { color: var(--br-text); }
+    .br-bottom-item.is-active .br-bottom-icon { color: var(--br-primary); }
+
+    /* ---------- Content ---------- */
+    .br-content {
+        padding-left: max(var(--br-space-3), env(safe-area-inset-left));
+        padding-right: max(var(--br-space-3), env(safe-area-inset-right));
+        padding-bottom: calc(var(--br-bottom-nav-height) + env(safe-area-inset-bottom) + var(--br-space-5));
+    }
+
+    /* Anything wide must scroll inside itself, never the page. */
+    .br-content img, .br-content canvas, .br-content svg { max-width: 100%; }
+    .br-table-wrap { -webkit-overflow-scrolling: touch; }
+    .br-table { min-width: 560px; }
+
+    /* Tab strips scroll sideways instead of wrapping/squashing. */
+    .br-income-tabs, .br-chip-row, [class*="-tabs"] {
+        overflow-x: auto; flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    [class*="-tabs"]::-webkit-scrollbar, .br-chip-row::-webkit-scrollbar { display: none; }
+    .br-income-tab, [class*="-tabs"] > button { flex: 0 0 auto; white-space: nowrap; }
+
+    /* ---------- Forms: 16px stops iOS zoom-on-focus; 44px targets ---------- */
+    .br-input, .br-select, .br-textarea { font-size: 16px; min-height: 44px; }
+    .br-button { min-height: 44px; }
+    .br-form-grid { grid-template-columns: 1fr; }
+
+    /* ---------- Modals become bottom sheets ---------- */
+    .br-modal-layer, .br-modal-backdrop { align-items: flex-end; padding: 0; }
+    .br-modal {
+        width: 100%; max-height: 92vh; max-height: 92dvh;
+        border-radius: var(--br-radius-xl) var(--br-radius-xl) 0 0;
+        padding: var(--br-space-5) var(--br-space-4) calc(var(--br-space-5) + env(safe-area-inset-bottom));
+    }
+    .br-modal-footer { flex-wrap: wrap; }
+    .br-modal-footer .br-button { flex: 1; }
+
+    /* ---------- Grids / headings ---------- */
+    .br-grid-4, .br-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .br-page-actions { flex-wrap: wrap; }
+    .br-stat-value { word-break: break-word; }
+    .br-toolbar { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+    .br-grid-2 { grid-template-columns: 1fr; }
+    .br-page-heading h2 { font-size: 20px; }
+    .br-card { padding: var(--br-space-4); }
+    .br-dash-hero { padding: var(--br-space-4); }
+}
+
+/* Short landscape phones: don't let the bottom bar eat the screen. */
+@media (max-width: 900px) and (max-height: 430px) {
+    :root { --br-bottom-nav-height: 48px; }
+    .br-bottom-label { display: none; }
+}

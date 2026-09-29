@@ -7,7 +7,7 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     >
 
     <meta
@@ -15,12 +15,44 @@
         content="#0f1115"
     >
 
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <meta
         name="description"
         content="BlackRoad personal finance application"
     >
 
     <title>BlackRoad</title>
+
+    <script>
+        /* Restore the route passed by a hard reload (?go=/dashboard). */
+        (function () {
+            try {
+                var go = new URLSearchParams(location.search).get("go");
+                if (go && go.charAt(0) === "/") history.replaceState({}, "", go);
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+
+    <script>
+        /* Apply saved look before first paint (no flash). */
+        (function () {
+            try {
+                var d = document.documentElement, g = function (k) { return localStorage.getItem(k); };
+                d.setAttribute("data-theme", g("br-theme") === "dark" ? "dark" : "light");
+                d.setAttribute("data-style", g("br_style") || "flat");
+                d.setAttribute("data-accent", g("br_accent") || "graphite");
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+
+    <link rel="manifest" href="./manifest.json">
+
+    <link rel="icon" type="image/png" href="./assets/icons/android-icon-192x192.png">
+
+    <link rel="apple-touch-icon" href="./assets/icons/android-icon-192x192.png">
 
 
     <link
@@ -43,6 +75,56 @@
         href="./src/styles/components.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="./src/styles/dashboard.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/income.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/stocks.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/lending.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/stepup.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/accounting.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/notifications.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/auth.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/themes.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/mobile.css"
+    >
+
 </head>
 
 
@@ -57,6 +139,16 @@
         src="./src/app/app.js"
     ></script>
 
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker
+                    .register("./sw.js")
+                    .catch(function () { /* offline support is optional */ });
+            });
+        }
+    </script>
 
 </body>
 

@@ -1,7 +1,39 @@
 import { Sidebar } from "../components/layout/sidebar.js";
 import { Topbar } from "../components/layout/topbar.js";
-import { getRoute, initRouter } from "./router.js";
+import { getRoute, initRouter, hardNavigate } from "./router.js";
 import { renderView } from "./views.js";
+import { navigate } from "./router.js";
+import { getSession, currentUser, logout } from "../services/auth.js";
+import { AuthScreen } from "../features/auth/auth-screen.js";
+import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
+import { initPreferences, getTheme, toggleTheme } from "../services/preferences.js";
+
+initPreferences();
+
+const themeGlyph = () => (getTheme() === "dark" ? "☀" : "☾");
+
+/* Sign-in gate. Returns true when the requested page may render. */
+async function passesGate(route) {
+    const isAuthRoute = route.module === "login" || route.module === "register";
+
+    let session = await getSession();
+
+    // A session whose account record is gone is treated as signed out.
+    if (session && !session.guest && !(await currentUser())) {
+        await logout();
+        session = null;
+    }
+
+    if (!session && !isAuthRoute) {
+        window.history.replaceState({}, "", "/login");
+        return false;
+    }
+    if (session && isAuthRoute) {
+        window.history.replaceState({}, "", "/dashboard");
+        return false;
+    }
+    return true;
+}
 
 function htmlToElement(html) {
     const template = document.createElement("template");
@@ -22,9 +54,16 @@ async function renderApp() {
         return;
     }
 
-    const route = getRoute();
+    let route = getRoute();
+
+    if (!(await passesGate(route))) route = getRoute();
 
     root.innerHTML = "";
+
+    if (route.module === "login" || route.module === "register") {
+        root.appendChild(AuthScreen(route.module));
+        return;
+    }
 
     // Main application shell
     const shell = document.createElement("div");
@@ -43,6 +82,32 @@ async function renderApp() {
     const topbar = htmlToElement(
         Topbar(route.title)
     );
+
+    // Topbar shortcuts: Notifications and Account buttons
+    topbar
+        .querySelector('[aria-label="Notifications"]')
+        ?.addEventListener("click", () => navigate("/notifications"));
+
+    topbar
+        .querySelector(".br-account-button")
+        ?.addEventListener("click", () => navigate("/account"));
+
+    // Theme toggle + logout
+    const themeBtn = topbar.querySelector('[data-action="toggle-theme"]');
+    if (themeBtn) {
+        themeBtn.textContent = themeGlyph();
+        themeBtn.addEventListener("click", () => {
+            toggleTheme();
+            themeBtn.textContent = themeGlyph();
+        });
+    }
+
+    topbar
+        .querySelector('[data-action="logout"]')
+        ?.addEventListener("click", async () => {
+            await logout();
+            hardNavigate("/login");
+        });
 
     // Page content container
     const content = document.createElement("div");
@@ -100,8 +165,15 @@ async function renderApp() {
     main.appendChild(topbar);
     main.appendChild(content);
 
+    const backdrop = document.createElement("div");
+    backdrop.className = "br-drawer-backdrop";
+
     shell.appendChild(sidebar);
+    shell.appendChild(backdrop);
     shell.appendChild(main);
+    shell.appendChild(BottomNav(route));
+
+    setupDrawer(shell, sidebar, backdrop, topbar.querySelector(".br-mobile-menu"));
 
     root.appendChild(shell);
 }

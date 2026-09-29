@@ -37,17 +37,17 @@
 
     /* ---------- Dark Theme ---------- */
 
-    --br-dark-bg: #0d0f12;
-    --br-dark-surface: #15181d;
-    --br-dark-surface-soft: #1c2026;
-    --br-dark-surface-hover: #232830;
+    --br-dark-bg: #000000;
+    --br-dark-surface: #000000;
+    --br-dark-surface-soft: #000000;
+    --br-dark-surface-hover: #0d0d0d;
 
     --br-dark-text: #f4f5f7;
-    --br-dark-text-secondary: #a7adb7;
-    --br-dark-text-muted: #777e89;
+    --br-dark-text-secondary: #a9a9a9;
+    --br-dark-text-muted: #7d7d7d;
 
-    --br-dark-border: #292e36;
-    --br-dark-border-strong: #363c46;
+    --br-dark-border: #2b2b2b;
+    --br-dark-border-strong: #444444;
 
 
     /* ---------- Typography ---------- */
@@ -163,5 +163,6 @@
 
     --br-primary: #f4f5f7;
     --br-primary-hover: #ffffff;
-    --br-primary-soft: #252a31;
+    --br-primary-soft: #000000;
+    --br-surface-muted: #1f1f1f;   /* bar tracks only */
 }

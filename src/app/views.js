@@ -1,5 +1,13 @@
 import { Dashboard } from "../features/dashboard/dashboard.js";
 import { Income } from "../features/income/income.js";
+import { Stocks } from "../features/stocks/stocks.js";
+import { Deposits } from "../features/deposits/deposits.js";
+import { Lending } from "../features/lending/lending.js";
+import { StepUp } from "../features/stepup/stepup.js";
+import { Accounting } from "../features/accounting/accounting.js";
+import { Notifications } from "../features/notifications/notifications.js";
+import { Account } from "../features/account/account.js";
+import { DataManagement } from "../features/data/data-management.js";
 
 export async function renderView(route) {
     switch (route.module) {
@@ -10,150 +18,28 @@ export async function renderView(route) {
             return await Income();
 
         case "stocks":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>Stocks</h2>
-                            <p>
-                                Stock portfolio and market data.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="br-card">
-                        <h3>Stocks</h3>
-                        <p class="br-muted">
-                            The existing Stocks module will be
-                            connected in the next phase.
-                        </p>
-                    </div>
-                </section>
-            `;
+            return await Stocks();
 
         case "deposits":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>Fixed Deposits</h2>
-                            <p>
-                                Manage your fixed deposits.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="br-card">
-                        <h3>Fixed Deposits</h3>
-                        <p class="br-muted">
-                            Existing FD data will be connected next.
-                        </p>
-                    </div>
-                </section>
-            `;
+            return await Deposits();
 
         case "lending":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>Lending</h2>
-                            <p>
-                                Track money you lend and receive.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="br-card">
-                        <h3>Lending</h3>
-                        <p class="br-muted">
-                            Existing Lending data will be connected next.
-                        </p>
-                    </div>
-                </section>
-            `;
+            return await Lending();
 
         case "stepup":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>StepUp</h2>
-                            <p>
-                                Manage your StepUp investment planning.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="br-card">
-                        <h3>StepUp</h3>
-                        <p class="br-muted">
-                            Existing StepUp data will be connected next.
-                        </p>
-                    </div>
-                </section>
-            `;
+            return await StepUp();
 
         case "accounting":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>Accounting</h2>
-                            <p>
-                                Manual accounting and records.
-                            </p>
-                        </div>
-                    </div>
+            return await Accounting();
 
-                    <div class="br-card">
-                        <h3>Accounting</h3>
-                        <p class="br-muted">
-                            Existing Accounting data will be connected next.
-                        </p>
-                    </div>
-                </section>
-            `;
+        case "data":
+            return await DataManagement();
 
         case "notifications":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>Notifications</h2>
-                            <p>
-                                Your BlackRoad notifications.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="br-card">
-                        <p class="br-muted">
-                            Notifications will be connected later.
-                        </p>
-                    </div>
-                </section>
-            `;
+            return await Notifications();
 
         case "account":
-            return `
-                <section class="br-page">
-                    <div class="br-page-heading">
-                        <div>
-                            <h2>Account</h2>
-                            <p>
-                                BlackRoad account settings.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="br-card">
-                        <p class="br-muted">
-                            Account settings will be connected later.
-                        </p>
-                    </div>
-                </section>
-            `;
+            return await Account();
 
         default:
             return `

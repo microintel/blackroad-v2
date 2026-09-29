@@ -1,0 +1,80 @@
+/* =========================================================
+   NOTIFICATIONS + ACCOUNT — small additions on the shared system
+   ========================================================= */
+
+.nf-panel { margin-top: 20px; }
+
+.nf-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--br-border);
+    cursor: pointer;
+}
+
+.nf-item:last-child { border-bottom: none; }
+.nf-item:hover { background: var(--br-surface-soft); }
+
+.nf-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nf-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+
+.nf-pos { color: var(--br-success); }
+.nf-neg { color: var(--br-danger); }
+
+/* ---------- account ---------- */
+
+.ac-account-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.ac-side { display: flex; flex-direction: column; gap: 20px; }
+
+.ac-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.ac-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--br-primary);
+    color: var(--br-text-inverse);
+    font-weight: 700;
+}
+
+.ac-stack { display: flex; flex-direction: column; gap: 12px; }
+
+.ac-stack label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: var(--br-font-size-sm);
+    font-weight: 600;
+}
+
+.ac-error { color: var(--br-danger); }
+
+.ac-plan-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.ac-switch-label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+@media (max-width: 900px) {
+    .ac-account-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- data management ---------- */
+
+.dm-progress { margin-top: 20px; }
+.dm-progress progress { width: 100%; height: 10px; }

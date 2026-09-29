@@ -309,8 +309,10 @@ function renderMonthlyTable(
                                     row.investment +
                                     row.sales;
 
+                                const mk = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, "0")}`;
+
                                 return `
-                                    <tr>
+                                    <tr data-month-key="${mk}">
 
                                         <td>
                                             <strong>

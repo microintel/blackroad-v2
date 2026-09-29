@@ -31,18 +31,19 @@ export function Topbar(title) {
                 <button
                     class="br-icon-button"
                     type="button"
-                    aria-label="Search"
+                    aria-label="Notifications"
                 >
-                    ⌕
+                    ♢
                 </button>
 
 
                 <button
                     class="br-icon-button"
                     type="button"
-                    aria-label="Notifications"
+                    data-action="toggle-theme"
+                    aria-label="Toggle dark / light"
                 >
-                    ♢
+                    ☾
                 </button>
 
 
@@ -51,6 +52,17 @@ export function Topbar(title) {
                     type="button"
                 >
                     Account
+                </button>
+
+
+                <button
+                    class="br-icon-button"
+                    type="button"
+                    data-action="logout"
+                    aria-label="Log out"
+                    title="Log out"
+                >
+                    ⎋
                 </button>
 
             </div>

@@ -5,6 +5,22 @@ import {
 } from "./database.js";
 
 import { IncomeStore } from "./stores/income-store.js";
+import { StocksStore } from "./stores/stocks-store.js";
+import { DepositStore } from "./stores/deposit-store.js";
+import { LendingStore } from "./stores/lending-store.js";
+import { StepUpStore } from "./stores/stepup-store.js";
+import { AccountingStore } from "./stores/accounting-store.js";
+
+const STORE_CLASSES = {
+    income: IncomeStore,
+    stocks: StocksStore,
+    deposits: DepositStore,
+    lending: LendingStore,
+    stepup: StepUpStore,
+    accounting: AccountingStore
+};
+
+const MODULES = Object.keys(STORE_CLASSES);
 
 class DataService {
     constructor() {
@@ -12,19 +28,51 @@ class DataService {
         this.stores = {};
     }
 
-    async getIncomeStore() {
-        if (this.stores.income) {
-            return this.stores.income;
+    async getStore(moduleName) {
+        if (this.stores[moduleName]) {
+            return this.stores[moduleName];
+        }
+
+        const StoreClass = STORE_CLASSES[moduleName];
+
+        if (!StoreClass) {
+            throw new Error(
+                `Unknown data module: ${moduleName}`
+            );
         }
 
         const database =
-            await this.getDatabase("income");
+            await this.getDatabase(moduleName);
 
-        const store = new IncomeStore(database);
+        const store = new StoreClass(database);
 
-        this.stores.income = store;
+        this.stores[moduleName] = store;
 
         return store;
+    }
+
+    getIncomeStore() {
+        return this.getStore("income");
+    }
+
+    getStocksStore() {
+        return this.getStore("stocks");
+    }
+
+    getDepositStore() {
+        return this.getStore("deposits");
+    }
+
+    getLendingStore() {
+        return this.getStore("lending");
+    }
+
+    getStepUpStore() {
+        return this.getStore("stepup");
+    }
+
+    getAccountingStore() {
+        return this.getStore("accounting");
     }
 
     async getDatabase(moduleName) {
@@ -59,18 +107,9 @@ class DataService {
     }
 
     async getSystemInfo() {
-        const modules = [
-            "income",
-            "stocks",
-            "lending",
-            "deposits",
-            "stepup",
-            "accounting"
-        ];
-
         const result = {};
 
-        for (const module of modules) {
+        for (const module of MODULES) {
             try {
                 result[module] =
                     await this.getDatabaseInfo(

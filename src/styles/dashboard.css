@@ -1,0 +1,211 @@
+/* =========================================================
+   DASHBOARD
+   Uses the shared BlackRoad tokens and components.
+   ========================================================= */
+
+.br-dash-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--br-space-2);
+    margin-bottom: var(--br-space-4);
+}
+
+.br-dash-pill {
+    padding: var(--br-space-1) var(--br-space-3);
+    border: 1px solid var(--br-border);
+    border-radius: 999px;
+    background: var(--br-surface);
+    color: var(--br-text-secondary);
+    font: inherit;
+    font-size: var(--br-font-size-xs);
+    cursor: pointer;
+}
+
+.br-dash-pill.active {
+    border-color: var(--br-primary);
+    background: var(--br-primary);
+    color: var(--br-text-inverse);
+}
+
+.br-dash-pnl {
+    display: block;
+    width: 100%;
+    height: 200px;
+}
+
+.br-dash-pnl polyline {
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.br-dash-pnl-up polyline { stroke: var(--br-success); }
+.br-dash-pnl-up circle { fill: var(--br-success); }
+.br-dash-pnl-down polyline { stroke: var(--br-danger); }
+.br-dash-pnl-down circle { fill: var(--br-danger); }
+
+.br-dash-zero {
+    stroke: var(--br-border-strong);
+    stroke-dasharray: 4 4;
+    vector-effect: non-scaling-stroke;
+}
+
+.br-dash-pnl-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--br-space-2);
+    color: var(--br-text-muted);
+    font-size: var(--br-font-size-xs);
+}
+
+/* Hero */
+
+.br-dash-hero {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-3);
+}
+
+.br-dash-networth {
+    font-size: var(--br-font-size-3xl);
+    font-weight: 700;
+    line-height: var(--br-line-tight);
+    word-break: break-word;
+}
+
+.br-dash-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--br-space-2);
+}
+
+.br-dash-foot {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--br-space-4);
+}
+
+.br-dash-foot > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-1);
+}
+
+/* Allocation */
+
+.br-dash-alloc {
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-6);
+    flex-wrap: wrap;
+}
+
+.br-dash-donut {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    flex: none;
+}
+
+.br-dash-donut svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.br-dash-donut circle {
+    fill: none;
+    stroke-width: 16;
+}
+
+.br-dash-ring-empty { stroke: var(--br-primary-soft); }
+
+.br-dash-donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.br-dash-donut-center small {
+    color: var(--br-text-muted);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+
+.br-dash-donut-center b {
+    font-size: var(--br-font-size-sm);
+}
+
+.br-dash-legend {
+    flex: 1;
+    min-width: 180px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-2);
+}
+
+.br-dash-legend li {
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
+    align-items: center;
+    gap: var(--br-space-2);
+    font-size: var(--br-font-size-sm);
+}
+
+.br-dash-legend-pct { color: var(--br-text-muted); }
+.br-dash-legend-amt { font-weight: 600; }
+
+.br-dash-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* Series colors (segments use stroke, legend dots use background) */
+
+.br-dash-c-lending { stroke: var(--br-danger); }
+.br-dash-c-mf { stroke: var(--br-warning); }
+.br-dash-c-fd { stroke: #7c5cd6; }
+.br-dash-c-stocks { stroke: var(--br-success); }
+
+.br-dash-bg-lending { background: var(--br-danger); }
+.br-dash-bg-mf { background: var(--br-warning); }
+.br-dash-bg-fd { background: #7c5cd6; }
+.br-dash-bg-stocks { background: var(--br-success); }
+
+/* Wealth lane tiles */
+
+.br-dash-lanes-title {
+    margin-top: var(--br-space-2);
+}
+
+.br-dash-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-2);
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.br-dash-tile:hover {
+    background: var(--br-surface-hover);
+}
+
+.br-dash-trend {
+    font-size: var(--br-font-size-xs);
+}
+
+@media (max-width: 600px) {
+    .br-dash-foot {
+        grid-template-columns: 1fr;
+    }
+}
