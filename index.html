@@ -30,6 +30,7 @@
         /* Routing is hash-based (index.html#/income) so any static server works.
            Convert older URL shapes before the app starts:
              /income            (server fell back to index.html)  ->  /#/income
+             /app/income        (app hosted in a sub-folder)      ->  /app/#/income
              index.html?go=/x   (older hard reloads)              ->  index.html#/x
            and drop the throwaway ?_= reload marker. */
         (function () {
@@ -38,9 +39,15 @@
                 var go = q.get("go"), route = null, base = l.pathname;
                 if (go && go.charAt(0) === "/") {
                     route = go;
-                } else if (!l.hash && l.pathname !== "/" && !/\.html?$/.test(l.pathname)) {
-                    route = l.pathname;
-                    base = "/";
+                } else if (!l.hash) {
+                    /* Only a known route name at the END of the path is a route.
+                       The app folder itself (e.g. /blackroad-v2/ on GitHub Pages)
+                       is not, and is kept as the base. */
+                    var m = l.pathname.match(/^(.*\/)(dashboard|income|stocks|deposits|lending|stepup|accounting|data|notifications|account|login|register)\/?$/);
+                    if (m) {
+                        route = "/" + m[2];
+                        base = m[1];
+                    }
                 }
                 if (route) {
                     history.replaceState({}, "", base + "#" + route);
