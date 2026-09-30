@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v16";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -25,6 +25,8 @@ const SHELL = [
     "./src/app/navigation.js",
     "./src/app/router.js",
     "./src/app/views.js",
+    "./src/components/chart-colors.js",
+    "./src/components/icons.js",
     "./src/components/layout/mobile-nav.js",
     "./src/components/layout/sidebar.js",
     "./src/components/layout/topbar.js",
@@ -86,6 +88,7 @@ const SHELL = [
     "./src/styles/notifications.css",
     "./src/styles/stepup.css",
     "./src/styles/stocks.css",
+    "./src/styles/theme.css",
     "./src/styles/tokens.css",
 ];
 
@@ -93,7 +96,13 @@ self.addEventListener("install", (event) => {
     event.waitUntil(
         caches
             .open(CACHE_NAME)
-            .then((cache) => cache.addAll(SHELL))
+            .then((cache) =>
+                Promise.all(
+                    SHELL.map((url) =>
+                        cache.add(new Request(url, { cache: "reload" }))
+                    )
+                )
+            )
             .then(() => self.skipWaiting())
     );
 });

@@ -1,3 +1,4 @@
+import { icon } from "../../components/icons.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -466,7 +467,7 @@ function personHTML(party) {
 
     const header = `
         <div class="ll-person-head">
-            <button type="button" class="br-button" data-action="back-people">← People</button>
+            <button type="button" class="br-button" data-action="back-people">${icon("arrow-left", { size: 16 })}People</button>
             <div>
                 <h3 style="margin:0;">${escapeHTML(party.name || "Unnamed")}</h3>
                 <p class="br-muted" style="margin:2px 0 0;">${escapeHTML(party.phone || party.note || "")}</p>
@@ -531,7 +532,7 @@ function personHTML(party) {
         html += `
             <section class="br-card" style="margin-bottom:12px;">
                 <div class="ll-year-head" data-action="toggle-year" data-year="${year}">
-                    <span>${open ? "▾" : "▸"} <strong>${year}</strong></span>
+                    <span>${icon(open ? "chevron-down" : "chevron-right", { size: 16 })} <strong>${year}</strong></span>
                     <span class="br-muted">
                         <span class="ll-get">+${fmtMoney(yGave)}</span> ·
                         <span class="ll-give">-${fmtMoney(yGot)}</span> ·

@@ -1,9 +1,12 @@
+import { COLORS } from "../../components/chart-colors.js";
 /* Income → Compare : two months or two years side by side (old compare.js) */
 import {
     periodTotals, monthKeyOf, yearKeyOf, monthLabelOf, formatMoney, esc
 } from "./income-shared.js";
 
-const state = { mode: "month", a: "", b: "" };
+const state = { mode: "month", a: "", b: "", range: "1y" };
+
+const RANGE_MONTHS = { "1m": 1, "6m": 6, "1y": 12, "3y": 36, "5y": 60, "10y": 120, max: Infinity };
 
 const label = (key, mode) => (mode === "year" ? key : monthLabelOf(key));
 
@@ -70,9 +73,9 @@ function categoryCompare(title, ma, mb, emptyText) {
                 <div class="br-cmp-cat">
                     <div class="br-bar-name">${esc(r.c)}</div>
                     <div class="br-cmp-lines">
-                        <div class="br-bar-track"><span class="br-bar-fill" style="width:${(r.a / max) * 100}%;background:#5b9dff"></span></div>
+                        <div class="br-bar-track"><span class="br-bar-fill" style="width:${(r.a / max) * 100}%;background:${COLORS.info}"></span></div>
                         <span class="br-bar-value">${formatMoney(r.a)}</span>
-                        <div class="br-bar-track"><span class="br-bar-fill" style="width:${(r.b / max) * 100}%;background:#e3ac54"></span></div>
+                        <div class="br-bar-track"><span class="br-bar-fill" style="width:${(r.b / max) * 100}%;background:${COLORS.gold}"></span></div>
                         <span class="br-bar-value">${formatMoney(r.b)}</span>
                     </div>
                 </div>`).join("")}
@@ -92,25 +95,71 @@ function verdict(la, lb, a, b) {
     return `<strong>${esc(better)}</strong> came out ${formatMoney(Math.abs(diff))} ahead of <strong>${esc(worse)}</strong> on net balance.`;
 }
 
-/* Monthly income / expense trend, drawn as inline SVG (no chart library) */
+/* Income vs expense for the two chosen periods (old compare chart) */
+function periodChart(la, lb, a, b) {
+    if (!a.income && !a.expense && !b.income && !b.expense) return "";
+    const max = Math.max(a.income, a.expense, b.income, b.expense, 1);
+    const W = 420, H = 180, pad = 28, bw = 34;
+    const groups = [[la, a], [lb, b]];
+    const gx = (i) => pad + 40 + i * ((W - pad * 2 - 80) / 1);
+    const bar = (x, v, c) => {
+        const h = (v / max) * (H - pad * 2);
+        return `<rect x="${x}" y="${H - pad - h}" width="${bw}" height="${h}" rx="4" fill="${c}"/>`;
+    };
+    return `
+        <section class="br-card" style="margin-bottom:16px;">
+            <h3>Income vs expense</h3>
+            <p class="br-muted"><span style="color:${COLORS.success}">●</span> Income &nbsp; <span style="color:${COLORS.danger}">●</span> Expense</p>
+            <div class="br-table-wrap">
+                <svg viewBox="0 0 ${W} ${H}" style="min-width:320px;width:100%;height:auto" role="img" aria-label="Income and expense for both periods">
+                    <line x1="${pad}" x2="${W - pad}" y1="${H - pad}" y2="${H - pad}" stroke="currentColor" opacity=".2"/>
+                    ${groups.map(([l, t], i) => `
+                        ${bar(gx(i) - bw - 2, t.income, COLORS.success)}
+                        ${bar(gx(i) + 2, t.expense, COLORS.danger)}
+                        <text x="${gx(i)}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">${esc(l)}</text>`).join("")}
+                </svg>
+            </div>
+        </section>`;
+}
+
+/* Monthly income / expense / balance trend, drawn as inline SVG (no chart library) */
 function trend(entries) {
-    const months = availableKeys(entries, "month").reverse().slice(-12);
-    if (!months.length) return "";
+    const all = availableKeys(entries, "month").reverse();
+    if (!all.length) return "";
+    const n = RANGE_MONTHS[state.range] ?? 12;
+    const months = Number.isFinite(n) ? all.slice(-n) : all;
     const data = months.map((k) => periodTotals(entries, k, "month"));
-    const max = Math.max(...data.flatMap((d) => [d.income, d.expense]), 1);
-    const W = 640, H = 180, pad = 24;
+    const rows = data.map((d) => ({
+        income: d.income,
+        expense: d.expense,
+        balance: d.income - d.expense - d.investment + d.investmentSale
+    }));
+    const vals = rows.flatMap((d) => [d.income, d.expense, d.balance]);
+    const max = Math.max(...vals, 1);
+    const min = Math.min(...vals, 0);
+    const W = Math.max(640, months.length * 48), H = 200, pad = 24;
     const step = months.length > 1 ? (W - pad * 2) / (months.length - 1) : 0;
-    const pts = (f) => data.map((d, i) =>
-        `${pad + i * step},${H - pad - (f(d) / max) * (H - pad * 2)}`).join(" ");
+    const y = (v) => H - pad - ((v - min) / (max - min || 1)) * (H - pad * 2);
+    const line = (f, c) => {
+        const pts = rows.map((d, i) => `${pad + i * step},${y(f(d))}`).join(" ");
+        const dots = rows.map((d, i) => `<circle cx="${pad + i * step}" cy="${y(f(d))}" r="3" fill="${c}"/>`).join("");
+        return `<polyline fill="none" stroke="${c}" stroke-width="2.5" points="${pts}"/>${dots}`;
+    };
+    const ranges = [["1m", "1M"], ["6m", "6M"], ["1y", "1Y"], ["3y", "3Y"], ["5y", "5Y"], ["10y", "10Y"], ["max", "MAX"]];
 
     return `
         <section class="br-card">
-            <h3>Last ${months.length} month${months.length === 1 ? "" : "s"}</h3>
-            <p class="br-muted"><span style="color:#3ecf8e">●</span> Income &nbsp; <span style="color:#b5583f">●</span> Expenses</p>
+            <h3>Monthly trend</h3>
+            <div class="br-income-tabs" style="margin:8px 0;">
+                ${ranges.map(([k, t]) => `<button type="button" class="br-income-tab ${state.range === k ? "active" : ""}" data-compare-range="${k}">${t}</button>`).join("")}
+            </div>
+            <p class="br-muted"><span style="color:${COLORS.success}">●</span> Income &nbsp; <span style="color:${COLORS.danger}">●</span> Expenses &nbsp; <span style="color:${COLORS.info}">●</span> Balance</p>
             <div class="br-table-wrap">
-                <svg viewBox="0 0 ${W} ${H}" style="min-width:420px;width:100%;height:auto" role="img" aria-label="Monthly trend">
-                    <polyline fill="none" stroke="#3ecf8e" stroke-width="2.5" points="${pts((d) => d.income)}"/>
-                    <polyline fill="none" stroke="#b5583f" stroke-width="2.5" points="${pts((d) => d.expense)}"/>
+                <svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 420)}px;width:100%;height:auto" role="img" aria-label="Monthly trend">
+                    <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" stroke="currentColor" opacity=".2"/>
+                    ${line((d) => d.income, COLORS.success)}
+                    ${line((d) => d.expense, COLORS.danger)}
+                    ${line((d) => d.balance, COLORS.info)}
                     ${months.map((k, i) => `<text x="${pad + i * step}" y="${H - 6}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${k.slice(2).replace("-", "/")}</text>`).join("")}
                 </svg>
             </div>
@@ -141,6 +190,7 @@ export function renderIncomeCompare(entries) {
                 <button type="button" class="br-income-tab ${state.mode === "year" ? "active" : ""}" data-compare-mode="year">Years</button>
             </div>
             <select class="br-select" data-compare-select="a">${opts(state.a)}</select>
+            <button type="button" class="br-button" data-compare-swap title="Swap periods" aria-label="Swap periods">⇄</button>
             <span class="br-muted">vs</span>
             <select class="br-select" data-compare-select="b">${opts(state.b)}</select>
         </div>
@@ -163,7 +213,9 @@ export function renderIncomeCompare(entries) {
                 <div class="br-stat-value">${Math.round(a.rate - b.rate)} pts</div>${delta(a.rate, b.rate)}</div>
         </div>
 
-        <p class="br-muted"><span style="color:#5b9dff">●</span> ${esc(la)} &nbsp; <span style="color:#e3ac54">●</span> ${esc(lb)}</p>
+        ${periodChart(la, lb, a, b)}
+
+        <p class="br-muted"><span style="color:${COLORS.info}">●</span> ${esc(la)} &nbsp; <span style="color:${COLORS.gold}">●</span> ${esc(lb)}</p>
         <div class="br-grid br-grid-2" style="margin-bottom:16px;">
             ${categoryCompare("Expenses by category", a.categoryTotals, b.categoryTotals, "No expenses in either period")}
             ${categoryCompare("Income by category", a.incomeCategoryTotals, b.incomeCategoryTotals, "No income in either period")}
@@ -178,6 +230,15 @@ export function handleCompareEvent(target) {
         state.mode = mode.dataset.compareMode;
         state.a = "";
         state.b = "";
+        return true;
+    }
+    if (target.closest?.("[data-compare-swap]")) {
+        [state.a, state.b] = [state.b, state.a];
+        return true;
+    }
+    const range = target.closest?.("[data-compare-range]");
+    if (range) {
+        state.range = range.dataset.compareRange;
         return true;
     }
     const sel = target.closest?.("[data-compare-select]");

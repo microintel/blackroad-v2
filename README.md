@@ -7,17 +7,19 @@ Personal finance web application, rebuilt gradually from the original BlackRoad 
 
 ## Running
 
-The app uses ES modules and `history.pushState` routing, so it must be served over HTTP
-(not opened as a file), and the server must fall back to `index.html` for unknown paths
-so that refreshing on `/income` works.
+The app uses ES modules, so it must be served over HTTP (not opened as a `file://` page).
+Routing is hash-based (`index.html#/income`), so **any static server works** and reloading,
+bookmarking or resizing / toggling device mode never gives a 404:
 
 ```bash
-python serve.py        # http://localhost:8080 (built-in SPA fallback)
+python serve.py                 # http://localhost:8080
 # or
-npx serve -s .         # -s = single-page fallback to index.html
+python -m http.server 8080      # then open http://localhost:8080/index.html
+# or VS Code Live Server, npx serve, GitHub Pages, ...
 ```
 
-Sign-in, sign-out, restore and account changes reload through `index.html?go=/route`, so they work even on servers with no fallback. Refreshing directly on `/income` still needs a fallback server (`serve.py` above).
+Older path-style links (`/income`) and `?go=/route` links are converted to the hash form on load.
+Sign-in, sign-out, restore and account changes do a full reload of `index.html#/route`.
 
 ## Project structure
 

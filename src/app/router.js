@@ -68,11 +68,30 @@ const routes = {
 };
 
 
+/* =========================================================
+   HASH ROUTING
+   URLs look like  index.html#/income.  The server only ever has
+   to serve index.html, so reloading, bookmarking, resizing the
+   window / toggling device mode, or hosting on any static server
+   (Live Server, python -m http.server, GitHub Pages, ...) never
+   produces a 404. Old path-style URLs (/income) are converted to
+   the hash form by the inline script in index.html.
+   ========================================================= */
+
+/* The current route path, e.g. "/income" ("/" when there is none). */
+export function currentPath() {
+    const raw = window.location.hash.replace(/^#/, "").split("?")[0];
+    return raw.charAt(0) === "/" ? raw : "/";
+}
+
+/* href for a route, for <a> tags. */
+export function hrefFor(path) {
+    return "#" + path;
+}
+
 export function getRoute() {
 
-    const path = window.location.pathname;
-
-    return routes[path] || {
+    return routes[currentPath()] || {
 
         title: "Page Not Found",
 
@@ -84,7 +103,7 @@ export function getRoute() {
 
 export function navigate(path) {
 
-    if (window.location.pathname === path) {
+    if (currentPath() === path) {
 
         window.dispatchEvent(
             new PopStateEvent("popstate")
@@ -97,13 +116,20 @@ export function navigate(path) {
     window.history.pushState(
         {},
         "",
-        path
+        hrefFor(path)
     );
 
 
     window.dispatchEvent(
         new PopStateEvent("popstate")
     );
+
+}
+
+
+/* Change the route without adding a history entry, and without rendering. */
+export function replaceRoute(path) {
+    window.history.replaceState({}, "", hrefFor(path));
 }
 
 
@@ -117,12 +143,13 @@ export function initRouter(render) {
 }
 
 
-/* Full page load that works on ANY static server.
-   Reloading /dashboard directly 404s on servers without an SPA
-   fallback, so we always reload index.html and pass the target
-   route in ?go=  (index.html restores it before the app starts). */
+/* Full page load (sign-in / sign-out / restore, where the data layer must
+   start fresh). Reloads index.html with the target route in the hash; the
+   throwaway ?_= value forces a real reload even if only the hash differs. */
 export function hardNavigate(path) {
     const base = new URL("../../", import.meta.url);
-    const target = path || (window.location.pathname + window.location.search);
-    window.location.replace(new URL("index.html", base).href + "?go=" + encodeURIComponent(target));
+    const target = path || currentPath();
+    window.location.replace(
+        new URL("index.html", base).href + "?_=" + Date.now() + "#" + target
+    );
 }

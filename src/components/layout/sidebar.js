@@ -1,5 +1,6 @@
 import { navigation } from "../../app/navigation.js";
-import { navigate } from "../../app/router.js";
+import { navigate, currentPath, hrefFor } from "../../app/router.js";
+import { icon } from "../icons.js";
 
 
 export function Sidebar() {
@@ -13,7 +14,7 @@ export function Sidebar() {
 
         <div class="br-brand">
 
-            <div class="br-brand-logo">
+            <div class="br-brand-logo" aria-hidden="true">
                 B
             </div>
 
@@ -70,11 +71,11 @@ export function Sidebar() {
                 document.createElement("a");
 
 
-            link.href = item.path;
+            link.href = hrefFor(item.path);
 
             link.className = "br-nav-item";
 
-            const here = window.location.pathname === "/" ? "/dashboard" : window.location.pathname;
+            const here = currentPath() === "/" ? "/dashboard" : currentPath();
 
             if (here === item.path) {
                 link.classList.add("is-active");
@@ -85,7 +86,7 @@ export function Sidebar() {
             link.innerHTML = `
 
                 <span class="br-nav-icon">
-                    ${item.icon}
+                    ${icon(item.icon, { size: 20 })}
                 </span>
 
                 <span class="br-nav-label">

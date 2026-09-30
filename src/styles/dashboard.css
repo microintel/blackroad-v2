@@ -11,20 +11,23 @@
 }
 
 .br-dash-pill {
-    padding: var(--br-space-1) var(--br-space-3);
-    border: 1px solid var(--br-border);
+    min-height: 30px;
+    padding: 0 var(--br-space-3);
+    border: 0;
     border-radius: 999px;
-    background: var(--br-surface);
-    color: var(--br-text-secondary);
+    background: transparent;
+    color: var(--br-text-muted);
     font: inherit;
     font-size: var(--br-font-size-xs);
+    font-weight: 500;
     cursor: pointer;
 }
 
+.br-dash-pill:hover { color: var(--br-text); }
+
 .br-dash-pill.active {
-    border-color: var(--br-primary);
-    background: var(--br-primary);
-    color: var(--br-text-inverse);
+    background: var(--br-gold-surface);
+    color: var(--br-gold-text);
 }
 
 .br-dash-pnl {
@@ -44,7 +47,7 @@
 .br-dash-pnl-down circle { fill: var(--br-danger); }
 
 .br-dash-zero {
-    stroke: var(--br-border-strong);
+    stroke: var(--br-border);
     stroke-dasharray: 4 4;
     vector-effect: non-scaling-stroke;
 }
@@ -66,12 +69,18 @@
     gap: var(--br-space-3);
 }
 
+.br-dash-hero { background: var(--br-surface); padding: var(--br-space-7) var(--br-space-6); }
+
 .br-dash-networth {
-    font-size: var(--br-font-size-3xl);
-    font-weight: 700;
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
     line-height: var(--br-line-tight);
+    color: var(--br-text);
     word-break: break-word;
 }
+
+.br-dash-networth-gold { color: var(--br-gold-text); }
 
 .br-dash-chips {
     display: flex;
@@ -83,6 +92,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--br-space-4);
+    margin-top: var(--br-space-4);
 }
 
 .br-dash-foot > div {
@@ -118,7 +128,7 @@
     stroke-width: 16;
 }
 
-.br-dash-ring-empty { stroke: var(--br-primary-soft); }
+.br-dash-ring-empty { stroke: var(--br-surface-active); }
 
 .br-dash-donut-center {
     position: absolute;
@@ -132,8 +142,7 @@
 
 .br-dash-donut-center small {
     color: var(--br-text-muted);
-    font-size: 10px;
-    letter-spacing: 0.08em;
+    font-size: 12px;
 }
 
 .br-dash-donut-center b {
@@ -170,15 +179,17 @@
 
 /* Series colors (segments use stroke, legend dots use background) */
 
-.br-dash-c-lending { stroke: var(--br-danger); }
-.br-dash-c-mf { stroke: var(--br-warning); }
-.br-dash-c-fd { stroke: #7c5cd6; }
-.br-dash-c-stocks { stroke: var(--br-success); }
+/* Allocation is a breakdown, not good/bad news, so it uses the
+   neutral series palette rather than green / red / amber. */
+.br-dash-c-stocks { stroke: var(--br-series-1); }
+.br-dash-c-mf { stroke: var(--br-series-2); }
+.br-dash-c-fd { stroke: var(--br-series-3); }
+.br-dash-c-lending { stroke: var(--br-series-6); }
 
-.br-dash-bg-lending { background: var(--br-danger); }
-.br-dash-bg-mf { background: var(--br-warning); }
-.br-dash-bg-fd { background: #7c5cd6; }
-.br-dash-bg-stocks { background: var(--br-success); }
+.br-dash-bg-stocks { background: var(--br-series-1); }
+.br-dash-bg-mf { background: var(--br-series-2); }
+.br-dash-bg-fd { background: var(--br-series-3); }
+.br-dash-bg-lending { background: var(--br-series-6); }
 
 /* Wealth lane tiles */
 
@@ -196,9 +207,11 @@
     cursor: pointer;
 }
 
-.br-dash-tile:hover {
-    background: var(--br-surface-hover);
-}
+.br-dash-tile { border: 0; transition: background var(--br-transition-fast); }
+.br-dash-tile:hover { background: var(--br-surface-soft); }
+.br-dash-tile .br-stat-label { display: flex; align-items: center; gap: 8px; }
+.br-dash-tile .br-stat-label .br-icon { color: var(--br-text-muted); }
+.br-dash-trend { display: inline-flex; align-items: center; gap: 4px; }
 
 .br-dash-trend {
     font-size: var(--br-font-size-xs);
@@ -208,4 +221,12 @@
     .br-dash-foot {
         grid-template-columns: 1fr;
     }
+}
+
+/* Net worth label carries the one gold accent on the hero. */
+.br-dash-hero > .br-stat-label { display: flex; align-items: center; gap: 8px; color: var(--br-gold-text); }
+
+@media (max-width: 600px) {
+    .br-dash-pills { flex-wrap: nowrap; gap: 0; justify-content: space-between; }
+    .br-dash-pill { padding: 0 var(--br-space-2); min-height: 36px; }
 }

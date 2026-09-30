@@ -107,10 +107,10 @@ export function drawChart(canvas, opts) {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
 
-        const muted = css("--br-text-muted", "#8b93a1");
-        const grid = css("--br-border", "rgba(128,128,128,.25)");
-        const bg = css("--br-surface", "#161a21");
-        const text = css("--br-text", "#e8eaed");
+        const muted = css("--br-text-muted", "#737373");
+        const grid = css("--br-hairline", "#171717");
+        const bg = css("--br-surface", "#0A0A0A");
+        const text = css("--br-text", "#F5F5F5");
 
         const padL = 48, padR = 12, padT = 10, padB = 24;
         const cw = w - padL - padR;
@@ -147,13 +147,13 @@ export function drawChart(canvas, opts) {
             const y = Y(opts.goal);
             ctx.save();
             ctx.setLineDash([6, 4]);
-            ctx.strokeStyle = "#e6b851";
+            ctx.strokeStyle = "#D4AF37";
             ctx.beginPath();
             ctx.moveTo(padL, y);
             ctx.lineTo(w - padR, y);
             ctx.stroke();
             ctx.restore();
-            ctx.fillStyle = "#e6b851";
+            ctx.fillStyle = "#D4AF37";
             ctx.textAlign = "left";
             ctx.fillText("Goal", padL + 4, y - 9);
         }

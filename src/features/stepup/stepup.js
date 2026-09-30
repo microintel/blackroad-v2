@@ -1,3 +1,5 @@
+import { icon } from "../../components/icons.js";
+import { COLORS } from "../../components/chart-colors.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -450,8 +452,8 @@ function overviewHTML() {
                 <h3 style="margin-bottom:12px;">Portfolio value vs invested</h3>
                 <canvas data-su-chart="portfolio" style="width:100%;height:260px;display:block;"></canvas>
                 <div class="su-legend">
-                    <span><i style="background:#2f81f7"></i>Portfolio value</span>
-                    <span><i style="background:#8b93a1"></i>Invested</span>
+                    <span><i style="background:var(--br-info)"></i>Portfolio value</span>
+                    <span><i style="background:var(--br-text-secondary)"></i>Invested</span>
                 </div>
             </section>
             ${growthHTML(calc)}
@@ -605,9 +607,9 @@ function fundHTML() {
                 </div>
                 <canvas data-su-chart="fund-projection" style="width:100%;height:260px;display:block;"></canvas>
                 <div class="su-legend">
-                    <span><i style="background:#00c853"></i>Optimistic · best year (${projection.bestPct >= 0 ? "+" : ""}${projection.bestPct.toFixed(1)}%/yr)</span>
-                    <span><i style="background:#2f81f7"></i>Expected · average (${projection.avgPct >= 0 ? "+" : ""}${projection.avgPct.toFixed(1)}%/yr)</span>
-                    <span><i style="background:#ff5252"></i>Pessimistic · worst year (${projection.worstPct >= 0 ? "+" : ""}${projection.worstPct.toFixed(1)}%/yr)</span>
+                    <span><i style="background:var(--br-success)"></i>Optimistic · best year (${projection.bestPct >= 0 ? "+" : ""}${projection.bestPct.toFixed(1)}%/yr)</span>
+                    <span><i style="background:var(--br-info)"></i>Expected · average (${projection.avgPct >= 0 ? "+" : ""}${projection.avgPct.toFixed(1)}%/yr)</span>
+                    <span><i style="background:var(--br-danger)"></i>Pessimistic · worst year (${projection.worstPct >= 0 ? "+" : ""}${projection.worstPct.toFixed(1)}%/yr)</span>
                 </div>
                 <p class="br-muted" style="margin:8px 0 0;">Based only on this fund's own calendar-year returns. Not a forecast.</p>
             </section>`
@@ -669,10 +671,10 @@ function goalProjectionHTML(series) {
             <p class="${hit ? "su-pos" : "su-neg"}" style="margin:0 0 12px;">${reach}</p>
             <canvas data-su-chart="goal-projection" style="width:100%;height:260px;display:block;"></canvas>
             <div class="su-legend">
-                <span><i style="background:#00c853"></i>Optimistic</span>
-                <span><i style="background:#2f81f7"></i>Expected</span>
-                <span><i style="background:#ff5252"></i>Pessimistic</span>
-                <span><i style="background:#e6b851"></i>Goal</span>
+                <span><i style="background:var(--br-success)"></i>Optimistic</span>
+                <span><i style="background:var(--br-info)"></i>Expected</span>
+                <span><i style="background:var(--br-danger)"></i>Pessimistic</span>
+                <span><i style="background:var(--br-gold)"></i>Goal</span>
             </div>
         </section>
     `;
@@ -696,13 +698,13 @@ function drawCharts(page) {
             series: [
                 {
                     name: "Invested",
-                    color: "#8b93a1",
+                    color: COLORS.textSecondary,
                     dashed: true,
                     points: calc.map((e) => ({ x: e.date, y: e.investedAmount }))
                 },
                 {
                     name: "Value",
-                    color: positive ? "#00c853" : "#ff5252",
+                    color: positive ? COLORS.success : COLORS.danger,
                     fill: true,
                     width: 2.5,
                     points: calc.map((e) => ({ x: e.date, y: e.portfolioValue }))
@@ -722,7 +724,7 @@ function drawCharts(page) {
             series: [
                 {
                     name: "₹100 grows to",
-                    color: "#2f81f7",
+                    color: COLORS.info,
                     fill: true,
                     points: series.map((r) => ({ x: r.date, y: r.growth }))
                 }
@@ -739,12 +741,12 @@ function drawCharts(page) {
                 series: [
                     {
                         name: "History",
-                        color: "#8b93a1",
+                        color: COLORS.textSecondary,
                         points: series.slice(-Math.min(series.length, 1500)).map((r) => ({ x: r.date, y: r.growth }))
                     },
-                    { name: "Optimistic", color: "#00c853", dashed: true, points: p.optimistic.map((r) => ({ x: r.date, y: r.value })) },
-                    { name: "Expected", color: "#2f81f7", points: p.expected.map((r) => ({ x: r.date, y: r.value })) },
-                    { name: "Pessimistic", color: "#ff5252", dashed: true, points: p.pessimistic.map((r) => ({ x: r.date, y: r.value })) }
+                    { name: "Optimistic", color: COLORS.success, dashed: true, points: p.optimistic.map((r) => ({ x: r.date, y: r.value })) },
+                    { name: "Expected", color: COLORS.info, points: p.expected.map((r) => ({ x: r.date, y: r.value })) },
+                    { name: "Pessimistic", color: COLORS.danger, dashed: true, points: p.pessimistic.map((r) => ({ x: r.date, y: r.value })) }
                 ]
             });
         }
@@ -758,9 +760,9 @@ function drawCharts(page) {
                 goal: settings.goalAmount,
                 yFormat: (n) => fmtK(n),
                 series: [
-                    { name: "Optimistic", color: "#00c853", dashed: true, points: g.scenarios.optimistic.map((r) => ({ x: r.date, y: r.value })) },
-                    { name: "Expected", color: "#2f81f7", points: g.scenarios.expected.map((r) => ({ x: r.date, y: r.value })) },
-                    { name: "Pessimistic", color: "#ff5252", dashed: true, points: g.scenarios.pessimistic.map((r) => ({ x: r.date, y: r.value })) }
+                    { name: "Optimistic", color: COLORS.success, dashed: true, points: g.scenarios.optimistic.map((r) => ({ x: r.date, y: r.value })) },
+                    { name: "Expected", color: COLORS.info, points: g.scenarios.expected.map((r) => ({ x: r.date, y: r.value })) },
+                    { name: "Pessimistic", color: COLORS.danger, dashed: true, points: g.scenarios.pessimistic.map((r) => ({ x: r.date, y: r.value })) }
                 ]
             });
         }
@@ -1006,7 +1008,7 @@ function historyHTML() {
         <div class="br-toolbar" style="margin-bottom:16px;">
             <div class="br-toolbar-left">
                 <input type="date" class="br-input" value="${escapeHTML(historyDate)}" data-su-hdate style="max-width:200px;">
-                <button type="button" class="br-button" data-action="sort-history">${historySortDesc ? "Newest first ↓" : "Oldest first ↑"}</button>
+                <button type="button" class="br-button" data-action="sort-history">${historySortDesc ? "Newest first" + icon("chevron-down", { size: 16 }) : "Oldest first" + icon("chevron-up", { size: 16 })}</button>
             </div>
             <div class="br-toolbar-right"><span class="br-muted">${rows.length} entr${rows.length === 1 ? "y" : "ies"}</span></div>
         </div>
@@ -1038,7 +1040,7 @@ function historyHTML() {
                         <td>${r.unitsHeld.toFixed(4)}</td>
                         <td style="text-align:right;white-space:nowrap;">
                             <button type="button" class="br-button" data-action="edit-entry" data-id="${r.id}">Edit</button>
-                            <button type="button" class="br-button br-button-danger" data-action="delete-entry" data-id="${r.id}">Delete</button>
+                            <button type="button" class="br-button br-button-danger" data-action="delete-entry" data-id="${r.id}">${icon("trash-2", { size: 16 })}Delete</button>
                         </td>
                     </tr>`
                         )
@@ -1113,7 +1115,7 @@ function ledgerHTML() {
                             (r) => `<tr>
                         <td>${escapeHTML(r.date)}</td>
                         <td>₹${r.amount.toLocaleString("en-IN")}</td>
-                        <td>${r.stepChange ? `<span class="${r.stepChange > 0 ? "su-pos" : "su-neg"}">${r.stepChange > 0 ? "▲" : "▼"} ${Math.abs(r.stepChange).toLocaleString("en-IN")}</span>` : "—"}</td>
+                        <td>${r.stepChange ? `<span class="${r.stepChange > 0 ? "su-pos" : "su-neg"}">${r.stepChange > 0 ? icon("arrow-up-right", { size: 14 }) : icon("arrow-down-right", { size: 14 })} ${Math.abs(r.stepChange).toLocaleString("en-IN")}</span>` : "—"}</td>
                         <td><span class="br-badge ${STATUS_BADGE[r.status] || ""}">${ALLOC_STATUS_LABEL[r.status] || r.status}</span></td>
                         <td>${r.navValue != null ? Number(r.navValue).toFixed(4) : "—"}</td>
                         <td>${r.units ? Number(r.units).toFixed(4) : "—"}</td>
@@ -1171,7 +1173,7 @@ function settingsHTML() {
               .map((seg, i) => {
                   const prev = i === 0 ? null : s.sipSchedule[i - 1].amount;
                   const arrow =
-                      prev === null ? "" : seg.amount > prev ? "▲ " : seg.amount < prev ? "▼ " : "";
+                      prev === null ? "" : seg.amount > prev ? icon("arrow-up-right", { size: 14 }) + " " : seg.amount < prev ? icon("arrow-down-right", { size: 14 }) + " " : "";
                   return `<div class="su-row">
                     <span><strong>${arrow}₹${seg.amount.toLocaleString("en-IN")}</strong>
                     <span class="br-muted"> from ${escapeHTML(seg.fromDate)}</span></span>
@@ -1220,7 +1222,7 @@ function settingsHTML() {
                         skipped.length
                             ? skipped
                                   .map(
-                                      (d) => `<div class="su-row"><span>⏭ ${escapeHTML(d)}</span>
+                                      (d) => `<div class="su-row"><span>${icon("skip-forward", { size: 14 })} ${escapeHTML(d)}</span>
                         <button type="button" class="br-button" data-action="restore-skip" data-date="${d}">Restore</button></div>`
                                   )
                                   .join("")
@@ -1276,7 +1278,7 @@ function settingsHTML() {
                             : ""
                     }
                 </div>
-                <p class="br-field-help" style="margin-top:8px;">Backup and restore of all SIPs is part of <a href="/data">Data Management</a>.</p>
+                <p class="br-field-help" style="margin-top:8px;">Backup and restore of all SIPs is part of <a href="#/data">Data Management</a>.</p>
             </section>
         </div>
     `;

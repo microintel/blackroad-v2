@@ -1,28 +1,28 @@
 /* Sign-in / register screens (no app shell) */
 .br-auth { min-height:100vh; display:grid; place-items:center; padding:var(--br-space-5); background:var(--br-bg); }
-.br-auth-card { width:100%; max-width:420px; padding:var(--br-space-7) var(--br-space-6); background:var(--br-surface); border:1px solid var(--br-border); border-radius:var(--br-radius-xl); box-shadow:var(--br-shadow-md); }
+.br-auth-card { width:100%; max-width:420px; padding:var(--br-space-7) var(--br-space-6); background:var(--br-surface); border:0; border-radius:var(--br-radius-lg); }
 .br-auth-brand { display:flex; align-items:center; gap:var(--br-space-3); margin-bottom:var(--br-space-6); }
 .br-auth-card h2 { margin:0 0 var(--br-space-1); font-size:var(--br-font-size-xl); }
 .br-auth-card > p { margin:0 0 var(--br-space-5); color:var(--br-text-secondary); }
 .br-auth-form { display:grid; gap:var(--br-space-4); }
-.br-auth-form label { display:grid; gap:6px; font-size:var(--br-font-size-sm); font-weight:600; color:var(--br-text-secondary); }
+.br-auth-form label { display:grid; gap:6px; font-size:var(--br-font-size-sm); font-weight:500; color:var(--br-text-secondary); }
 .br-auth-form .br-button { width:100%; }
 .br-auth-error { margin:0; padding:var(--br-space-2) var(--br-space-3); border-radius:var(--br-radius-md); color:var(--br-danger); background:var(--br-danger-soft); font-size:var(--br-font-size-sm); }
 .br-auth-alt { margin-top:var(--br-space-5); display:grid; gap:var(--br-space-3); text-align:center; font-size:var(--br-font-size-sm); color:var(--br-text-secondary); }
-.br-auth-alt a { color:var(--br-text); font-weight:600; }
+.br-auth-alt a { color:var(--br-gold-text); font-weight:600; }
 .br-auth-theme { position:fixed; top:14px; right:14px; }
 .br-appearance-row { display:flex; flex-wrap:wrap; gap:var(--br-space-2); }
-.br-chip { min-height:34px; padding:0 var(--br-space-4); border:1px solid var(--br-border); border-radius:var(--br-radius-full); color:var(--br-text); background:var(--br-surface); font-weight:600; cursor:pointer; }
-.br-chip[aria-pressed="true"] { border-color:var(--br-primary); color:var(--br-text-inverse); background:var(--br-primary); }
-.br-swatch { width:34px; height:34px; border-radius:50%; border:2px solid var(--br-border); cursor:pointer; padding:0; }
-.br-swatch[aria-pressed="true"] { outline:2px solid var(--br-text); outline-offset:2px; }
+.br-chip { min-height:34px; padding:0 var(--br-space-4); border:0; border-radius:var(--br-radius-full); color:var(--br-text-secondary); background:var(--br-surface-hover); font-weight:500; cursor:pointer; }
+.br-chip[aria-pressed="true"] { color:var(--br-gold-text); background:var(--br-gold-surface); }
+.br-swatch { width:34px; height:34px; border-radius:50%; border:0; cursor:pointer; padding:0; }
+.br-swatch[aria-pressed="true"] { outline:2px solid var(--br-gold); outline-offset:2px; }
 .br-appearance-group { display:grid; gap:var(--br-space-2); margin-bottom:var(--br-space-5); }
-.br-appearance-group > span { font-size:var(--br-font-size-sm); font-weight:600; color:var(--br-text-secondary); }
+.br-appearance-group > span { font-size:var(--br-font-size-sm); font-weight:500; color:var(--br-text-secondary); }
 
 /* Sign in / Register switch + prominent secondary actions */
-.br-auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin-bottom:var(--br-space-5); border:1px solid var(--br-border); border-radius:var(--br-radius-md); }
-.br-auth-tabs a { display:grid; place-items:center; min-height:40px; border-radius:var(--br-radius-sm); color:var(--br-text-secondary); font-weight:600; text-decoration:none; border:1px solid transparent; }
-.br-auth-tabs a.is-active { color:var(--br-text); border-color:var(--br-border-strong); background:var(--br-surface-soft); }
+.br-auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin-bottom:var(--br-space-5); border:0; background:var(--br-surface-soft); border-radius:var(--br-radius-md); }
+.br-auth-tabs a { display:grid; place-items:center; min-height:40px; border-radius:var(--br-radius-sm); color:var(--br-text-muted); font-weight:500; text-decoration:none; border:0; }
+.br-auth-tabs a.is-active { color:var(--br-gold-text); background:var(--br-surface-active); }
 .br-auth-alt .br-button { display:inline-flex; align-items:center; justify-content:center; width:100%; text-decoration:none; }
 .br-auth-guest { color:var(--br-text-secondary); }
 @media (max-width:480px) {

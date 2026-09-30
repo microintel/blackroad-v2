@@ -31,7 +31,7 @@
     flex-direction: column;
     gap: 7px;
     font-size: var(--br-font-size-sm);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .ac-live-row,
@@ -40,12 +40,12 @@
     justify-content: space-between;
     gap: 12px;
     padding: 10px 0;
-    border-bottom: 1px solid var(--br-border);
+    border-bottom: 1px solid var(--br-hairline);
     font-size: var(--br-font-size-sm);
 }
 
-.ac-total { font-weight: 700; border-top: 1px solid var(--br-border-strong); margin-top: 6px; }
-.ac-net { font-weight: 800; border-bottom: none; border-top: 2px solid var(--br-text); }
+.ac-total { font-weight: 600; margin-top: 6px; color: var(--br-text); }
+.ac-net { font-weight: 600; font-size: var(--br-font-size-lg); border-bottom: none; color: var(--br-gold-text); }
 .ac-pos { color: var(--br-success); }
 .ac-neg { color: var(--br-danger); }
 
@@ -66,8 +66,8 @@
     margin-right: 8px;
 }
 
-.ac-dot-assets { background: var(--br-success); }
-.ac-dot-liab { background: var(--br-border-strong); }
+.ac-dot-assets { background: var(--br-gold); }
+.ac-dot-liab { background: var(--br-series-6); }
 
 @media (max-width: 900px) {
     .ac-layout { grid-template-columns: 1fr; }

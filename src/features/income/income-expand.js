@@ -4,27 +4,31 @@ import { computeBreakdownTotals, barList, esc, formatMoney } from "./income-shar
 const PANELS = {
     expense: {
         title: "Expense by category",
+        tone: "expense",
         pick: (t) => t.catTotals,
-        palette: ["#b5583f", "#6f7bb3", "#4f8f6b", "#c99a4f", "#8a6bb0", "#5c9bc9", "#c96c8c"],
+        palette: ["var(--inc-c-expense)"],
         empty: "No expenses logged yet"
     },
     "income-source": {
         title: "Income by source",
+        tone: "income",
         pick: (t) => t.sourceTotals,
-        palette: ["#3ecf8e"],
+        palette: ["var(--inc-c-income)"],
         empty: "No income logged yet"
     },
     "income-category": {
         title: "Income by category",
+        tone: "income",
         pick: (t) => t.incomeCatTotals,
-        palette: ["#3ecf8e", "#5b9dff", "#e3ac54", "#7fd0d9", "#c07fe0", "#8fbf5e", "#e08fa8"],
+        palette: ["var(--inc-c-income)"],
         empty: "No income logged yet"
     },
     "investment-returns": {
         title: "Investment returns",
         sub: "Dividends, interest and other portfolio earnings — kept separate from salary/genuine income.",
+        tone: "returns",
         pick: (t) => t.invReturnTotals,
-        palette: ["#5b9dff"],
+        palette: ["var(--inc-c-income)"],
         empty: "No investment returns logged yet"
     }
 };
@@ -37,11 +41,12 @@ export function renderIncomeExpand(entries, panelKey = "expense") {
 
     const chips = Object.entries(PANELS).map(([key, p]) => `
         <button type="button"
-            class="br-chip ${key === panelKey ? "active" : ""}"
+            class="inc-expand-btn inc-expand-${p.tone}${key === panelKey ? " active" : ""}"
+            aria-pressed="${key === panelKey}"
             data-expand-panel="${key}">${esc(p.title)}</button>`).join("");
 
     return `
-        <div class="br-chip-row">${chips}</div>
+        <div class="inc-expand-grid">${chips}</div>
         <section class="br-card" style="margin-top:20px;">
             <div class="br-card-header">
                 <div>

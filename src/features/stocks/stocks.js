@@ -1,3 +1,5 @@
+import { icon } from "../../components/icons.js";
+import { SERIES } from "../../components/chart-colors.js";
 import { navigate } from "../../app/router.js";
 import { dataService } from "../../data/data-service.js";
 
@@ -82,7 +84,7 @@ export async function Stocks() {
                     class="br-button br-button-primary"
                     data-action="add-txn"
                 >
-                    <span>+</span>
+                    ${icon("plus", { size: 18 })}
                     Add transaction
                 </button>
             </div>
@@ -117,7 +119,7 @@ export async function Stocks() {
                 <div class="br-toolbar">
                     <div class="br-toolbar-left">
                         <div class="br-search-box">
-                            <span>⌕</span>
+                            <span class="br-search-icon">${icon("search", { size: 16 })}</span>
                             <input type="search" placeholder="Search stock, symbol or notes..." data-txn-search>
                         </div>
 
@@ -739,10 +741,7 @@ function renderSearchResults(page, raw) {
    ANALYTICS
 ========================================= */
 
-const CHART_PALETTE = [
-    "#5B9DFF", "#E3AC54", "#3ECF8E", "#B98CF0", "#F27A8A",
-    "#4FD1C5", "#F0B429", "#7C93FF", "#E879B0", "#8FD14F"
-];
+const CHART_PALETTE = SERIES;
 
 function chartColor(i) {
     return CHART_PALETTE[i % CHART_PALETTE.length];
@@ -954,9 +953,9 @@ function renderTransactions(page) {
                         pnl !== undefined ? "br-pnl-" + pnlClass(pnl) : ""
                     }">${pnl !== undefined ? fmtSigned(pnl, true) : "—"}</td>
                     <td>
-                        <button type="button" class="br-button" data-action="edit-txn" data-id="${t.id}">Edit</button>
+                        <button type="button" class="br-button" data-action="edit-txn" data-id="${t.id}">${icon("pencil", { size: 16 })}Edit</button>
                         <button type="button" class="br-button" data-action="duplicate-txn" data-id="${t.id}">Duplicate</button>
-                        <button type="button" class="br-button br-button-danger" data-action="delete-txn" data-id="${t.id}">Delete</button>
+                        <button type="button" class="br-button br-button-danger" data-action="delete-txn" data-id="${t.id}">${icon("trash-2", { size: 16 })}Delete</button>
                     </td>
                 </tr>
             `;

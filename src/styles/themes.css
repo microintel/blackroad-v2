@@ -1,212 +1,27 @@
 /* =========================================================
-   THEMES: accent colours + UI styles
-   html[data-theme]  light | dark          (tokens.css)
-   html[data-accent] graphite|gold|green|blue|violet|rose
-   html[data-style]  neumo (Soft) | glass | flat | skeuo (Realistic)
-   Accent recolours the primary token, so every module follows.
+   THEME-INDEPENDENT OVERRIDES
+   Colour values for Light and Dark live in theme.css. This
+   file keeps the flat-only overrides that apply in both
+   themes. The old Soft / Glass / Realistic styles and the
+   coloured accents relied on gradients, blur and glow, so
+   they are retired; data-style / data-accent still resolve
+   to the single flat style.
    ========================================================= */
 
-/* ---------- Accents (light) ---------- */
-html[data-accent="gold"]   { --br-primary:#b8841c; --br-primary-hover:#9e7017; --br-primary-soft:#f7edd6; --br-text-inverse:#fff; }
-html[data-accent="green"]  { --br-primary:#16845b; --br-primary-hover:#106b49; --br-primary-soft:#e2f4ec; --br-text-inverse:#fff; }
-html[data-accent="blue"]   { --br-primary:#3867d6; --br-primary-hover:#2c54b3; --br-primary-soft:#e6edff; --br-text-inverse:#fff; }
-html[data-accent="violet"] { --br-primary:#7048d6; --br-primary-hover:#5c39b5; --br-primary-soft:#eee8fc; --br-text-inverse:#fff; }
-html[data-accent="rose"]   { --br-primary:#d6386f; --br-primary-hover:#b62b5b; --br-primary-soft:#fce6ee; --br-text-inverse:#fff; }
-
-/* ---------- Accents (dark) ---------- */
-html[data-theme="dark"][data-accent="gold"]   { --br-primary:#e0a84e; --br-primary-hover:#eab866; --br-primary-soft:#000000; --br-text-inverse:#16130b; }
-html[data-theme="dark"][data-accent="green"]  { --br-primary:#3fbf8c; --br-primary-hover:#5bd0a0; --br-primary-soft:#000000; --br-text-inverse:#07140e; }
-html[data-theme="dark"][data-accent="blue"]   { --br-primary:#5b8def; --br-primary-hover:#79a0f3; --br-primary-soft:#000000; --br-text-inverse:#07101f; }
-html[data-theme="dark"][data-accent="violet"] { --br-primary:#9a7cf0; --br-primary-hover:#ae95f4; --br-primary-soft:#000000; --br-text-inverse:#0e0920; }
-html[data-theme="dark"][data-accent="rose"]   { --br-primary:#ee6c9a; --br-primary-hover:#f288ac; --br-primary-soft:#000000; --br-text-inverse:#200811; }
-
-
-/* ---------- Flat (default, old app default) ---------- */
-html[data-style="flat"] {
-    --br-shadow-xs:none; --br-shadow-sm:none; --br-shadow-md:0 1px 0 rgba(0,0,0,.04); --br-shadow-lg:0 8px 24px rgba(0,0,0,.10);
+html,
+body {
+    background: var(--br-bg);
 }
 
-/* ---------- Soft (neumorphic) ---------- */
-html[data-style="neumo"] {
-    --br-radius-md:14px; --br-radius-lg:18px; --br-radius-xl:22px;
-    --br-nm-hi: rgba(255,255,255,.9);
-    --br-nm-lo: rgba(163,177,198,.45);
-}
-html[data-theme="dark"][data-style="neumo"] {
-    --br-nm-hi: rgba(255,255,255,.04);
-    --br-nm-lo: rgba(0,0,0,.55);
-}
-html[data-style="neumo"] .br-card,
-html[data-style="neumo"] .br-sidebar,
-html[data-style="neumo"] .br-modal,
-html[data-style="neumo"] .br-account-button,
-html[data-style="neumo"] .br-button,
-html[data-style="neumo"] .br-icon-button {
-    border-color: transparent;
-    box-shadow: 6px 6px 14px var(--br-nm-lo), -6px -6px 14px var(--br-nm-hi);
-}
-html[data-style="neumo"] .br-input,
-html[data-style="neumo"] .br-select,
-html[data-style="neumo"] .br-textarea {
-    border-color: transparent;
-    box-shadow: inset 3px 3px 7px var(--br-nm-lo), inset -3px -3px 7px var(--br-nm-hi);
-}
-html[data-style="neumo"] .br-button:active { box-shadow: inset 3px 3px 7px var(--br-nm-lo), inset -3px -3px 7px var(--br-nm-hi); }
+/* Status badges: solid tinted surface + coloured text, no outline. */
+.br-badge-success { background: var(--br-success-soft); color: var(--br-success); }
+.br-badge-danger  { background: var(--br-danger-soft);  color: var(--br-danger); }
+.br-badge-warning { background: var(--br-warning-soft); color: var(--br-warning); }
+.br-badge-info    { background: var(--br-info-soft);    color: var(--br-info); }
 
-/* ---------- Glass ---------- */
-html[data-style="glass"] body {
-    background:
-        radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, var(--br-primary) 22%, transparent), transparent 60%),
-        radial-gradient(800px 500px at 100% 0%, color-mix(in srgb, var(--br-info) 18%, transparent), transparent 60%),
-        var(--br-bg);
-    background-attachment: fixed;
-}
-html[data-style="glass"] .br-card,
-html[data-style="glass"] .br-sidebar,
-html[data-style="glass"] .br-modal,
-html[data-style="glass"] .br-account-button,
-html[data-style="glass"] .br-button,
-html[data-style="glass"] .br-input,
-html[data-style="glass"] .br-select,
-html[data-style="glass"] .br-textarea {
-    background: color-mix(in srgb, var(--br-surface) 58%, transparent);
-    border-color: color-mix(in srgb, var(--br-text) 12%, transparent);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    backdrop-filter: blur(16px) saturate(140%);
-}
-html[data-style="glass"] .br-button-primary { background: color-mix(in srgb, var(--br-primary) 88%, transparent); }
+/* Danger button keeps its tint on hover. */
+.br-button-danger:hover { background: var(--br-danger-soft); color: var(--br-danger); filter: none; }
 
-/* ---------- Realistic (skeuomorphic) ---------- */
-html[data-style="skeuo"] { --br-radius-md:9px; --br-radius-lg:12px; }
-html[data-style="skeuo"] .br-card,
-html[data-style="skeuo"] .br-sidebar,
-html[data-style="skeuo"] .br-modal {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--br-surface) 92%, #fff), var(--br-surface));
-    box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 -1px 0 rgba(0,0,0,.06) inset, 0 6px 16px rgba(0,0,0,.14);
-}
-html[data-style="skeuo"] .br-button,
-html[data-style="skeuo"] .br-icon-button,
-html[data-style="skeuo"] .br-account-button {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--br-surface) 88%, #fff), var(--br-surface-hover));
-    border-color: var(--br-border-strong);
-    box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 2px 4px rgba(0,0,0,.18);
-}
-html[data-style="skeuo"] .br-button-primary {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--br-primary) 82%, #fff), var(--br-primary));
-    box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 2px 5px rgba(0,0,0,.3);
-}
-html[data-style="skeuo"] .br-button:active { box-shadow: 0 2px 5px rgba(0,0,0,.25) inset; }
-html[data-style="skeuo"] .br-input,
-html[data-style="skeuo"] .br-select,
-html[data-style="skeuo"] .br-textarea { box-shadow: 0 2px 4px rgba(0,0,0,.14) inset; }
-
-
-/* =========================================================
-   PURE BLACK DARK MODE
-   Background, cards, sections, hero, sidebar, topbar, modals
-   are all #000. Only borders (and text) separate them.
-   ========================================================= */
-
-html[data-theme="dark"] body { background: #000; }
-
-/* Selected / hover states must be visible without a grey fill. */
-html[data-theme="dark"] .br-nav-item.is-active,
-html[data-theme="dark"] .br-nav-item.active,
-html[data-theme="dark"] .br-nav-item[aria-current="page"] {
-    border: 1px solid var(--br-primary);
-    color: var(--br-primary);
-}
-html[data-theme="dark"] .br-nav-item { border: 1px solid transparent; }
-html[data-theme="dark"] .br-income-tab.active,
-html[data-theme="dark"] .br-chip.active { border: 1px solid var(--br-border-strong); }
-html[data-theme="dark"] .br-dash-ring-empty { stroke: var(--br-border-strong); }
-html[data-theme="dark"] .ll-month-row {
-    background: #000;
-    box-shadow: inset 0 1px var(--br-border), inset 0 -1px var(--br-border);
-}
-html[data-theme="dark"] .br-bottom-item.is-active { color: var(--br-primary); }
-html[data-theme="dark"] .br-header { background: #000; -webkit-backdrop-filter: none; backdrop-filter: none; }
-html[data-theme="dark"] .br-modal-layer,
-html[data-theme="dark"] .br-modal-backdrop { background: rgba(0, 0, 0, .75); }
-
-/* ---- Soft (dark): faint light edge + border, no grey fill ---- */
-html[data-theme="dark"][data-style="neumo"] {
-    --br-nm-hi: rgba(255, 255, 255, .05);
-    --br-nm-lo: rgba(0, 0, 0, 1);
-}
-html[data-theme="dark"][data-style="neumo"] .br-card,
-html[data-theme="dark"][data-style="neumo"] .br-sidebar,
-html[data-theme="dark"][data-style="neumo"] .br-modal,
-html[data-theme="dark"][data-style="neumo"] .br-account-button,
-html[data-theme="dark"][data-style="neumo"] .br-button,
-html[data-theme="dark"][data-style="neumo"] .br-icon-button {
-    border: 1px solid var(--br-border);
-    box-shadow: 4px 4px 12px var(--br-nm-lo), -2px -2px 8px var(--br-nm-hi);
-}
-html[data-theme="dark"][data-style="neumo"] .br-input,
-html[data-theme="dark"][data-style="neumo"] .br-select,
-html[data-theme="dark"][data-style="neumo"] .br-textarea {
-    border: 1px solid var(--br-border);
-    box-shadow: inset 2px 2px 6px var(--br-nm-lo);
-}
-
-/* ---- Glass (dark): black glass, border catches the light ---- */
-html[data-theme="dark"][data-style="glass"] body {
-    background:
-        radial-gradient(700px 400px at 10% -10%, color-mix(in srgb, var(--br-primary) 9%, transparent), transparent 60%),
-        #000;
-    background-attachment: fixed;
-}
-html[data-theme="dark"][data-style="glass"] .br-card,
-html[data-theme="dark"][data-style="glass"] .br-sidebar,
-html[data-theme="dark"][data-style="glass"] .br-modal,
-html[data-theme="dark"][data-style="glass"] .br-account-button,
-html[data-theme="dark"][data-style="glass"] .br-button,
-html[data-theme="dark"][data-style="glass"] .br-input,
-html[data-theme="dark"][data-style="glass"] .br-select,
-html[data-theme="dark"][data-style="glass"] .br-textarea {
-    background: rgba(0, 0, 0, .62);
-    border-color: rgba(255, 255, 255, .16);
-}
-
-/* ---- Realistic (dark): black bodies, top-edge highlight + border ---- */
-html[data-theme="dark"][data-style="skeuo"] .br-card,
-html[data-theme="dark"][data-style="skeuo"] .br-sidebar,
-html[data-theme="dark"][data-style="skeuo"] .br-modal {
-    background: #000;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .10) inset, 0 6px 16px rgba(0, 0, 0, .9);
-}
-html[data-theme="dark"][data-style="skeuo"] .br-button,
-html[data-theme="dark"][data-style="skeuo"] .br-icon-button,
-html[data-theme="dark"][data-style="skeuo"] .br-account-button {
-    background: #000;
-    border-color: var(--br-border-strong);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .12) inset, 0 2px 4px rgba(0, 0, 0, .9);
-}
-html[data-theme="dark"][data-style="skeuo"] .br-button-primary {
-    background: var(--br-primary);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 2px 5px rgba(0, 0, 0, .9);
-}
-html[data-theme="dark"][data-style="skeuo"] .br-input,
-html[data-theme="dark"][data-style="skeuo"] .br-select,
-html[data-theme="dark"][data-style="skeuo"] .br-textarea {
-    background: #000;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .9) inset;
-}
-
-/* ---- Dark status colours: black fill, coloured text + border ---- */
-html[data-theme="dark"] {
-    --br-success: #3fbf8c;  --br-success-soft: #000;
-    --br-danger:  #f0716b;  --br-danger-soft:  #000;
-    --br-warning: #e0a84e;  --br-warning-soft: #000;
-    --br-info:    #5b8def;  --br-info-soft:    #000;
-}
-html[data-theme="dark"] .br-badge { background: #000; border: 1px solid var(--br-border-strong); }
-html[data-theme="dark"] .br-badge-success { border-color: var(--br-success); }
-html[data-theme="dark"] .br-badge-danger  { border-color: var(--br-danger); }
-html[data-theme="dark"] .br-badge-warning { border-color: var(--br-warning); }
-html[data-theme="dark"] .br-badge-info    { border-color: var(--br-info); }
-html[data-theme="dark"] .br-button-danger { background: #000; border: 1px solid var(--br-danger); color: var(--br-danger); }
-html[data-theme="dark"] .br-dash-pill { background: #000; border: 1px solid var(--br-border-strong); }
-html[data-theme="dark"] .br-dash-pill.active { border-color: var(--br-primary); color: var(--br-primary); }
-html[data-theme="dark"] .br-button-danger:hover { background: #0d0d0d; }
+/* Every overlay is a plain dim; no blur. */
+.br-modal-layer,
+.br-modal-backdrop { background: var(--br-overlay); }

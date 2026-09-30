@@ -5,39 +5,39 @@
 .br-chip {
     padding: 6px 12px;
     border-radius: 999px;
-    border: 1px solid var(--line-soft, rgba(255,255,255,.12));
-    background: transparent;
-    color: inherit;
+    border: 0;
+    background: var(--br-surface-hover);
+    color: var(--br-text-secondary);
     font: inherit;
     font-size: 13px;
     cursor: pointer;
 }
-.br-chip.active { background: var(--accent, #5b9dff); border-color: transparent; color: #fff; }
+.br-chip.active { background: var(--br-gold-surface); color: var(--br-gold-text); }
 
 .br-search-filters { display: grid; gap: 14px; margin-top: 14px; }
 
 .br-flash { animation: br-flash 2s ease; }
-@keyframes br-flash { 0%, 60% { background: rgba(91,157,255,.22); } 100% { background: transparent; } }
+@keyframes br-flash { 0%, 60% { background: var(--br-gold-surface); } 100% { background: transparent; } }
 
 .br-result-row { display: flex; justify-content: space-between; gap: 12px; cursor: pointer; }
 
-.br-pos { color: #3ecf8e; }
-.br-neg { color: #e5654f; }
+.br-pos { color: var(--br-success); }
+.br-neg { color: var(--br-danger); }
 
-.br-kv { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft, rgba(255,255,255,.08)); }
+.br-kv { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--br-hairline); }
 .br-kv span { opacity: .7; }
 .br-kv strong { text-align: right; }
 
-.br-verdict { padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line-soft, rgba(255,255,255,.12)); }
+.br-verdict { padding: 14px 16px; border-radius: 12px; background: var(--br-surface-soft); }
 
-.br-delta { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; background: rgba(150,150,150,.18); }
-.br-delta.up { background: rgba(62,207,142,.18); color: #3ecf8e; }
-.br-delta.down { background: rgba(229,101,79,.18); color: #e5654f; }
+.br-delta { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; background: var(--br-surface-hover); }
+.br-delta.up { background: var(--br-success-soft); color: var(--br-success); }
+.br-delta.down { background: var(--br-danger-soft); color: var(--br-danger); }
 
 .br-bars { display: grid; gap: 10px; }
 .br-bar-row { display: grid; grid-template-columns: minmax(90px, 160px) 1fr auto; gap: 12px; align-items: center; }
 .br-bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.br-bar-track { height: 10px; border-radius: 6px; background: rgba(150,150,150,.16); overflow: hidden; }
+.br-bar-track { height: 10px; border-radius: 6px; background: var(--br-surface-active); overflow: hidden; }
 .br-bar-fill { display: block; height: 100%; border-radius: 6px; }
 .br-bar-value { font-variant-numeric: tabular-nums; font-size: 13px; }
 
@@ -47,12 +47,1149 @@
 .br-jump-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
 .br-jump-link {
     display: flex; justify-content: space-between; gap: 8px; padding: 12px 14px;
-    border-radius: 10px; border: 1px solid var(--line-soft, rgba(255,255,255,.12));
-    background: transparent; color: inherit; font: inherit; cursor: pointer; text-align: left;
+    border-radius: 10px; border: 0;
+    background: var(--br-surface-soft); color: inherit; font: inherit; cursor: pointer; text-align: left;
 }
-.br-jump-link:hover { border-color: var(--accent, #5b9dff); }
+.br-jump-link:hover { background: var(--br-surface-hover); }
 
 @media (max-width: 640px) {
     .br-bar-row { grid-template-columns: 1fr auto; }
     .br-bar-track { grid-column: 1 / -1; order: 3; }
+}
+
+.br-income-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--br-space-2); }
+
+
+/* =========================================================
+   INCOME MODULE  (flat, minimalist, theme-aware)
+   Everything below is scoped to .br-income, so no other
+   module is affected. Colours come only from the semantic
+   theme tokens (theme.css).
+   ========================================================= */
+
+
+/* ---------- Scope: rebind the shared --br-* tokens to the
+   semantic theme tokens, so shared components used inside
+   Income (buttons, tabs, chips, search box, focus ring)
+   pick up the Income look with no per-component overrides. */
+
+.br-income {
+    --br-primary: var(--accent);
+    --br-primary-hover: var(--accent-hover);
+    --br-primary-soft: var(--surface-secondary);
+    --br-gold: var(--accent);
+    --br-gold-bright: var(--accent-hover);
+    --br-gold-text: var(--text-primary);
+    --br-gold-surface: var(--surface-secondary);
+    --br-surface: var(--surface-secondary);
+    --br-surface-soft: var(--surface-secondary);
+    --br-surface-hover: var(--hover-background);
+    --br-surface-active: var(--active-background);
+    --br-border: var(--border);
+    --br-hairline: var(--border);
+
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+    gap: var(--br-space-5);
+}
+
+.br-income p { color: var(--text-secondary); }
+.br-income h2,
+.br-income h3,
+.br-income h4 { color: var(--text-primary); }
+
+
+/* ---------- Page header ---------- */
+
+.inc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--br-space-4);
+}
+
+.inc-header-text { min-width: 0; }
+
+.inc-header h2 {
+    margin: 0 0 2px;
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+.inc-header p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.inc-add { flex: none; }
+
+
+/* ---------- Buttons (secondary = outline, primary = accent fill) ---------- */
+
+.br-income .br-button {
+    min-height: 40px;
+    padding: 0 var(--br-space-4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.br-income .br-button:hover,
+.br-income .br-button:active { background: var(--hover-background); }
+
+/* Selectors carry :root so they outrank the light-theme brand-button
+   override in theme.css (Income uses the green accent, not the gold). */
+:root .br-income .br-button.br-button-primary {
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+    background: var(--accent);
+    font-weight: 600;
+}
+
+:root .br-income .br-button.br-button-primary:hover,
+:root .br-income .br-button.br-button-primary:active {
+    border-color: var(--accent-hover);
+    color: var(--accent-contrast);
+    background: var(--accent-hover);
+}
+
+:root .br-income .br-button.br-button-primary .br-icon { color: var(--accent-contrast); }
+
+.br-income .br-button:disabled {
+    opacity: 1;
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: var(--surface-secondary);
+}
+
+.inc-icon-button {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    background: transparent;
+    transition: background var(--br-transition-fast), color var(--br-transition-fast);
+}
+
+.inc-icon-button:hover { color: var(--text-primary); background: var(--hover-background); }
+.inc-icon-button.inc-icon-danger:hover { color: var(--danger); }
+
+
+/* ---------- Tabs: flat underline ---------- */
+
+.br-income .br-income-tabs {
+    width: 100%;
+    gap: var(--br-space-1);
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.br-income .br-income-tabs::-webkit-scrollbar { display: none; }
+
+.br-income .br-income-tab {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 var(--br-space-3);
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--text-secondary);
+    background: transparent;
+    white-space: nowrap;
+}
+
+.br-income .br-income-tab:hover { color: var(--text-primary); background: transparent; }
+
+.br-income .br-income-tab.active {
+    color: var(--text-primary);
+    background: transparent;
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+
+/* ---------- Views ---------- */
+
+.inc-view { display: flex; flex-direction: column; gap: var(--br-space-6); }
+
+
+/* ---------- Summary ---------- */
+
+.inc-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: end;
+    gap: var(--br-space-4) var(--br-space-7);
+    padding-bottom: var(--br-space-5);
+    border-bottom: 1px solid var(--border);
+}
+
+.inc-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--br-space-4) var(--br-space-5);
+}
+
+.inc-metric { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.inc-label { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
+
+.inc-amount {
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.inc-amount-lg { font-size: 34px; letter-spacing: -0.02em; }
+
+.inc-hint { color: var(--text-secondary); font-size: 12px; }
+
+.inc-pos { color: var(--success); }
+.inc-neg { color: var(--danger); }
+.inc-quiet { margin: 0; color: var(--text-muted); font-size: 14px; }
+
+
+/* ---------- Section headings ---------- */
+
+.inc-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-3);
+}
+
+.inc-section-head h3,
+.inc-section-head h4 {
+    margin: 0 0 2px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.inc-section-head p { margin: 0; font-size: 13px; }
+
+
+/* ---------- Invested by category ---------- */
+
+.br-income .br-investment-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    column-gap: var(--br-space-6);
+}
+
+.br-income .br-investment-chip {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--br-space-3);
+    padding: var(--br-space-2) 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.br-income .br-investment-chip span { color: var(--text-secondary); min-width: 0; overflow-wrap: anywhere; }
+.br-income .br-investment-chip strong { font-weight: 600; }
+
+
+/* ---------- Ledger tools (search + refresh) ---------- */
+
+.inc-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--br-space-2);
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.br-income .br-search-box {
+    flex: 1 1 auto;
+    max-width: 380px;
+    min-height: 40px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    background: var(--input-background);
+    color: var(--text-secondary);
+}
+
+.br-income .br-search-box input { color: var(--text-primary); background: transparent; font-size: 14px; }
+.br-income .br-search-box:focus-within { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.br-income .br-search-box input:focus-visible { outline: none; }
+
+
+/* ---------- Ledger: one component, three layouts ----------
+   The layout follows the width of the ledger itself (container
+   query), so it adapts correctly beside the sidebar too.
+   < 640px   stacked rows (phones, small tablets)
+   640-879px compact table, category + date under the source
+   >= 880px  full table                                        */
+
+.inc-table { container: inc / inline-size; }
+
+.inc-head { display: none; }
+
+/* Ledger cards: soft grey fill (existing theme token, light + dark), no border/outline */
+.inc-entry {
+    background: var(--br-surface-soft);
+    border: 0;
+    outline: 0;
+    border-radius: 10px;
+    margin-bottom: var(--br-space-2);
+}
+
+.inc-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "source income"
+        "stats  actions";
+    align-items: center;
+    gap: 6px var(--br-space-3);
+    padding: var(--br-space-3) 0;
+}
+
+.inc-source { grid-area: source; }
+.inc-income { grid-area: income; }
+.inc-stats { grid-area: stats; }
+.inc-actions { grid-area: actions; }
+
+.inc-cell { min-width: 0; font-size: 14px; }
+
+.inc-source { display: flex; align-items: flex-start; gap: 10px; }
+
+.inc-source-icon { flex: none; margin-top: 2px; color: var(--text-secondary); }
+
+.inc-source-text { display: flex; flex-direction: column; min-width: 0; }
+
+.inc-title {
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inc-meta { color: var(--text-secondary); font-size: 13px; }
+
+.inc-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.inc-income { font-size: 16px; font-weight: 600; }
+
+.inc-category,
+.inc-date { display: none; color: var(--text-secondary); }
+
+.inc-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--br-space-4);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.inc-stats .inc-cell { font-size: 13px; text-align: left; }
+.inc-stats .inc-zero { display: none; }
+
+.inc-mlabel { margin-right: 6px; color: var(--text-secondary); }
+.inc-mlabel-inline { color: var(--text-secondary); }
+.inc-sale { margin-left: var(--br-space-2); color: var(--text-secondary); }
+
+.inc-actions { display: flex; justify-content: flex-end; gap: 2px; }
+.inc-actions-head {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+
+/* Nested transactions */
+
+.inc-txns { list-style: none; margin: 0; padding: 0 0 var(--br-space-3) 26px; }
+
+.inc-txn {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--br-space-3);
+    padding: 5px 0;
+    font-size: 14px;
+}
+
+.inc-txn-text { display: flex; flex-direction: column; min-width: 0; }
+.inc-txn-text strong { font-weight: 500; overflow-wrap: anywhere; }
+.inc-txn-amount { flex: none; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* Compact table */
+
+@container inc (min-width: 640px) {
+
+    .inc-head,
+    .inc-row {
+        display: grid;
+        grid-template-areas: none;
+        grid-template-columns: minmax(150px, 2.2fr) repeat(4, minmax(84px, 1fr)) 96px;
+        column-gap: var(--br-space-3);
+        align-items: center;
+    }
+
+    .inc-head {
+        padding: 0 var(--br-space-2) var(--br-space-2);
+        border-bottom: 1px solid var(--border);
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .inc-head > :nth-child(2),
+    .inc-head > :nth-child(3) { display: none; }
+
+    .inc-row { padding: var(--br-space-3) var(--br-space-2); }
+
+    .inc-source,
+    .inc-income,
+    .inc-stats,
+    .inc-actions { grid-area: auto; }
+
+    .inc-stats { display: contents; }
+    .inc-stats .inc-cell { font-size: 14px; text-align: right; }
+    .inc-stats .inc-zero { display: block; }
+
+    .inc-mlabel { display: none; }
+    .inc-sale { display: block; margin: 0; font-size: 12px; }
+    .inc-mlabel-inline { display: inline; }
+
+    .inc-income { font-size: 14px; }
+    .inc-txns { padding: 0 var(--br-space-2) var(--br-space-3) 34px; }
+}
+
+@media (hover: hover) {
+    @container inc (min-width: 640px) {
+        .inc-row:hover { background: var(--hover-background); }
+    }
+}
+
+/* Full table */
+
+@container inc (min-width: 880px) {
+
+    .inc-head,
+    .inc-row {
+        grid-template-columns:
+            minmax(170px, 2fr) minmax(90px, 1fr) 108px
+            repeat(4, minmax(92px, 1fr)) 96px;
+    }
+
+    .inc-head > :nth-child(2),
+    .inc-head > :nth-child(3) { display: block; }
+
+    .inc-category,
+    .inc-date { display: block; }
+
+    .inc-source .inc-meta { display: none; }
+
+    .inc-source { align-items: center; }
+    .inc-source-icon { margin-top: 0; }
+}
+
+
+/* ---------- Empty states ---------- */
+
+.inc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--br-space-2);
+    padding: var(--br-space-8) var(--br-space-4);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.inc-empty h4 { margin: var(--br-space-1) 0 0; font-size: 16px; font-weight: 600; }
+.inc-empty p { max-width: 380px; margin: 0 0 var(--br-space-3); font-size: 14px; }
+
+
+/* ---------- Add / edit dialog ---------- */
+
+.br-income .br-modal {
+    width: min(560px, 100%);
+    padding: var(--br-space-5) var(--br-space-6) 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--background);
+}
+
+.br-income .br-modal:focus { outline: none; }
+
+.br-income .br-modal-header { margin-bottom: var(--br-space-5); }
+.br-income .br-modal-header h3 { margin: 0 0 2px; font-size: 18px; }
+.br-income .br-modal-header p { margin: 0; font-size: 13px; }
+
+.br-income .br-modal-close { width: 36px; height: 36px; flex: none; }
+
+.inc-form-error {
+    margin-bottom: var(--br-space-4);
+    padding: var(--br-space-2) var(--br-space-3);
+    border-left: 2px solid var(--danger);
+    background: var(--surface-secondary);
+    color: var(--danger);
+    font-size: 13px;
+}
+
+.inc-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--br-space-4);
+}
+
+.inc-field { min-width: 0; }
+
+.inc-field label { display: flex; flex-direction: column; gap: 6px; }
+
+.inc-field-label { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
+
+.br-income .inc-field input,
+.br-income .inc-field select {
+    width: 100%;
+    min-height: 40px;
+    padding: 0 var(--br-space-3);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    background: var(--input-background);
+    font-size: 14px;
+    transition: border-color var(--br-transition-fast);
+}
+
+.br-income .inc-field input::placeholder { color: var(--text-muted); }
+
+.br-income .inc-field input:hover,
+.br-income .inc-field select:hover { border-color: var(--text-muted); }
+
+.br-income .inc-field input:focus-visible,
+.br-income .inc-field select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+    border-color: var(--accent);
+}
+
+.br-income .inc-field [aria-invalid="true"] { border-color: var(--danger); }
+.br-income .inc-field [aria-invalid="true"]:focus-visible { outline-color: var(--danger); border-color: var(--danger); }
+
+.inc-error { margin: 6px 0 0; color: var(--danger); font-size: 12px; }
+.br-income .inc-error { color: var(--danger); }
+
+.inc-money { position: relative; display: block; }
+.inc-money-prefix {
+    position: absolute; left: var(--br-space-3); top: 50%; transform: translateY(-50%);
+    color: var(--text-secondary); font-size: 14px; pointer-events: none;
+}
+.br-income .inc-money input { padding-left: 28px; }
+
+.inc-modal-section {
+    margin-top: var(--br-space-6);
+    padding-top: var(--br-space-5);
+    border-top: 1px solid var(--border);
+}
+
+.inc-txn-row { padding: var(--br-space-4) 0; border-top: 1px solid var(--border); }
+.inc-txn-row:first-child { border-top: 0; padding-top: var(--br-space-1); }
+.inc-txn-row-actions { display: flex; justify-content: flex-end; margin-top: var(--br-space-3); }
+
+/* Footer stays visible while the form scrolls (and above the mobile keyboard) */
+.br-income .br-modal-footer {
+    position: sticky;
+    bottom: 0;
+    margin: var(--br-space-6) calc(var(--br-space-6) * -1) 0;
+    padding: var(--br-space-3) var(--br-space-6) var(--br-space-4);
+    border-top: 1px solid var(--border);
+    background: var(--background);
+}
+
+
+/* ---------- Sub-views (Statement, Statistics, Search, Compare, Expand, Jump to) ---------- */
+
+.br-income .br-card {
+    padding: var(--br-space-4);
+    border-radius: 8px;
+    background: var(--surface-secondary);
+}
+
+.br-income .br-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-3);
+}
+
+.br-income .br-card h3,
+.br-income .br-card-heading h3 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+
+.br-income .br-card-header p,
+.br-income .br-card-heading p { margin: 0; font-size: 13px; }
+
+.br-income .br-stat-label { color: var(--text-secondary); }
+.br-income .br-stat-value { font-size: 20px; }
+
+.br-income .br-statement { display: flex; flex-direction: column; gap: var(--br-space-4); }
+
+.br-income .br-statement-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: var(--br-space-3);
+}
+
+.br-income .br-statement-stat { display: flex; flex-direction: column; gap: 4px; }
+.br-income .br-statement-stat strong { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.br-income .br-statement-stat.positive strong { color: var(--success); }
+.br-income .br-statement-stat.negative strong { color: var(--danger); }
+.br-income .br-statement-period { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+
+.br-income .br-table-wrap { border-radius: 0; background: transparent; }
+.br-income .br-table th { color: var(--text-secondary); }
+.br-income .br-table tbody tr:hover { background: var(--hover-background); }
+
+.br-income .br-toolbar { padding: 0; border-radius: 0; background: transparent; }
+
+.br-income .br-input,
+.br-income .br-select {
+    min-height: 40px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    background: var(--input-background);
+}
+
+.br-income .br-input:hover,
+.br-income .br-select:hover { background: var(--input-background); border-color: var(--text-muted); }
+
+.br-income .br-input:focus,
+.br-income .br-select:focus { border-color: var(--accent); background: var(--input-background); }
+
+.br-income .br-input:focus-visible,
+.br-income .br-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+
+.br-income .br-chip {
+    min-height: 32px;
+    padding: 0 var(--br-space-3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.br-income .br-chip:hover { background: var(--hover-background); }
+
+.br-income .br-chip.active {
+    border-color: var(--accent);
+    color: var(--text-primary);
+    background: transparent;
+}
+
+.br-income .br-field label { color: var(--text-secondary); }
+
+.br-income .br-list { border-radius: 0; background: transparent; gap: 0; }
+.br-income .br-list-item { padding: var(--br-space-3) 0; border-bottom: 1px solid var(--border); background: transparent; }
+.br-income .br-list-item:hover { background: var(--hover-background); }
+
+.br-income .br-empty-state { min-height: 120px; border-radius: 0; background: transparent; }
+
+.br-income .br-delta { padding: 0; border-radius: 0; background: transparent; }
+.br-income .br-delta.up { background: transparent; color: var(--success); }
+.br-income .br-delta.down { background: transparent; color: var(--danger); }
+
+.br-income .br-bar-track { height: 8px; border-radius: 2px; }
+.br-income .br-bar-fill { border-radius: 2px; }
+
+.br-income .br-verdict { border-radius: 8px; }
+.br-income .br-jump-link { border-radius: 6px; }
+
+.br-income .br-pos { color: var(--success); }
+.br-income .br-neg { color: var(--danger); }
+
+.br-income .br-flash { animation: none; background: var(--active-background); }
+
+
+/* ---------- Tablet (768-1023) ---------- */
+
+@media (max-width: 1023px) {
+
+    .inc-summary { grid-template-columns: 1fr; }
+
+    .inc-icon-button { width: 44px; height: 44px; }
+    .br-income .br-modal-close { width: 44px; height: 44px; }
+}
+
+
+/* ---------- Mobile (<= 768) ---------- */
+
+@media (max-width: 768px) {
+
+    .br-income { gap: var(--br-space-4); }
+
+    .inc-header h2 { font-size: 22px; }
+
+    .inc-add { min-height: 44px; }
+
+    .br-income .br-income-tab { min-height: 44px; }
+
+    .inc-amount-lg { font-size: 30px; }
+
+    /* Ledger tools stack under the heading */
+    .inc-ledger-head { flex-direction: column; align-items: stretch; }
+    .inc-tools { flex: 1 1 auto; justify-content: stretch; }
+    .br-income .br-search-box { max-width: none; min-height: 44px; }
+
+    .br-income .br-button { min-height: 44px; }
+
+    /* Form: single column, 16px text (no iOS zoom), 44px targets */
+    .inc-fields { grid-template-columns: 1fr; }
+
+    .br-income .inc-field input,
+    .br-income .inc-field select { min-height: 44px; font-size: 16px; }
+
+    .br-income .br-modal {
+        width: 100%;
+        max-height: 92vh;
+        max-height: 92dvh;
+        padding: var(--br-space-4) var(--br-space-4) 0;
+        border-width: 1px 0 0;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .br-income .br-modal-footer {
+        margin: var(--br-space-5) calc(var(--br-space-4) * -1) 0;
+        padding: var(--br-space-3) var(--br-space-4) calc(var(--br-space-3) + env(safe-area-inset-bottom));
+    }
+
+    .br-income .br-modal-footer .br-button { flex: 1; }
+
+    .br-income .br-input,
+    .br-income .br-select { min-height: 44px; font-size: 16px; }
+}
+
+
+/* ---------- Phones (<= 600): summary becomes a compact list ---------- */
+
+@media (max-width: 600px) {
+
+    .inc-summary { gap: var(--br-space-3); padding-bottom: var(--br-space-3); }
+
+    .inc-metrics { grid-template-columns: 1fr; gap: 0; }
+
+    .inc-metrics .inc-metric {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: var(--br-space-2) 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .inc-metrics .inc-metric:last-child { border-bottom: 0; }
+    .inc-metrics .inc-hint { display: none; }
+    .inc-metrics .inc-amount { font-size: 16px; }
+
+    .br-income .br-investment-strip { grid-template-columns: 1fr; }
+}
+
+
+/* ---------- Very small phones (320-374) ---------- */
+
+@media (max-width: 374px) {
+
+    .inc-header { align-items: flex-start; }
+    .inc-header p { font-size: 13px; }
+    .inc-amount-lg { font-size: 26px; }
+    .inc-add { padding: 0 var(--br-space-3); }
+}
+
+
+/* ---------- Width containment (no sideways page growth on any Income tab) ----------
+   Grid / flex children default to min-width:auto, so one wide table or
+   row of controls could stretch its whole column past the screen. These
+   rules let every block shrink to the viewport; wide tables then scroll
+   inside their own .br-table-wrap instead of widening the page. */
+
+.br-income,
+.br-income > * { min-width: 0; max-width: 100%; }
+
+.br-income .br-grid { grid-template-columns: repeat(var(--inc-cols, 1), minmax(0, 1fr)); }
+.br-income .br-grid-2 { --inc-cols: 2; }
+.br-income .br-grid-3 { --inc-cols: 3; }
+.br-income .br-grid-4 { --inc-cols: 4; }
+
+.br-income .br-grid > *,
+.br-income .br-card,
+.br-income .br-statistics-view,
+.br-income .br-statement,
+.br-income .br-search-filters > *,
+.br-income .br-field,
+.br-income .br-field label,
+.br-income .br-toolbar > * { min-width: 0; }
+
+.br-income .br-statistics-view { display: flex; flex-direction: column; gap: var(--br-space-4); }
+
+.br-income .br-table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.br-income .br-search-box,
+.br-income .br-toolbar .br-select,
+.br-income .br-toolbar .br-input { max-width: 100%; }
+
+/* Date range: two inputs that share the row, or stack when narrow */
+.br-income .br-chip-row:has(input[type="date"]) { flex-wrap: wrap; overflow: visible; }
+.br-income .br-chip-row input[type="date"] { flex: 1 1 140px; min-width: 0; }
+
+/* Preset name + buttons wrap instead of overflowing */
+.br-income .br-toolbar { flex-wrap: wrap; }
+.br-income .br-toolbar .br-input { flex: 1 1 160px; }
+
+@media (max-width: 900px) {
+    .br-income .br-grid-3,
+    .br-income .br-grid-4 { --inc-cols: 2; }
+}
+
+@media (max-width: 600px) {
+    .br-income .br-grid-2,
+    .br-income .br-grid-3 { --inc-cols: 1; }
+    .br-income .br-grid-4 { --inc-cols: 2; }
+}
+
+@media (max-width: 374px) {
+    .br-income .br-grid-4 { --inc-cols: 1; }
+}
+
+/* Tables inside Income tabs: tighter cells on phones so more columns show
+   before the (internal) sideways scroll starts. */
+@media (max-width: 600px) {
+    .br-income .br-table { min-width: 460px; }
+    .br-income .br-table th,
+    .br-income .br-table td { padding: 10px 8px; white-space: nowrap; }
+}
+
+
+/* =========================================================
+   INCOME ROWS THAT OPEN, AND SEPARATE EDITING
+   Each income row opens to show only its own transactions.
+   Income actions sit on the income row; transaction actions
+   sit on each transaction.
+   ========================================================= */
+
+.inc-row { cursor: pointer; }
+.inc-row .inc-actions,
+.inc-row .inc-actions * { cursor: default; }
+.inc-row .inc-actions button { cursor: pointer; }
+
+.inc-toggle {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    margin: 0 -4px 0 -6px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.inc-toggle:hover { color: var(--text-primary); background: var(--hover-background); }
+.inc-toggle .br-icon { transition: transform var(--br-transition-fast); }
+.inc-entry.is-open .inc-toggle .br-icon { transform: rotate(90deg); }
+
+.inc-count { color: var(--text-muted); font-size: 12px; }
+
+/* The panel: indented under the income, quietly separated */
+.inc-txns-row { margin: 0 0 var(--br-space-3); }
+
+.inc-txns-cell {
+    padding: var(--br-space-1) 0 var(--br-space-2) var(--br-space-5);
+    border-left: 2px solid var(--border);
+    margin-left: 13px;
+}
+
+.inc-txns { padding: 0; }
+
+.inc-txn { align-items: center; padding: 2px 0; border-bottom: 1px solid var(--border); }
+.inc-txn:last-child { border-bottom: 0; }
+
+.inc-txn-text { flex: 1 1 auto; }
+
+.inc-txn-actions { flex: none; display: flex; gap: 2px; margin-right: -6px; }
+
+.inc-txns-empty { padding: var(--br-space-2) 0; }
+
+.inc-txns-foot { padding: var(--br-space-2) 0 0; }
+.inc-txns-foot .br-button { min-height: 36px; font-size: 13px; }
+
+/* Full table: panel lines up under the Source column */
+@container inc (min-width: 640px) {
+    .inc-txns-cell { margin-left: 20px; }
+}
+
+/* Dialog: a single transaction has no section frame */
+.inc-modal-section.is-solo { margin-top: 0; padding-top: 0; border-top: 0; }
+.inc-txn-row.is-solo { padding: 0; border-top: 0; }
+
+@media (max-width: 1023px) {
+    .inc-toggle { width: 36px; height: 36px; }
+    .inc-txns-foot .br-button { min-height: 44px; }
+}
+
+@media (max-width: 600px) {
+    .inc-txns-cell { padding-left: var(--br-space-3); margin-left: 12px; }
+}
+
+
+/* Ledger card fill needs a little inner padding so text never touches the card edge */
+.inc-txns-row { padding-inline: var(--br-space-3); }
+@container inc (max-width: 639.98px) {
+    .inc-row { padding-inline: var(--br-space-3); }
+}
+
+
+/* Ledger cards: soft grey in light, subtle dark grey in dark (existing tokens) */
+:root[data-theme="light"] .inc-entry { background: var(--br-surface-soft); }
+:root[data-theme="dark"] .inc-entry { background: var(--active-background); }
+.br-income .inc-entry,
+.br-income .inc-entry:hover { border: 0; outline: 0; }
+
+/* Ledger date range + collapse all: own row, wraps, never widens the page */
+.inc-ledger-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--br-space-2);
+    margin-bottom: var(--br-space-3);
+    min-width: 0;
+}
+.inc-ledger-filters .br-input { flex: 1 1 140px; min-width: 0; max-width: 100%; }
+.inc-ledger-filters .br-button { flex: none; }
+@media (min-width: 641px) {
+    .inc-ledger-filters .br-input { flex: 0 0 160px; }
+}
+
+
+/* ---------- Search: multi-select pickers (source / expenses / income category) ---------- */
+
+.br-multi { position: relative; min-width: 0; }
+
+.br-income .br-multi-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--br-space-2);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+.br-income .br-multi-btn [data-multi-label] { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.br-multi-panel {
+    margin-top: 6px;
+    padding: var(--br-space-2);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    background: var(--input-background);
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+.br-multi-panel[hidden] { display: none; }
+
+.br-multi-opt {
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-3);
+    min-height: 40px;
+    padding: 0 var(--br-space-2);
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+.br-multi-opt:hover { background: var(--hover-background); }
+.br-multi-opt input { flex: none; width: 18px; height: 18px; accent-color: var(--accent); }
+
+.br-multi-foot {
+    position: sticky;
+    bottom: calc(var(--br-space-2) * -1);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--br-space-2);
+    margin: var(--br-space-2) calc(var(--br-space-2) * -1) calc(var(--br-space-2) * -1);
+    padding: var(--br-space-2);
+    background: var(--input-background);
+    border-top: 1px solid var(--border);
+}
+
+@media (max-width: 1023px) {
+    .br-multi-opt { min-height: 44px; }
+}
+
+/* Type and saved presets wrap instead of scrolling sideways */
+.br-income .br-chip-row.inc-wrap-row { flex-wrap: wrap; overflow: visible; }
+
+
+/* =========================================================
+   INCOME: FINANCIAL COLOUR SYSTEM
+   Scoped to .br-income only. Nothing here changes a global
+   theme variable; the palette reuses the existing theme
+   tokens (success / danger / info / warning) plus one local
+   violet for invested money. Text colour only, flat, no
+   gradients: the black (dark) and light backgrounds are
+   untouched.
+
+     income    green   money received
+     expense   coral   money spent
+     balance   blue    available / remaining money
+     invested  violet  money moved into investments
+     sales     amber   proceeds from selling investments
+     returns   green when positive, coral when negative
+   ========================================================= */
+
+.br-income {
+    --inc-c-income: var(--br-success);
+    --inc-c-expense: var(--br-danger);
+    --inc-c-balance: var(--br-info);
+    --inc-c-invested: #A78BFA;
+    --inc-c-sales: var(--br-warning);
+
+    --inc-t-income: var(--br-success-soft);
+    --inc-t-expense: var(--br-danger-soft);
+    --inc-t-balance: var(--br-info-soft);
+    --inc-t-invested: #171226;
+    --inc-t-sales: var(--br-warning-soft);
+}
+
+:root[data-theme="light"] .br-income {
+    --inc-c-invested: #7C3AED;
+    --inc-t-invested: #F1EBFD;
+}
+
+.br-income .inc-c-income { color: var(--inc-c-income); }
+.br-income .inc-c-expense { color: var(--inc-c-expense); }
+.br-income .inc-c-balance { color: var(--inc-c-balance); }
+.br-income .inc-c-invested { color: var(--inc-c-invested); }
+.br-income .inc-c-sales { color: var(--inc-c-sales); }
+
+/* Table header/footer cells otherwise take the muted th colour */
+.br-income .br-table .inc-c-income { color: var(--inc-c-income); }
+.br-income .br-table .inc-c-expense { color: var(--inc-c-expense); }
+.br-income .br-table .inc-c-balance { color: var(--inc-c-balance); }
+.br-income .br-table .inc-c-invested { color: var(--inc-c-invested); }
+.br-income .br-table .inc-c-sales { color: var(--inc-c-sales); }
+
+/* Statement summary cards: colour the figure only, labels stay muted */
+.br-income .br-statement-stat.inc-c-income strong { color: var(--inc-c-income); }
+.br-income .br-statement-stat.inc-c-expense strong { color: var(--inc-c-expense); }
+.br-income .br-statement-stat.inc-c-balance strong { color: var(--inc-c-balance); }
+.br-income .br-statement-stat.inc-c-invested strong { color: var(--inc-c-invested); }
+.br-income .br-statement-stat.inc-c-sales strong { color: var(--inc-c-sales); }
+
+/* Ledger: sale tag and the "Invested by category" figures */
+.br-income .inc-sale { color: var(--inc-c-sales); }
+.br-income .br-investment-chip strong { color: var(--inc-c-invested); }
+
+/* Transaction type: a quiet tint behind the amount */
+.br-income .inc-txn-amount.inc-c-expense { color: var(--inc-c-expense); }
+.br-income .inc-txn-amount.inc-c-invested { color: var(--inc-c-invested); }
+.br-income .inc-txn-amount.inc-c-sales { color: var(--inc-c-sales); }
+
+
+/* =========================================================
+   INCOME → EXPAND: four equal panel buttons
+   2 equal columns on phones, 4 equal columns from tablet up.
+   Every button has the same width and height.
+   ========================================================= */
+
+.br-income .inc-expand-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-2);
+}
+
+@media (min-width: 768px) {
+    .br-income .inc-expand-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--br-space-4);
+    }
+}
+
+.br-income .inc-expand-btn {
+    --inc-accent: var(--inc-c-income);
+    --inc-accent-tint: var(--inc-t-income);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 68px;
+    padding: var(--br-space-4) var(--br-space-4);
+    border: 1px solid color-mix(in srgb, var(--inc-accent) 40%, var(--border));
+    border-radius: 8px;
+    background: var(--inc-accent-tint);
+    color: var(--inc-accent);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Small matching accent dot before the label */
+.br-income .inc-expand-btn::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--inc-accent);
+}
+
+.br-income .inc-expand-expense {
+    --inc-accent: var(--inc-c-expense);
+    --inc-accent-tint: var(--inc-t-expense);
+}
+
+.br-income .inc-expand-income,
+.br-income .inc-expand-returns {
+    --inc-accent: var(--inc-c-income);
+    --inc-accent-tint: var(--inc-t-income);
+}
+
+.br-income .inc-expand-btn:hover {
+    border-color: var(--inc-accent);
+}
+
+/* Selected panel: solid accent border, full-strength text */
+.br-income .inc-expand-btn.active {
+    border-color: var(--inc-accent);
+    box-shadow: inset 0 0 0 1px var(--inc-accent);
+    color: var(--text-primary);
+}
+
+.br-income .inc-expand-btn:focus-visible {
+    outline: 2px solid var(--inc-accent);
+    outline-offset: 2px;
 }

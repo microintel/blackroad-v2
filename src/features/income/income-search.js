@@ -1,3 +1,4 @@
+import { icon } from "../../components/icons.js";
 /*
  * Income → Search (old search.js)
  * Flat, transaction-level search: every income row and every
@@ -19,7 +20,7 @@ const norm = (v) => String(v || "").toLowerCase().trim();
 const tokenize = (v) => norm(v).split(/[^a-z0-9]+/).filter(Boolean);
 
 const filters = {
-    term: "", sources: new Set(), categories: new Set(),
+    term: "", sources: new Set(), expenseCategories: new Set(), incomeCategories: new Set(),
     from: "", to: "", type: "all", sort: "newest"
 };
 
@@ -64,7 +65,12 @@ function matches(it) {
         if (!ok) return false;
     }
     if (filters.sources.size && ![...filters.sources].some((s) => it.fromNorm.includes(norm(s)))) return false;
-    if (filters.categories.size && ![...filters.categories].some((c) => norm(it.category).includes(norm(c)))) return false;
+    if (filters.expenseCategories.size || filters.incomeCategories.size) {
+        const cat = norm(it.category);
+        const isIncomeSide = it.kind === "income" || it.kind === "investment-sale";
+        const set = isIncomeSide ? filters.incomeCategories : filters.expenseCategories;
+        if (![...set].some((c) => norm(c) === cat)) return false;
+    }
 
     if (filters.from || filters.to) {
         const t = new Date(it.date + "T00:00:00").getTime();
@@ -88,7 +94,7 @@ function sortItems(list) {
 }
 
 const hasFilters = () =>
-    filters.term.trim() || filters.sources.size || filters.categories.size ||
+    filters.term.trim() || filters.sources.size || filters.expenseCategories.size || filters.incomeCategories.size ||
     filters.from || filters.to || filters.type !== "all";
 
 function loadPresets() {
@@ -106,12 +112,15 @@ function summary(items) {
         else if (i.kind === "investment") investment += i.amount;
         else expense += i.amount;
     });
-    const stat = (l, v) => `<div class="br-stat"><div class="br-stat-label">${l}</div><div class="br-stat-value">${v}</div></div>`;
+    const stat = (l, v, tone = "") => `<div class="br-stat"><div class="br-stat-label">${l}</div><div class="br-stat-value ${tone}">${v}</div></div>`;
+    const net = income + sale - expense - investment;
     return `<div class="br-grid br-grid-4">
         ${stat("Results", items.length)}
-        ${stat("Income", formatMoney(income))}
-        ${stat("Expense", formatMoney(expense))}
-        ${stat("Net", formatMoney(income + sale - expense - investment))}
+        ${stat("Income", formatMoney(income), "inc-c-income")}
+        ${stat("Expense", formatMoney(expense), "inc-c-expense")}
+        ${investment > 0 ? stat("Investment", formatMoney(investment), "inc-c-invested") : ""}
+        ${sale > 0 ? stat("Investment sale", formatMoney(sale), "inc-c-sales") : ""}
+        ${stat("Net", formatMoney(net), net < 0 ? "inc-c-expense" : "inc-c-balance")}
     </div>`;
 }
 
@@ -122,23 +131,50 @@ function csv(items) {
     return rows.map((r) => r.map(q).join(",")).join("\n");
 }
 
-function chipGroup(values, selected, attr) {
-    if (!values.length) return `<span class="br-muted">None yet</span>`;
-    return values.map((v) => `<button type="button" class="br-chip ${selected.has(v) ? "active" : ""}"
-        data-${attr}="${esc(v)}">${esc(v)}</button>`).join("");
+const PICKER_NOUN = { sources: "sources", expenseCategories: "expenses", incomeCategories: "income categories" };
+
+function pickerLabel(key, selected) {
+    if (!selected.size) return `All ${PICKER_NOUN[key]}`;
+    if (selected.size === 1) return [...selected][0];
+    return `${selected.size} selected`;
+}
+
+/* A button that opens a checklist: pick one or more, no sideways scrolling */
+function picker(key, values, selected) {
+    return `
+        <div class="br-multi" data-multi="${key}">
+            <button type="button" class="br-select br-multi-btn" data-multi-toggle="${key}" aria-expanded="false">
+                <span data-multi-label>${esc(pickerLabel(key, selected))}</span>
+                <span aria-hidden="true">▾</span>
+            </button>
+            <div class="br-multi-panel" data-multi-panel hidden>
+                ${values.length ? values.map((v) => `
+                    <label class="br-multi-opt">
+                        <input type="checkbox" data-multi-opt="${key}" value="${esc(v)}" ${selected.has(v) ? "checked" : ""}>
+                        <span>${esc(v)}</span>
+                    </label>`).join("") : `<span class="br-muted" style="padding:8px 4px;">None yet</span>`}
+                <div class="br-multi-foot">
+                    <button type="button" class="br-button" data-multi-clear="${key}">Clear</button>
+                    <button type="button" class="br-button br-button-primary" data-multi-close>Done</button>
+                </div>
+            </div>
+        </div>`;
 }
 
 export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
     const items = buildItems(entries);
     const sources = [...new Set(entries.map((e) => e.from).filter(Boolean))].sort();
-    const categories = [...new Set(items.map((i) => i.category).filter(Boolean))].sort();
+    const uniq = (list) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const expenseCats = uniq(items.filter((i) => i.kind === "expense" || i.kind === "investment").map((i) => i.category));
+    const incomeCats = uniq(items.filter((i) => i.kind === "income" || i.kind === "investment-sale").map((i) => i.category));
+    const optionLists = { sources, expenseCategories: expenseCats, incomeCategories: incomeCats };
     let current = [];
 
     container.innerHTML = `
         <div class="br-card">
             <div class="br-toolbar">
                 <div class="br-search-box">
-                    <span>⌕</span>
+                    <span class="br-search-icon">${icon("search", { size: 16 })}</span>
                     <input type="search" data-s="term" placeholder="Search description, source or category..." value="${esc(filters.term)}">
                 </div>
                 <select class="br-select" data-s="sort">
@@ -151,7 +187,7 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
 
             <div class="br-search-filters">
                 <div class="br-field"><label>Type</label>
-                    <div class="br-chip-row" data-s="types">
+                    <div class="br-chip-row inc-wrap-row" data-s="types">
                         ${["all", "income", "expense"].map((t) => `<button type="button" class="br-chip ${filters.type === t ? "active" : ""}" data-s-type="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}
                     </div></div>
                 <div class="br-field"><label>Date range</label>
@@ -159,10 +195,12 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
                         <input type="date" class="br-input" data-s="from" value="${esc(filters.from)}">
                         <input type="date" class="br-input" data-s="to" value="${esc(filters.to)}">
                     </div></div>
-                <div class="br-field"><label>Source</label>
-                    <div class="br-chip-row" data-s="sources">${chipGroup(sources, filters.sources, "s-source")}</div></div>
-                <div class="br-field"><label>Category</label>
-                    <div class="br-chip-row" data-s="categories">${chipGroup(categories, filters.categories, "s-category")}</div></div>
+                <div class="br-field"><label>Income source</label>
+                    ${picker("sources", sources, filters.sources)}</div>
+                <div class="br-field"><label>Expenses</label>
+                    ${picker("expenseCategories", expenseCats, filters.expenseCategories)}</div>
+                <div class="br-field"><label>Income category</label>
+                    ${picker("incomeCategories", incomeCats, filters.incomeCategories)}</div>
             </div>
 
             <div class="br-toolbar" style="margin-top:12px;">
@@ -171,7 +209,7 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
                 <button type="button" class="br-button" data-s-action="clear">Clear</button>
                 <button type="button" class="br-button" data-s-action="csv" hidden>Download CSV</button>
             </div>
-            <div class="br-chip-row" data-s="presets" style="margin-top:8px;"></div>
+            <div class="br-chip-row inc-wrap-row" data-s="presets" style="margin-top:8px;"></div>
         </div>
 
         <div data-s="summary" style="margin:16px 0;"></div>
@@ -212,21 +250,41 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
         $("summary").innerHTML = summary(current);
         $("results").innerHTML = `<div class="br-card"><div class="br-list">${current.map((it, idx) => {
             const out = it.kind === "expense" || it.kind === "investment";
+            const tone = it.kind === "investment" ? "inc-c-invested"
+                : it.kind === "investment-sale" ? "inc-c-sales"
+                : out ? "inc-c-expense" : "inc-c-income";
             return `<div class="br-list-item br-result-row" data-s-open="${idx}" tabindex="0">
                 <div>
                     <strong>${esc(it.desc)}</strong>
                     <div class="br-muted">${esc(it.category || (it.kind === "income" ? "Income" : it.kind === "investment-sale" ? "Investment sale" : it.kind === "investment" ? "Investment" : ""))}</div>
                 </div>
                 <div style="text-align:right">
-                    <strong class="${out ? "br-neg" : "br-pos"}">${out ? "-" : "+"}${formatMoney(it.amount)}</strong>
+                    <strong class="${tone}">${out ? "-" : "+"}${formatMoney(it.amount)}</strong>
                     <div class="br-muted">${esc(it.date)}</div>
                 </div></div>`;
         }).join("")}</div></div>`;
     }
 
+    function syncPickers() {
+        Object.keys(optionLists).forEach((key) => {
+            const selected = filters[key];
+            const box = container.querySelector(`[data-multi="${key}"]`);
+            if (!box) return;
+            box.querySelectorAll("[data-multi-opt]").forEach((cb) => { cb.checked = selected.has(cb.value); });
+            box.querySelector("[data-multi-label]").textContent = pickerLabel(key, selected);
+        });
+    }
+
+    function closePickers(except) {
+        container.querySelectorAll("[data-multi]").forEach((box) => {
+            if (box === except) return;
+            box.querySelector("[data-multi-panel]").hidden = true;
+            box.querySelector("[data-multi-toggle]").setAttribute("aria-expanded", "false");
+        });
+    }
+
     function rerenderChips() {
-        $("sources").innerHTML = chipGroup(sources, filters.sources, "s-source");
-        $("categories").innerHTML = chipGroup(categories, filters.categories, "s-category");
+        syncPickers();
         container.querySelectorAll("[data-s-type]").forEach((b) =>
             b.classList.toggle("active", b.dataset.sType === filters.type));
     }
@@ -241,6 +299,14 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
     });
 
     container.addEventListener("change", (e) => {
+        const opt = e.target.closest?.("[data-multi-opt]");
+        if (opt) {
+            const set = filters[opt.dataset.multiOpt];
+            if (opt.checked) set.add(opt.value); else set.delete(opt.value);
+            syncPickers();
+            renderResults();
+            return;
+        }
         if (e.target.dataset.s === "sort") {
             filters.sort = e.target.value;
             renderResults();
@@ -251,11 +317,24 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
         const t = e.target;
         const toggle = (set, v) => (set.has(v) ? set.delete(v) : set.add(v));
 
-        const src = t.closest("[data-s-source]");
-        if (src) { toggle(filters.sources, src.dataset.sSource); rerenderChips(); return renderResults(); }
+        const pickBtn = t.closest("[data-multi-toggle]");
+        if (pickBtn) {
+            const box = pickBtn.closest("[data-multi]");
+            const panel = box.querySelector("[data-multi-panel]");
+            closePickers(box);
+            panel.hidden = !panel.hidden;
+            pickBtn.setAttribute("aria-expanded", String(!panel.hidden));
+            return;
+        }
 
-        const cat = t.closest("[data-s-category]");
-        if (cat) { toggle(filters.categories, cat.dataset.sCategory); rerenderChips(); return renderResults(); }
+        const pickClear = t.closest("[data-multi-clear]");
+        if (pickClear) {
+            filters[pickClear.dataset.multiClear].clear();
+            syncPickers();
+            return renderResults();
+        }
+
+        if (t.closest("[data-multi-close]")) { return closePickers(); }
 
         const type = t.closest("[data-s-type]");
         if (type) { filters.type = type.dataset.sType; rerenderChips(); return renderResults(); }
@@ -275,7 +354,9 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
                 Object.assign(filters, {
                     term: p.term || "", from: p.from || "", to: p.to || "",
                     type: p.type || "all", sort: p.sort || "newest",
-                    sources: new Set(p.sources || []), categories: new Set(p.categories || [])
+                    sources: new Set(p.sources || []),
+                    expenseCategories: new Set(p.expenseCategories || (p.categories || []).filter((c) => expenseCats.includes(c))),
+                    incomeCategories: new Set(p.incomeCategories || (p.categories || []).filter((c) => incomeCats.includes(c)))
                 });
                 container.querySelector('[data-s="term"]').value = filters.term;
                 container.querySelector('[data-s="from"]').value = filters.from;
@@ -290,7 +371,7 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
         const action = t.closest("[data-s-action]")?.dataset.sAction;
         if (action === "clear") {
             Object.assign(filters, { term: "", from: "", to: "", type: "all", sort: "newest",
-                sources: new Set(), categories: new Set() });
+                sources: new Set(), expenseCategories: new Set(), incomeCategories: new Set() });
             mountIncomeSearch(container, entries, { onOpenEntry });
             return;
         }
@@ -302,7 +383,9 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
             list.push({
                 name, term: filters.term, from: filters.from, to: filters.to,
                 type: filters.type, sort: filters.sort,
-                sources: [...filters.sources], categories: [...filters.categories]
+                sources: [...filters.sources],
+                expenseCategories: [...filters.expenseCategories],
+                incomeCategories: [...filters.incomeCategories]
             });
             savePresets(list);
             nameEl.value = "";

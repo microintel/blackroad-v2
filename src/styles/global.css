@@ -78,7 +78,7 @@ hr {
     margin: 0;
 
     border: 0;
-    border-top: 1px solid var(--br-border);
+    height: 0;
 }
 
 
@@ -103,7 +103,8 @@ h4,
 h5,
 h6 {
     color: var(--br-text);
-    font-weight: 650;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 h1 {
@@ -123,14 +124,16 @@ h2 {
 h3 {
     margin-bottom: var(--br-space-3);
 
-    font-size: var(--br-font-size-xl);
+    font-size: var(--br-font-size-lg);
+    font-weight: 500;
     line-height: var(--br-line-tight);
 }
 
 h4 {
     margin-bottom: var(--br-space-2);
 
-    font-size: var(--br-font-size-lg);
+    font-size: var(--br-font-size-md);
+    font-weight: 500;
 }
 
 p {
@@ -138,7 +141,7 @@ p {
 }
 
 strong {
-    font-weight: 650;
+    font-weight: 600;
 }
 
 
@@ -175,13 +178,13 @@ input[type="radio"] {
    ========================================================= */
 
 :focus-visible {
-    outline: 2px solid var(--br-info);
+    outline: 2px solid var(--br-gold);
     outline-offset: 2px;
 }
 
 ::selection {
-    background: var(--br-primary);
-    color: var(--br-text-inverse);
+    background: var(--br-gold);
+    color: #000000;
 }
 
 
@@ -191,7 +194,7 @@ input[type="radio"] {
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--br-border-strong) transparent;
+    scrollbar-color: var(--br-surface-active) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -204,7 +207,7 @@ input[type="radio"] {
 }
 
 *::-webkit-scrollbar-thumb {
-    background: var(--br-border-strong);
+    background: var(--br-surface-active);
     border-radius: var(--br-radius-full);
 }
 
@@ -243,4 +246,56 @@ input[type="radio"] {
 
 .br-text-info {
     color: var(--br-info);
+}
+
+/* =========================================================
+   FINANCIAL FIGURES
+   Tabular numerals everywhere money, quantities, rates and
+   dates appear, so columns line up and digits don't jitter.
+   ========================================================= */
+
+.br-stat-value,
+.br-dash-networth,
+.br-dash-legend-amt,
+.br-dash-legend-pct,
+.br-dash-foot strong,
+.br-dash-pnl-foot,
+.br-table td,
+.br-table th,
+.br-kv,
+.br-pos,
+.br-neg,
+.br-delta,
+.br-badge,
+.su-pos,
+.su-neg,
+.ll-get,
+.ll-give,
+.br-num,
+td,
+input[type="number"],
+input[type="date"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+.br-icon {
+    flex: none;
+    display: inline-block;
+    vertical-align: -0.15em;
+}
+
+/* Gain / loss text stays paired with a sign or label in the markup. */
+.br-text-success { color: var(--br-success); }
+.br-text-danger  { color: var(--br-danger); }
+.br-text-warning { color: var(--br-warning); }
+.br-text-info    { color: var(--br-info); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

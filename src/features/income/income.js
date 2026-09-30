@@ -1,3 +1,4 @@
+import { icon } from "../../components/icons.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -11,7 +12,8 @@ import {
     todayISO,
     EXPENSE_CATEGORIES,
     INCOME_CATEGORIES,
-    isInvestmentCategory
+    isInvestmentCategory,
+    isInvestmentSaleIncomeEntry
 } from "./income-service.js";
 
 import {
@@ -26,100 +28,59 @@ import { renderIncomeJumpTo } from "./income-jumpto.js";
 let currentExpandPanel = "expense";
 let currentEntries = [];
 let currentSearch = "";
+let dateFrom = "";
+let dateTo = "";
 let editingEntryId = null;
 let currentIncomeView = "ledger";
+let isSaving = false;
+let lastFocused = null;
 
+/* Dialog modes: "income-new" (income + its transactions, for a brand-new
+   entry), "income-edit" (income fields only), "txn" (one transaction only). */
+let modalMode = "income-new";
+let editingTxnIndex = null;   // null = adding a transaction, number = editing it
+
+/* Ledger entries whose transactions are open. Survives reloads of the list. */
+const expandedEntries = new Set();
+
+
+
+
+const INCOME_TABS = [
+    ["ledger", "Ledger"],
+    ["statement", "Statement"],
+    ["statistics", "Statistics"],
+    ["search", "Search"],
+    ["compare", "Compare"],
+    ["expand", "Expand"],
+    ["jumpto", "Jump to"]
+];
 
 export async function Income() {
 
     const page =
         document.createElement("section");
 
-    page.className = "br-page";
+    page.className = "br-page br-income";
 
     page.innerHTML = `
 
-        <!-- PAGE HEADER -->
-        <div class="br-page-heading">
-
-            <div>
-
-                <h2>Income & Expenses</h2>
-
-                <p>
-                    Manage your complete income,
-                    expenses and investments.
-                </p>
-
-            </div>
-
-
-            <button
-                type="button"
-                class="br-button br-button-primary"
-                data-action="add-income"
-            >
-                <span>+</span>
-                Add income
-            </button>
-
-        </div>
-
-
         <!-- INCOME NAVIGATION -->
-        <div class="br-income-tabs">
-    <button
-        type="button"
-        class="br-income-tab active"
-        data-income-tab="ledger"
-    >
-        Ledger
-    </button>
-
-    <button
-        type="button"
-        class="br-income-tab"
-        data-income-tab="statement"
-    >
-        Statement
-    </button>
-
-    <button
-        type="button"
-        class="br-income-tab"
-        data-income-tab="statistics"
-    >
-        Statistics
-    </button>
-    <button
-        type="button"
-        class="br-income-tab"
-        data-income-tab="search"
-    >
-        Search
-    </button>
-    <button
-        type="button"
-        class="br-income-tab"
-        data-income-tab="compare"
-    >
-        Compare
-    </button>
-    <button
-        type="button"
-        class="br-income-tab"
-        data-income-tab="expand"
-    >
-        Expand
-    </button>
-    <button
-        type="button"
-        class="br-income-tab"
-        data-income-tab="jumpto"
-    >
-        Jump to
-    </button>
-</div>
+        <div
+            class="br-income-tabs"
+            role="group"
+            aria-label="Income views"
+        >
+            ${INCOME_TABS.map(
+                ([key, label]) => `
+                    <button
+                        type="button"
+                        class="br-income-tab${key === "ledger" ? " active" : ""}"
+                        data-income-tab="${key}"
+                        aria-pressed="${key === "ledger"}"
+                    >${label}</button>`
+            ).join("")}
+        </div>
 
 
         <!-- ========================= -->
@@ -127,61 +88,35 @@ export async function Income() {
         <!-- ========================= -->
 
         <div
+            class="inc-view"
             data-income-view-container="ledger"
         >
 
-            <!-- SEARCH TOOLBAR -->
-
-            <div class="br-income-toolbar">
-
-                <div class="br-search-box">
-
-                    <span>⌕</span>
-
-                    <input
-                        type="search"
-                        placeholder="Search source, description or category..."
-                        data-income-search
-                    />
-
-                </div>
-
-
-                <button
-                    type="button"
-                    class="br-button"
-                    data-action="refresh"
-                >
-                    Refresh
-                </button>
-
-            </div>
-
-
             <!-- SUMMARY -->
 
-            <div
-                class="br-grid br-grid-4"
+            <section
+                class="inc-summary"
                 data-summary
-            ></div>
+                aria-label="Income summary"
+            ></section>
 
 
             <!-- INVESTMENT SUMMARY -->
 
             <section
-                class="br-card"
-                style="margin-top:20px;"
+                class="inc-section"
+                aria-labelledby="inc-invested-title"
             >
 
-                <div class="br-card-header">
+                <div class="inc-section-head">
 
                     <div>
 
-                        <h3>
+                        <h3 id="inc-invested-title">
                             Invested by category
                         </h3>
 
-                        <p class="br-muted">
+                        <p>
                             Current money still parked
                             in each investment category.
                         </p>
@@ -202,24 +137,88 @@ export async function Income() {
             <!-- LEDGER -->
 
             <section
-                class="br-card"
-                style="margin-top:20px;"
+                class="inc-section"
+                aria-labelledby="inc-ledger-title"
             >
 
-                <div class="br-card-header">
+                <div class="inc-section-head inc-ledger-head">
 
                     <div>
 
-                        <h3>
+                        <h3 id="inc-ledger-title">
                             Income ledger
                         </h3>
 
-                        <p
-                            class="br-muted"
-                            data-ledger-status
-                        ></p>
+                        <p data-ledger-status></p>
 
                     </div>
+
+
+                    <div class="inc-tools">
+
+                        <button
+                            type="button"
+                            class="br-button br-button-primary inc-add"
+                            data-action="add-income"
+                        >
+                            ${icon("plus", { size: 18 })}
+                            <span>Add income</span>
+                        </button>
+
+                        <div class="br-search-box">
+
+                            <span class="br-search-icon">${icon("search", { size: 16 })}</span>
+
+                            <input
+                                type="search"
+                                placeholder="Search source, description or category"
+                                aria-label="Search income entries"
+                                data-income-search
+                            />
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="inc-icon-button"
+                            data-action="refresh"
+                            aria-label="Refresh"
+                            title="Refresh"
+                        >
+                            ${icon("refresh-cw", { size: 16 })}
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="inc-ledger-filters">
+
+                    <input
+                        type="date"
+                        class="br-input"
+                        aria-label="From date"
+                        title="From date"
+                        data-ledger-from
+                    />
+
+                    <input
+                        type="date"
+                        class="br-input"
+                        aria-label="To date"
+                        title="To date"
+                        data-ledger-to
+                    />
+
+                    <button
+                        type="button"
+                        class="br-button"
+                        data-action="collapse-all"
+                    >
+                        Collapse all
+                    </button>
 
                 </div>
 
@@ -232,7 +231,7 @@ export async function Income() {
 
 
         <!-- ========================= -->
-        <!-- STATEMENT VIEW -->
+        <!-- OTHER VIEWS -->
         <!-- ========================= -->
 
         <div
@@ -257,9 +256,11 @@ export async function Income() {
         >
 
             <div
-                class="br-modal"
+                class="br-modal inc-modal"
                 role="dialog"
                 aria-modal="true"
+                aria-labelledby="inc-modal-title"
+                tabindex="-1"
             >
 
                 <!-- MODAL HEADER -->
@@ -268,11 +269,17 @@ export async function Income() {
 
                     <div>
 
-                        <h3 data-modal-title>
+                        <h3
+                            id="inc-modal-title"
+                            data-modal-title
+                        >
                             Add income
                         </h3>
 
-                        <p class="br-muted">
+                        <p
+                            class="br-muted"
+                            data-modal-sub
+                        >
                             Income and its related
                             transactions are stored
                             in the existing ledger.
@@ -283,10 +290,12 @@ export async function Income() {
 
                     <button
                         type="button"
-                        class="br-button"
+                        class="br-modal-close"
                         data-action="close-modal"
+                        aria-label="Close"
+                        title="Close"
                     >
-                        ×
+                        ${icon("x", { size: 18 })}
                     </button>
 
                 </div>
@@ -294,71 +303,74 @@ export async function Income() {
 
                 <!-- FORM -->
 
-                <form data-income-form>
+                <form
+                    data-income-form
+                    novalidate
+                >
 
-                    <!-- MAIN ENTRY -->
-
-                    <div class="br-form-grid">
-
-                        <label>
-
-                            <span>
-                                Amount
-                            </span>
-
-                            <input
-                                name="income"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                required
-                            />
-
-                        </label>
+                    <div
+                        class="inc-form-error"
+                        data-form-error
+                        role="alert"
+                        hidden
+                    ></div>
 
 
-                        <label>
+                    <!-- MAIN ENTRY: source, category, amount, date -->
 
-                            <span>
-                                Date
-                            </span>
+                    <div
+                        class="inc-fields"
+                        data-income-fields
+                    >
 
-                            <input
-                                name="date"
-                                type="date"
-                                required
-                            />
-
-                        </label>
-
-
-                        <label>
-
-                            <span>
-                                Source
-                            </span>
-
-                            <input
+                        ${fieldHTML(
+                            "Source",
+                            `<input
                                 name="from"
                                 type="text"
                                 placeholder="Salary, freelance..."
+                                autocomplete="off"
                                 required
-                            />
+                            />`
+                        )}
 
-                        </label>
 
-
-                        <label>
-
-                            <span>
-                                Category
-                            </span>
-
-                            <select
+                        ${fieldHTML(
+                            "Category",
+                            `<select
                                 name="category"
-                            ></select>
+                            ></select>`
+                        )}
 
-                        </label>
+
+                        ${fieldHTML(
+                            "Amount",
+                            `<span class="inc-money">
+                                <span
+                                    class="inc-money-prefix"
+                                    aria-hidden="true"
+                                >₹</span>
+                                <input
+                                    name="income"
+                                    type="number"
+                                    inputmode="decimal"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    required
+                                />
+                            </span>`
+                        )}
+
+
+                        ${fieldHTML(
+                            "Date",
+                            `<input
+                                name="date"
+                                type="date"
+                                required
+                            />`
+                        )}
 
                     </div>
 
@@ -366,11 +378,13 @@ export async function Income() {
                     <!-- TRANSACTIONS -->
 
                     <div
-                        class="br-modal-section"
+                        class="inc-modal-section"
+                        data-txn-section
                     >
 
                         <div
-                            class="br-card-header"
+                            class="inc-section-head"
+                            data-txn-head
                         >
 
                             <div>
@@ -379,7 +393,7 @@ export async function Income() {
                                     Transactions
                                 </h4>
 
-                                <p class="br-muted">
+                                <p>
                                     Add expenses or
                                     investment movements
                                     belonging to this entry.
@@ -393,7 +407,8 @@ export async function Income() {
                                 class="br-button"
                                 data-action="add-transaction"
                             >
-                                + Transaction
+                                ${icon("plus", { size: 16 })}
+                                <span>Transaction</span>
                             </button>
 
                         </div>
@@ -424,8 +439,9 @@ export async function Income() {
                         <button
                             type="submit"
                             class="br-button br-button-primary"
+                            data-save
                         >
-                            Save
+                            Save income
                         </button>
 
                     </div>
@@ -444,6 +460,43 @@ export async function Income() {
     await loadEntries(page);
 
     return page;
+}
+
+
+/* =========================================
+   FORM FIELD HELPER
+   A label + control, with a slot right under
+   it for that field's own validation message.
+========================================= */
+
+function fieldHTML(
+    label,
+    control,
+    extraClass = ""
+) {
+
+    return `
+
+        <div class="inc-field ${extraClass}">
+
+            <label>
+
+                <span class="inc-field-label">${label}</span>
+
+                ${control}
+
+            </label>
+
+            <p
+                class="inc-error"
+                data-error
+                hidden
+            ></p>
+
+        </div>
+
+    `;
+
 }
 
 
@@ -505,6 +558,7 @@ function attachEvents(page) {
             if (
                 compareBox &&
                 compareBox.contains(event.target) &&
+                !event.target.closest("select") &&
                 handleCompareEvent(event.target)
             ) {
                 renderActiveView(page);
@@ -521,13 +575,134 @@ function attachEvents(page) {
                 );
 
 
+            /*
+             * Click on an income row (not on one of its
+             * buttons): open / close its transactions
+             */
+
             if (!actionElement) {
+
+                const row =
+                    event.target.closest(
+                        ".inc-row"
+                    );
+
+                if (
+                    row &&
+                    !event.target.closest(
+                        "a, input, select, textarea"
+                    )
+                ) {
+
+                    toggleEntry(
+                        row.closest(
+                            "[data-entry-id]"
+                        )
+                    );
+
+                }
+
                 return;
             }
 
 
             const action =
                 actionElement.dataset.action;
+
+
+            if (
+                action ===
+                "toggle-entry"
+            ) {
+
+                toggleEntry(
+                    actionElement.closest(
+                        "[data-entry-id]"
+                    )
+                );
+
+                return;
+            }
+
+
+            if (
+                action ===
+                "add-entry-transaction" ||
+                action ===
+                "edit-transaction" ||
+                action ===
+                "delete-transaction"
+            ) {
+
+                const entryElement =
+                    actionElement.closest(
+                        "[data-entry-id]"
+                    );
+
+                if (!entryElement) {
+                    return;
+                }
+
+                const entryId =
+                    Number(
+                        entryElement.dataset
+                            .entryId
+                    );
+
+                if (
+                    action ===
+                    "add-entry-transaction"
+                ) {
+
+                    openTransactionModal(
+                        page,
+                        entryId
+                    );
+
+                    return;
+                }
+
+                const index =
+                    Number(
+                        actionElement
+                            .closest(
+                                "[data-txn-index]"
+                            )
+                            ?.dataset
+                            .txnIndex
+                    );
+
+                if (
+                    !Number.isInteger(
+                        index
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    action ===
+                    "edit-transaction"
+                ) {
+
+                    openTransactionModal(
+                        page,
+                        entryId,
+                        index
+                    );
+
+                } else {
+
+                    await deleteTransaction(
+                        page,
+                        entryId,
+                        index
+                    );
+
+                }
+
+                return;
+            }
 
 
             if (
@@ -647,6 +822,48 @@ function attachEvents(page) {
 
             if (
                 action ===
+                "clear-search"
+            ) {
+
+                currentSearch =
+                    "";
+
+                resetLedgerDates(
+                    page
+                );
+
+                const searchBox =
+                    page.querySelector(
+                        "[data-income-search]"
+                    );
+
+                if (searchBox) {
+                    searchBox.value =
+                        "";
+                    searchBox.focus();
+                }
+
+                renderLedger(
+                    page
+                );
+
+                return;
+            }
+
+
+            if (
+                action ===
+                "collapse-all"
+            ) {
+                expandedEntries.clear();
+                renderLedger(
+                    page
+                );
+                return;
+            }
+
+            if (
+                action ===
                 "refresh"
             ) {
 
@@ -689,6 +906,40 @@ function attachEvents(page) {
 
     }
 
+
+    /*
+     * Ledger date range
+     */
+    const fromInput =
+        page.querySelector(
+            "[data-ledger-from]"
+        );
+
+    const toInput =
+        page.querySelector(
+            "[data-ledger-to]"
+        );
+
+    [fromInput, toInput].forEach(
+        (input) => {
+            if (!input) {
+                return;
+            }
+
+            input.addEventListener(
+                "change",
+                () => {
+                    dateFrom =
+                        fromInput.value;
+                    dateTo =
+                        toInput.value;
+                    renderLedger(
+                        page
+                    );
+                }
+            );
+        }
+    );
 
     /*
      * Form submit
@@ -750,6 +1001,238 @@ function attachEvents(page) {
 
     }
 
+
+    /*
+     * Clear a field's message as soon as it is fixed
+     */
+
+    if (form) {
+
+        const revalidate =
+            (event) => {
+
+                const field =
+                    event.target;
+
+                if (
+                    !field.matches ||
+                    !field.matches(
+                        "input, select"
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    field.hasAttribute(
+                        "aria-invalid"
+                    ) &&
+                    !fieldErrorMessage(
+                        field
+                    )
+                ) {
+
+                    clearFieldError(
+                        field
+                    );
+
+                }
+
+            };
+
+        form.addEventListener(
+            "input",
+            revalidate
+        );
+
+        form.addEventListener(
+            "change",
+            revalidate
+        );
+
+    }
+
+
+    /*
+     * Keyboard: Escape closes the dialog and Tab
+     * stays inside it while it is open
+     */
+
+    if (modal) {
+
+        modal.addEventListener(
+            "keydown",
+            (event) => {
+
+                if (
+                    event.key ===
+                    "Escape"
+                ) {
+
+                    event.preventDefault();
+
+                    closeIncomeModal(
+                        page
+                    );
+
+                    return;
+                }
+
+
+                if (
+                    event.key !==
+                    "Tab"
+                ) {
+                    return;
+                }
+
+
+                const focusable =
+                    [
+                        ...modal.querySelectorAll(
+                            "button, input, select, textarea, [tabindex]:not([tabindex='-1'])"
+                        )
+                    ].filter(
+                        (element) =>
+                            !element.disabled &&
+                            element.offsetParent !==
+                                null
+                    );
+
+
+                if (!focusable.length) {
+                    return;
+                }
+
+
+                const first =
+                    focusable[0];
+
+                const last =
+                    focusable[
+                        focusable.length - 1
+                    ];
+
+
+                if (
+                    event.shiftKey &&
+                    (document.activeElement ===
+                        first ||
+                        document.activeElement ===
+                            modal.querySelector(
+                                '[role="dialog"]'
+                            ))
+                ) {
+
+                    event.preventDefault();
+
+                    last.focus();
+
+                } else if (
+                    !event.shiftKey &&
+                    document.activeElement ===
+                        last
+                ) {
+
+                    event.preventDefault();
+
+                    first.focus();
+
+                }
+
+            }
+        );
+
+    }
+
+
+}
+
+
+/* =========================================
+   OPEN / CLOSE AN ENTRY'S TRANSACTIONS
+   Only the clicked income opens; nothing is
+   re-rendered, so scroll position is kept.
+========================================= */
+
+function toggleEntry(
+    entryElement
+) {
+
+    if (!entryElement) {
+        return;
+    }
+
+
+    const id =
+        Number(
+            entryElement.dataset
+                .entryId
+        );
+
+    const panel =
+        entryElement.querySelector(
+            ".inc-txns-row"
+        );
+
+    const button =
+        entryElement.querySelector(
+            '[data-action="toggle-entry"]'
+        );
+
+    if (!panel) {
+        return;
+    }
+
+
+    const open =
+        panel.hidden;
+
+    panel.hidden =
+        !open;
+
+    entryElement.classList.toggle(
+        "is-open",
+        open
+    );
+
+
+    if (open) {
+        expandedEntries.add(
+            id
+        );
+    } else {
+        expandedEntries.delete(
+            id
+        );
+    }
+
+
+    if (button) {
+
+        button.setAttribute(
+            "aria-expanded",
+            String(open)
+        );
+
+        button.setAttribute(
+            "aria-label",
+            button
+                .getAttribute(
+                    "aria-label"
+                )
+                .replace(
+                    open
+                        ? /^Show/
+                        : /^Hide/,
+                    open
+                        ? "Hide"
+                        : "Show"
+                )
+        );
+
+    }
+
 }
 
 
@@ -763,6 +1246,13 @@ function switchIncomeView(page, view) {
         tab.classList.toggle(
             "active",
             tab.dataset.incomeTab === view
+        );
+
+        tab.setAttribute(
+            "aria-pressed",
+            String(
+                tab.dataset.incomeTab === view
+            )
         );
     });
 
@@ -803,8 +1293,18 @@ function renderActiveView(page) {
     }
 }
 
+function resetLedgerDates(page) {
+    dateFrom = "";
+    dateTo = "";
+    page.querySelectorAll("[data-ledger-from], [data-ledger-to]").forEach((input) => {
+        input.value = "";
+    });
+}
+
 function openEntryInLedger(page, entryId) {
+    expandedEntries.add(Number(entryId));
     currentSearch = "";
+    resetLedgerDates(page);
     const box = page.querySelector("[data-income-search]");
     if (box) box.value = "";
     switchIncomeView(page, "ledger");
@@ -963,8 +1463,13 @@ async function loadEntries(
 }
 
 
+
 /* =========================================
    SUMMARY
+   Same four figures as before (Total income,
+   Expenses, Invested, Cash balance), plus the
+   current-month net that used to sit in the
+   ledger subtitle. Nothing is recalculated here.
 ========================================= */
 
 function renderSummary(
@@ -996,99 +1501,123 @@ function renderSummary(
 
     container.innerHTML = `
 
-        ${statCard(
-            "Total income",
-            formatMoney(
-                summary.income
-            ),
-            "All recorded income"
-        )}
+        <div class="inc-metric inc-metric-primary">
+
+            <span class="inc-label">
+                Total income
+            </span>
+
+            <strong class="inc-amount inc-amount-lg inc-c-income">
+                ${formatMoney(
+                    summary.income
+                )}
+            </strong>
+
+            <span class="inc-hint">
+                All recorded income
+            </span>
+
+        </div>
 
 
-        ${statCard(
-            "Expenses",
-            formatMoney(
-                summary.expense
-            ),
-            "Normal spending"
-        )}
+        <div class="inc-metrics">
+
+            ${statCard(
+                "Expenses",
+                formatMoney(
+                    summary.expense
+                ),
+                "Normal spending",
+                "inc-c-expense"
+            )}
 
 
-        ${statCard(
-            "Invested",
-            formatMoney(
-                summary.contributions
-            ),
-            "Investment purchases"
-        )}
+            ${statCard(
+                "Invested",
+                formatMoney(
+                    summary.contributions
+                ),
+                "Investment purchases",
+                "inc-c-invested"
+            )}
 
 
-        ${statCard(
-            "Cash balance",
-            formatMoney(
-                summary.cash
-            ),
-            "Current cash flow"
-        )}
+            ${statCard(
+                "Cash balance",
+                formatMoney(
+                    summary.cash
+                ),
+                "Current cash flow",
+                toneOf(
+                    summary.cash
+                )
+            )}
+
+
+            ${statCard(
+                "This month",
+                formatMoney(
+                    month.net
+                ),
+                "Net for the current month",
+                toneOf(
+                    month.net
+                )
+            )}
+
+        </div>
 
     `;
 
-
-    const status =
-        page.querySelector(
-            "[data-ledger-status]"
-        );
+}
 
 
-    if (status) {
+function toneOf(
+    value
+) {
 
-        status.textContent =
-            `${currentEntries.length} ${
-                currentEntries.length === 1
-                    ? "entry"
-                    : "entries"
-            } · This month: ${formatMoney(
-                month.net
-            )} net`;
+    const number =
+        Number(value) || 0;
 
+    if (number > 0) {
+        return "inc-c-balance";
     }
+
+    if (number < 0) {
+        return "inc-c-expense";
+    }
+
+    return "";
 
 }
 
 
 /* =========================================
-   STAT CARD
+   STAT (one summary figure)
 ========================================= */
 
 function statCard(
     label,
     value,
-    description
+    description,
+    tone = ""
 ) {
 
     return `
 
-        <div class="br-card">
+        <div class="inc-metric">
 
-            <span class="br-muted">
+            <span class="inc-label">
                 ${label}
             </span>
 
-
-            <strong
-                style="
-                    display:block;
-                    font-size:1.35rem;
-                    margin-top:7px;
-                "
-            >
+            <strong class="inc-amount ${tone}">
                 ${value}
             </strong>
 
-
-            <small class="br-muted">
+            <span class="inc-hint">
                 ${description}
-            </small>
+            </span>
 
         </div>
 
@@ -1126,7 +1655,7 @@ function renderInvestments(
 
         container.innerHTML = `
 
-            <p class="br-muted">
+            <p class="inc-quiet">
                 No investments recorded yet.
             </p>
 
@@ -1194,6 +1723,10 @@ function renderLedger(
      * Search
      */
 
+    const autoOpen =
+        new Set();
+
+
     if (
         currentSearch.trim()
     ) {
@@ -1207,6 +1740,24 @@ function renderLedger(
                             entry,
                             currentSearch
                         );
+
+
+                    /*
+                     * Matched only through its transactions:
+                     * show them so the match is visible.
+                     */
+
+                    if (
+                        !result.entryMatch &&
+                        result
+                            .transactionMatches
+                            .length >
+                            0
+                    ) {
+                        autoOpen.add(
+                            entry.id
+                        );
+                    }
 
 
                     return (
@@ -1224,38 +1775,118 @@ function renderLedger(
 
 
     /*
+     * Date range (an entry passes if it or any of
+     * its transactions falls inside the range)
+     */
+    const hasDateFilter =
+        Boolean(dateFrom || dateTo);
+
+    if (hasDateFilter) {
+        const inRange = (d) => {
+            if (!d) {
+                return false;
+            }
+            if (dateFrom && d < dateFrom) {
+                return false;
+            }
+            if (dateTo && d > dateTo) {
+                return false;
+            }
+            return true;
+        };
+
+        entries =
+            entries.filter(
+                (entry) =>
+                    inRange(entry.date) ||
+                    (entry.transactions || [])
+                        .some((t) =>
+                            inRange(t.date)
+                        )
+            );
+    }
+
+    /*
+     * Status line under the ledger heading
+     */
+
+    const status =
+        page.querySelector(
+            "[data-ledger-status]"
+        );
+
+
+    if (status) {
+
+        const total =
+            currentEntries.length;
+
+        const noun =
+            total === 1
+                ? "entry"
+                : "entries";
+
+        status.textContent =
+            currentSearch.trim() || hasDateFilter
+                ? `Showing ${entries.length} of ${total} ${noun}`
+                : `${total} ${noun}`;
+
+    }
+
+
+    /*
      * Empty
      */
 
     if (!entries.length) {
 
+        const searching =
+            Boolean(
+                currentSearch.trim()
+            ) || hasDateFilter;
+
+
         container.innerHTML = `
 
-            <div
-                style="
-                    padding:40px 20px;
-                    text-align:center;
-                "
-            >
+            <div class="inc-empty">
 
-                <h3>
+                ${icon(
+                    searching
+                        ? "search"
+                        : "wallet",
+                    { size: 22 }
+                )}
+
+                <h4>
                     ${
-                        currentSearch
-                            ? "No matches"
-                            : "Your ledger is empty"
+                        searching
+                            ? "No matching income entries"
+                            : "No income recorded yet"
                     }
-                </h3>
+                </h4>
 
-
-                <p class="br-muted">
-
+                <p>
                     ${
-                        currentSearch
-                            ? "Try another search."
-                            : "Add your first income entry."
+                        searching
+                            ? "Nothing matches your search. Try different words or clear the search."
+                            : "Add your first income entry to start tracking your earnings."
                     }
-
                 </p>
+
+                ${
+                    searching
+                        ? `
+                            <button
+                                type="button"
+                                class="br-button"
+                                data-action="clear-search"
+                            >
+                                ${icon("x", { size: 16 })}
+                                <span>Clear search</span>
+                            </button>
+                        `
+                        : ""
+                }
 
             </div>
 
@@ -1265,25 +1896,60 @@ function renderLedger(
     }
 
 
-    container.innerHTML =
-        entries
-            .map(
-                (entry) =>
-                    renderEntry(
-                        entry
-                    )
-            )
-            .join("");
+    container.innerHTML = `
+
+        <div
+            class="inc-table"
+            role="table"
+            aria-label="Income ledger"
+        >
+
+            <div
+                class="inc-head"
+                role="row"
+            >
+                <span role="columnheader">Source</span>
+                <span role="columnheader">Category</span>
+                <span role="columnheader">Date</span>
+                <span role="columnheader" class="inc-num">Income</span>
+                <span role="columnheader" class="inc-num">Expense</span>
+                <span role="columnheader" class="inc-num">Invested</span>
+                <span role="columnheader" class="inc-num">Balance</span>
+                <span role="columnheader" class="inc-actions-head">Actions</span>
+            </div>
+
+            ${entries
+                .map(
+                    (entry) =>
+                        renderEntry(
+                            entry,
+                            expandedEntries.has(
+                                entry.id
+                            ) ||
+                                autoOpen.has(
+                                    entry.id
+                                )
+                        )
+                )
+                .join("")}
+
+        </div>
+
+    `;
 
 }
 
 
 /* =========================================
    ENTRY
+   One ledger entry: a table row on desktop,
+   a compact stacked row on tablet and phone.
+   Same fields and actions as before.
 ========================================= */
 
 function renderEntry(
-    entry
+    entry,
+    expanded = false
 ) {
 
     const income =
@@ -1310,106 +1976,205 @@ function renderEntry(
         ) || 0;
 
 
+    const balance =
+        Number(
+            entry.balance
+        ) || 0;
+
+
     const transactions =
         entry.transactions || [];
+
+
+    const source =
+        entry.from ||
+        "Income";
+
+
+    const dateText =
+        formatDate(
+            entry.date
+        );
+
+
+    /* Sale proceeds are shown in the Income column but are not income. */
+    const isSaleIncome =
+        isInvestmentSaleIncomeEntry(
+            entry
+        );
+
+
+    const iconName =
+        /salary/i.test(
+            entry.category || ""
+        )
+            ? "briefcase-business"
+            : "banknote";
 
 
     return `
 
         <article
-            class="br-income-entry"
+            class="br-income-entry inc-entry${expanded ? " is-open" : ""}"
             data-entry-id="${entry.id}"
-            style="
-                padding:18px 0;
-                border-bottom:
-                    1px solid var(--line-soft);
-            "
+            role="rowgroup"
         >
 
             <div
-                style="
-                    display:flex;
-                    justify-content:space-between;
-                    gap:20px;
-                    align-items:flex-start;
-                "
+                class="inc-row"
+                role="row"
             >
 
                 <div
-                    style="
-                        min-width:0;
-                    "
+                    class="inc-cell inc-source"
+                    role="cell"
                 >
 
-                    <div
-                        style="
-                            display:flex;
-                            align-items:center;
-                            gap:10px;
-                            flex-wrap:wrap;
-                        "
+                    <button
+                        type="button"
+                        class="inc-toggle"
+                        data-action="toggle-entry"
+                        aria-expanded="${expanded}"
+                        aria-controls="inc-txns-${entry.id}"
+                        aria-label="${
+                            expanded
+                                ? "Hide"
+                                : "Show"
+                        } transactions for ${escapeAttribute(
+                            source
+                        )}"
+                        title="Transactions"
                     >
+                        ${icon("chevron-right", { size: 16 })}
+                    </button>
 
-                        <strong>
+                    <span class="inc-source-icon">
+                        ${icon(iconName, { size: 16 })}
+                    </span>
+
+                    <div class="inc-source-text">
+
+                        <strong class="inc-title">
                             ${escapeHTML(
-                                entry.from ||
-                                    "Income"
+                                source
                             )}
                         </strong>
 
+                        <span class="inc-meta">
+                            ${
+                                entry.category
+                                    ? escapeHTML(
+                                          entry.category
+                                      ) + " · "
+                                    : ""
+                            }${dateText}
+                        </span>
 
-                        ${
-                            entry.category
-                                ? `
-                                    <span
-                                        class="br-badge"
-                                    >
-                                        ${escapeHTML(
-                                            entry.category
-                                        )}
-                                    </span>
-                                `
-                                : ""
-                        }
+                        <span class="inc-count">
+                            ${
+                                transactions.length
+                                    ? transactions.length +
+                                      (transactions.length === 1
+                                          ? " transaction"
+                                          : " transactions")
+                                    : "No transactions"
+                            }
+                        </span>
 
-                    </div>
-
-
-                    <div
-                        class="br-muted"
-                        style="
-                            margin-top:5px;
-                        "
-                    >
-                        ${formatDate(
-                            entry.date
-                        )}
                     </div>
 
                 </div>
 
 
                 <div
-                    style="
-                        text-align:right;
-                        flex-shrink:0;
-                    "
+                    class="inc-cell inc-category"
+                    role="cell"
                 >
+                    ${
+                        entry.category
+                            ? escapeHTML(
+                                  entry.category
+                              )
+                            : `<span class="inc-quiet">—</span>`
+                    }
+                </div>
 
-                    <strong>
-                        +${formatMoney(
-                            income
+
+                <div
+                    class="inc-cell inc-date"
+                    role="cell"
+                >
+                    ${dateText}
+                </div>
+
+
+                <div
+                    class="inc-cell inc-num inc-income ${
+                        isSaleIncome
+                            ? "inc-c-sales"
+                            : income > 0
+                                ? "inc-c-income"
+                                : ""
+                    }"
+                    role="cell"
+                >
+                    +${formatMoney(
+                        income
+                    )}
+                </div>
+
+
+                <div class="inc-stats">
+
+                    <div
+                        class="inc-cell inc-num inc-secondary${
+                            expense === 0
+                                ? " inc-zero"
+                                : " inc-c-expense"
+                        }"
+                        role="cell"
+                    >
+                        <span class="inc-mlabel">Expense</span>
+                        ${formatMoney(
+                            expense
                         )}
-                    </strong>
+                    </div>
 
 
                     <div
-                        class="br-muted"
-                        style="
-                            margin-top:4px;
-                        "
+                        class="inc-cell inc-num inc-secondary${
+                            investment === 0 &&
+                            sale === 0
+                                ? " inc-zero"
+                                : ""
+                        }${
+                            investment > 0
+                                ? " inc-c-invested"
+                                : ""
+                        }"
+                        role="cell"
                     >
-                        Balance:
+                        <span class="inc-mlabel">Invested</span>
+                        ${formatMoney(
+                            investment
+                        )}
+                        ${
+                            sale > 0
+                                ? `<span class="inc-sale"><span class="inc-mlabel-inline">Sale</span> ${formatMoney(
+                                      sale
+                                  )}</span>`
+                                : ""
+                        }
+                    </div>
+
+
+                    <div
+                        class="inc-cell inc-num inc-secondary ${toneOf(
+                            balance
+                        )}"
+                        role="cell"
+                    >
+                        <span class="inc-mlabel">Balance</span>
                         ${formatMoney(
                             entry.balance
                         )}
@@ -1417,110 +2182,104 @@ function renderEntry(
 
                 </div>
 
+
+                <div
+                    class="inc-cell inc-actions"
+                    role="cell"
+                >
+
+                    <button
+                        type="button"
+                        class="inc-icon-button"
+                        data-action="edit-entry"
+                        aria-label="Edit entry from ${escapeAttribute(
+                            source
+                        )}"
+                        title="Edit"
+                    >
+                        ${icon("pencil", { size: 16 })}
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="inc-icon-button inc-icon-danger"
+                        data-action="delete-entry"
+                        aria-label="Delete entry from ${escapeAttribute(
+                            source
+                        )}"
+                        title="Delete"
+                    >
+                        ${icon("trash-2", { size: 16 })}
+                    </button>
+
+                </div>
+
             </div>
 
 
             <div
-                style="
-                    display:flex;
-                    flex-wrap:wrap;
-                    gap:8px 18px;
-                    margin-top:14px;
-                    font-size:.85rem;
-                "
-            >
-
-                <span>
-                    Expense:
-                    <strong>
-                        ${formatMoney(
-                            expense
-                        )}
-                    </strong>
-                </span>
-
-
-                <span>
-                    Investment:
-                    <strong>
-                        ${formatMoney(
-                            investment
-                        )}
-                    </strong>
-                </span>
-
-
+                class="inc-txns-row"
+                role="row"
+                id="inc-txns-${entry.id}"
                 ${
-                    sale > 0
-                        ? `
-                            <span>
-                                Sale:
-                                <strong>
-                                    ${formatMoney(
-                                        sale
-                                    )}
-                                </strong>
-                            </span>
-                        `
-                        : ""
+                    expanded
+                        ? ""
+                        : "hidden"
                 }
-
-            </div>
-
-
-            ${
-                transactions.length
-                    ? `
-
-                        <div
-                            style="
-                                margin-top:14px;
-                                padding-left:14px;
-                            "
-                        >
-
-                            ${transactions
-                                .map(
-                                    (
-                                        transaction
-                                    ) =>
-                                        renderTransaction(
-                                            transaction
-                                        )
-                                )
-                                .join("")}
-
-                        </div>
-
-                    `
-                    : ""
-            }
-
-
-            <div
-                style="
-                    display:flex;
-                    gap:8px;
-                    margin-top:14px;
-                "
             >
 
-                <button
-                    type="button"
-                    class="br-button"
-                    data-action="edit-entry"
+                <div
+                    role="cell"
+                    class="inc-txns-cell"
                 >
-                    Edit
-                </button>
 
+                    ${
+                        transactions.length
+                            ? `
+                                <ul
+                                    class="inc-txns"
+                                    aria-label="Transactions for ${escapeAttribute(
+                                        source
+                                    )}"
+                                >
 
-                <button
-                    type="button"
-                    class="br-button"
-                    data-action="delete-entry"
-                >
-                    Delete
-                </button>
+                                    ${transactions
+                                        .map(
+                                            (
+                                                transaction,
+                                                index
+                                            ) =>
+                                                renderTransaction(
+                                                    transaction,
+                                                    index
+                                                )
+                                        )
+                                        .join("")}
+
+                                </ul>
+                            `
+                            : `
+                                <p class="inc-quiet inc-txns-empty">
+                                    No transactions for this income yet.
+                                </p>
+                            `
+                    }
+
+                    <div class="inc-txns-foot">
+
+                        <button
+                            type="button"
+                            class="br-button"
+                            data-action="add-entry-transaction"
+                        >
+                            ${icon("plus", { size: 16 })}
+                            <span>Transaction</span>
+                        </button>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -1536,7 +2295,8 @@ function renderEntry(
 ========================================= */
 
 function renderTransaction(
-    transaction
+    transaction,
+    index
 ) {
 
     const investment =
@@ -1566,18 +2326,12 @@ function renderTransaction(
 
     return `
 
-        <div
-            style="
-                display:flex;
-                justify-content:space-between;
-                gap:12px;
-                padding:8px 0;
-                border-bottom:
-                    1px dashed var(--line-soft);
-            "
+        <li
+            class="inc-txn"
+            data-txn-index="${index}"
         >
 
-            <div>
+            <div class="inc-txn-text">
 
                 <strong>
                     ${escapeHTML(
@@ -1589,25 +2343,19 @@ function renderTransaction(
                 </strong>
 
 
-                <div class="br-muted">
+                <span class="inc-meta">
 
                     ${escapeHTML(
                         transaction.category ||
                             "Uncategorized"
-                    )}
-
-
-                    ${
+                    )}${
                         transaction.date
                             ? " · " +
                               formatDate(
                                   transaction.date
                               )
                             : ""
-                    }
-
-
-                    ${
+                    }${
                         investment
                             ? isSale
                                 ? " · Sell"
@@ -1615,12 +2363,20 @@ function renderTransaction(
                             : ""
                     }
 
-                </div>
+                </span>
 
             </div>
 
 
-            <strong>
+            <strong
+                class="inc-txn-amount ${
+                    isSale
+                        ? "inc-c-sales"
+                        : investment
+                            ? "inc-c-invested"
+                            : "inc-c-expense"
+                }"
+            >
 
                 ${
                     isSale
@@ -1632,9 +2388,275 @@ function renderTransaction(
 
             </strong>
 
-        </div>
+
+            <div class="inc-txn-actions">
+
+                <button
+                    type="button"
+                    class="inc-icon-button"
+                    data-action="edit-transaction"
+                    aria-label="Edit transaction"
+                    title="Edit transaction"
+                >
+                    ${icon("pencil", { size: 16 })}
+                </button>
+
+
+                <button
+                    type="button"
+                    class="inc-icon-button inc-icon-danger"
+                    data-action="delete-transaction"
+                    aria-label="Delete transaction"
+                    title="Delete transaction"
+                >
+                    ${icon("trash-2", { size: 16 })}
+                </button>
+
+            </div>
+
+        </li>
 
     `;
+
+}
+
+
+/* =========================================
+   MODAL MODES
+========================================= */
+
+const MODE_TEXT = {
+
+    "income-new": {
+        sub: "Income and its related transactions are stored in the existing ledger.",
+        save: "Save income"
+    },
+
+    "income-edit": {
+        sub: "Update the source, category, amount or date. Transactions are not changed.",
+        save: "Save income"
+    },
+
+    txn: {
+        sub: "Only this transaction is changed.",
+        save: "Save transaction"
+    }
+
+};
+
+
+function setModalMode(
+    page,
+    mode
+) {
+
+    modalMode =
+        mode;
+
+
+    const modal =
+        page.querySelector(
+            "[data-income-modal]"
+        );
+
+
+    const text =
+        MODE_TEXT[mode];
+
+
+    modal.dataset.mode =
+        mode;
+
+
+    modal.querySelector(
+        "[data-income-fields]"
+    ).hidden =
+        mode === "txn";
+
+
+    const section =
+        modal.querySelector(
+            "[data-txn-section]"
+        );
+
+
+    section.hidden =
+        mode === "income-edit";
+
+    section.classList.toggle(
+        "is-solo",
+        mode === "txn"
+    );
+
+
+    modal.querySelector(
+        "[data-txn-head]"
+    ).hidden =
+        mode === "txn";
+
+
+    modal.querySelector(
+        "[data-modal-sub]"
+    ).textContent =
+        text.sub;
+
+
+    modal.querySelector(
+        "[data-save]"
+    ).textContent =
+        text.save;
+
+}
+
+
+/* =========================================
+   OPEN TRANSACTION MODAL
+   Add a transaction to one income, or edit
+   one existing transaction. Nothing else
+   from the entry is shown or changed.
+========================================= */
+
+function openTransactionModal(
+    page,
+    entryId,
+    index = null
+) {
+
+    const entry =
+        currentEntries.find(
+            (item) =>
+                Number(
+                    item.id
+                ) ===
+                Number(
+                    entryId
+                )
+        );
+
+
+    if (!entry) {
+        return;
+    }
+
+
+    const existing =
+        index === null
+            ? null
+            : (
+                  entry.transactions ||
+                  []
+              )[index];
+
+
+    if (
+        index !== null &&
+        !existing
+    ) {
+        return;
+    }
+
+
+    const modal =
+        page.querySelector(
+            "[data-income-modal]"
+        );
+
+
+    const form =
+        page.querySelector(
+            "[data-income-form]"
+        );
+
+
+    editingEntryId =
+        entry.id;
+
+    editingTxnIndex =
+        index;
+
+
+    form.reset();
+
+    resetFormErrors(
+        form
+    );
+
+    setModalMode(
+        page,
+        "txn"
+    );
+
+
+    page.querySelector(
+        "[data-modal-title]"
+    ).textContent =
+        (
+            existing
+                ? "Edit transaction"
+                : "Add transaction"
+        ) +
+        " · " +
+        (
+            entry.from ||
+            "Income"
+        );
+
+
+    const container =
+        page.querySelector(
+            "[data-transactions]"
+        );
+
+    container.innerHTML =
+        "";
+
+    addTransactionRow(
+        page,
+        existing ||
+            {
+                date:
+                    entry.date ||
+                    todayISO()
+            },
+        {
+            solo: true
+        }
+    );
+
+
+    lastFocused =
+        document.activeElement;
+
+    modal.hidden =
+        false;
+
+    document.body.classList.add(
+        "br-no-scroll"
+    );
+
+
+    if (
+        window.matchMedia &&
+        window.matchMedia(
+            "(pointer: fine)"
+        ).matches
+    ) {
+
+        container
+            .querySelector(
+                "input"
+            )
+            ?.focus();
+
+    } else {
+
+        modal
+            .querySelector(
+                '[role="dialog"]'
+            )
+            ?.focus();
+
+    }
 
 }
 
@@ -1690,6 +2712,24 @@ function openIncomeModal(
 
     form.reset();
 
+    resetFormErrors(
+        form
+    );
+
+
+    /*
+     * Editing an existing income shows only the income
+     * fields; its transactions are managed from the ledger.
+     * A brand-new income keeps the full form.
+     */
+
+    setModalMode(
+        page,
+        entry
+            ? "income-edit"
+            : "income-new"
+    );
+
 
     form.elements.income.value =
         entry?.income ??
@@ -1737,8 +2777,43 @@ function openIncomeModal(
     );
 
 
+    lastFocused =
+        document.activeElement;
+
+
     modal.hidden =
         false;
+
+
+    document.body.classList.add(
+        "br-no-scroll"
+    );
+
+
+    /*
+     * Fine pointers: jump straight into the first
+     * field. Touch: focus the dialog, so the on-screen
+     * keyboard does not cover the form on open.
+     */
+
+    if (
+        window.matchMedia &&
+        window.matchMedia(
+            "(pointer: fine)"
+        ).matches
+    ) {
+
+        form.elements.from.focus();
+
+    } else {
+
+        modal
+            .querySelector(
+                '[role="dialog"]'
+            )
+            ?.focus();
+
+    }
 
 }
 
@@ -1762,8 +2837,313 @@ function closeIncomeModal(
     }
 
 
+    document.body.classList.remove(
+        "br-no-scroll"
+    );
+
+
     editingEntryId =
         null;
+
+    editingTxnIndex =
+        null;
+
+
+    if (
+        lastFocused &&
+        document.contains(
+            lastFocused
+        )
+    ) {
+
+        lastFocused.focus();
+
+    }
+
+    lastFocused =
+        null;
+
+}
+
+
+/* =========================================
+   FIELD ERRORS
+   Messages sit directly under the field they
+   belong to. The rules themselves are unchanged:
+   they are the browser's own constraint checks
+   (required / min / step) already on the inputs.
+========================================= */
+
+let errorCounter = 0;
+
+
+function fieldErrorMessage(
+    input
+) {
+
+    const state =
+        input.validity;
+
+
+    if (state.valid) {
+        return "";
+    }
+
+
+    if (state.valueMissing) {
+
+        if (input.name === "income") {
+            return "Enter the income amount.";
+        }
+
+        if (input.name === "date") {
+            return "Choose a date.";
+        }
+
+        if (input.name === "from") {
+            return "Enter where this income came from.";
+        }
+
+        return "This field is required.";
+    }
+
+
+    if (state.badInput) {
+        return "Enter a valid number.";
+    }
+
+
+    if (state.rangeUnderflow) {
+        return "This amount can't be negative.";
+    }
+
+
+    if (state.stepMismatch) {
+        return "Use no more than two decimal places.";
+    }
+
+
+    return input.validationMessage || "Check this value.";
+
+}
+
+
+function setFieldError(
+    input,
+    message
+) {
+
+    const field =
+        input.closest(
+            ".inc-field"
+        );
+
+
+    const slot =
+        field?.querySelector(
+            "[data-error]"
+        );
+
+
+    if (!slot) {
+        return;
+    }
+
+
+    if (!slot.id) {
+
+        errorCounter += 1;
+
+        slot.id =
+            "inc-error-" +
+            errorCounter;
+
+    }
+
+
+    slot.textContent =
+        message;
+
+    slot.hidden =
+        false;
+
+
+    input.setAttribute(
+        "aria-invalid",
+        "true"
+    );
+
+    input.setAttribute(
+        "aria-describedby",
+        slot.id
+    );
+
+}
+
+
+function clearFieldError(
+    input
+) {
+
+    const slot =
+        input
+            .closest(
+                ".inc-field"
+            )
+            ?.querySelector(
+                "[data-error]"
+            );
+
+
+    if (slot) {
+
+        slot.textContent = "";
+
+        slot.hidden = true;
+
+    }
+
+
+    input.removeAttribute(
+        "aria-invalid"
+    );
+
+    input.removeAttribute(
+        "aria-describedby"
+    );
+
+}
+
+
+function resetFormErrors(
+    form
+) {
+
+    form
+        .querySelectorAll(
+            "input, select"
+        )
+        .forEach(
+            clearFieldError
+        );
+
+
+    showFormError(
+        form,
+        ""
+    );
+
+}
+
+
+function showFormError(
+    form,
+    message
+) {
+
+    const box =
+        form.querySelector(
+            "[data-form-error]"
+        );
+
+
+    if (!box) {
+        return;
+    }
+
+
+    box.textContent =
+        message;
+
+    box.hidden =
+        !message;
+
+}
+
+
+/*
+ * Check every field. Returns true when the form
+ * may be submitted; otherwise shows each message
+ * beside its field and focuses the first problem.
+ */
+
+function validateIncomeForm(
+    form
+) {
+
+    let firstInvalid =
+        null;
+
+
+    form
+        .querySelectorAll(
+            "input, select"
+        )
+        .forEach(
+            (input) => {
+
+                /*
+                 * Fields in a hidden part of the dialog
+                 * are not part of this edit
+                 */
+
+                if (
+                    input.closest(
+                        "[hidden]"
+                    )
+                ) {
+                    return;
+                }
+
+
+                const message =
+                    fieldErrorMessage(
+                        input
+                    );
+
+
+                if (message) {
+
+                    setFieldError(
+                        input,
+                        message
+                    );
+
+                    firstInvalid =
+                        firstInvalid ||
+                        input;
+
+                } else {
+
+                    clearFieldError(
+                        input
+                    );
+
+                }
+
+            }
+        );
+
+
+    if (firstInvalid) {
+
+        showFormError(
+            form,
+            "Please fix the highlighted fields."
+        );
+
+        firstInvalid.focus();
+
+        return false;
+    }
+
+
+    showFormError(
+        form,
+        ""
+    );
+
+    return true;
 
 }
 
@@ -1814,13 +3194,17 @@ function populateCategorySelect(
 }
 
 
+
 /* =========================================
    ADD TRANSACTION ROW
+   Same fields, names and data-field hooks as
+   before; only the layout and styling changed.
 ========================================= */
 
 function addTransactionRow(
     page,
-    existing = null
+    existing = null,
+    { solo = false } = {}
 ) {
 
     const container =
@@ -1838,66 +3222,20 @@ function addTransactionRow(
     row.dataset.transactionRow =
         "true";
 
-
-    row.style.cssText = `
-        border:1px solid var(--line-soft);
-        border-radius:12px;
-        padding:14px;
-        margin-bottom:10px;
-    `;
+    row.className =
+        "inc-txn-row" +
+        (solo ? " is-solo" : "");
 
 
     row.innerHTML = `
 
         <div
-            class="br-form-grid"
+            class="inc-fields"
         >
 
-            <label>
-
-                <span>
-                    Amount
-                </span>
-
-                <input
-                    data-field="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value="${escapeAttribute(
-                        existing?.amount ??
-                            ""
-                    )}"
-                />
-
-            </label>
-
-
-            <label>
-
-                <span>
-                    Date
-                </span>
-
-                <input
-                    data-field="date"
-                    type="date"
-                    value="${escapeAttribute(
-                        existing?.date ||
-                            todayISO()
-                    )}"
-                />
-
-            </label>
-
-
-            <label>
-
-                <span>
-                    Description
-                </span>
-
-                <input
+            ${fieldHTML(
+                "Description",
+                `<input
                     data-field="description"
                     type="text"
                     value="${escapeAttribute(
@@ -1905,18 +3243,13 @@ function addTransactionRow(
                             ""
                     )}"
                     placeholder="Groceries..."
-                />
+                />`
+            )}
 
-            </label>
 
-
-            <label>
-
-                <span>
-                    Category
-                </span>
-
-                <select
+            ${fieldHTML(
+                "Category",
+                `<select
                     data-field="category"
                 >
 
@@ -1951,18 +3284,49 @@ function addTransactionRow(
                         )
                         .join("")}
 
-                </select>
+                </select>`
+            )}
 
-            </label>
+
+            ${fieldHTML(
+                "Amount",
+                `<span class="inc-money">
+                    <span
+                        class="inc-money-prefix"
+                        aria-hidden="true"
+                    >₹</span>
+                    <input
+                        data-field="amount"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value="${escapeAttribute(
+                            existing?.amount ??
+                                ""
+                        )}"
+                    />
+                </span>`
+            )}
 
 
-            <label>
+            ${fieldHTML(
+                "Date",
+                `<input
+                    data-field="date"
+                    type="date"
+                    value="${escapeAttribute(
+                        existing?.date ||
+                            todayISO()
+                    )}"
+                />`
+            )}
 
-                <span>
-                    Type
-                </span>
 
-                <select
+            ${fieldHTML(
+                "Type",
+                `<select
                     data-field="type"
                 >
 
@@ -1996,51 +3360,55 @@ function addTransactionRow(
                         Investment Sell
                     </option>
 
-                </select>
-
-            </label>
-
-
-            <label>
-
-                <span>
-                    Cost basis
-                </span>
-
-                <input
-                    data-field="costBasis"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value="${escapeAttribute(
-                        existing?.costBasis ??
-                            ""
-                    )}"
-                    placeholder="Optional"
-                />
-
-            </label>
-
-        </div>
+                </select>`
+            )}
 
 
-        <div
-            style="
-                display:flex;
-                justify-content:flex-end;
-                margin-top:10px;
-            "
-        >
-
-            <button
-                type="button"
-                class="br-button"
-                data-action="remove-transaction"
-            >
-                Remove
-            </button>
+            ${fieldHTML(
+                "Cost basis",
+                `<span class="inc-money">
+                    <span
+                        class="inc-money-prefix"
+                        aria-hidden="true"
+                    >₹</span>
+                    <input
+                        data-field="costBasis"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.01"
+                        value="${escapeAttribute(
+                            existing?.costBasis ??
+                                ""
+                        )}"
+                        placeholder="Optional"
+                    />
+                </span>`
+            )}
 
         </div>
+
+
+        ${
+            solo
+                ? ""
+                : `
+                    <div
+                        class="inc-txn-row-actions"
+                    >
+
+                        <button
+                            type="button"
+                            class="br-button"
+                            data-action="remove-transaction"
+                        >
+                            ${icon("trash-2", { size: 16 })}
+                            <span>Remove</span>
+                        </button>
+
+                    </div>
+                `
+        }
 
     `;
 
@@ -2054,15 +3422,116 @@ function addTransactionRow(
 
 /* =========================================
    SAVE INCOME
+   Three kinds of save, each touching only what
+   its dialog showed:
+   - income-new  : the new income + its transactions
+   - income-edit : source / category / amount / date;
+                   existing transactions stay as they are
+   - txn         : one transaction inside its income
+   Derived totals are recalculated by the existing
+   recalcEntry(), exactly as before. Fields are
+   checked with messages next to each input, and a
+   second click while a save runs is ignored.
 ========================================= */
+
+/* Read one transaction row of the dialog. */
+
+function readTransactionRow(
+    row,
+    fallbackDate
+) {
+
+    const costBasisValue =
+        row.querySelector(
+            '[data-field="costBasis"]'
+        ).value;
+
+
+    return {
+
+        amount:
+            Number(
+                row.querySelector(
+                    '[data-field="amount"]'
+                ).value
+            ) || 0,
+
+        date:
+            row.querySelector(
+                '[data-field="date"]'
+            ).value ||
+            fallbackDate,
+
+        description:
+            row.querySelector(
+                '[data-field="description"]'
+            ).value
+                .trim(),
+
+        category:
+            row.querySelector(
+                '[data-field="category"]'
+            ).value,
+
+        type:
+            row.querySelector(
+                '[data-field="type"]'
+            ).value,
+
+        costBasis:
+            costBasisValue
+                ? Number(
+                      costBasisValue
+                  )
+                : undefined
+
+    };
+
+}
+
+
+function findEntry(
+    id
+) {
+
+    return currentEntries.find(
+        (entry) =>
+            Number(
+                entry.id
+            ) ===
+            Number(
+                id
+            )
+    );
+
+}
+
+
+/* Copy of an entry's transactions, safe to change. */
+
+function copyTransactions(
+    entry
+) {
+
+    return (
+        entry?.transactions ||
+        []
+    ).map(
+        (transaction) => ({
+            ...transaction
+        })
+    );
+
+}
+
 
 async function saveIncome(
     page
 ) {
 
-    const store =
-        await dataService
-            .getIncomeStore();
+    if (isSaving) {
+        return;
+    }
 
 
     const form =
@@ -2071,150 +3540,331 @@ async function saveIncome(
         );
 
 
-    const amount =
-        Number(
-            form.elements.income.value
-        );
-
-
     if (
-        !Number.isFinite(
-            amount
-        ) ||
-        amount < 0
+        !validateIncomeForm(
+            form
+        )
     ) {
-
-        window.alert(
-            "Enter a valid income amount."
-        );
-
         return;
     }
 
 
-    const transactionRows =
-        [
-            ...page.querySelectorAll(
-                "[data-transaction-row]"
-            )
-        ];
+    const mode =
+        modalMode;
 
 
-    const transactions =
-        transactionRows.map(
-            (row) => {
+    if (mode !== "txn") {
 
-                const costBasisValue =
-                    row.querySelector(
-                        '[data-field="costBasis"]'
-                    ).value;
+        const amount =
+            Number(
+                form.elements.income.value
+            );
 
 
-                return {
+        if (
+            !Number.isFinite(
+                amount
+            ) ||
+            amount < 0
+        ) {
 
-                    id:
-                        uid(),
+            setFieldError(
+                form.elements.income,
+                "Enter a valid income amount."
+            );
 
-                    amount:
-                        Number(
-                            row.querySelector(
-                                '[data-field="amount"]'
-                            ).value
-                        ) || 0,
+            form.elements.income.focus();
 
-                    date:
-                        row.querySelector(
-                            '[data-field="date"]'
-                        ).value ||
-                        form.elements
-                            .date
-                            .value,
+            return;
+        }
 
-                    description:
-                        row.querySelector(
-                            '[data-field="description"]'
-                        ).value
-                            .trim(),
+    }
 
-                    category:
-                        row.querySelector(
-                            '[data-field="category"]'
-                        ).value,
 
-                    type:
-                        row.querySelector(
-                            '[data-field="type"]'
-                        ).value,
-
-                    ...(costBasisValue
-                        ? {
-                              costBasis:
-                                  Number(
-                                      costBasisValue
-                                  )
-                          }
-                        : {})
-
-                };
-
-            }
+    const saveButton =
+        form.querySelector(
+            "[data-save]"
         );
 
 
-    const existing =
-        editingEntryId ===
-        null
-            ? null
-            : currentEntries.find(
-                  (entry) =>
-                      Number(
-                          entry.id
-                      ) ===
-                      Number(
-                          editingEntryId
-                      )
-              );
+    isSaving =
+        true;
 
+    if (saveButton) {
 
-    const entry = {
+        saveButton.disabled =
+            true;
 
-        ...(existing || {}),
+        saveButton.textContent =
+            "Saving…";
 
-        income:
-            amount,
+    }
 
-        date:
-            form.elements
-                .date
-                .value,
-
-        from:
-            form.elements
-                .from
-                .value
-                .trim(),
-
-        category:
-            form.elements
-                .category
-                .value,
-
-        transactions
-
-    };
-
-
-    /*
-     * Recalculate all derived
-     * values before storing.
-     */
-
-    recalcEntry(
-        entry
+    form.setAttribute(
+        "aria-busy",
+        "true"
     );
 
 
     try {
+
+        const store =
+            await dataService
+                .getIncomeStore();
+
+
+        const existing =
+            editingEntryId ===
+            null
+                ? null
+                : findEntry(
+                      editingEntryId
+                  );
+
+
+        let entry;
+
+
+        if (mode === "txn") {
+
+            /*
+             * One transaction: the income itself is untouched
+             */
+
+            if (!existing) {
+                throw new Error(
+                    "This income entry no longer exists."
+                );
+            }
+
+
+            const transactions =
+                copyTransactions(
+                    existing
+                );
+
+
+            const row =
+                page.querySelector(
+                    "[data-transaction-row]"
+                );
+
+
+            const values =
+                readTransactionRow(
+                    row,
+                    existing.date
+                );
+
+
+            if (
+                editingTxnIndex ===
+                null
+            ) {
+
+                const created = {
+
+                    id:
+                        uid(),
+
+                    ...values
+
+                };
+
+                if (
+                    created.costBasis ===
+                    undefined
+                ) {
+                    delete created.costBasis;
+                }
+
+                transactions.push(
+                    created
+                );
+
+            } else {
+
+                const current =
+                    transactions[
+                        editingTxnIndex
+                    ];
+
+                if (!current) {
+                    throw new Error(
+                        "This transaction no longer exists."
+                    );
+                }
+
+                const updated = {
+
+                    ...current,
+
+                    ...values,
+
+                    id:
+                        current.id ??
+                        uid()
+
+                };
+
+                if (
+                    updated.costBasis ===
+                    undefined
+                ) {
+                    delete updated.costBasis;
+                }
+
+                transactions[
+                    editingTxnIndex
+                ] =
+                    updated;
+
+            }
+
+
+            entry = {
+
+                ...existing,
+
+                transactions
+
+            };
+
+        } else if (
+            mode ===
+            "income-edit"
+        ) {
+
+            /*
+             * Income fields only: transactions are kept as they are
+             */
+
+            if (!existing) {
+                throw new Error(
+                    "This income entry no longer exists."
+                );
+            }
+
+
+            entry = {
+
+                ...existing,
+
+                income:
+                    Number(
+                        form.elements
+                            .income
+                            .value
+                    ),
+
+                date:
+                    form.elements
+                        .date
+                        .value,
+
+                from:
+                    form.elements
+                        .from
+                        .value
+                        .trim(),
+
+                category:
+                    form.elements
+                        .category
+                        .value,
+
+                transactions:
+                    copyTransactions(
+                        existing
+                    )
+
+            };
+
+        } else {
+
+            /*
+             * New income, with any transactions added in the dialog
+             */
+
+            const transactions =
+                [
+                    ...page.querySelectorAll(
+                        "[data-transaction-row]"
+                    )
+                ].map(
+                    (row) => {
+
+                        const values =
+                            readTransactionRow(
+                                row,
+                                form.elements
+                                    .date
+                                    .value
+                            );
+
+                        const created = {
+
+                            id:
+                                uid(),
+
+                            ...values
+
+                        };
+
+                        if (
+                            created.costBasis ===
+                            undefined
+                        ) {
+                            delete created.costBasis;
+                        }
+
+                        return created;
+
+                    }
+                );
+
+
+            entry = {
+
+                income:
+                    Number(
+                        form.elements
+                            .income
+                            .value
+                    ),
+
+                date:
+                    form.elements
+                        .date
+                        .value,
+
+                from:
+                    form.elements
+                        .from
+                        .value
+                        .trim(),
+
+                category:
+                    form.elements
+                        .category
+                        .value,
+
+                transactions
+
+            };
+
+        }
+
+
+        /*
+         * Recalculate all derived
+         * values before storing.
+         */
+
+        recalcEntry(
+            entry
+        );
+
 
         await store.saveEntry(
             entry
@@ -2238,9 +3888,31 @@ async function saveIncome(
         );
 
 
-        window.alert(
+        showFormError(
+            form,
             error.message ||
                 "Could not save income."
+        );
+
+    } finally {
+
+        isSaving =
+            false;
+
+        if (saveButton) {
+
+            saveButton.disabled =
+                false;
+
+            saveButton.textContent =
+                MODE_TEXT[
+                    modalMode
+                ].save;
+
+        }
+
+        form.removeAttribute(
+            "aria-busy"
         );
 
     }
@@ -2249,7 +3921,7 @@ async function saveIncome(
 
 
 /* =========================================
-   DELETE
+   DELETE A WHOLE INCOME
 ========================================= */
 
 async function deleteEntry(
@@ -2258,12 +3930,8 @@ async function deleteEntry(
 ) {
 
     const entry =
-        currentEntries.find(
-            (item) =>
-                Number(
-                    item.id
-                ) ===
-                Number(id)
+        findEntry(
+            id
         );
 
 
@@ -2272,12 +3940,29 @@ async function deleteEntry(
     }
 
 
+    const count =
+        (
+            entry.transactions ||
+            []
+        ).length;
+
+
     const confirmed =
         window.confirm(
             `Delete the income entry from ${
                 entry.from ||
                 "this source"
-            }?`
+            }` +
+                (
+                    count
+                        ? ` and its ${count} ${
+                              count === 1
+                                  ? "transaction"
+                                  : "transactions"
+                          }`
+                        : ""
+                ) +
+                "?"
         );
 
 
@@ -2298,6 +3983,13 @@ async function deleteEntry(
         );
 
 
+        expandedEntries.delete(
+            Number(
+                id
+            )
+        );
+
+
         await loadEntries(
             page
         );
@@ -2313,6 +4005,113 @@ async function deleteEntry(
         window.alert(
             error.message ||
                 "Could not delete entry."
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   DELETE ONE TRANSACTION
+   The income and its other transactions are
+   kept; totals are recalculated as usual.
+========================================= */
+
+async function deleteTransaction(
+    page,
+    entryId,
+    index
+) {
+
+    const entry =
+        findEntry(
+            entryId
+        );
+
+
+    const transaction =
+        (
+            entry?.transactions ||
+            []
+        )[index];
+
+
+    if (!transaction) {
+        return;
+    }
+
+
+    const label =
+        transaction.description ||
+        transaction.category ||
+        "this transaction";
+
+
+    const confirmed =
+        window.confirm(
+            `Delete the transaction "${label}" (${formatMoney(
+                transaction.amount
+            )}) from ${
+                entry.from ||
+                "this income"
+            }? The income entry stays.`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        const store =
+            await dataService
+                .getIncomeStore();
+
+
+        const transactions =
+            copyTransactions(
+                entry
+            );
+
+        transactions.splice(
+            index,
+            1
+        );
+
+
+        const updated =
+            recalcEntry({
+
+                ...entry,
+
+                transactions
+
+            });
+
+
+        await store.saveEntry(
+            updated
+        );
+
+
+        await loadEntries(
+            page
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Could not delete transaction:",
+            error
+        );
+
+
+        window.alert(
+            error.message ||
+                "Could not delete transaction."
         );
 
     }

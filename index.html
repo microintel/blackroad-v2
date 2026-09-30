@@ -12,7 +12,7 @@
 
     <meta
         name="theme-color"
-        content="#0f1115"
+        content="#000000"
     >
 
     <meta name="mobile-web-app-capable" content="yes">
@@ -27,24 +27,49 @@
     <title>BlackRoad</title>
 
     <script>
-        /* Restore the route passed by a hard reload (?go=/dashboard). */
+        /* Routing is hash-based (index.html#/income) so any static server works.
+           Convert older URL shapes before the app starts:
+             /income            (server fell back to index.html)  ->  /#/income
+             index.html?go=/x   (older hard reloads)              ->  index.html#/x
+           and drop the throwaway ?_= reload marker. */
         (function () {
             try {
-                var go = new URLSearchParams(location.search).get("go");
-                if (go && go.charAt(0) === "/") history.replaceState({}, "", go);
+                var l = location, q = new URLSearchParams(l.search);
+                var go = q.get("go"), route = null, base = l.pathname;
+                if (go && go.charAt(0) === "/") {
+                    route = go;
+                } else if (!l.hash && l.pathname !== "/" && !/\.html?$/.test(l.pathname)) {
+                    route = l.pathname;
+                    base = "/";
+                }
+                if (route) {
+                    history.replaceState({}, "", base + "#" + route);
+                } else if (q.has("_")) {
+                    history.replaceState({}, "", l.pathname + l.hash);
+                }
             } catch (e) { /* ignore */ }
         })();
     </script>
 
     <script>
-        /* Apply saved look before first paint (no flash). */
+        /* Apply the saved theme (or the system theme on a first visit)
+           before first paint, so there is no flash of the wrong theme.
+           Keep the storage key and logic in sync with services/preferences.js. */
         (function () {
+            var d = document.documentElement, theme = "dark";
             try {
-                var d = document.documentElement, g = function (k) { return localStorage.getItem(k); };
-                d.setAttribute("data-theme", g("br-theme") === "dark" ? "dark" : "light");
-                d.setAttribute("data-style", g("br_style") || "flat");
-                d.setAttribute("data-accent", g("br_accent") || "graphite");
-            } catch (e) { /* ignore */ }
+                var saved = localStorage.getItem("br-theme");
+                if (saved === "light" || saved === "dark") {
+                    theme = saved;
+                } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+                    theme = "light";
+                }
+            } catch (e) { /* storage blocked: fall back to dark */ }
+            d.setAttribute("data-theme", theme);
+            d.setAttribute("data-style", "flat");
+            d.setAttribute("data-accent", "gold");
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute("content", theme === "light" ? "#FFFFFF" : "#000000");
         })();
     </script>
 
@@ -58,6 +83,11 @@
     <link
         rel="stylesheet"
         href="./src/styles/tokens.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/theme.css"
     >
 
     <link
@@ -142,6 +172,15 @@
 
     <script>
         if ("serviceWorker" in navigator) {
+            /* An open page (e.g. an installed phone app) keeps running old
+               code after an update. Reload once when a new worker takes over. */
+            var hadController = !!navigator.serviceWorker.controller;
+            var reloaded = false;
+            navigator.serviceWorker.addEventListener("controllerchange", function () {
+                if (!hadController || reloaded) return;
+                reloaded = true;
+                window.location.reload();
+            });
             window.addEventListener("load", function () {
                 navigator.serviceWorker
                     .register("./sw.js")

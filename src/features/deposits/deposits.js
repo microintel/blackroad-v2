@@ -1,3 +1,4 @@
+import { icon } from "../../components/icons.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -39,7 +40,7 @@ export async function Deposits() {
             </div>
 
             <button type="button" class="br-button br-button-primary" data-action="add-fd">
-                <span>+</span>
+                ${icon("plus", { size: 18 })}
                 Add deposit
             </button>
         </div>
@@ -279,8 +280,8 @@ function rowHTML(r, m) {
             <td>${formatINR(m.currentValue)}</td>
             <td>
                 ${closed ? "" : `<button type="button" class="br-button" data-action="close-fd" data-id="${r.id}">Close</button>`}
-                <button type="button" class="br-button" data-action="edit-fd" data-id="${r.id}">Edit</button>
-                <button type="button" class="br-button br-button-danger" data-action="delete-fd" data-id="${r.id}">Delete</button>
+                <button type="button" class="br-button" data-action="edit-fd" data-id="${r.id}">${icon("pencil", { size: 16 })}Edit</button>
+                <button type="button" class="br-button br-button-danger" data-action="delete-fd" data-id="${r.id}">${icon("trash-2", { size: 16 })}Delete</button>
             </td>
         </tr>
         ${detail}

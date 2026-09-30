@@ -1,5 +1,7 @@
 import {
     calculateLedgerSummary,
+    entryIncomeAmount,
+    entryInvestmentSaleDisplayAmount,
     investmentBreakdownByCategory,
     recalcEntry,
     formatMoney
@@ -24,31 +26,41 @@ export function renderIncomeStatement(
                 ${summaryCard(
                     "Income",
                     summary.income,
-                    "Money received"
+                    "Money received",
+                    "",
+                    "inc-c-income"
                 )}
 
                 ${summaryCard(
                     "Expenses",
                     summary.expense,
-                    "Money spent"
+                    "Money spent",
+                    "",
+                    "inc-c-expense"
                 )}
 
                 ${summaryCard(
                     "Investments",
                     summary.contributions,
-                    "Money moved into assets"
+                    "Money moved into assets",
+                    "",
+                    "inc-c-invested"
                 )}
 
                 ${summaryCard(
                     "Investment sales",
                     summary.assetSales,
-                    "Money returned from assets"
+                    "Money returned from assets",
+                    "",
+                    "inc-c-sales"
                 )}
 
                 ${summaryCard(
                     "Realized gain / loss",
                     summary.realizedGainLoss,
-                    "Investment performance"
+                    "Investment performance",
+                    "",
+                    signClass(summary.realizedGainLoss)
                 )}
 
                 ${summaryCard(
@@ -57,7 +69,10 @@ export function renderIncomeStatement(
                     "Income − expenses − investments + sales",
                     summary.cash >= 0
                         ? "positive"
-                        : "negative"
+                        : "negative",
+                    summary.cash >= 0
+                        ? "inc-c-balance"
+                        : "inc-c-expense"
                 )}
 
             </div>
@@ -117,15 +132,47 @@ export function renderIncomeStatement(
     `;
 }
 
+/*
+ * Colour helper: green for a gain, red for a loss, none at zero.
+ */
+function signClass(
+    value
+) {
+    const number =
+        Number(value) || 0;
+
+    if (number > 0) {
+        return "inc-c-income";
+    }
+
+    if (number < 0) {
+        return "inc-c-expense";
+    }
+
+    return "";
+}
+
+/*
+ * Balance / cash flow: blue when available, red when overdrawn.
+ */
+function balanceClass(
+    value
+) {
+    return (Number(value) || 0) < 0
+        ? "inc-c-expense"
+        : "inc-c-balance";
+}
+
 function summaryCard(
     label,
     value,
     description,
-    tone = ""
+    tone = "",
+    kind = ""
 ) {
     return `
         <div
-            class="br-card br-statement-stat ${tone}"
+            class="br-card br-statement-stat ${tone} ${kind}"
         >
             <span class="br-muted">
                 ${label}
@@ -211,13 +258,16 @@ function buildMonthlyRows(
             const row =
                 months.get(key);
 
+            /*
+             * Income uses the same rule as the Income search and
+             * Compare views (entryIncomeAmount): investment-sale
+             * proceeds are not income. Reading the raw stored
+             * `income` here counted them as income.
+             */
             row.income +=
-                Number(
-                    calculated.income ??
-                        calculatedIncome(
-                            calculated
-                        )
-                ) || 0;
+                entryIncomeAmount(
+                    entry
+                );
 
             row.expense +=
                 Number(
@@ -229,10 +279,16 @@ function buildMonthlyRows(
                     calculated.investment
                 ) || 0;
 
+            /*
+             * Sales come from the entry as loaded. `calculated` is a
+             * second recalculation of an already-calculated entry,
+             * which drops sale-entry proceeds (they were being
+             * counted as income instead).
+             */
             row.sales +=
-                Number(
-                    calculated.investmentSale
-                ) || 0;
+                entryInvestmentSaleDisplayAmount(
+                    entry
+                );
 
             row.gainLoss +=
                 Number(
@@ -257,22 +313,6 @@ function buildMonthlyRows(
                 a.key
             )
     );
-}
-
-function calculatedIncome(
-    entry
-) {
-    const value =
-        Number(entry.income);
-
-    return Number.isFinite(
-        value
-    )
-        ? Math.max(
-              0,
-              value
-          )
-        : 0;
 }
 
 function renderMonthlyTable(
@@ -346,31 +386,31 @@ function renderMonthlyTable(
                                             </small>
                                         </td>
 
-                                        <td>
+                                        <td class="inc-c-income">
                                             ${formatMoney(
                                                 row.income
                                             )}
                                         </td>
 
-                                        <td>
+                                        <td class="inc-c-expense">
                                             ${formatMoney(
                                                 row.expense
                                             )}
                                         </td>
 
-                                        <td>
+                                        <td class="inc-c-invested">
                                             ${formatMoney(
                                                 row.investment
                                             )}
                                         </td>
 
-                                        <td>
+                                        <td class="inc-c-sales">
                                             ${formatMoney(
                                                 row.sales
                                             )}
                                         </td>
 
-                                        <td>
+                                        <td class="${balanceClass(cash)}">
                                             <strong>
                                                 ${formatMoney(
                                                     cash
@@ -378,7 +418,7 @@ function renderMonthlyTable(
                                             </strong>
                                         </td>
 
-                                        <td>
+                                        <td class="${signClass(row.gainLoss)}">
                                             ${formatMoney(
                                                 row.gainLoss
                                             )}
@@ -442,37 +482,37 @@ function renderTotals(
 
             <th>Total</th>
 
-            <th>
+            <th class="inc-c-income">
                 ${formatMoney(
                     total.income
                 )}
             </th>
 
-            <th>
+            <th class="inc-c-expense">
                 ${formatMoney(
                     total.expense
                 )}
             </th>
 
-            <th>
+            <th class="inc-c-invested">
                 ${formatMoney(
                     total.investment
                 )}
             </th>
 
-            <th>
+            <th class="inc-c-sales">
                 ${formatMoney(
                     total.sales
                 )}
             </th>
 
-            <th>
+            <th class="${balanceClass(cash)}">
                 ${formatMoney(
                     cash
                 )}
             </th>
 
-            <th>
+            <th class="${signClass(total.gainLoss)}">
                 ${formatMoney(
                     total.gainLoss
                 )}
@@ -525,19 +565,19 @@ function renderInvestmentTable(
                                         </strong>
                                     </td>
 
-                                    <td>
+                                    <td class="inc-c-invested">
                                         ${formatMoney(
                                             row.invested
                                         )}
                                     </td>
 
-                                    <td>
+                                    <td class="inc-c-sales">
                                         ${formatMoney(
                                             row.sold
                                         )}
                                     </td>
 
-                                    <td>
+                                    <td class="inc-c-invested">
                                         <strong>
                                             ${formatMoney(
                                                 row.net

@@ -1,68 +1,105 @@
 /* =========================================================
    BLACKROAD PREFERENCES
-   Theme (light/dark), UI style, accent colour, click sound.
+   Theme (light / dark), click sound.
    Storage keys match the old app where they existed:
-     br-theme   'light' | 'dark'
-     br_style   'neumo' | 'glass' | 'flat' | 'skeuo'
-   New in V2:
-     br_accent  'graphite' | 'gold' | 'green' | 'blue' | 'violet' | 'rose'
+     br-theme   'light' | 'dark'   (absent = follow the system)
+     br_style   'flat'             (legacy, single value)
+     br_accent  'gold'             (legacy, single value)
      br_sound   '1' | '0'
+
+   Theme rules
+   - First visit (no saved value): follow prefers-color-scheme,
+     and keep following it if the system setting changes.
+   - After the user picks a theme with the toggle, that choice is
+     saved and always wins over the system setting.
+   - index.html applies the same rule before first paint; this
+     module takes over once the app boots.
    ========================================================= */
 
-export const STYLES = [
-    { id: "neumo", label: "Soft" },
-    { id: "glass", label: "Glass" },
-    { id: "flat", label: "Flat" },
-    { id: "skeuo", label: "Realistic" }
-];
+/* One flat look. The lists keep a single entry so callers and
+   stored keys keep working. */
+export const STYLES = [{ id: "flat", label: "Flat" }];
 
-export const ACCENTS = [
-    { id: "graphite", label: "Graphite", color: "#17191d" },
-    { id: "gold", label: "Gold", color: "#c9962b" },
-    { id: "green", label: "Green", color: "#16845b" },
-    { id: "blue", label: "Blue", color: "#3867d6" },
-    { id: "violet", label: "Violet", color: "#7c5cd6" },
-    { id: "rose", label: "Rose", color: "#d6457a" }
-];
+export const ACCENTS = [{ id: "gold", label: "Gold", color: "#D4AF37" }];
+
+export const THEMES = ["light", "dark"];
 
 const K = { theme: "br-theme", style: "br_style", accent: "br_accent", sound: "br_sound" };
+
+const THEME_COLOR = { light: "#FFFFFF", dark: "#000000" };
 
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
 
 const root = () => document.documentElement;
 
-export const getTheme = () => (get(K.theme) === "dark" ? "dark" : "light");
-export const getStyle = () => {
-    const s = get(K.style);
-    return STYLES.some((x) => x.id === s) ? s : "flat";
-};
-export const getAccent = () => {
-    const a = get(K.accent);
-    return ACCENTS.some((x) => x.id === a) ? a : "graphite";
-};
+const systemQuery = () =>
+    typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-color-scheme: light)")
+        : null;
+
+/* The user's explicit choice, or null when they have not made one. */
+export function getSavedTheme() {
+    const saved = get(K.theme);
+    return saved === "light" || saved === "dark" ? saved : null;
+}
+
+export function getSystemTheme() {
+    const q = systemQuery();
+    return q && q.matches ? "light" : "dark";
+}
+
+/* The theme currently in effect. */
+export function getTheme() {
+    return getSavedTheme() || getSystemTheme();
+}
+
+export const getStyle = () => "flat";
+export const getAccent = () => "gold";
 export const isSoundOn = () => get(K.sound) === "1";
 
-export function setTheme(mode) {
-    mode = mode === "dark" ? "dark" : "light";
-    root().setAttribute("data-theme", mode);
-    set(K.theme, mode);
-    syncThemeColor(mode);
-    return mode;
-}
-function syncThemeColor(mode) {
+function syncThemeColor(theme) {
     const m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute("content", mode === "dark" ? "#000000" : "#ffffff");
+    if (m) m.setAttribute("content", THEME_COLOR[theme] || THEME_COLOR.dark);
 }
-export const toggleTheme = () => setTheme(getTheme() === "dark" ? "light" : "dark");
 
-export function setStyle(id) {
-    root().setAttribute("data-style", id);
-    set(K.style, id);
+let themingTimer = 0;
+
+/* Apply a theme to the page. `persist` is true only for a user choice. */
+function applyTheme(theme, { persist = false, animate = false } = {}) {
+    const next = theme === "light" ? "light" : "dark";
+
+    if (animate) {
+        // Short colour ease for the manual toggle only (see theme.css).
+        root().classList.add("br-theming");
+        clearTimeout(themingTimer);
+        themingTimer = setTimeout(() => root().classList.remove("br-theming"), 250);
+    }
+
+    root().setAttribute("data-theme", next);
+    if (persist) set(K.theme, next);
+    syncThemeColor(next);
+
+    window.dispatchEvent(new CustomEvent("br:theme-change", { detail: { theme: next } }));
+    return next;
 }
-export function setAccent(id) {
-    root().setAttribute("data-accent", id);
-    set(K.accent, id);
+
+/* User picked a theme: apply, save, and remember it. */
+export function setTheme(theme) {
+    return applyTheme(theme, { persist: true, animate: true });
+}
+
+export function toggleTheme() {
+    return setTheme(getTheme() === "dark" ? "light" : "dark");
+}
+
+export function setStyle() {
+    root().setAttribute("data-style", "flat");
+    set(K.style, "flat");
+}
+export function setAccent() {
+    root().setAttribute("data-accent", "gold");
+    set(K.accent, "gold");
 }
 export function setSound(on) {
     set(K.sound, on ? "1" : "0");
@@ -86,11 +123,25 @@ function playClick() {
     } catch { /* no-op */ }
 }
 
+let systemListenerAttached = false;
+
 export function initPreferences() {
-    root().setAttribute("data-theme", getTheme());
-    syncThemeColor(getTheme());
-    root().setAttribute("data-style", getStyle());
-    root().setAttribute("data-accent", getAccent());
+    applyTheme(getTheme());
+    root().setAttribute("data-style", "flat");
+    root().setAttribute("data-accent", "gold");
+
+    // Follow live system theme changes, but only until the user has chosen.
+    // initPreferences() runs once at boot; the flag keeps it that way even
+    // if it were ever called again.
+    if (!systemListenerAttached) {
+        systemListenerAttached = true;
+        const q = systemQuery();
+        const onSystemChange = () => { if (!getSavedTheme()) applyTheme(getSystemTheme()); };
+        if (q) {
+            if (q.addEventListener) q.addEventListener("change", onSystemChange);
+            else if (q.addListener) q.addListener(onSystemChange);
+        }
+    }
 
     // Single delegated listener; reads the preference on every tap so the
     // toggle takes effect immediately.

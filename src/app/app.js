@@ -1,16 +1,26 @@
 import { Sidebar } from "../components/layout/sidebar.js";
 import { Topbar } from "../components/layout/topbar.js";
-import { getRoute, initRouter, hardNavigate } from "./router.js";
+import { getRoute, initRouter, hardNavigate, replaceRoute } from "./router.js";
 import { renderView } from "./views.js";
 import { navigate } from "./router.js";
 import { getSession, currentUser, logout } from "../services/auth.js";
 import { AuthScreen } from "../features/auth/auth-screen.js";
 import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
-import { initPreferences, getTheme, toggleTheme } from "../services/preferences.js";
+import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
+import { themeToggleContent } from "../components/layout/topbar.js";
 
 initPreferences();
 
-const themeGlyph = () => (getTheme() === "dark" ? "☀" : "☾");
+// Keep the header toggle's icon and label in step with the theme, whether it
+// changed from the toggle itself or from the system setting. Registered once.
+window.addEventListener("br:theme-change", (event) => {
+    const ui = themeToggleContent(event.detail?.theme || getTheme());
+    document.querySelectorAll('[data-action="toggle-theme"]').forEach((button) => {
+        button.innerHTML = ui.icon;
+        button.setAttribute("aria-label", ui.label);
+        button.setAttribute("title", ui.label);
+    });
+});
 
 /* Sign-in gate. Returns true when the requested page may render. */
 async function passesGate(route) {
@@ -25,11 +35,11 @@ async function passesGate(route) {
     }
 
     if (!session && !isAuthRoute) {
-        window.history.replaceState({}, "", "/login");
+        replaceRoute("/login");
         return false;
     }
     if (session && isAuthRoute) {
-        window.history.replaceState({}, "", "/dashboard");
+        replaceRoute("/dashboard");
         return false;
     }
     return true;
@@ -92,16 +102,13 @@ async function renderApp() {
         .querySelector(".br-account-button")
         ?.addEventListener("click", () => navigate("/account"));
 
-    // Theme toggle + logout
-    const themeBtn = topbar.querySelector('[data-action="toggle-theme"]');
-    if (themeBtn) {
-        themeBtn.textContent = themeGlyph();
-        themeBtn.addEventListener("click", () => {
-            toggleTheme();
-            themeBtn.textContent = themeGlyph();
-        });
-    }
+    // Light / Dark toggle. The topbar is rebuilt on every render, so this
+    // listener lives and dies with its button (no duplicates across routes).
+    topbar
+        .querySelector('[data-action="toggle-theme"]')
+        ?.addEventListener("click", () => toggleTheme());
 
+    // Logout
     topbar
         .querySelector('[data-action="logout"]')
         ?.addEventListener("click", async () => {

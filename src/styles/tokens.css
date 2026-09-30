@@ -1,59 +1,17 @@
+/* =========================================================
+   BLACKROAD DESIGN TOKENS  (non-colour)
+   Type, spacing, radius, layout, controls, motion.
+   ALL COLOUR TOKENS (both Light and Dark) live in theme.css,
+   which must be loaded straight after this file.
+   ========================================================= */
+
 :root {
-    /* =========================================================
-       BLACKROAD DESIGN TOKENS
-       ========================================================= */
-
-    /* ---------- Colors ---------- */
-
-    --br-bg: #f5f6f8;
-    --br-surface: #ffffff;
-    --br-surface-soft: #f8f9fb;
-    --br-surface-hover: #f1f3f6;
-
-    --br-text: #15171b;
-    --br-text-secondary: #626873;
-    --br-text-muted: #9298a3;
-    --br-text-inverse: #ffffff;
-
-    --br-border: #e4e7eb;
-    --br-border-strong: #d5d9df;
-
-    --br-primary: #17191d;
-    --br-primary-hover: #292c32;
-    --br-primary-soft: #eceef1;
-
-    --br-success: #16845b;
-    --br-success-soft: #e9f7f1;
-
-    --br-danger: #d64545;
-    --br-danger-soft: #fcecec;
-
-    --br-warning: #b7791f;
-    --br-warning-soft: #fff6df;
-
-    --br-info: #3867d6;
-    --br-info-soft: #edf2ff;
-
-
-    /* ---------- Dark Theme ---------- */
-
-    --br-dark-bg: #000000;
-    --br-dark-surface: #000000;
-    --br-dark-surface-soft: #000000;
-    --br-dark-surface-hover: #0d0d0d;
-
-    --br-dark-text: #f4f5f7;
-    --br-dark-text-secondary: #a9a9a9;
-    --br-dark-text-muted: #7d7d7d;
-
-    --br-dark-border: #2b2b2b;
-    --br-dark-border-strong: #444444;
-
 
     /* ---------- Typography ---------- */
 
     --br-font:
         Inter,
+        Geist,
         ui-sans-serif,
         -apple-system,
         BlinkMacSystemFont,
@@ -69,12 +27,12 @@
     --br-font-size-lg: 16px;
     --br-font-size-xl: 20px;
     --br-font-size-2xl: 24px;
-    --br-font-size-3xl: 32px;
+    --br-font-size-3xl: 30px;
+    --br-font-size-metric: 32px;
 
     --br-line-tight: 1.2;
     --br-line-normal: 1.5;
     --br-line-relaxed: 1.65;
-
 
     /* ---------- Spacing ---------- */
 
@@ -89,44 +47,36 @@
     --br-space-9: 48px;
     --br-space-10: 64px;
 
-
     /* ---------- Radius ---------- */
 
-    --br-radius-sm: 7px;
-    --br-radius-md: 10px;
-    --br-radius-lg: 14px;
-    --br-radius-xl: 18px;
-    --br-radius-2xl: 22px;
+    --br-radius-sm: 6px;
+    --br-radius-md: 8px;
+    --br-radius-lg: 12px;
+    --br-radius-xl: 12px;
+    --br-radius-2xl: 12px;
     --br-radius-full: 999px;
 
+    /* ---------- Shadows: none. Depth comes from surface tone. ---------- */
 
-    /* ---------- Shadows ---------- */
+    --br-shadow-xs: none;
+    --br-shadow-sm: none;
+    --br-shadow-md: none;
+    --br-shadow-lg: none;
 
-    --br-shadow-xs:
-        0 1px 2px rgba(15, 23, 42, 0.04);
+    /* ---------- Icons ---------- */
 
-    --br-shadow-sm:
-        0 2px 8px rgba(15, 23, 42, 0.05);
-
-    --br-shadow-md:
-        0 8px 24px rgba(15, 23, 42, 0.08);
-
-    --br-shadow-lg:
-        0 16px 40px rgba(15, 23, 42, 0.12);
-
+    --br-icon-nav: 20px;
+    --br-icon-inline: 16px;
+    --br-icon-action: 18px;
 
     /* ---------- Layout ---------- */
 
-    --br-sidebar-width: 250px;
+    --br-sidebar-width: 248px;
     --br-sidebar-collapsed-width: 72px;
-
     --br-header-height: 64px;
-
-    --br-content-max-width: 1440px;
-
+    --br-content-max-width: 1280px;
     --br-page-padding-x: 32px;
     --br-page-padding-y: 32px;
-
 
     /* ---------- Controls ---------- */
 
@@ -134,35 +84,13 @@
     --br-control-height-md: 40px;
     --br-control-height-lg: 46px;
 
-
     /* ---------- Motion ---------- */
 
     --br-transition-fast: 120ms ease;
     --br-transition: 160ms ease;
     --br-transition-slow: 240ms ease;
+
+    /* ---------- Breakpoints (reference; media queries can't read vars) ----------
+       mobile  <= 768px   tablet 769-1100px   desktop > 1100px  */
 }
 
-
-/* =========================================================
-   DARK MODE
-   ========================================================= */
-
-[data-theme="dark"] {
-    --br-bg: var(--br-dark-bg);
-    --br-surface: var(--br-dark-surface);
-    --br-surface-soft: var(--br-dark-surface-soft);
-    --br-surface-hover: var(--br-dark-surface-hover);
-
-    --br-text: var(--br-dark-text);
-    --br-text-secondary: var(--br-dark-text-secondary);
-    --br-text-muted: var(--br-dark-text-muted);
-    --br-text-inverse: #111318;
-
-    --br-border: var(--br-dark-border);
-    --br-border-strong: var(--br-dark-border-strong);
-
-    --br-primary: #f4f5f7;
-    --br-primary-hover: #ffffff;
-    --br-primary-soft: #000000;
-    --br-surface-muted: #1f1f1f;   /* bar tracks only */
-}

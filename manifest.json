@@ -9,8 +9,8 @@
     "orientation": "portrait",
     "dir": "auto",
     "lang": "en-IN",
-    "theme_color": "#0f1115",
-    "background_color": "#0f1115",
+    "theme_color": "#000000",
+    "background_color": "#000000",
     "icons": [
         {
             "src": "assets/icons/android-icon-192x192.png",

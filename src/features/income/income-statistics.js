@@ -1,3 +1,12 @@
+import {
+    entryIncomeAmount,
+    entryInvestmentSaleDisplayAmount,
+    entryGenuineIncomeAmount,
+    entryInvestmentReturnAmount,
+    isInvestmentCategory
+} from "./income-service.js";
+import { SERIES, COLORS } from "../../components/chart-colors.js";
+
 function formatMoney(value) {
     const amount = Number(value) || 0;
 
@@ -217,6 +226,196 @@ function renderCategoryTable(categories) {
     `;
 }
 
+
+/* ------------------------------------------------------------------
+ * Restored from the old Statistics page: ratio cards, expense / income /
+ * investment-return breakdowns (tap a category to see its items) and a
+ * monthly chart. All figures use the same income-service helpers as the
+ * Ledger, so they agree with every other Income view.
+ * ------------------------------------------------------------------ */
+
+function computeExtras(entries) {
+    const expCats = new Map();
+    const incCats = new Map();
+    const retCats = new Map();
+    const monthly = new Map();
+    const txnDates = [];
+    let income = 0, expense = 0, investment = 0, sale = 0, txnCount = 0;
+
+    const push = (map, key, note, amount, date) => {
+        if (!map.has(key)) map.set(key, { total: 0, items: [] });
+        const c = map.get(key);
+        c.total += amount;
+        c.items.push({ note, amount, date });
+    };
+
+    entries.forEach((e) => {
+        const inc = entryIncomeAmount(e);
+        const exp = Number(e.expense) || 0;
+        const inv = Number(e.investment) || 0;
+        const sl = entryInvestmentSaleDisplayAmount(e);
+        income += inc; expense += exp; investment += inv; sale += sl;
+
+        const cat = e.category || "Uncategorized";
+        const genuine = entryGenuineIncomeAmount(e);
+        if (genuine > 0) push(incCats, cat, e.from || cat, genuine, e.date);
+        const ret = entryInvestmentReturnAmount(e);
+        if (ret > 0) push(retCats, cat, e.from || cat, ret, e.date);
+
+        const mk = monthKey(e.date);
+        if (mk) {
+            if (!monthly.has(mk)) monthly.set(mk, { income: 0, expense: 0, investment: 0, sale: 0 });
+            const m = monthly.get(mk);
+            m.income += inc; m.expense += exp; m.investment += inv; m.sale += sl;
+        }
+
+        (e.transactions || []).forEach((t) => {
+            if (isInvestmentCategory(t.category)) return;
+            const amt = Number(t.amount) || 0;
+            txnCount++;
+            const tc = t.category || "Uncategorized";
+            push(expCats, tc, t.description || tc, amt, t.date || e.date);
+            if (t.date) txnDates.push(t.date);
+        });
+    });
+
+    const balance = income - expense - investment + sale;
+    const months = Math.max(monthly.size, 1);
+    let daySpan = months * 30;
+    const dates = txnDates.map((d) => new Date(d + "T00:00:00")).filter((d) => !Number.isNaN(d.getTime())).sort((a, b) => a - b);
+    if (dates.length > 1) {
+        daySpan = Math.max(1, Math.round((dates[dates.length - 1] - dates[0]) / 86400000) + 1);
+    }
+    const top = (m) => [...m.entries()].sort((a, b) => b[1].total - a[1].total)[0] || null;
+
+    return {
+        expCats, incCats, retCats, monthly, income, expense, balance, txnCount, months,
+        savingsRate: income > 0 ? (balance / income) * 100 : 0,
+        expenseRatio: income > 0 ? (expense / income) * 100 : (expense > 0 ? 100 : 0),
+        avgTxn: txnCount > 0 ? expense / txnCount : 0,
+        avgMonthlyIncome: income / months,
+        avgMonthlyExpense: expense / months,
+        avgMonthlySavings: balance / months,
+        avgDailySpend: expense / daySpan,
+        topExpense: top(expCats),
+        topIncome: top(incCats)
+    };
+}
+
+function ratioCards(x) {
+    const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+    const card = (label, value, sub, tone = "") => `
+        <div class="br-card br-stat">
+            <span class="br-stat-label">${label}</span>
+            <strong class="br-stat-value ${tone}">${value}</strong>
+            <span class="br-muted">${sub}</span>
+        </div>`;
+    return `
+        <div class="br-grid br-grid-4">
+            ${card("Savings rate", x.savingsRate.toFixed(1) + "%", "of income kept", x.savingsRate >= 0 ? "br-pos" : "br-neg")}
+            ${card("Expense ratio", x.expenseRatio.toFixed(1) + "%", "of income spent", x.expenseRatio > 100 ? "br-neg" : "")}
+            ${card("Avg. monthly income", formatMoney(x.avgMonthlyIncome), "over " + plural(x.months, "month"))}
+            ${card("Avg. monthly expense", formatMoney(x.avgMonthlyExpense), "over " + plural(x.months, "month"))}
+            ${card("Avg. monthly savings", formatMoney(x.avgMonthlySavings), "net cash change", x.avgMonthlySavings >= 0 ? "br-pos" : "br-neg")}
+            ${card("Avg. daily spend", formatMoney(x.avgDailySpend), "across logged days")}
+            ${card("Avg. per transaction", formatMoney(x.avgTxn), plural(x.txnCount, "transaction"))}
+            ${card("Top category",
+                x.topExpense ? escapeHtml(x.topExpense[0]) : "—",
+                x.topExpense ? formatMoney(x.topExpense[1].total) + " spent" : "No expenses yet")}
+        </div>`;
+}
+
+/* One breakdown card; each category opens to list its items (largest first) */
+function breakdownCard(title, sub, map, total, emptyText, palette = SERIES) {
+    const rows = [...map.entries()].sort((a, b) => b[1].total - a[1].total);
+    if (!rows.length || total <= 0) {
+        return `
+            <div class="br-card">
+                <div class="br-card-heading"><div><h3>${title}</h3><p class="br-muted">${sub}</p></div></div>
+                <div class="br-empty-state"><p class="br-muted">${emptyText}</p></div>
+            </div>`;
+    }
+    const max = rows[0][1].total || 1;
+    return `
+        <div class="br-card">
+            <div class="br-card-heading"><div><h3>${title}</h3><p class="br-muted">${sub}</p></div></div>
+            <div class="br-bars">
+                ${rows.map(([name, c], i) => {
+                    const color = palette[i % palette.length];
+                    const items = c.items.slice().sort((a, b) => b.amount - a.amount);
+                    return `
+                    <details class="br-stat-cat">
+                        <summary style="cursor:pointer;list-style:none;">
+                            <div class="br-bar-row">
+                                <div class="br-bar-name">${escapeHtml(name)} <span class="br-muted">${((c.total / total) * 100).toFixed(1)}%</span></div>
+                                <div class="br-bar-track"><span class="br-bar-fill" style="width:${(c.total / max) * 100}%;background:${color}"></span></div>
+                                <div class="br-bar-value">${formatMoney(c.total)}</div>
+                            </div>
+                        </summary>
+                        <div class="br-list" style="margin:6px 0 12px;">
+                            ${items.map((it, n) => `
+                                <div class="br-list-item">
+                                    <span>${n + 1}. ${escapeHtml(it.note)} <span class="br-muted">${escapeHtml(it.date || "")}</span></span>
+                                    <strong>${formatMoney(it.amount)} <span class="br-muted">${c.total > 0 ? ((it.amount / c.total) * 100).toFixed(1) : "0.0"}%</span></strong>
+                                </div>`).join("")}
+                        </div>
+                    </details>`;
+                }).join("")}
+            </div>
+        </div>`;
+}
+
+/* Income / expense / balance by month, inline SVG (no chart library) */
+function monthlyChart(monthly) {
+    const keys = [...monthly.keys()].sort();
+    if (!keys.length) return "";
+    const data = keys.map((k) => {
+        const m = monthly.get(k);
+        return { income: m.income, expense: m.expense, balance: m.income - m.expense - m.investment + m.sale };
+    });
+    const vals = data.flatMap((d) => [d.income, d.expense, d.balance]);
+    const max = Math.max(...vals, 1);
+    const min = Math.min(...vals, 0);
+    const W = Math.max(640, keys.length * 56), H = 220, pad = 28;
+    const step = keys.length > 1 ? (W - pad * 2) / (keys.length - 1) : 0;
+    const y = (v) => H - pad - ((v - min) / (max - min || 1)) * (H - pad * 2);
+    const pts = (f) => data.map((d, i) => `${pad + i * step},${y(f(d))}`).join(" ");
+    const dots = (f, c) => data.map((d, i) => `<circle cx="${pad + i * step}" cy="${y(f(d))}" r="3" fill="${c}"/>`).join("");
+    const line = (f, c) => `<polyline fill="none" stroke="${c}" stroke-width="2.5" points="${pts(f)}"/>${dots(f, c)}`;
+
+    return `
+        <div class="br-card">
+            <div class="br-card-heading"><div>
+                <h3>Monthly chart</h3>
+                <p class="br-muted"><span style="color:${COLORS.success}">●</span> Income &nbsp; <span style="color:${COLORS.danger}">●</span> Expense &nbsp; <span style="color:${COLORS.info}">●</span> Balance</p>
+            </div></div>
+            <div class="br-table-wrap">
+                <svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 640)}px;width:100%;height:auto" role="img" aria-label="Monthly income, expense and balance">
+                    <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" stroke="currentColor" opacity=".2"/>
+                    ${line((d) => d.income, COLORS.success)}
+                    ${line((d) => d.expense, COLORS.danger)}
+                    ${line((d) => d.balance, COLORS.info)}
+                    ${keys.map((k, i) => `<text x="${pad + i * step}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${escapeHtml(monthLabel(k))}</text>`).join("")}
+                </svg>
+            </div>
+        </div>`;
+}
+
+function renderExtraStatistics(entries) {
+    if (!entries.length) return "";
+    const x = computeExtras(entries);
+    const sum = (m) => [...m.values()].reduce((a, c) => a + c.total, 0);
+    return `
+        ${ratioCards(x)}
+        ${monthlyChart(x.monthly)}
+        <div class="br-grid br-grid-2">
+            ${breakdownCard("Expense by category", "Tap a category to see its transactions.", x.expCats, sum(x.expCats), "No expenses logged yet")}
+            ${breakdownCard("Income by category", "Genuine income only, by entry category.", x.incCats, sum(x.incCats), "No income logged yet", [COLORS.success, ...SERIES])}
+        </div>
+        ${breakdownCard("Investment returns", "Dividends, interest and other portfolio earnings.", x.retCats, sum(x.retCats), "No investment returns logged yet", [COLORS.info, ...SERIES])}
+    `;
+}
+
 export function renderIncomeStatistics(entries = []) {
     const statistics = calculateStatistics(entries);
 
@@ -285,7 +484,7 @@ export function renderIncomeStatistics(entries = []) {
 
             </div>
 
-            <div class="br-grid br-grid-2">
+            <div class="br-grid">
 
                 <div class="br-card">
 
@@ -302,20 +501,7 @@ export function renderIncomeStatistics(entries = []) {
 
                 </div>
 
-                <div class="br-card">
-
-                    <div class="br-card-heading">
-                        <div>
-                            <h3>Expense Categories</h3>
-                            <p class="br-muted">
-                                Where your expenses are going.
-                            </p>
-                        </div>
-                    </div>
-
-                    ${renderCategoryTable(statistics.categories)}
-
-                </div>
+                
 
             </div>
 
@@ -367,6 +553,7 @@ export function renderIncomeStatistics(entries = []) {
 
             </div>
 
+            ${renderExtraStatistics(entries)}
         </section>
     `;
 }

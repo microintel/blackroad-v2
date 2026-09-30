@@ -1,4 +1,5 @@
 import { navigate } from "../../app/router.js";
+import { icon, FEATURE_ICON } from "../../components/icons.js";
 
 import {
     getDashboardData,
@@ -16,6 +17,14 @@ const RANGES = [
 ];
 
 const CIRCUMFERENCE = 2 * Math.PI * 52;
+
+const TILE_ICON = {
+    "/income": FEATURE_ICON.income,
+    "/stepup": FEATURE_ICON.mutualFunds,
+    "/stocks": FEATURE_ICON.stocks,
+    "/deposits": FEATURE_ICON.deposits,
+    "/lending": FEATURE_ICON.lending
+};
 
 function signed(value, digits = 1) {
     const number = Number(value) || 0;
@@ -85,7 +94,8 @@ function buildTiles(data) {
             path: "/deposits",
             value: formatINR(deposits.totalCurrentValue),
             trend: depositsTrend,
-            up: true
+            up: true,
+            neutral: true
         },
         {
             name: "Loans & Liabilities",
@@ -108,7 +118,7 @@ function buildDonut(data) {
                         cx="66" cy="66" r="52"></circle>
                 </svg>
                 <div class="br-dash-donut-center">
-                    <small>ASSETS</small>
+                    <small>Assets</small>
                     <b>${formatINR(0)}</b>
                 </div>
             </div>
@@ -155,7 +165,7 @@ function buildDonut(data) {
                 ${segments}
             </svg>
             <div class="br-dash-donut-center">
-                <small>ASSETS</small>
+                <small>Assets</small>
                 <b>${formatINR(data.chartTotal)}</b>
             </div>
         </div>
@@ -264,7 +274,7 @@ export async function Dashboard() {
 
         <div class="br-card">
             <div class="br-card-heading">
-                <h3>Mutual Fund Profit / Loss</h3>
+                <h3>Mutual fund profit / loss</h3>
                 <span class="br-badge ${
                     data.mutualFunds.pnl >= 0
                         ? "br-badge-success"
@@ -287,7 +297,7 @@ export async function Dashboard() {
 
         <div class="br-grid br-grid-2 br-dash-hero-grid">
             <div class="br-card br-dash-hero">
-                <span class="br-stat-label">Total Net Worth</span>
+                <span class="br-stat-label">${icon(FEATURE_ICON.networth, { size: 16 })}Total net worth</span>
 
                 <strong class="br-dash-networth ${
                     data.netWorth < 0 ? "br-text-danger" : ""
@@ -339,7 +349,7 @@ export async function Dashboard() {
 
             <div class="br-card">
                 <div class="br-card-heading">
-                    <h3>Asset Allocation</h3>
+                    <h3>Asset allocation</h3>
                 </div>
 
                 <div class="br-dash-alloc">${buildDonut(data)}</div>
@@ -347,7 +357,7 @@ export async function Dashboard() {
         </div>
 
         <div class="br-card-heading br-dash-lanes-title">
-            <h3>Your Wealth Lanes</h3>
+            <h3>Your wealth lanes</h3>
         </div>
 
         <div class="br-grid br-grid-3">
@@ -357,11 +367,22 @@ export async function Dashboard() {
                 <button type="button"
                     class="br-card br-dash-tile"
                     data-path="${tile.path}">
-                    <span class="br-stat-label">${tile.name}</span>
+                    <span class="br-stat-label">${icon(
+                        TILE_ICON[tile.path] || "coins",
+                        { size: 16 }
+                    )}${tile.name}</span>
                     <strong class="br-stat-value">${tile.value}</strong>
                     <span class="br-dash-trend ${
-                        tile.up ? "br-text-success" : "br-text-danger"
-                    }">${tile.trend}</span>
+                        tile.neutral
+                            ? "br-text-secondary"
+                            : tile.up
+                              ? "br-text-success"
+                              : "br-text-danger"
+                    }">${
+                        tile.neutral
+                            ? ""
+                            : icon(tile.up ? "trending-up" : "trending-down", { size: 14 })
+                    }${tile.trend}</span>
                 </button>`
                 )
                 .join("")}

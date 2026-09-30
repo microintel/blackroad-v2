@@ -1,6 +1,5 @@
 import { login, register, loginGuest } from "../../services/auth.js";
 import { navigate, hardNavigate } from "../../app/router.js";
-import { getTheme, toggleTheme } from "../../services/preferences.js";
 
 /* Full-screen sign-in / register (rendered without the app shell).
    Scope changes on sign-in, and the data layer caches databases per
@@ -16,10 +15,6 @@ export function AuthScreen(mode) {
     el.className = "br-auth";
 
     el.innerHTML = `
-        <button type="button" class="br-icon-button br-auth-theme" data-theme-toggle aria-label="Toggle dark / light">
-            ${getTheme() === "dark" ? "☀" : "☾"}
-        </button>
-
         <div class="br-auth-card">
             <div class="br-auth-brand">
                 <div class="br-brand-logo">B</div>
@@ -30,8 +25,8 @@ export function AuthScreen(mode) {
             </div>
 
             <div class="br-auth-tabs" role="tablist">
-                <a href="/login" data-go="/login" role="tab" class="${isLogin ? "is-active" : ""}" aria-selected="${isLogin}">Sign in</a>
-                <a href="/register" data-go="/register" role="tab" class="${isLogin ? "" : "is-active"}" aria-selected="${!isLogin}">Register</a>
+                <a href="#/login" data-go="/login" role="tab" class="${isLogin ? "is-active" : ""}" aria-selected="${isLogin}">Sign in</a>
+                <a href="#/register" data-go="/register" role="tab" class="${isLogin ? "" : "is-active"}" aria-selected="${!isLogin}">Register</a>
             </div>
 
             <h2>${isLogin ? "Sign in" : "Create account"}</h2>
@@ -49,9 +44,9 @@ export function AuthScreen(mode) {
             <div class="br-auth-alt">
                 ${isLogin
                     ? `<span>New to BlackRoad?</span>
-                       <a href="/register" data-go="/register" class="br-button">Create an account</a>`
+                       <a href="#/register" data-go="/register" class="br-button">Create an account</a>`
                     : `<span>Already have an account?</span>
-                       <a href="/login" data-go="/login" class="br-button">Sign in</a>`}
+                       <a href="#/login" data-go="/login" class="br-button">Sign in</a>`}
                 <button type="button" class="br-button br-auth-guest" data-guest>Continue as guest (read-only)</button>
             </div>
         </div>
@@ -89,10 +84,6 @@ export function AuthScreen(mode) {
     el.querySelector("[data-guest]").addEventListener("click", async () => {
         await loginGuest();
         enterApp();
-    });
-
-    el.querySelector("[data-theme-toggle]").addEventListener("click", (e) => {
-        e.currentTarget.textContent = toggleTheme() === "dark" ? "☀" : "☾";
     });
 
     return el;

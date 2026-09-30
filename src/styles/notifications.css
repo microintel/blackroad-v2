@@ -9,8 +9,8 @@
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    padding: 12px 8px;
-    border-bottom: 1px solid var(--br-border);
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--br-hairline);
     cursor: pointer;
 }
 
@@ -43,8 +43,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--br-primary);
-    color: var(--br-text-inverse);
+    background: var(--br-gold);
+    color: #000000;
     font-weight: 700;
 }
 
@@ -55,7 +55,7 @@
     flex-direction: column;
     gap: 7px;
     font-size: var(--br-font-size-sm);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .ac-error { color: var(--br-danger); }
