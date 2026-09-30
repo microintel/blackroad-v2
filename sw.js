@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v17";
+const CACHE_VERSION = "v19";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -47,6 +47,22 @@ const SHELL = [
     "./src/features/accounting/accounting.js",
     "./src/features/dashboard/dashboard-service.js",
     "./src/features/dashboard/dashboard.js",
+    "./src/features/dashboard/intelligence/cash-flow.js",
+    "./src/features/dashboard/intelligence/debt.js",
+    "./src/features/dashboard/intelligence/emergency-fund.js",
+    "./src/features/dashboard/intelligence/engine.js",
+    "./src/features/dashboard/intelligence/example-data.js",
+    "./src/features/dashboard/intelligence/explainable-insights.js",
+    "./src/features/dashboard/intelligence/financial-intelligence.js",
+    "./src/features/dashboard/intelligence/goals.js",
+    "./src/features/dashboard/intelligence/health.js",
+    "./src/features/dashboard/intelligence/portfolio-concentration.js",
+    "./src/features/dashboard/intelligence/risk.js",
+    "./src/features/dashboard/intelligence/shared.js",
+    "./src/features/dashboard/intelligence/subscriptions.js",
+    "./src/features/dashboard/intelligence/timeline.js",
+    "./src/features/dashboard/intelligence/what-changed.js",
+    "./src/features/dashboard/intelligence/what-if.js",
     "./src/features/data/data-management.js",
     "./src/features/deposits/deposits-service.js",
     "./src/features/deposits/deposits.js",
@@ -83,6 +99,7 @@ const SHELL = [
     "./src/styles/dashboard.css",
     "./src/styles/global.css",
     "./src/styles/income.css",
+    "./src/styles/intelligence.css",
     "./src/styles/layout.css",
     "./src/styles/lending.css",
     "./src/styles/notifications.css",

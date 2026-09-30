@@ -44,3 +44,19 @@ Scope: the Income module UI and a reusable theme foundation. No stores, services
 - Ledger rows show the income only; clicking a row (or its chevron) opens just that income's transactions.
 - Income edit shows only source / category / amount / date and leaves its transactions untouched. Transaction edit shows only that one transaction; transaction delete removes only that transaction. Totals are recalculated by the existing recalcEntry().
 - "+ Transaction" inside an open income adds a transaction to that income. "Add income" still creates an income together with optional transactions. Deleting an income still removes it with its transactions (the confirmation now says how many).
+
+## Financial Intelligence layout foundation (Dashboard)
+
+Scope: presentation only. No stores, services, calculations, routes, APIs or data schemas were touched. All values are static samples; the What-If controls sit in a disabled fieldset.
+
+- `src/features/dashboard/intelligence/` holds one file per feature area (health, cash-flow, risk, what-if, goals, debt, subscriptions, emergency-fund, portfolio-concentration, timeline, explainable-insights, what-changed). Each exports a `renderX()` returning one card with a stable `data-fi="<key>"`, so a feature can later replace its own file's body without touching the others. `financial-intelligence.js` composes them into six groups; `shared.js` has the card / slot / bar helpers.
+- `src/styles/intelligence.css` is scoped under `.br-fi` and uses theme tokens only, so Light and Dark both work. Hierarchy is set by surface tone and type: primary (Health, Cash flow) > secondary > supporting > analytical.
+- Layout: 12-column grid on desktop; pairs stack at <=1100px (planning and supporting cards stay two-up); single column at <=768px, where the timeline turns vertical.
+- Integration: `dashboard.js` imports and appends `FinancialIntelligence()` after the wealth lanes (2 added lines). `index.html` links the stylesheet; `sw.js` precaches the new files (CACHE_VERSION v17 -> v18).
+
+### Update: Financial Intelligence now runs on example data
+- `intelligence/example-data.js` is a made-up household (income ₹60,000, EMI ₹27,000, etc.). It is not read from any store or service.
+- `intelligence/engine.js` holds every rule and threshold as plain functions (no DOM, storage or network): health score, risk levels, cash-flow forecast, goal maths, month-by-month loan payoff, subscription detection, sector concentration, what-changed, and the sentences behind the insights.
+- Each card shows a "How this works" panel with the rule and this example's own numbers. The What-If sliders recalculate a copy of the month and change nothing else.
+- To go live later: build an object with the shape of `EXAMPLE_DATA` from real data and pass it to `FinancialIntelligence(data)`. The engine and cards need no changes.
+- sw.js CACHE_VERSION is now v19.

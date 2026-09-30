@@ -1,5 +1,6 @@
 import { navigate } from "../../app/router.js";
 import { icon, FEATURE_ICON } from "../../components/icons.js";
+import { FinancialIntelligence } from "./intelligence/financial-intelligence.js";
 
 import {
     getDashboardData,
@@ -388,6 +389,10 @@ export async function Dashboard() {
                 .join("")}
         </div>
     `;
+
+    /* Presentation-only layout foundation for the future
+       financial intelligence features (no data, no logic). */
+    page.appendChild(await FinancialIntelligence());
 
     page.querySelectorAll("[data-path]").forEach((tile) => {
         tile.addEventListener("click", () => {
