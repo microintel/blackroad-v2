@@ -1,0 +1,158 @@
+/* =========================================================
+   SKELETON LOADING + VIEW TRANSITIONS
+   Shimmer is one transform-only animation on a pseudo
+   element, so it runs on the compositor (no layout/paint
+   per frame). Colours come from theme tokens.
+   ========================================================= */
+
+.br-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-5);
+    width: 100%;
+    /* invisible for the first 120ms so fast pages never flash */
+    opacity: 0;
+    animation: br-sk-show 200ms ease 120ms forwards;
+}
+
+@keyframes br-sk-show { to { opacity: 1; } }
+
+.br-sk {
+    position: relative;
+    display: block;
+    max-width: 100%;
+    border-radius: var(--br-radius-sm);
+    background: var(--br-surface-active);
+    overflow: hidden;
+}
+
+.br-sk::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--br-sk-shine, rgba(255, 255, 255, 0.07)), transparent);
+    transform: translateX(-100%);
+    animation: br-sk-shimmer 1.4s ease-in-out infinite;
+}
+
+:root[data-theme="light"] .br-sk { --br-sk-shine: rgba(255, 255, 255, 0.65); }
+
+@keyframes br-sk-shimmer { to { transform: translateX(100%); } }
+
+.br-sk-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-4);
+    padding: var(--br-space-6);
+    border: 1px solid var(--br-hairline);
+    border-radius: var(--br-radius-lg);
+    background: var(--br-surface);
+    min-width: 0;
+}
+
+.br-sk-heading { display: flex; flex-direction: column; gap: var(--br-space-2); }
+
+.br-sk-card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--br-space-3); }
+.br-sk-card-head .br-sk:last-child { border-radius: var(--br-radius-md); flex: none; }
+
+.br-sk-grid { display: grid; gap: var(--br-space-4); width: 100%; }
+.br-sk-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.br-sk-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.br-sk-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.br-sk-grid-fi { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.br-sk-grid-fi > :first-child { grid-column: span 5; }
+.br-sk-grid-fi > :last-child { grid-column: span 7; }
+
+.br-sk-tabs { display: flex; gap: var(--br-space-4); padding-bottom: var(--br-space-3); border-bottom: 1px solid var(--border); overflow: hidden; }
+
+.br-sk-health { display: flex; align-items: center; gap: var(--br-space-5); }
+.br-sk-ring { width: 132px; height: 132px; border-radius: 50%; flex: none; }
+.br-sk-col { display: flex; flex-direction: column; gap: var(--br-space-3); flex: 1; min-width: 0; }
+.br-sk-meter { display: flex; flex-direction: column; gap: 8px; }
+.br-sk-two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--br-space-3); }
+
+.br-sk-toolbar { display: flex; justify-content: space-between; gap: var(--br-space-3); }
+.br-sk-row { display: flex; align-items: center; gap: var(--br-space-3); padding: var(--br-space-2) 0; }
+.br-sk-row .br-sk:first-child { border-radius: var(--br-radius-md); flex: none; }
+.br-sk-row-text { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+
+@media (max-width: 900px) {
+    .br-sk-grid-4, .br-sk-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .br-sk-grid-fi > * { grid-column: span 12 !important; }
+    .br-sk-grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .br-sk-grid-4, .br-sk-grid-3 { grid-template-columns: 1fr; }
+    .br-sk-card { padding: var(--br-space-4); }
+    .br-sk-health { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-sk::after { animation: none; }
+    .br-skeleton { animation-duration: 0.01ms; animation-delay: 0s; }
+}
+
+
+/* ---------- Page enter: real content fades up once it is ready ---------- */
+
+.br-view-in { animation: br-view-in 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+
+@keyframes br-view-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+
+/* ---------- Drawer: smoother slide, hidden from tab order when closed ---------- */
+
+@media (max-width: 768px) {
+    .br-sidebar {
+        visibility: hidden;
+        transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 300ms;
+        will-change: transform;
+        contain: layout paint;
+    }
+
+    .br-sidebar.is-open {
+        visibility: visible;
+        transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+    }
+
+    .br-drawer-backdrop { transition: opacity 260ms ease; }
+}
+
+
+/* ---------- Modals: soft open (centred on desktop, sheet on phones) ---------- */
+
+.br-modal-layer:not([hidden]),
+.br-modal-backdrop:not([hidden]) { animation: br-modal-fade 180ms ease both; }
+
+.br-modal-layer:not([hidden]) > .br-modal,
+.br-modal-backdrop:not([hidden]) > .br-modal { animation: br-modal-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes br-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes br-modal-pop { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 600px) {
+    .br-modal-layer:not([hidden]) > .br-modal,
+    .br-modal-backdrop:not([hidden]) > .br-modal { animation-name: br-modal-sheet; }
+
+    @keyframes br-modal-sheet { from { transform: translateY(100%); } to { transform: none; } }
+}
+
+
+/* ---------- Theme switch: freeze per-element transitions while the new theme is captured ---------- */
+
+:root.br-vt-switching *,
+:root.br-vt-switching *::before,
+:root.br-vt-switching *::after { transition: none !important; }
+
+.br-theme-fade {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 320ms ease;
+}

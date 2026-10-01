@@ -1,5 +1,6 @@
 import { icon } from "../../components/icons.js";
 import { SERIES } from "../../components/chart-colors.js";
+import { tipAttr } from "../../components/chart-tooltip.js";
 import { navigate } from "../../app/router.js";
 import { dataService } from "../../data/data-service.js";
 
@@ -90,7 +91,7 @@ export async function Stocks() {
             </div>
         </div>
 
-        <div class="br-income-tabs">
+        <div class="br-income-tabs br-tabs-flat">
             <button type="button" class="br-income-tab active" data-stocks-tab="holdings">Holdings</button>
             <button type="button" class="br-income-tab" data-stocks-tab="transactions">Transactions</button>
             <button type="button" class="br-income-tab" data-stocks-tab="analytics">Analytics</button>
@@ -862,7 +863,7 @@ function buildDonut(weighted, totalValue) {
     const arcs = weighted
         .map((h, i) => {
             const dash = (Math.max(0, Math.min(100, h.weight)) / 100) * circ;
-            const arc = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${chartColor(i)}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${Math.max(circ - dash, 0).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${c} ${c})"></circle>`;
+            const arc = `<circle class="br-tip-seg" ${tipAttr(h.name || h.symbol, [["Share", h.weight.toFixed(1) + "%", chartColor(i)]])} cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${chartColor(i)}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${Math.max(circ - dash, 0).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${c} ${c})"></circle>`;
             offset += dash;
             return arc;
         })
@@ -1347,12 +1348,22 @@ function buildChart(history, buyDate) {
     const yTicks = [max - (max - min) * 0.05, (max + min) / 2, min + (max - min) * 0.05];
     const xTicks = [0, Math.floor((n - 1) / 2), n - 1];
 
-    return `<svg viewBox="0 0 ${w} ${h}" class="br-price-chart" preserveAspectRatio="none" role="img" aria-label="Price chart">
+    /* Hover / touch bands: one per point, thinned on long histories. */
+    const stride = Math.max(1, Math.ceil(n / 300));
+    const bandW = (plotW / Math.max(n - 1, 1)) * stride;
+    const bands = history
+        .map((p, i) => ({ p, i }))
+        .filter(({ i }) => i % stride === 0)
+        .map(({ p, i }) => `<rect class="br-tip-hit" x="${(x(i) - bandW / 2).toFixed(2)}" y="0" width="${bandW.toFixed(2)}" height="${h}" ${tipAttr(fmtDate(p.date), [["Close", fmtMoney(p.close), color]])}></rect>`)
+        .join("");
+
+    return `<svg viewBox="0 0 ${w} ${h}" class="br-price-chart br-tip-scrub" preserveAspectRatio="none" role="img" aria-label="Price chart">
         ${yTicks.map((v) => `<line x1="${padL}" x2="${w - padR}" y1="${y(v).toFixed(2)}" y2="${y(v).toFixed(2)}" class="br-chart-grid"></line>`).join("")}
         <polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"></polyline>
         ${marker}
         ${yTicks.map((v) => `<text x="2" y="${(y(v) + 4).toFixed(2)}" class="br-chart-label">${fmtMoney(v, true)}</text>`).join("")}
         ${xTicks.map((i) => `<text x="${x(i).toFixed(2)}" y="${h - 6}" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}" class="br-chart-label">${fmtDate(history[i].date).replace(/\s\d{4}$/, "")}</text>`).join("")}
+        ${bands}
     </svg>${marker ? `<div class="br-muted" style="font-size:12px;">Bought ${fmtDate(buyDate)}</div>` : ""}`;
 }
 

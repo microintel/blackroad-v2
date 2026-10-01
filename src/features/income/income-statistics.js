@@ -6,6 +6,7 @@ import {
     isInvestmentCategory
 } from "./income-service.js";
 import { SERIES, COLORS } from "../../components/chart-colors.js";
+import { tipAttr } from "../../components/chart-tooltip.js";
 
 function formatMoney(value) {
     const amount = Number(value) || 0;
@@ -24,6 +25,20 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+/* Colour classes shared with the Statement view (income.css: .inc-c-*) */
+function signClass(value) {
+    const number = Number(value) || 0;
+
+    if (number > 0) return "inc-c-income";
+    if (number < 0) return "inc-c-expense";
+
+    return "";
+}
+
+function balanceClass(value) {
+    return (Number(value) || 0) < 0 ? "inc-c-expense" : "inc-c-balance";
 }
 
 function monthKey(date) {
@@ -176,10 +191,10 @@ function renderMonthlyTable(monthly) {
                         return `
                             <tr>
                                 <td>${escapeHtml(monthLabel(month))}</td>
-                                <td>${formatMoney(item.income)}</td>
-                                <td>${formatMoney(item.expense)}</td>
-                                <td>${formatMoney(item.investment)}</td>
-                                <td>${formatMoney(net)}</td>
+                                <td class="inc-c-income">${formatMoney(item.income)}</td>
+                                <td class="inc-c-expense">${formatMoney(item.expense)}</td>
+                                <td class="inc-c-invested">${formatMoney(item.investment)}</td>
+                                <td class="${balanceClass(net)}">${formatMoney(net)}</td>
                             </tr>
                         `;
                     }).join("")}
@@ -396,6 +411,15 @@ function monthlyChart(monthly) {
                     ${line((d) => d.expense, COLORS.danger)}
                     ${line((d) => d.balance, COLORS.info)}
                     ${keys.map((k, i) => `<text x="${pad + i * step}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${escapeHtml(monthLabel(k))}</text>`).join("")}
+                    ${keys.map((k, i) => {
+                        const bandW = keys.length > 1 ? step : W - pad * 2;
+                        const bandX = keys.length > 1 ? pad + i * step - step / 2 : pad;
+                        return `<rect class="br-tip-hit" x="${bandX}" y="0" width="${bandW}" height="${H}" ${tipAttr(monthLabel(k), [
+                            ["Income", formatMoney(data[i].income), COLORS.success],
+                            ["Expense", formatMoney(data[i].expense), COLORS.danger],
+                            ["Balance", formatMoney(data[i].balance), COLORS.info]
+                        ])}></rect>`;
+                    }).join("")}
                 </svg>
             </div>
         </div>`;
@@ -447,7 +471,7 @@ export function renderIncomeStatistics(entries = []) {
                         Total Income
                     </span>
 
-                    <strong class="br-stat-value">
+                    <strong class="br-stat-value inc-c-income">
                         ${formatMoney(statistics.income)}
                     </strong>
                 </div>
@@ -457,7 +481,7 @@ export function renderIncomeStatistics(entries = []) {
                         Total Expenses
                     </span>
 
-                    <strong class="br-stat-value">
+                    <strong class="br-stat-value inc-c-expense">
                         ${formatMoney(statistics.expense)}
                     </strong>
                 </div>
@@ -467,7 +491,7 @@ export function renderIncomeStatistics(entries = []) {
                         Net Cash Flow
                     </span>
 
-                    <strong class="br-stat-value">
+                    <strong class="br-stat-value ${balanceClass(netCashFlow)}">
                         ${formatMoney(netCashFlow)}
                     </strong>
                 </div>
@@ -477,7 +501,7 @@ export function renderIncomeStatistics(entries = []) {
                         Investment Flow
                     </span>
 
-                    <strong class="br-stat-value">
+                    <strong class="br-stat-value inc-c-invested">
                         ${formatMoney(investmentFlow)}
                     </strong>
                 </div>
@@ -524,7 +548,7 @@ export function renderIncomeStatistics(entries = []) {
                             Investments
                         </span>
 
-                        <strong class="br-stat-value">
+                        <strong class="br-stat-value inc-c-invested">
                             ${formatMoney(statistics.investment)}
                         </strong>
                     </div>
@@ -534,7 +558,7 @@ export function renderIncomeStatistics(entries = []) {
                             Investment Sales
                         </span>
 
-                        <strong class="br-stat-value">
+                        <strong class="br-stat-value inc-c-sales">
                             ${formatMoney(statistics.investmentSales)}
                         </strong>
                     </div>
@@ -544,7 +568,7 @@ export function renderIncomeStatistics(entries = []) {
                             Realized Gain / Loss
                         </span>
 
-                        <strong class="br-stat-value">
+                        <strong class="br-stat-value ${signClass(statistics.realizedGainLoss)}">
                             ${formatMoney(statistics.realizedGainLoss)}
                         </strong>
                     </div>

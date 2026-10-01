@@ -1,6 +1,7 @@
 import { Sidebar } from "../components/layout/sidebar.js";
 import { Topbar } from "../components/layout/topbar.js";
-import { getRoute, initRouter, hardNavigate, replaceRoute } from "./router.js";
+import { confirmLogout } from "../components/confirm-dialog.js";
+import { getRoute, initRouter, hardNavigate, replaceRoute, currentPath } from "./router.js";
 import { renderView } from "./views.js";
 import { navigate } from "./router.js";
 import { getSession, currentUser, logout } from "../services/auth.js";
@@ -8,8 +9,11 @@ import { AuthScreen } from "../features/auth/auth-screen.js";
 import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
 import { themeToggleContent } from "../components/layout/topbar.js";
+import { initChartTooltips } from "../components/chart-tooltip.js";
+import { pageSkeleton, skeletonVariantFor } from "../components/skeleton.js";
 
 initPreferences();
+initChartTooltips();
 
 // Keep the header toggle's icon and label in step with the theme, whether it
 // changed from the toggle itself or from the system setting. Registered once.
@@ -53,42 +57,44 @@ function htmlToElement(html) {
     return template.content.firstElementChild;
 }
 
-async function renderApp() {
-    const root = document.querySelector("#app");
+/* Latest render wins: a slow page that finishes after the user has already
+   moved on must not overwrite the newer page. */
+let renderId = 0;
 
-    if (!root) {
-        console.error(
-            "BlackRoad: #app element not found."
-        );
+const here = () => (currentPath() === "/" ? "/dashboard" : currentPath());
 
-        return;
-    }
+/* Keep the existing shell (sidebar, header, nav) between pages and only
+   update what differs. Rebuilding it on every click was the main cause of
+   flicker and lag when moving around the app. */
+function updateShell(shell, route) {
+    const path = here();
 
-    let route = getRoute();
+    const title = shell.querySelector(".br-page-title");
+    if (title) title.textContent = route.title;
 
-    if (!(await passesGate(route))) route = getRoute();
+    shell.querySelectorAll(".br-nav-item").forEach((link) => {
+        const on = link.getAttribute("href") === "#" + path;
+        link.classList.toggle("is-active", on);
+        if (on) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+    });
 
-    root.innerHTML = "";
+    shell.querySelectorAll(".br-bottom-item[data-path]").forEach((item) => {
+        item.classList.toggle("is-active", item.dataset.path === path);
+    });
+}
 
-    if (route.module === "login" || route.module === "register") {
-        root.appendChild(AuthScreen(route.module));
-        return;
-    }
-
-    // Main application shell
+function buildShell(route) {
     const shell = document.createElement("div");
 
     shell.className = "br-app-shell";
 
-    // Sidebar
     const sidebar = Sidebar();
 
-    // Main area
     const main = document.createElement("main");
 
     main.className = "br-main";
 
-    // Top navigation
     const topbar = htmlToElement(
         Topbar(route.title)
     );
@@ -102,73 +108,26 @@ async function renderApp() {
         .querySelector(".br-account-button")
         ?.addEventListener("click", () => navigate("/account"));
 
-    // Light / Dark toggle. The topbar is rebuilt on every render, so this
-    // listener lives and dies with its button (no duplicates across routes).
+    // Light / Dark toggle. The shell now lives across pages, so this is
+    // attached once, to the button that stays.
     topbar
         .querySelector('[data-action="toggle-theme"]')
-        ?.addEventListener("click", () => toggleTheme());
+        ?.addEventListener("click", (event) => {
+            const r = event.currentTarget.getBoundingClientRect();
+            toggleTheme({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        });
 
     // Logout
     topbar
         .querySelector('[data-action="logout"]')
         ?.addEventListener("click", async () => {
-            await logout();
-            hardNavigate("/login");
+            if (await confirmLogout()) hardNavigate("/login");
         });
 
-    // Page content container
     const content = document.createElement("div");
 
     content.className = "br-content";
 
-    try {
-        // Views can now return either:
-        // 1. HTML string
-        // 2. DOM element
-        // 3. Promise resolving to either
-        const view = await renderView(route);
-
-        if (typeof view === "string") {
-            content.innerHTML = view;
-        } else if (view instanceof Node) {
-            content.appendChild(view);
-        } else {
-            console.error(
-                "BlackRoad: Invalid view returned for route:",
-                route
-            );
-
-            content.innerHTML = `
-                <section class="br-page">
-                    <div class="br-card">
-                        <h2>Unable to load page</h2>
-                        <p class="br-muted">
-                            The page returned an invalid view.
-                        </p>
-                    </div>
-                </section>
-            `;
-        }
-    } catch (error) {
-        console.error(
-            "BlackRoad: Error rendering route:",
-            error
-        );
-
-        content.innerHTML = `
-            <section class="br-page">
-                <div class="br-card">
-                    <h2>Something went wrong</h2>
-
-                    <p class="br-muted">
-                        This page could not be loaded.
-                    </p>
-                </div>
-            </section>
-        `;
-    }
-
-    // Build application
     main.appendChild(topbar);
     main.appendChild(content);
 
@@ -182,7 +141,100 @@ async function renderApp() {
 
     setupDrawer(shell, sidebar, backdrop, topbar.querySelector(".br-mobile-menu"));
 
-    root.appendChild(shell);
+    return { shell, content };
+}
+
+const errorCard = (title, text) => `
+    <section class="br-page">
+        <div class="br-card">
+            <h2>${title}</h2>
+            <p class="br-muted">${text}</p>
+        </div>
+    </section>
+`;
+
+async function renderApp() {
+    const root = document.querySelector("#app");
+
+    if (!root) {
+        console.error(
+            "BlackRoad: #app element not found."
+        );
+
+        return;
+    }
+
+    const myId = ++renderId;
+
+    let route = getRoute();
+
+    if (!(await passesGate(route))) route = getRoute();
+
+    if (myId !== renderId) return;
+
+    if (route.module === "login" || route.module === "register") {
+        root.innerHTML = "";
+        root.appendChild(AuthScreen(route.module));
+        return;
+    }
+
+    // Main application shell: reuse it when it is already on screen.
+    let shell = root.querySelector(":scope > .br-app-shell");
+    let content;
+
+    if (shell) {
+        updateShell(shell, route);
+        content = shell.querySelector(".br-content");
+        window.scrollTo(0, 0);
+    } else {
+        root.innerHTML = "";
+        ({ shell, content } = buildShell(route));
+        root.appendChild(shell);
+    }
+
+    // Show the page frame straight away; the skeleton fills it while data loads.
+    content.classList.remove("br-view-in");
+    content.replaceChildren(pageSkeleton(skeletonVariantFor(route.module)));
+
+    let html = null;
+    let node = null;
+
+    try {
+        // Views can return either:
+        // 1. HTML string
+        // 2. DOM element
+        // 3. Promise resolving to either
+        const view = await renderView(route);
+
+        if (typeof view === "string") {
+            html = view;
+        } else if (view instanceof Node) {
+            node = view;
+        } else {
+            console.error(
+                "BlackRoad: Invalid view returned for route:",
+                route
+            );
+
+            html = errorCard("Unable to load page", "The page returned an invalid view.");
+        }
+    } catch (error) {
+        console.error(
+            "BlackRoad: Error rendering route:",
+            error
+        );
+
+        html = errorCard("Something went wrong", "This page could not be loaded.");
+    }
+
+    if (myId !== renderId) return;
+
+    if (node) content.replaceChildren(node);
+    else content.innerHTML = html;
+
+    // Fade the real page in once.
+    void content.offsetWidth;
+    content.classList.add("br-view-in");
 }
 
 document.addEventListener(

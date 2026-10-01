@@ -494,49 +494,6 @@
    Working version: how-it-works, charts, meters, comparisons
    ========================================================= */
 
-/* ---------- How this works ---------- */
-
-.br-fi-how {
-    margin-top: var(--br-space-4);
-    color: var(--br-text-secondary);
-    font-size: var(--br-font-size-sm);
-}
-
-.br-fi-how summary {
-    display: inline-flex;
-    align-items: center;
-    min-height: 32px;
-    padding: 0 var(--br-space-3);
-    border-radius: var(--br-radius-full);
-    background: var(--fi-inset);
-    color: var(--br-gold-text);
-    font-size: var(--br-font-size-xs);
-    font-weight: 600;
-    cursor: pointer;
-    list-style: none;
-}
-
-.br-fi-how summary::-webkit-details-marker { display: none; }
-.br-fi-how summary:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; }
-
-.br-fi-how[open] summary { margin-bottom: var(--br-space-3); }
-
-.br-fi-how p { margin: 0 0 var(--br-space-3); line-height: var(--br-line-relaxed); }
-
-.br-fi-how ul {
-    display: flex;
-    flex-direction: column;
-    gap: var(--br-space-2);
-    margin: 0;
-    padding: var(--br-space-4);
-    list-style: none;
-    border-radius: var(--br-radius-md);
-    background: var(--fi-inset);
-    line-height: var(--br-line-normal);
-}
-
-.br-fi-how li b { color: var(--br-text); font-weight: 600; }
-
 /* ---------- Notes and small text ---------- */
 
 .br-fi-note {
@@ -711,4 +668,342 @@
 
 @media (max-width: 768px) {
     .br-fi-node small { max-width: 30ch; }
+}
+
+/* Hidden tab groups on the Financial Intelligence page */
+.br-fi-group[hidden] { display: none; }
+
+
+/* =========================================================
+   UI POLISH LAYER
+   Style only: scannable hierarchy, semantic colour (green =
+   good, amber = watch, red = act), tiles instead of loose
+   text, comfortable touch targets. No logic lives here, and
+   every rule is scoped under .br-fi.
+   ========================================================= */
+
+/* ---------- Structure: soft edge so cards read on black ---------- */
+
+.br-fi-card {
+    border: 1px solid var(--br-hairline);
+    transition: border-color var(--br-transition);
+}
+
+.br-fi-card:hover { border-color: var(--br-border-strong); }
+
+/* Group title becomes a small section label (the tab already names it) */
+.br-fi-group-title {
+    color: var(--br-text-muted);
+    font-size: var(--br-font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.br-fi-heading p { font-size: var(--br-font-size-sm); line-height: var(--br-line-normal); }
+
+/* Gentle entrance when a tab opens */
+@keyframes br-fi-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes br-fi-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.br-fi-group:not([hidden]) { animation: br-fi-in 240ms ease both; }
+.br-fi-bar > span { transform-origin: left; animation: br-fi-grow 600ms ease both; }
+
+
+/* ---------- Card heading: icon tile + clearer title ---------- */
+
+.br-fi-card .br-card-heading { align-items: center; }
+
+.br-fi-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--br-radius-md);
+    background: var(--fi-inset);
+}
+
+.br-fi-primary .br-fi-icon { background: var(--br-gold-surface); }
+
+.br-fi-card .br-card-heading h3 { letter-spacing: -0.01em; }
+
+.br-fi-card .br-stat-label {
+    color: var(--br-text-muted);
+    font-size: var(--br-font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+
+/* ---------- Big numbers get the attention ---------- */
+
+.br-fi-value { font-size: 36px; font-weight: 700; }
+
+.br-fi-figure-row .br-badge {
+    min-height: 30px;
+    padding: 0 14px;
+    font-size: var(--br-font-size-md);
+    font-weight: 600;
+}
+
+/* Stat pairs become tiles */
+.br-fi-card .br-fi-stats > .br-fi-stat {
+    padding: var(--br-space-3) var(--br-space-4);
+    border-radius: var(--br-radius-md);
+    background: var(--fi-inset);
+}
+
+.br-fi-card .br-fi-stat strong { font-size: var(--br-font-size-xl); font-weight: 700; letter-spacing: -0.01em; }
+
+/* Notes become callouts with a status edge */
+.br-fi-note {
+    border-left: 3px solid var(--br-gold);
+    border-radius: var(--br-radius-sm) var(--br-radius-md) var(--br-radius-md) var(--br-radius-sm);
+}
+
+.br-fi-note-warning { border-left-color: var(--br-warning); background: var(--br-warning-soft); }
+
+.br-fi-card[data-fi="risk"] .br-fi-note { border-left-color: var(--br-success); }
+.br-fi-card[data-fi="risk"]:has(.br-fi-figure-row .br-badge-warning) .br-fi-note { border-left-color: var(--br-warning); }
+.br-fi-card[data-fi="risk"]:has(.br-fi-figure-row .br-badge-danger) .br-fi-note { border-left-color: var(--br-danger); }
+
+/* Thicker, friendlier bars */
+.br-fi-bar { height: 10px; }
+
+
+/* ---------- Health ---------- */
+
+.br-fi-ring { width: 148px; height: 148px; }
+.br-fi-ring circle { stroke-width: 12; }
+.br-fi-ring-sm { width: 120px; height: 120px; }
+
+.br-fi-health .br-fi-ring-arc { stroke: var(--br-success); }
+.br-fi-health .br-fi-ring-arc.br-fi-arc-warning { stroke: var(--br-warning); }
+.br-fi-health .br-fi-ring-arc.br-fi-arc-danger { stroke: var(--br-danger); }
+
+.br-fi-health .br-fi-ring-center strong { font-size: 38px; font-weight: 700; line-height: 1; }
+.br-fi-health .br-fi-ring-center small { margin-top: 4px; font-weight: 600; }
+
+.br-fi-ring:has(.br-fi-ring-arc:not(.br-fi-arc-warning):not(.br-fi-arc-danger)) .br-fi-ring-center strong { color: var(--br-success); }
+.br-fi-ring:has(.br-fi-arc-warning) .br-fi-ring-center strong { color: var(--br-warning); }
+.br-fi-ring:has(.br-fi-arc-danger) .br-fi-ring-center strong { color: var(--br-danger); }
+
+.br-fi-health .br-fi-lead { font-size: var(--br-font-size-md); color: var(--br-text-secondary); }
+
+/* Score breakdown: one mini meter per check */
+.br-fi-rows-meter { gap: var(--br-space-1); }
+
+.br-fi-rows-meter li {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: var(--br-space-2) 0;
+    border-top: 0;
+}
+
+.br-fi-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--br-space-3); }
+.br-fi-row-top > span { color: var(--br-text-secondary); }
+.br-fi-row-top > b { font-weight: 700; }
+.br-fi-row-top small { color: var(--br-text-muted); font-size: var(--br-font-size-xs); font-weight: 500; }
+
+.br-fi-rows-meter .br-fi-bar { height: 6px; }
+.br-fi-rows-meter .br-fi-bar > span { background: var(--br-success); }
+.br-fi-rows-meter .br-fi-bar-warning > span { background: var(--br-warning); }
+.br-fi-rows-meter .br-fi-bar-danger > span { background: var(--br-danger); }
+
+
+/* ---------- Cash flow ---------- */
+
+.br-fi-line polyline { stroke-width: 2.5; }
+.br-fi-line .area { fill: var(--br-gold); opacity: 0.12; stroke: none; }
+.br-fi-line.is-down .area { fill: var(--br-danger); }
+
+.br-fi-chart { padding: var(--br-space-4) var(--br-space-4) var(--br-space-3); }
+
+
+/* ---------- Risk ---------- */
+
+.br-fi-meters { gap: var(--br-space-4); }
+.br-fi-meter-head > b { font-weight: 700; }
+.br-fi-meters .br-fi-bar { height: 8px; }
+.br-fi-meters .br-fi-bar > span { background: var(--br-success); }
+.br-fi-meters .br-fi-bar-warning > span { background: var(--br-warning); }
+.br-fi-meters .br-fi-bar-danger > span { background: var(--br-danger); }
+
+
+/* ---------- What-if ---------- */
+
+.br-fi-control label { color: var(--br-text); font-weight: 600; }
+
+.br-fi-pill { min-width: 60px; padding: 4px var(--br-space-3); font-size: var(--br-font-size-sm); }
+
+.br-fi-control input[type="range"] { height: 32px; margin: 0; }
+
+.br-fi-result { padding: var(--br-space-5); gap: var(--br-space-2); }
+.br-fi-result .br-fi-value { font-size: 32px; }
+.br-fi-result .br-fi-rows { margin-top: var(--br-space-2); }
+
+
+/* ---------- Goals ---------- */
+
+.br-fi-card .br-fi-goal {
+    gap: var(--br-space-3);
+    padding: var(--br-space-4);
+    border-radius: var(--br-radius-md);
+    background: var(--fi-inset);
+}
+
+.br-fi-card .br-fi-goal + .br-fi-goal { margin-top: 0; padding-top: var(--br-space-4); border-top: 0; }
+
+.br-fi-goal-amount { font-size: var(--br-font-size-xl); font-weight: 700; }
+.br-fi-goal .br-fi-bar { --fi-track: var(--br-border-strong); }
+
+.br-fi-goal-need {
+    padding-top: var(--br-space-3);
+    border-top: 1px solid var(--br-border-strong);
+}
+
+
+/* ---------- Debt payoff ---------- */
+
+.br-fi-card[data-fi="debt"] .br-fi-stats-3 > :last-child strong { color: var(--br-success); }
+.br-fi-card[data-fi="debt"] .br-fi-note { border-left-color: var(--br-success); }
+
+.br-fi-compare > div:first-child .br-fi-bar > span { background: var(--br-text-muted); }
+.br-fi-compare > div:last-child .br-fi-bar > span { background: var(--br-success); }
+.br-fi-compare > div > b { color: var(--br-text-secondary); }
+
+
+/* ---------- Subscriptions ---------- */
+
+.br-fi-subs li { min-height: 52px; }
+.br-fi-subs b { font-weight: 600; }
+.br-fi-subs strong { font-size: var(--br-font-size-lg); font-weight: 700; }
+
+
+/* ---------- Emergency fund ---------- */
+
+.br-fi-card[data-fi="emergency-fund"] .br-fi-value { font-size: 32px; }
+
+
+/* ---------- Portfolio ---------- */
+
+.br-fi-portfolio .br-fi-rows b { font-weight: 700; }
+.br-fi-dot { width: 12px; height: 12px; }
+
+
+/* ---------- Timeline ---------- */
+
+.br-fi-node-in::before { background: var(--br-success); }
+.br-fi-node-out::before { background: var(--br-danger); }
+.br-fi-node-final::before { background: var(--br-gold); }
+
+.br-fi-node-amount { font-size: var(--br-font-size-xl); font-weight: 700; letter-spacing: -0.01em; }
+.br-fi-node strong { color: var(--br-text-secondary); font-size: var(--br-font-size-sm); font-weight: 600; }
+.br-fi-node-final strong { color: var(--br-text); }
+.br-fi-node-final .br-fi-node-amount { font-size: var(--br-font-size-2xl); }
+
+
+/* ---------- Insights ---------- */
+
+.br-fi-insight {
+    gap: var(--br-space-2);
+    padding: var(--br-space-4) var(--br-space-5);
+    border-left: 3px solid var(--br-gold);
+    border-radius: var(--br-radius-sm) var(--br-radius-md) var(--br-radius-md) var(--br-radius-sm);
+}
+
+.br-fi-insight h4 { font-size: var(--br-font-size-lg); }
+
+.br-fi-insight ul { background: transparent; padding: 0; gap: var(--br-space-2); }
+
+.br-fi-insight ul li { display: flex; gap: var(--br-space-2); line-height: var(--br-line-normal); }
+
+.br-fi-insight ul li::before {
+    content: "";
+    flex: none;
+    width: 5px;
+    height: 5px;
+    margin-top: 7px;
+    border-radius: 50%;
+    background: var(--br-gold);
+}
+
+
+/* ---------- What changed ---------- */
+
+.br-fi-change { padding: 2px var(--br-space-2); border-radius: var(--br-radius-full); background: var(--fi-inset); font-weight: 700; }
+.br-fi-change.br-text-danger { background: var(--br-danger-soft); }
+.br-fi-change.br-text-success { background: var(--br-success-soft); }
+
+.br-fi-pair { gap: 4px; }
+.br-fi-pair span { height: 8px; }
+
+
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .br-fi-value { font-size: 30px; }
+    .br-fi-result .br-fi-value,
+    .br-fi-card[data-fi="emergency-fund"] .br-fi-value { font-size: 28px; }
+
+    .br-fi-card .br-card-heading { gap: var(--br-space-3); }
+
+    /* Health: ring on top, centred, then the breakdown */
+    .br-fi-health { flex-direction: column; text-align: center; gap: var(--br-space-4); }
+    .br-fi-health .br-fi-lead { min-width: 0; max-width: none; }
+
+    .br-fi-rows li { min-height: 44px; }
+
+    /* Timeline: name left, amount right, note underneath */
+    .br-fi-node {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: baseline;
+        column-gap: var(--br-space-3);
+        row-gap: 2px;
+    }
+
+    .br-fi-node small { grid-column: 1 / -1; max-width: none; }
+
+    .br-fi-node-final .br-fi-node-amount { font-size: var(--br-font-size-xl); }
+
+    /* What-if: controls then result, comfortable to drag */
+    .br-fi-whatif { gap: var(--br-space-4); }
+    .br-fi-control input[type="range"] { height: 36px; }
+}
+
+@media (max-width: 480px) {
+    .br-fi-primary,
+    .br-fi-supporting,
+    .br-fi-card { padding: var(--br-space-4); }
+
+    .br-fi-ring { width: 136px; height: 136px; }
+
+    .br-fi-portfolio { flex-direction: column; align-items: center; }
+    .br-fi-portfolio .br-fi-rows { width: 100%; }
+
+    /* Debt: three stats read as label / value rows */
+    .br-fi-stats-3 > .br-fi-stat {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--br-space-3);
+    }
+
+    .br-fi-card .br-fi-stats-3 > .br-fi-stat strong { font-size: var(--br-font-size-lg); }
+
+    .br-fi-goal-amount { font-size: var(--br-font-size-lg); }
+
+    .br-fi-compare > div { grid-template-columns: 64px 1fr; }
+}
+
+/* Larger screens: give the headline cards a little more air */
+@media (min-width: 1101px) {
+    .br-fi-primary { padding: var(--br-space-8) var(--br-space-7); }
 }

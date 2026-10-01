@@ -1,4 +1,4 @@
-import { fiCard, how, inr } from "./shared.js";
+import { fiCard, fiBar, inr } from "./shared.js";
 
 const CIRC = 2 * Math.PI * 52;
 
@@ -27,26 +27,19 @@ export function renderHealth(model) {
                             stroke-dasharray="${arc.toFixed(1)} ${(CIRC - arc).toFixed(1)}"></circle>
                     </svg>
                     <div class="br-fi-ring-center">
-                        <div><strong>${h.status}</strong><small>${h.score} / 100</small></div>
+                        <div><strong>${h.score}</strong><small>/ 100 · ${h.status}</small></div>
                     </div>
                 </div>
                 <p class="br-fi-lead">${lead}</p>
             </div>
 
-            <ul class="br-fi-rows">
+            <ul class="br-fi-rows br-fi-rows-meter">
                 ${h.parts.map((p) => `
-                    <li><span>${p.label}</span><b>${Math.round(p.points)} / ${p.max}</b></li>`).join("")}
+                    <li>
+                        <div class="br-fi-row-top"><span>${p.label}</span><b>${Math.round(p.points)} <small>/ ${p.max}</small></b></div>
+                        ${fiBar((p.points / p.max) * 100, p.points / p.max < 0.4 ? "danger" : p.points / p.max < 0.7 ? "warning" : "")}
+                    </li>`).join("")}
             </ul>
-        `,
-        how: how(
-            "The score adds up five checks, worth 100 points in total. Good is 65 or more, Fair is 40 to 64, and below 40 is At risk.",
-            [
-                `<b>Emergency cover (30):</b> savings ${inr(m.savings)} ÷ monthly bills ${inr(m.obligations)} = ${m.coverage.toFixed(1)} months. Full marks at 4 months.`,
-                `<b>Savings vs expenses (20):</b> ${inr(m.savings)} ÷ ${inr(m.expenses)} = ${m.savingsVsExpenses.toFixed(1)}×. Full marks at 3×.`,
-                `<b>EMI burden (20):</b> EMI is ${Math.round(m.emiRatio * 100)}% of income. Full marks at 25% or less, zero at 55%.`,
-                `<b>Amount kept (15):</b> ${inr(m.net)} left plus ${inr(m.sip)} SIP is ${Math.round(m.savingsRate * 100)}% of income. Full marks at 15%.`,
-                `<b>Spending trend (10):</b> spending changed ${m.trendPct.toFixed(1)}% vs last month. Full marks if it did not rise, zero at +15%.`
-            ]
-        )
+        `
     });
 }

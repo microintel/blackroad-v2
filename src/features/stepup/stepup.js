@@ -91,13 +91,13 @@ export async function StepUp() {
     page.innerHTML = `
         <div class="br-page-heading">
             <div>
-                <h2>StepUp</h2>
+                <h2>Mutual Fund</h2>
                 <p>SIP compounder — step-ups, skipped months and NAV allocation tracking.</p>
             </div>
             <div data-su-profilebar></div>
         </div>
 
-        <div class="br-income-tabs">
+        <div class="br-income-tabs br-tabs-flat">
             <button type="button" class="br-income-tab active" data-su-tab="overview">Overview</button>
             <button type="button" class="br-income-tab" data-su-tab="history">History</button>
             <button type="button" class="br-income-tab" data-su-tab="ledger">SIP ledger</button>

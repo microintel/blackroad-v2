@@ -1,4 +1,5 @@
 import { COLORS } from "../../components/chart-colors.js";
+import { tipAttr } from "../../components/chart-tooltip.js";
 /* Income → Compare : two months or two years side by side (old compare.js) */
 import {
     periodTotals, monthKeyOf, yearKeyOf, monthLabelOf, formatMoney, esc
@@ -116,7 +117,12 @@ function periodChart(la, lb, a, b) {
                     ${groups.map(([l, t], i) => `
                         ${bar(gx(i) - bw - 2, t.income, COLORS.success)}
                         ${bar(gx(i) + 2, t.expense, COLORS.danger)}
-                        <text x="${gx(i)}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">${esc(l)}</text>`).join("")}
+                        <text x="${gx(i)}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">${esc(l)}</text>
+                        <rect class="br-tip-hit" x="${gx(i) - bw - 10}" y="0" width="${bw * 2 + 20}" height="${H}" ${tipAttr(l, [
+                            ["Income", formatMoney(t.income), COLORS.success],
+                            ["Expense", formatMoney(t.expense), COLORS.danger],
+                            ["Net", formatMoney(t.net)]
+                        ])}></rect>`).join("")}
                 </svg>
             </div>
         </section>`;
@@ -161,6 +167,15 @@ function trend(entries) {
                     ${line((d) => d.expense, COLORS.danger)}
                     ${line((d) => d.balance, COLORS.info)}
                     ${months.map((k, i) => `<text x="${pad + i * step}" y="${H - 6}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${k.slice(2).replace("-", "/")}</text>`).join("")}
+                    ${months.map((k, i) => {
+                        const bandW = months.length > 1 ? step : W - pad * 2;
+                        const bandX = months.length > 1 ? pad + i * step - step / 2 : pad;
+                        return `<rect class="br-tip-hit" x="${bandX}" y="0" width="${bandW}" height="${H}" ${tipAttr(label(k, "month"), [
+                            ["Income", formatMoney(rows[i].income), COLORS.success],
+                            ["Expenses", formatMoney(rows[i].expense), COLORS.danger],
+                            ["Balance", formatMoney(rows[i].balance), COLORS.info]
+                        ])}></rect>`;
+                    }).join("")}
                 </svg>
             </div>
         </section>`;
@@ -203,13 +218,13 @@ export function renderIncomeCompare(entries) {
         </div>
 
         <div class="br-grid br-grid-4" style="margin-bottom:16px;">
-            <div class="br-stat"><div class="br-stat-label">Income</div>
+            <div class="br-card br-stat"><div class="br-stat-label">Income</div>
                 <div class="br-stat-value">${formatMoney(a.income - b.income)}</div>${delta(a.income, b.income)}</div>
-            <div class="br-stat"><div class="br-stat-label">Expenses</div>
+            <div class="br-card br-stat"><div class="br-stat-label">Expenses</div>
                 <div class="br-stat-value">${formatMoney(a.expense - b.expense)}</div>${delta(a.expense, b.expense, true)}</div>
-            <div class="br-stat"><div class="br-stat-label">Net</div>
+            <div class="br-card br-stat"><div class="br-stat-label">Net</div>
                 <div class="br-stat-value">${formatMoney(a.net - b.net)}</div>${delta(a.net, b.net)}</div>
-            <div class="br-stat"><div class="br-stat-label">Savings rate</div>
+            <div class="br-card br-stat"><div class="br-stat-label">Savings rate</div>
                 <div class="br-stat-value">${Math.round(a.rate - b.rate)} pts</div>${delta(a.rate, b.rate)}</div>
         </div>
 

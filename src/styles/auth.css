@@ -30,3 +30,73 @@
     .br-auth-card { padding:var(--br-space-5) var(--br-space-4); }
     .br-auth-form .br-input { font-size:16px; min-height:44px; }
 }
+
+
+/* =========================================================
+   Login / Register background
+   Always black + gold, in Light and Dark alike. Everything here
+   sits behind the card at very low contrast.
+   ========================================================= */
+
+.br-auth {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: #000000;
+    color: var(--br-text);
+}
+
+.br-auth-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.br-auth-net {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-mask-image: radial-gradient(ellipse 90% 85% at 50% 50%, #000 35%, transparent 100%);
+            mask-image: radial-gradient(ellipse 90% 85% at 50% 50%, #000 35%, transparent 100%);
+}
+
+/* Soft gold glow centred behind the card */
+.br-auth-glow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(900px, 120vw);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(212, 175, 55, .13), rgba(212, 175, 55, .05) 55%, transparent 100%);
+}
+
+/* Oversized BlackRoad mark, cropped by the bottom-right corner */
+.br-auth-mark {
+    position: absolute;
+    right: -6vw;
+    bottom: -10vw;
+    width: min(46vw, 640px);
+    height: auto;
+    opacity: .04;
+    transform: rotate(-8deg);
+}
+
+.br-auth-card {
+    position: relative;
+    border: 1px solid rgba(212, 175, 55, .14);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .65), 0 0 60px rgba(212, 175, 55, .06);
+}
+
+@media (max-width: 480px) {
+    .br-auth-glow { top: 36%; width: 150vw; }
+    .br-auth-mark { width: 78vw; right: -18vw; bottom: -14vw; opacity: .045; }
+    .br-auth-net { opacity: .8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-auth-bg * { animation: none !important; }
+}

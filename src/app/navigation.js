@@ -14,14 +14,15 @@ export const navigation = [
             { label: "Income & Expenses", path: "/income", icon: "wallet" },
             { label: "Stocks", path: "/stocks", icon: "chart-candlestick" },
             { label: "Fixed Deposits", path: "/deposits", icon: "landmark" },
-            { label: "Lending", path: "/lending", icon: "arrow-left-right" }
+            { label: "Lending", path: "/lending", icon: "arrow-left-right" },
+            { label: "Mutual Fund", path: "/mutualfund", icon: "chart-no-axes-combined" }
         ]
     },
 
     {
         title: "Tools",
         items: [
-            { label: "StepUp", path: "/stepup", icon: "chart-no-axes-combined" },
+            { label: "Financial Intelligence", path: "/intelligence", icon: "brain" },
             { label: "Accounting", path: "/accounting", icon: "receipt" },
             { label: "Data Management", path: "/data", icon: "database" },
             { label: "Notifications", path: "/notifications", icon: "bell" },

@@ -79,7 +79,7 @@ export async function Lending() {
             <div data-ll-actions></div>
         </div>
 
-        <div class="br-income-tabs">
+        <div class="br-income-tabs br-tabs-flat">
             <button type="button" class="br-income-tab active" data-ll-tab="overview">Overview</button>
             <button type="button" class="br-income-tab" data-ll-tab="people">People</button>
             <button type="button" class="br-income-tab" data-ll-tab="loans">Loans</button>

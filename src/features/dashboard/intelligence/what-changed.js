@@ -1,4 +1,4 @@
-import { fiCard, how, inr, signedInr, signedPct } from "./shared.js";
+import { fiCard, inr, signedInr, signedPct } from "./shared.js";
 import { icon } from "../../../components/icons.js";
 
 export function renderWhatChanged(model) {
@@ -35,14 +35,6 @@ export function renderWhatChanged(model) {
             <div class="br-fi-note">
                 <p>Your everyday spending ${c.delta >= 0 ? "rose" : "fell"} ${Math.abs(Math.round(c.pct))}% (${signedInr(c.delta)})${names ? `, mainly because ${names} increased` : ""}.</p>
             </div>
-        `,
-        how: how(
-            "Each category is compared with the same category last month. The summary names the two categories that added the most rupees.",
-            [
-                `Change % = this month ÷ last month − 1, per category.`,
-                `Total everyday spending: ${inr(c.before)} → ${inr(c.after)} = ${signedInr(c.delta)} (${signedPct(c.pct)}). Rent and EMI are fixed and not included.`,
-                `Bars: pale = last month, gold = this month, on the same scale.`
-            ]
-        )
+        `
     });
 }

@@ -176,7 +176,7 @@ function renderMF(page, body, data) {
 
     body.innerHTML = rows
         .map((r) => `
-            <div class="nf-item" data-path="/stepup">
+            <div class="nf-item" data-path="/mutualfund">
                 <div class="nf-main">
                     <b>${escapeHTML(r.name)}</b>
                     <span class="br-muted">NAV ${r.latestNav != null ? formatINR(r.latestNav) : "—"} · Invested ${formatINR(r.invested)}

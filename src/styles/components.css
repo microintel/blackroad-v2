@@ -486,3 +486,73 @@
 @media (max-width: 768px) {
     .br-search-box { min-height: 44px; }
 }
+
+
+/* =========================================================
+   Flat underline tabs (same look as Income). Add .br-tabs-flat
+   next to .br-income-tabs to use them in any module.
+   ========================================================= */
+
+.br-income-tabs.br-tabs-flat {
+    width: 100%;
+    gap: var(--br-space-1);
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.br-income-tabs.br-tabs-flat::-webkit-scrollbar { display: none; }
+
+.br-income-tabs.br-tabs-flat .br-income-tab {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 var(--br-space-3);
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--text-secondary);
+    background: transparent;
+    white-space: nowrap;
+}
+
+.br-income-tabs.br-tabs-flat .br-income-tab:hover { color: var(--text-primary); background: transparent; }
+
+.br-income-tabs.br-tabs-flat .br-income-tab.active {
+    color: var(--text-primary);
+    background: transparent;
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+@media (max-width: 1023px) {
+    .br-income-tabs.br-tabs-flat .br-income-tab { min-height: 44px; }
+}
+
+
+/* ---------- Confirmation dialog (logout etc.) ---------- */
+
+.br-confirm-layer { align-items: center; padding: var(--br-space-5); }
+
+.br-confirm {
+    width: min(400px, 100%);
+    padding: var(--br-space-6);
+    border-radius: var(--br-radius-lg);
+}
+
+:root[data-theme="dark"] .br-confirm { border: 1px solid var(--border); }
+
+.br-confirm-body h3 { margin: 0 0 var(--br-space-2); font-size: var(--br-font-size-lg); }
+.br-confirm-body p { margin: 0; }
+
+.br-confirm-footer { margin-top: var(--br-space-6); }
+.br-confirm-footer .br-button { min-width: 96px; min-height: 44px; }
+
+@media (max-width: 768px) {
+    .br-confirm-layer { align-items: center; padding: var(--br-space-5); }
+    .br-confirm { border-radius: var(--br-radius-lg); }
+    .br-confirm-footer .br-button { flex: 1; }
+}

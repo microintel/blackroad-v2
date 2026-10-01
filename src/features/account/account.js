@@ -1,3 +1,4 @@
+import { confirmLogout } from "../../components/confirm-dialog.js";
 import { hardNavigate } from "../../app/router.js";
 import { AppearanceCard } from "./appearance.js";
 import {
@@ -244,8 +245,7 @@ function renderProfile(page, user) {
     });
 
     page.querySelector('[data-action="logout"]').addEventListener("click", async () => {
-        await logout();
-        reloadApp();
+        if (await confirmLogout()) reloadApp();
     });
 }
 

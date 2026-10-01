@@ -3,6 +3,7 @@ import { Income } from "../features/income/income.js";
 import { Stocks } from "../features/stocks/stocks.js";
 import { Deposits } from "../features/deposits/deposits.js";
 import { Lending } from "../features/lending/lending.js";
+import { FinancialIntelligencePage } from "../features/dashboard/intelligence/financial-intelligence.js";
 import { StepUp } from "../features/stepup/stepup.js";
 import { Accounting } from "../features/accounting/accounting.js";
 import { Notifications } from "../features/notifications/notifications.js";
@@ -28,6 +29,9 @@ export async function renderView(route) {
 
         case "stepup":
             return await StepUp();
+
+        case "intelligence":
+            return await FinancialIntelligencePage();
 
         case "accounting":
             return await Accounting();

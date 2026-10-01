@@ -1,3 +1,4 @@
+import { tipAttr } from "../../components/chart-tooltip.js";
 import {
     EMPTY_MANUAL,
     loadManual,
@@ -56,7 +57,7 @@ export async function Accounting() {
                     <div class="ac-live-row"><span>Mutual Funds</span><strong data-live="mf">₹0</strong></div>
                     <div class="ac-live-row"><span>Loans &amp; Liabilities</span><strong data-live="liab">₹0</strong></div>
                     <div class="ac-live-row"><span>Lending Receivable</span><strong data-live="recv">₹0</strong></div>
-                    <p class="br-field-help">Pulled automatically from StepUp and Lending. Everything else is entered manually.</p>
+                    <p class="br-field-help">Pulled automatically from Mutual Fund and Lending. Everything else is entered manually.</p>
                 </section>
             </div>
 
@@ -245,8 +246,8 @@ function donut(assets, liabilities) {
 
     return `
         <svg class="ac-donut" viewBox="0 0 140 140" role="img" aria-label="Assets versus liabilities">
-            <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--br-border-strong)" stroke-width="16"></circle>
-            <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--br-success)" stroke-width="16"
+            <circle class="br-tip-seg" ${tipAttr("Liabilities", [["Value", formatINR(liabilities)]])} cx="70" cy="70" r="${r}" fill="none" stroke="var(--br-border-strong)" stroke-width="16"></circle>
+            <circle class="br-tip-seg" ${tipAttr("Assets", [["Value", formatINR(assets)]])} cx="70" cy="70" r="${r}" fill="none" stroke="var(--br-success)" stroke-width="16"
                 stroke-dasharray="${assetLen} ${c}" transform="rotate(-90 70 70)"></circle>
         </svg>
         <div class="ac-legend">

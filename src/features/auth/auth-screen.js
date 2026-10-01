@@ -1,5 +1,6 @@
 import { login, register, loginGuest } from "../../services/auth.js";
 import { navigate, hardNavigate } from "../../app/router.js";
+import { authBackground } from "./auth-background.js";
 
 /* Full-screen sign-in / register (rendered without the app shell).
    Scope changes on sign-in, and the data layer caches databases per
@@ -15,6 +16,7 @@ export function AuthScreen(mode) {
     el.className = "br-auth";
 
     el.innerHTML = `
+        ${authBackground()}
         <div class="br-auth-card">
             <div class="br-auth-brand">
                 <div class="br-brand-logo">B</div>

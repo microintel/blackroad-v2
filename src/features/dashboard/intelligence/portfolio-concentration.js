@@ -1,4 +1,5 @@
-import { fiCard, how, inr } from "./shared.js";
+import { fiCard, inr } from "./shared.js";
+import { tipAttr } from "../../../components/chart-tooltip.js";
 
 const CIRC = 2 * Math.PI * 52;
 const SERIES = [1, 2, 3, 6];
@@ -19,7 +20,7 @@ export function renderPortfolioConcentration(model) {
 
     const segs = p.sectors.map((s, i) => {
         const len = (s.pct / 100) * CIRC;
-        const out = `<circle class="br-fi-seg br-fi-seg-${SERIES[i % 4]}" cx="66" cy="66" r="52"
+        const out = `<circle class="br-fi-seg br-fi-seg-${SERIES[i % 4]} br-tip-seg" ${tipAttr(s.name, [["Share", Math.round(s.pct) + "%"], ["Value", inr(s.value)]])} cx="66" cy="66" r="52"
             stroke-dasharray="${len.toFixed(1)} ${(CIRC - len).toFixed(1)}"
             stroke-dashoffset="${(-offset).toFixed(1)}"></circle>`;
         offset += len;
@@ -53,18 +54,11 @@ export function renderPortfolioConcentration(model) {
                 </ul>
             </div>
 
-            <div class="br-fi-note">
+            <div class="br-fi-note${p.concentrated ? " br-fi-note-warning" : ""}">
                 <p>${p.concentrated
                     ? `${Math.round(p.top.pct)}% of your investments are concentrated in one sector (${p.top.name}).`
                     : `No single sector holds more than 35%.`}</p>
             </div>
-        `,
-        how: how(
-            "Each holding is added to its sector. A sector's share is its value divided by the whole portfolio. Any sector at 35% or more is flagged.",
-            [
-                `Portfolio total: ${inr(p.total)}.`,
-                ...p.sectors.map((s) => `${s.name}: ${inr(s.value)} ÷ ${inr(p.total)} = ${Math.round(s.pct)}%.`)
-            ]
-        )
+        `
     });
 }

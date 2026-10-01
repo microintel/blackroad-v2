@@ -1,4 +1,4 @@
-import { fiCard, how, fiStat, fiBar, inr } from "./shared.js";
+import { fiCard, fiStat, fiBar, inr } from "./shared.js";
 
 const TARGET = 6;
 
@@ -21,7 +21,7 @@ export function renderEmergencyFund(model) {
                 <strong class="br-fi-value">${months.toFixed(1)} months</strong>
             </div>
 
-            ${fiBar((months / TARGET) * 100)}
+            ${fiBar((months / TARGET) * 100, months < 3 ? "danger" : months < TARGET ? "warning" : "")}
             <div class="br-fi-goal-meta"><span>0</span><span>Target ${TARGET} months</span></div>
 
             <div class="br-fi-stats">
@@ -34,14 +34,6 @@ export function renderEmergencyFund(model) {
                     ? `${inr(shortfall)} more would reach a ${TARGET}-month cushion.`
                     : `You already have a ${TARGET}-month cushion.`}</p>
             </div>
-        `,
-        how: how(
-            "Coverage is how many months your savings could pay the bills you cannot skip if income stopped.",
-            [
-                `Monthly bills = rent ${inr(m.rent)} + everyday spending ${inr(m.variable)} + EMI ${inr(m.emi)} = ${inr(m.obligations)}. SIP is left out because it can be paused.`,
-                `Coverage = ${inr(m.savings)} ÷ ${inr(m.obligations)} = ${months.toFixed(1)} months.`,
-                `The usual target is ${TARGET} months: ${TARGET} × ${inr(m.obligations)} = ${inr(TARGET * m.obligations)}.`
-            ]
-        )
+        `
     });
 }

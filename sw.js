@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v19";
+const CACHE_VERSION = "v33";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -26,7 +26,9 @@ const SHELL = [
     "./src/app/router.js",
     "./src/app/views.js",
     "./src/components/chart-colors.js",
+    "./src/components/chart-tooltip.js",
     "./src/components/icons.js",
+    "./src/components/skeleton.js",
     "./src/components/layout/mobile-nav.js",
     "./src/components/layout/sidebar.js",
     "./src/components/layout/topbar.js",
@@ -43,6 +45,8 @@ const SHELL = [
     "./src/features/account/account.js",
     "./src/features/account/appearance.js",
     "./src/features/auth/auth-screen.js",
+    "./src/features/auth/auth-background.js",
+    "./src/components/confirm-dialog.js",
     "./src/features/accounting/accounting-service.js",
     "./src/features/accounting/accounting.js",
     "./src/features/dashboard/dashboard-service.js",
@@ -93,6 +97,7 @@ const SHELL = [
     "./src/services/preferences.js",
     "./src/styles/accounting.css",
     "./src/styles/auth.css",
+    "./src/styles/chart-tooltip.css",
     "./src/styles/themes.css",
     "./src/styles/mobile.css",
     "./src/styles/components.css",
@@ -103,6 +108,7 @@ const SHELL = [
     "./src/styles/layout.css",
     "./src/styles/lending.css",
     "./src/styles/notifications.css",
+    "./src/styles/skeleton.css",
     "./src/styles/stepup.css",
     "./src/styles/stocks.css",
     "./src/styles/theme.css",

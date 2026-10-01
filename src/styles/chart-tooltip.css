@@ -1,0 +1,70 @@
+/* =========================================================
+   CHART TOOLTIP  (components/chart-tooltip.js)
+   Theme-aware: reads only the shared --br-* tokens, so it is
+   pure black with a border in dark mode and white in light.
+   ========================================================= */
+
+.br-chart-tip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    min-width: 120px;
+    max-width: 260px;
+    padding: var(--br-space-2) var(--br-space-3);
+    border: 1px solid var(--br-border-strong);
+    border-radius: var(--br-radius-md);
+    background: var(--br-surface);
+    color: var(--br-text);
+    font-size: var(--br-font-size-xs);
+    line-height: 1.4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--br-transition-fast);
+}
+
+.br-chart-tip.is-visible { opacity: 1; }
+
+.br-chart-tip-title {
+    margin-bottom: 4px;
+    color: var(--br-text-secondary);
+    font-weight: 500;
+}
+
+.br-chart-tip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--br-space-4);
+    font-variant-numeric: tabular-nums;
+}
+
+.br-chart-tip-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--br-text-secondary);
+}
+
+.br-chart-tip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+}
+
+.br-chart-tip-row strong { font-weight: 600; color: var(--br-text); }
+
+/* Invisible hit areas laid over a chart; the active one is lightly shaded. */
+.br-tip-hit { fill: transparent; cursor: crosshair; }
+.br-tip-hit.is-tip-active { fill: var(--br-text); fill-opacity: 0.07; }
+
+/* Donut / ring segments */
+.br-tip-seg { cursor: pointer; }
+.br-tip-seg.is-tip-active { opacity: 0.8; }
+
+svg [data-tip] { -webkit-tap-highlight-color: transparent; outline: none; }
+
+/* Charts that fit the screen: a horizontal drag scrubs the values while
+   vertical swipes still scroll the page. */
+.br-tip-scrub { touch-action: pan-y; }

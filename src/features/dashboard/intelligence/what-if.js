@@ -1,4 +1,4 @@
-import { fiCard, how, levelBadge, inr, signedInr } from "./shared.js";
+import { fiCard, levelBadge, inr, signedInr } from "./shared.js";
 import { core, scenarioFromControls } from "./engine.js";
 import { EMERGENCIES } from "./example-data.js";
 
@@ -65,16 +65,7 @@ export function renderWhatIf(model) {
                     ${resultHtml({ data, values }, m)}
                 </div>
             </div>
-        `,
-        how: how(
-            "Your example month is recalculated with the changes you choose. Nothing is saved, and the other cards keep showing today's example.",
-            [
-                `<b>Salary change</b> scales income: ${inr(m.income)} × (1 + change).`,
-                `<b>Expense change</b> scales everyday spending only (${inr(m.variable)}). Rent, EMI and SIP stay fixed.`,
-                `<b>Emergency scenario</b> subtracts a one-off cost from next month's balance, or removes salary for the month.`,
-                `Then the same rules as the health, risk and forecast cards are run on the new numbers.`
-            ]
-        )
+        `
     });
 }
 

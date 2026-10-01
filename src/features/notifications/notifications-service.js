@@ -1,7 +1,7 @@
 /* =========================================================
    NOTIFICATIONS — DATA
    Read-only. Uses the existing stores and services, so the
-   numbers match the Stocks, StepUp, Lending and Deposits pages.
+   numbers match the Stocks, Mutual Fund, Lending and Deposits pages.
    Live endpoints are the same ones the old page used
    (indian-stock-ltp for LTP, mfapi.in for NAV).
    ========================================================= */

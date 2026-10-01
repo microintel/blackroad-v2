@@ -43,7 +43,7 @@
                     /* Only a known route name at the END of the path is a route.
                        The app folder itself (e.g. /blackroad-v2/ on GitHub Pages)
                        is not, and is kept as the base. */
-                    var m = l.pathname.match(/^(.*\/)(dashboard|income|stocks|deposits|lending|stepup|accounting|data|notifications|account|login|register)\/?$/);
+                    var m = l.pathname.match(/^(.*\/)(dashboard|income|stocks|deposits|lending|mutualfund|stepup|intelligence|accounting|data|notifications|account|login|register)\/?$/);
                     if (m) {
                         route = "/" + m[2];
                         base = m[1];
@@ -76,7 +76,7 @@
             d.setAttribute("data-style", "flat");
             d.setAttribute("data-accent", "gold");
             var m = document.querySelector('meta[name="theme-color"]');
-            if (m) m.setAttribute("content", theme === "light" ? "#FFFFFF" : "#000000");
+            if (m) m.setAttribute("content", theme === "light" ? "#EEECE7" : "#000000");
         })();
     </script>
 
@@ -160,6 +160,16 @@
     <link
         rel="stylesheet"
         href="./src/styles/themes.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/chart-tooltip.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/skeleton.css"
     >
 
     <link

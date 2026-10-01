@@ -30,9 +30,20 @@ const routes = {
         module: "lending"
     },
 
-    "/stepup": {
-        title: "StepUp",
+    "/mutualfund": {
+        title: "Mutual Fund",
         module: "stepup"
+    },
+
+    /* old StepUp address, kept so bookmarks keep working */
+    "/stepup": {
+        title: "Mutual Fund",
+        module: "stepup"
+    },
+
+    "/intelligence": {
+        title: "Financial Intelligence",
+        module: "intelligence"
     },
 
     "/accounting": {

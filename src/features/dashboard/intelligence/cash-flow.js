@@ -1,4 +1,5 @@
-import { fiCard, how, inr, signedInr } from "./shared.js";
+import { fiCard, inr, signedInr } from "./shared.js";
+import { tipAttr } from "../../../components/chart-tooltip.js";
 
 const LABELS = ["Next month", "+2", "+3", "+4", "+5", "+6"];
 
@@ -13,11 +14,16 @@ function chart(values) {
     const down = values[values.length - 1] < values[0];
 
     return `
-        <svg class="br-fi-line ${down ? "is-down" : ""}" viewBox="0 0 ${W} ${H}"
+        <svg class="br-fi-line br-tip-scrub ${down ? "is-down" : ""}" viewBox="0 0 ${W} ${H}"
             preserveAspectRatio="none" role="img"
             aria-label="Projected balance over the next six months">
             <line class="zero" x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"></line>
+            <polygon class="area" points="${x(0).toFixed(1)},${y(0).toFixed(1)} ${pts} ${x(values.length - 1).toFixed(1)},${y(0).toFixed(1)}"></polygon>
             <polyline points="${pts}" fill="none"></polyline>
+            ${values.map((v, i) => {
+                const bw = (W - padX * 2) / Math.max(values.length - 1, 1);
+                return `<rect class="br-tip-hit" x="${(x(i) - bw / 2).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${H}" ${tipAttr(LABELS[i] || "", [["Projected balance", inr(v)]])}></rect>`;
+            }).join("")}
         </svg>
         <div class="br-fi-axis">${LABELS.map((l) => `<span>${l}</span>`).join("")}</div>
     `;
@@ -55,14 +61,6 @@ export function renderCashFlow(model) {
                     <small class="br-text-muted">${dips ? low.label : "Never dips below today's balance"}</small>
                 </div>
             </div>
-        `,
-        how: how(
-            "The forecast repeats this month's income and payments. Each month's change is income minus every payment. It does not include one-off costs or changes in income.",
-            [
-                `Income ${inr(m.income)} − EMI ${inr(m.emi)} − SIP ${inr(m.sip)} − rent ${inr(m.rent)} − everyday spending ${inr(m.variable)} = <b>${signedInr(m.net)}</b> a month.`,
-                `Balance today ${inr(m.opening)} + ${signedInr(m.net)} = <b>${inr(next)}</b> next month; the chart adds the same amount again for each month after.`,
-                `Lowest point: the balance is checked after every payment date in the timeline below, and the smallest value is shown.`
-            ]
-        )
+        `
     });
 }

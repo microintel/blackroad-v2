@@ -33,6 +33,11 @@ let dateTo = "";
 let editingEntryId = null;
 let currentIncomeView = "ledger";
 let isSaving = false;
+
+/* Ledger performance: only this many entries are drawn at once. */
+const LEDGER_PAGE = 30;
+let ledgerLimit = LEDGER_PAGE;
+let searchTimer = null;
 let lastFocused = null;
 
 /* Dialog modes: "income-new" (income + its transactions, for a brand-new
@@ -155,15 +160,6 @@ export async function Income() {
 
 
                     <div class="inc-tools">
-
-                        <button
-                            type="button"
-                            class="br-button br-button-primary inc-add"
-                            data-action="add-income"
-                        >
-                            ${icon("plus", { size: 18 })}
-                            <span>Add income</span>
-                        </button>
 
                         <div class="br-search-box">
 
@@ -853,6 +849,17 @@ function attachEvents(page) {
 
             if (
                 action ===
+                "show-more"
+            ) {
+                ledgerLimit += LEDGER_PAGE;
+                renderLedger(
+                    page
+                );
+                return;
+            }
+
+            if (
+                action ===
                 "collapse-all"
             ) {
                 expandedEntries.clear();
@@ -897,9 +904,13 @@ function attachEvents(page) {
                 currentSearch =
                     search.value;
 
-                renderLedger(
-                    page
-                );
+                ledgerLimit = LEDGER_PAGE;
+
+                clearTimeout(searchTimer);
+
+                searchTimer = setTimeout(() => {
+                    renderLedger(page);
+                }, 160);
 
             }
         );
@@ -933,6 +944,7 @@ function attachEvents(page) {
                         fromInput.value;
                     dateTo =
                         toInput.value;
+                    ledgerLimit = LEDGER_PAGE;
                     renderLedger(
                         page
                     );
@@ -1188,6 +1200,17 @@ function toggleEntry(
     const open =
         panel.hidden;
 
+    if (open) {
+        const cell =
+            panel.querySelector(".inc-txns-cell");
+        const entry =
+            currentEntries.find((e) => e.id === id);
+
+        if (cell && entry && !cell.firstElementChild) {
+            cell.innerHTML = renderTxnPanel(entry);
+        }
+    }
+
     panel.hidden =
         !open;
 
@@ -1294,6 +1317,7 @@ function renderActiveView(page) {
 }
 
 function resetLedgerDates(page) {
+    ledgerLimit = LEDGER_PAGE;
     dateFrom = "";
     dateTo = "";
     page.querySelectorAll("[data-ledger-from], [data-ledger-to]").forEach((input) => {
@@ -1303,11 +1327,13 @@ function resetLedgerDates(page) {
 
 function openEntryInLedger(page, entryId) {
     expandedEntries.add(Number(entryId));
+    clearTimeout(searchTimer);
     currentSearch = "";
     resetLedgerDates(page);
     const box = page.querySelector("[data-income-search]");
     if (box) box.value = "";
     switchIncomeView(page, "ledger");
+    ledgerLimit = Infinity;   /* make sure the target row is drawn */
     renderLedger(page);
 
     const el = page.querySelector(`[data-entry-id="${entryId}"]`);
@@ -1507,11 +1533,25 @@ function renderSummary(
                 Total income
             </span>
 
-            <strong class="inc-amount inc-amount-lg inc-c-income">
-                ${formatMoney(
-                    summary.income
-                )}
-            </strong>
+            <div class="inc-total-row">
+
+                <strong class="inc-amount inc-amount-lg inc-c-income">
+                    ${formatMoney(
+                        summary.income
+                    )}
+                </strong>
+
+                <button
+                    type="button"
+                    class="br-button br-button-primary inc-add"
+                    data-action="add-income"
+                    aria-label="Add income"
+                    title="Add income"
+                >
+                    ${icon("plus", { size: 18 })}
+                </button>
+
+            </div>
 
             <span class="inc-hint">
                 All recorded income
@@ -1727,18 +1767,21 @@ function renderLedger(
         new Set();
 
 
-    if (
-        currentSearch.trim()
-    ) {
+    const term =
+        currentSearch
+            .trim()
+            .toLowerCase();
+
+    if (term) {
 
         entries =
             currentEntries.filter(
                 (entry) => {
 
                     const result =
-                        matchesSearch(
+                        fastMatch(
                             entry,
-                            currentSearch
+                            term
                         );
 
 
@@ -1749,10 +1792,7 @@ function renderLedger(
 
                     if (
                         !result.entryMatch &&
-                        result
-                            .transactionMatches
-                            .length >
-                            0
+                        result.txnMatch
                     ) {
                         autoOpen.add(
                             entry.id
@@ -1762,10 +1802,7 @@ function renderLedger(
 
                     return (
                         result.entryMatch ||
-                        result
-                            .transactionMatches
-                            .length >
-                            0
+                        result.txnMatch
                     );
 
                 }
@@ -1919,6 +1956,7 @@ function renderLedger(
             </div>
 
             ${entries
+                .slice(0, ledgerLimit)
                 .map(
                     (entry) =>
                         renderEntry(
@@ -1935,8 +1973,53 @@ function renderLedger(
 
         </div>
 
+        ${
+            entries.length > ledgerLimit
+                ? `<div class="inc-more">
+                    <button
+                        type="button"
+                        class="br-button"
+                        data-action="show-more"
+                    >Show more
+                        <span class="inc-more-count">${
+                            Math.min(LEDGER_PAGE, entries.length - ledgerLimit)
+                        } of ${entries.length - ledgerLimit} left</span>
+                    </button>
+                </div>`
+                : ""
+        }
+
     `;
 
+}
+
+
+/* Cheap lowercase search text per entry, rebuilt only when the entry object changes. */
+const searchIndex = new WeakMap();
+
+function fastMatch(entry, term) {
+    let idx = searchIndex.get(entry);
+
+    if (!idx) {
+        idx = {
+            head: (
+                String(entry.from || "") + "\n" +
+                String(entry.category || "")
+            ).toLowerCase(),
+            txns: (entry.transactions || []).map((t) =>
+                (
+                    String(t.description || "") + "\n" +
+                    String(t.category || "")
+                ).toLowerCase()
+            )
+        };
+        searchIndex.set(entry, idx);
+    }
+
+    return {
+        entryMatch: idx.head.includes(term),
+        txnMatch: idx.txns.some((t) => t.includes(term))
+    };
 }
 
 
@@ -2233,6 +2316,30 @@ function renderEntry(
                     role="cell"
                     class="inc-txns-cell"
                 >
+                    ${expanded ? renderTxnPanel(entry) : ""}
+
+                </div>
+
+            </div>
+
+        </article>
+
+    `;
+
+}
+
+
+/* Transactions panel body. Built only when an entry is opened. */
+function renderTxnPanel(entry) {
+
+    const transactions =
+        entry.transactions || [];
+
+    const source =
+        entry.from ||
+        "Income";
+
+    return `
 
                     ${
                         transactions.length
@@ -2279,14 +2386,8 @@ function renderEntry(
 
                     </div>
 
-                </div>
-
-            </div>
-
-        </article>
 
     `;
-
 }
 
 

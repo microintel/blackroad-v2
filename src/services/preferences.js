@@ -26,7 +26,7 @@ export const THEMES = ["light", "dark"];
 
 const K = { theme: "br-theme", style: "br_style", accent: "br_accent", sound: "br_sound" };
 
-const THEME_COLOR = { light: "#FFFFFF", dark: "#000000" };
+const THEME_COLOR = { light: "#EEECE7", dark: "#000000" };
 
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
@@ -63,34 +63,138 @@ function syncThemeColor(theme) {
     if (m) m.setAttribute("content", THEME_COLOR[theme] || THEME_COLOR.dark);
 }
 
-let themingTimer = 0;
+let activeTransition = null;
+let fadeTimer = 0;
 
-/* Apply a theme to the page. `persist` is true only for a user choice. */
-function applyTheme(theme, { persist = false, animate = false } = {}) {
-    const next = theme === "light" ? "light" : "dark";
+const WIPE_MS = 520;
+const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
-    if (animate) {
-        // Short colour ease for the manual toggle only (see theme.css).
-        root().classList.add("br-theming");
-        clearTimeout(themingTimer);
-        themingTimer = setTimeout(() => root().classList.remove("br-theming"), 250);
-    }
+const prefersReducedMotion = () =>
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* Flip the attribute and tell the rest of the app. */
+function commitTheme(next, persist) {
     root().setAttribute("data-theme", next);
     if (persist) set(K.theme, next);
     syncThemeColor(next);
 
     window.dispatchEvent(new CustomEvent("br:theme-change", { detail: { theme: next } }));
+}
+
+/* Radius that reaches the farthest corner from the click, so the circle
+   always covers the whole screen. */
+function revealRadius(x, y) {
+    return Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+    );
+}
+
+/* Manual toggle: the new theme opens as a circle from the button that was
+   pressed (View Transitions API). Returns false when the browser cannot do
+   it, so the caller falls back to a cheap cross-fade. */
+function revealTheme(next, persist, origin) {
+    if (
+        prefersReducedMotion() ||
+        typeof document.startViewTransition !== "function"
+    ) {
+        return false;
+    }
+
+    // A second tap mid-animation jumps the first to its end, then starts fresh,
+    // so the toggle can never get stuck waiting on an old transition.
+    if (activeTransition) {
+        try { activeTransition.skipTransition(); } catch { /* already finished */ }
+    }
+
+    const x = origin && Number.isFinite(origin.x) ? origin.x : window.innerWidth - 40;
+    const y = origin && Number.isFinite(origin.y) ? origin.y : 32;
+    const r = revealRadius(x, y);
+
+    // Per-element colour transitions would be caught half-way in the new
+    // snapshot, so they are switched off for the length of the reveal.
+    root().classList.add("br-vt-switching");
+
+    const transition = document.startViewTransition(() => commitTheme(next, persist));
+
+    activeTransition = transition;
+
+    transition.ready
+        .then(() => {
+            root().animate(
+                {
+                    clipPath: [
+                        `circle(0px at ${x}px ${y}px)`,
+                        `circle(${r}px at ${x}px ${y}px)`
+                    ]
+                },
+                {
+                    duration: WIPE_MS,
+                    easing: EASE,
+                    pseudoElement: "::view-transition-new(root)"
+                }
+            );
+        })
+        .catch(() => { /* theme is already applied by the callback */ });
+
+    transition.finished.finally(() => {
+        if (activeTransition === transition) {
+            activeTransition = null;
+            root().classList.remove("br-vt-switching");
+        }
+    });
+
+    return true;
+}
+
+/* Fallback for browsers without View Transitions: cover the screen with the
+   old background, swap the theme underneath, and fade the cover away. One
+   composited layer, so it stays smooth on long pages. */
+function fadeTheme(next, persist) {
+    const old = getComputedStyle(root()).getPropertyValue("--background").trim() || "#000";
+
+    const cover = document.createElement("div");
+    cover.className = "br-theme-fade";
+    cover.style.background = old;
+    document.body.appendChild(cover);
+
+    commitTheme(next, persist);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        cover.style.opacity = "0";
+    }));
+
+    clearTimeout(fadeTimer);
+    const done = () => cover.remove();
+    cover.addEventListener("transitionend", done, { once: true });
+    fadeTimer = setTimeout(done, 600);
+}
+
+/* Apply a theme to the page. `persist` is true only for a user choice. */
+function applyTheme(theme, { persist = false, animate = false, origin = null } = {}) {
+    const next = theme === "light" ? "light" : "dark";
+
+    if (!animate || prefersReducedMotion()) {
+        commitTheme(next, persist);
+        return next;
+    }
+
+    if (!revealTheme(next, persist, origin)) {
+        fadeTheme(next, persist);
+    }
+
     return next;
 }
 
 /* User picked a theme: apply, save, and remember it. */
-export function setTheme(theme) {
-    return applyTheme(theme, { persist: true, animate: true });
+export function setTheme(theme, origin = null) {
+    return applyTheme(theme, { persist: true, animate: true, origin });
 }
 
-export function toggleTheme() {
-    return setTheme(getTheme() === "dark" ? "light" : "dark");
+/* `origin` is {x, y} in viewport pixels (where the toggle was pressed). */
+export function toggleTheme(origin = null) {
+    return setTheme(getTheme() === "dark" ? "light" : "dark", origin);
 }
 
 export function setStyle() {

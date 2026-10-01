@@ -29,7 +29,7 @@ export async function DataManagement() {
                 <div class="br-card-heading"><h3>Export backup</h3></div>
                 <p class="br-muted">
                     Downloads everything — Income, Stocks, Fixed Deposits,
-                    Lending, StepUp and Accounting — as one file.
+                    Lending, Mutual Fund and Accounting — as one file.
                 </p>
                 <p class="br-field-help" data-last-backup></p>
                 <button type="button" class="br-button br-button-primary" data-action="export">Export all data</button>
@@ -39,7 +39,7 @@ export async function DataManagement() {
                 <div class="br-card-heading"><h3>Restore backup</h3></div>
                 <p class="br-muted">
                     Choose a BlackRoad backup file. Older single-module exports
-                    (Income, Stocks, Lending, Fixed Deposits, StepUp) work too.
+                    (Income, Stocks, Lending, Fixed Deposits, Mutual Fund) work too.
                     You'll see what it contains before anything is changed.
                 </p>
                 <p class="br-field-help">Restoring replaces the current data of every module in the file.</p>

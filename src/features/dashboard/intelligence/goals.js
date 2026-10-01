@@ -1,4 +1,4 @@
-import { fiCard, how, fiBar, inr } from "./shared.js";
+import { fiCard, fiBar, inr } from "./shared.js";
 
 export function renderGoals(model) {
     const { goals, surplus } = model.goals;
@@ -32,14 +32,6 @@ export function renderGoals(model) {
                         </span>
                     </div>
                 </div>`).join("")}
-        `,
-        how: how(
-            "For each goal: what is still missing, spread evenly over the months left. Goals are checked in order against the monthly surplus.",
-            goals.map((g) =>
-                `<b>${g.name}:</b> (${inr(g.target)} − ${inr(g.saved)}) ÷ ${g.months} months = ${inr(g.required)} a month.`
-            ).concat([
-                `Monthly surplus available: ${inr(surplus)}. Each goal uses part of it, so later goals see what is left.`
-            ])
-        )
+        `
     });
 }

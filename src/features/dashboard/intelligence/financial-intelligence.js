@@ -63,7 +63,7 @@ export async function FinancialIntelligence(data) {
             <div>
                 <h2 id="br-fi-title">Financial intelligence</h2>
                 <p>${isLive
-                    ? "Calculated from your income, loans, deposits and holdings, using your last full months. Open “How this works” on any card to see the rule and the numbers behind it."
+                    ? "Calculated from your income, loans, deposits and holdings, using your last full months."
                     : "Not enough of your data yet, so these cards show an example household. Add at least one full month of income entries to see your own numbers."}</p>
             </div>
             <span class="br-badge ${isLive ? "br-badge-success" : "br-badge-info"}">${isLive ? "Your data" : "Example data"}</span>
@@ -81,4 +81,70 @@ export async function FinancialIntelligence(data) {
     bindWhatIf(section, model);
 
     return section;
+}
+
+
+/* =========================================================
+   FINANCIAL INTELLIGENCE PAGE (Tools > Financial Intelligence)
+   One tab per group, like Income's Ledger / Statement / Compare,
+   so only one group is on screen at a time.
+   ========================================================= */
+
+const TAB_LABEL = {
+    health: "Health",
+    risk: "Risk",
+    planning: "Planning",
+    supporting: "Savings",
+    timeline: "Timeline",
+    explanations: "Insights"
+};
+
+let currentFiTab = GROUPS[0].key;
+
+export async function FinancialIntelligencePage() {
+    const root = await FinancialIntelligence();
+
+    const page = document.createElement("section");
+    page.className = "br-page";
+
+    const heading = root.querySelector(".br-fi-heading");
+    const groups = [...root.querySelectorAll("[data-fi-group]")];
+
+    if (!groups.some((g) => g.dataset.fiGroup === currentFiTab)) {
+        currentFiTab = GROUPS[0].key;
+    }
+
+    page.innerHTML = `
+        <div class="br-income-tabs br-tabs-flat" role="group" aria-label="Financial intelligence views">
+            ${GROUPS.map((g) => `
+                <button type="button"
+                    class="br-income-tab${g.key === currentFiTab ? " active" : ""}"
+                    data-fi-tab="${g.key}"
+                    aria-pressed="${g.key === currentFiTab}">${TAB_LABEL[g.key] || g.title}</button>`).join("")}
+        </div>
+    `;
+
+    root.style.marginTop = "0";
+    root.insertBefore(page.firstElementChild, heading);
+
+    const show = (key) => {
+        currentFiTab = key;
+        groups.forEach((g) => { g.hidden = g.dataset.fiGroup !== key; });
+        root.querySelectorAll("[data-fi-tab]").forEach((b) => {
+            const on = b.dataset.fiTab === key;
+            b.classList.toggle("active", on);
+            b.setAttribute("aria-pressed", String(on));
+        });
+    };
+
+    root.querySelectorAll("[data-fi-tab]").forEach((b) => {
+        b.addEventListener("click", () => show(b.dataset.fiTab));
+    });
+
+    show(currentFiTab);
+
+    page.innerHTML = "";
+    page.appendChild(root);
+
+    return page;
 }

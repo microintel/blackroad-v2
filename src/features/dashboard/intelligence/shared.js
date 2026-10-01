@@ -8,9 +8,9 @@ import { icon } from "../../../components/icons.js";
 export { inr, signedInr, signedPct } from "./engine.js";
 
 /* One feature area = one card with a stable data-fi key.
-   `how` is the "How this works" explanation shown under the card. */
+   */
 export function fiCard({
-    key, tier, span, half = false, title, subtitle, iconName, body, how = ""
+    key, tier, span, half = false, title, subtitle, iconName, body
 }) {
     const id = `br-fi-${key}-title`;
 
@@ -26,20 +26,7 @@ export function fiCard({
                 <span class="br-fi-icon" aria-hidden="true">${icon(iconName, { size: 18 })}</span>
             </div>
             <div class="br-fi-body" data-fi-body>${body}</div>
-            ${how}
         </article>
-    `;
-}
-
-/* Collapsible explanation. `lines` are short HTML strings that
-   show the rule with this example's own numbers. */
-export function how(summary, lines) {
-    return `
-        <details class="br-fi-how">
-            <summary>How this works</summary>
-            <p>${summary}</p>
-            <ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
-        </details>
     `;
 }
 

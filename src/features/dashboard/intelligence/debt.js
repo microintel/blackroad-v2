@@ -1,4 +1,4 @@
-import { fiCard, how, fiStat, fiBar, inr } from "./shared.js";
+import { fiCard, fiStat, fiBar, inr } from "./shared.js";
 
 const label = (n) => (Number.isFinite(n) ? `${n} months` : "Never");
 
@@ -51,15 +51,6 @@ export function renderDebt(model) {
             <div class="br-fi-note">
                 <p>Paying ${inr(d.extra)} extra each month finishes the loan ${d.monthsSaved} month${d.monthsSaved === 1 ? "" : "s"} sooner and saves about ${inr(d.interestSaved)} in interest.</p>
             </div>
-        `,
-        how: how(
-            "The loan is run forward one month at a time: add a month of interest, subtract the payment, repeat until the balance reaches zero.",
-            [
-                `Balance ${inr(d.loan.outstanding)}, rate ${d.loan.annualRate}% a year = ${(d.loan.annualRate / 12).toFixed(3)}% a month.`,
-                `Each month: interest = balance × monthly rate; new balance = balance + interest − payment.`,
-                `Payment ${inr(d.loan.emi)} takes <b>${d.current.months}</b> months. Payment ${inr(d.loan.emi + d.extra)} takes <b>${d.faster.months}</b>.`,
-                `Interest saved = total interest paid today − total interest with the extra payment.`
-            ]
-        )
+        `
     });
 }
