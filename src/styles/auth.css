@@ -182,3 +182,485 @@
     .br-auth-form { gap: var(--br-space-4); }
     .br-auth-aside h1 { font-size: 40px; }
 }
+
+
+/* =========================================================
+   Login + Register look (scoped to .br-auth only)
+   - One gold accent (#E6B851) for Sign in and Register.
+   - No boxes: no outlines, brackets or square tiles. Fields are
+     floating-label underline inputs, tabs are a sliding
+     underline, secondary actions are plain text links.
+   - The page background and particle canvas are NOT touched.
+   ========================================================= */
+
+:root .br-auth {
+    --au-a: #E6B851;          /* gold accent */
+    --au-b: #E6B851;          /* gold */
+    --au-c: #E6B851;          /* gold */
+    --au-line: #2E2E2E;
+    --au-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Existing links / eye button / credit read the gold tokens */
+    --br-gold: var(--au-a);
+    --br-gold-bright: var(--au-a);
+    --br-gold-muted: var(--au-a);
+    --br-gold-surface: transparent;
+    --br-gold-text: var(--au-a);
+
+    --br-radius-sm: 10px;
+    --br-radius-md: 12px;
+    --br-radius-lg: 24px;
+}
+
+:root .br-auth--register {
+    --au-a: #E6B851;
+    --au-b: #E6B851;
+    --au-c: #E6B851;
+}
+
+.br-auth ::selection { background: var(--au-a); color: #000000; }
+
+/* ---- Brand: bigger name ---- */
+
+.br-auth .br-brand-logo,
+:root .br-auth .br-brand-logo {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    border-radius: 14px;
+    background: var(--au-a);
+    color: #000000;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.br-auth .br-brand-name,
+.br-auth .br-auth-aside-brand .br-brand-name {
+    font-size: 30px;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+}
+
+.br-auth .br-auth-brand .br-brand-name { font-size: 26px; }
+.br-auth .br-auth-brand .br-brand-subtitle { font-size: 13px; color: var(--au-a); }
+.br-auth .br-auth-aside-brand { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 14px; }
+
+/* ---- Slogan colours ---- */
+
+.br-auth .br-auth-hl { color: var(--au-a); }
+
+.br-auth .br-auth-points { gap: 14px; max-width: 440px; }
+
+.br-auth .br-auth-points li { padding: 0; border: 0; background: transparent; }
+
+.br-auth .br-auth-points li::before { width: 8px; height: 8px; border-radius: 50%; background: var(--au-a); }
+.br-auth .br-auth-points li:nth-child(2)::before { background: var(--au-b); }
+.br-auth .br-auth-points li:nth-child(3)::before { background: var(--au-c); }
+
+/* ---- Card: no outline, no corner brackets ---- */
+
+.br-auth .br-auth-card {
+    background: #000000;
+    border: 0;
+    border-radius: 28px;
+}
+
+.br-auth .br-auth-card::before,
+.br-auth .br-auth-card::after { content: none; }
+
+/* ---- Tabs: text + sliding underline ---- */
+
+.br-auth .br-auth-tabs {
+    position: relative;
+    gap: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid var(--au-line);
+}
+
+.br-auth .br-auth-tabs a {
+    min-height: 44px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--br-text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.br-auth .br-auth-tabs a + a { border-left: 0; }
+.br-auth .br-auth-tabs a:not(.is-active):hover { color: var(--br-text); background: transparent; }
+.br-auth .br-auth-tabs a.is-active { background: transparent; color: var(--au-a); border: 0; }
+
+.br-auth .br-auth-tabs::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 50%;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--au-a);
+    pointer-events: none;
+}
+
+.br-auth--login .br-auth-tabs::after { animation: br-tab-to-left 0.45s var(--au-ease) both; }
+.br-auth--register .br-auth-tabs::after { animation: br-tab-to-right 0.45s var(--au-ease) both; }
+
+@keyframes br-tab-to-left  { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes br-tab-to-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+
+/* ---- Heading ---- */
+
+.br-auth .br-auth-card h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+.br-auth .br-auth-card > p { color: var(--br-text-secondary); }
+
+/* ---- Floating-label underline fields ---- */
+
+.br-auth .br-auth-form { gap: 22px; }
+
+.br-auth .br-auth-form label.br-field {
+    position: relative;
+    display: block;
+    gap: 0;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.br-auth .br-auth-form label.br-field::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--au-a);
+    transform: scaleX(0);
+    transition: transform 0.3s var(--au-ease);
+    pointer-events: none;
+}
+
+.br-auth .br-auth-form label.br-field:focus-within::after { transform: scaleX(1); }
+
+.br-auth .br-auth-form .br-input,
+.br-auth .br-auth-form .br-input:hover,
+.br-auth .br-auth-form .br-input:focus {
+    width: 100%;
+    min-height: 54px;
+    padding: 22px 0 8px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--au-line);
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    color: var(--br-text);
+    font-size: 16px;
+}
+
+.br-auth .br-auth-form .br-auth-pw .br-input { padding-right: 56px; }
+
+.br-auth .br-field-label {
+    position: absolute;
+    left: 0;
+    top: 17px;
+    color: var(--br-text-muted);
+    font-size: 15px;
+    line-height: 1;
+    pointer-events: none;
+    transform-origin: left top;
+    transition: transform 0.2s var(--au-ease), color 0.2s ease;
+}
+
+.br-auth .br-input:focus ~ .br-field-label,
+.br-auth .br-input:not(:placeholder-shown) ~ .br-field-label,
+.br-auth .br-input:-webkit-autofill ~ .br-field-label {
+    transform: translateY(-14px) scale(0.78);
+}
+
+.br-auth .br-input:focus ~ .br-field-label { color: var(--au-a); }
+
+.br-auth .br-input:-webkit-autofill {
+    -webkit-text-fill-color: var(--br-text);
+    transition: background-color 9999s ease-out 0s;
+}
+
+.br-auth .br-auth-eye { right: 0; top: 60%; color: var(--br-text-secondary); border-radius: 999px; }
+.br-auth .br-auth-eye:hover { color: var(--au-a); }
+
+/* ---- Error: soft tint + quick shake ---- */
+
+.br-auth .br-auth-form .br-auth-error {
+    border-radius: 12px;
+    animation: br-auth-shake 0.4s ease both;
+}
+
+@keyframes br-auth-shake {
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
+}
+
+/* ---- Buttons: one clear primary, the rest are text links ---- */
+
+.br-auth .br-button { border-radius: 999px; }
+
+.br-auth .br-button-primary,
+:root .br-auth .br-button-primary {
+    min-height: 50px;
+    border: 0;
+    background: var(--au-a);
+    color: #000000;
+    font-weight: 700;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.br-auth .br-button-primary:hover,
+:root .br-auth .br-button-primary:hover,
+:root .br-auth .br-button-primary:active { background: var(--au-a); color: #000000; opacity: 0.92; }
+
+.br-auth .br-button-primary:active { transform: scale(0.98); }
+.br-auth .br-button-primary:disabled { opacity: 0.55; cursor: progress; }
+
+.br-auth .br-auth-alt { gap: 4px; }
+
+.br-auth .br-auth-alt .br-button {
+    min-height: 40px;
+    border: 0;
+    background: transparent;
+    color: var(--au-a);
+    font-weight: 600;
+}
+
+.br-auth .br-auth-alt .br-button:hover { background: transparent; border: 0; color: var(--au-a); text-decoration: underline; text-underline-offset: 4px; }
+
+.br-auth .br-auth-alt .br-auth-guest { color: var(--br-text-secondary); font-weight: 500; }
+.br-auth .br-auth-alt .br-auth-guest:hover { color: var(--br-text); }
+
+.br-auth .br-auth-eye:focus-visible,
+.br-auth .br-button:focus-visible,
+.br-auth .br-auth-tabs a:focus-visible,
+.br-auth .br-auth-alt a:focus-visible { outline: 2px solid var(--au-a); outline-offset: 3px; }
+
+.br-auth .br-auth-credit strong { color: var(--au-c); }
+
+/* ---- Gentle staggered entrance ---- */
+
+@keyframes br-auth-rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.br-auth .br-auth-aside > *,
+.br-auth .br-auth-form > *,
+.br-auth .br-auth-alt > * { animation: br-auth-rise 0.5s var(--au-ease) both; }
+
+.br-auth .br-auth-aside > :nth-child(2),
+.br-auth .br-auth-form > :nth-child(1) { animation-delay: 0.06s; }
+.br-auth .br-auth-aside > :nth-child(3),
+.br-auth .br-auth-form > :nth-child(2) { animation-delay: 0.12s; }
+.br-auth .br-auth-aside > :nth-child(4),
+.br-auth .br-auth-form > :nth-child(3) { animation-delay: 0.18s; }
+.br-auth .br-auth-form > :nth-child(4) { animation-delay: 0.24s; }
+.br-auth .br-auth-form > :nth-child(5) { animation-delay: 0.3s; }
+
+/* ---- Tablet and up ---- */
+
+@media (min-width: 641px) {
+    .br-auth .br-auth-card { max-width: 440px; }
+}
+
+@media (min-width: 1024px) {
+    .br-auth .br-auth-card { max-width: none; }
+    .br-auth .br-brand-name,
+    .br-auth .br-auth-aside-brand .br-brand-name { font-size: 34px; }
+}
+
+/* ---- Phone: bottom sheet (layout unchanged) ---- */
+
+@keyframes br-auth-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+
+    :root .br-auth { display: block; padding: 0; min-height: 100vh; min-height: 100dvh; }
+
+    .br-auth .br-auth-shell {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: stretch;
+        justify-items: stretch;
+    }
+
+    .br-auth .br-auth-aside {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        flex: 1 1 auto;
+        min-height: 72px;
+        gap: 12px;
+        padding: calc(env(safe-area-inset-top) + 24px) 24px 16px;
+    }
+
+    .br-auth .br-auth-aside > p,
+    .br-auth .br-auth-points { display: none; }
+
+    .br-auth .br-auth-aside h1 { display: none; margin: 0; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+
+    .br-auth .br-auth-aside-brand { margin-bottom: 0; }
+    .br-auth .br-auth-aside-brand .br-brand-name { font-size: 28px; }
+
+    .br-auth .br-auth-card {
+        flex: none;
+        max-width: none;
+        width: 100%;
+        background: #000000;
+        border-radius: 28px 28px 0 0;
+        padding: 12px var(--br-space-5) calc(var(--br-space-5) + env(safe-area-inset-bottom));
+        animation: br-auth-sheet-up 0.4s var(--au-ease) both;
+    }
+
+    /* Grab handle */
+    .br-auth .br-auth-card::before {
+        content: "";
+        position: static;
+        display: block;
+        width: 40px;
+        height: 4px;
+        margin: 0 auto var(--br-space-4);
+        border: 0;
+        border-radius: 2px;
+        background: #3A3A3A;
+    }
+
+    .br-auth .br-auth-card .br-auth-brand { display: none; }
+    .br-auth .br-auth-tabs { margin-bottom: var(--br-space-4); }
+    .br-auth .br-auth-form { gap: 16px; }
+    .br-auth .br-auth-alt { margin-top: var(--br-space-3); }
+    .br-auth .br-auth-credit { margin-top: var(--br-space-3); }
+}
+
+/* Taller phones have room to show the slogan above the sheet */
+@media (max-width: 640px) and (min-height: 780px) {
+    .br-auth .br-auth-aside h1 { display: block; }
+}
+
+/* Shorter phones: drop the sub-line so the sheet fits */
+@media (max-width: 640px) and (max-height: 760px) {
+    .br-auth .br-auth-card > p { display: none; }
+    .br-auth .br-auth-card h2 { margin-bottom: var(--br-space-3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-auth .br-auth-card,
+    .br-auth .br-auth-aside > *,
+    .br-auth .br-auth-form > *,
+    .br-auth .br-auth-alt > *,
+    .br-auth .br-auth-error,
+    .br-auth .br-auth-tabs::after { animation: none; }
+    .br-auth .br-field-label,
+    .br-auth .br-auth-form label.br-field::after { transition: none; }
+}
+
+
+/* =========================================================
+   Google button + "coming soon" popup (login / register)
+   Plain pill, no outline. Icon keeps Google's own colours.
+   ========================================================= */
+
+.br-auth .br-auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: var(--br-space-5) 0 var(--br-space-4);
+    color: var(--br-text-muted);
+    font-size: var(--br-font-size-sm);
+}
+
+.br-auth .br-auth-divider::before,
+.br-auth .br-auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--au-line);
+}
+
+.br-auth .br-auth-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 50px;
+    padding: 0 var(--br-space-4);
+    border: 0;
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: #1F1F1F;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.br-auth .br-auth-google:hover { opacity: 0.92; }
+.br-auth .br-auth-google:active { transform: scale(0.98); }
+.br-auth .br-auth-google:focus-visible { outline: 2px solid var(--au-a); outline-offset: 3px; }
+.br-auth .br-auth-google-icon { flex: none; display: block; }
+
+.br-auth-popup-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: var(--br-space-5);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.br-auth-popup {
+    width: 100%;
+    max-width: 340px;
+    padding: var(--br-space-6) var(--br-space-5) var(--br-space-5);
+    border-radius: 24px;
+    background: #000000;
+    color: var(--br-text);
+    text-align: center;
+    display: grid;
+    gap: var(--br-space-3);
+    animation: br-auth-rise 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.br-auth-popup h3 { margin: 0; font-size: 20px; font-weight: 700; color: #E6B851; }
+.br-auth-popup p { margin: 0 0 var(--br-space-2); color: var(--br-text-secondary); line-height: 1.5; }
+
+.br-auth-popup .br-button-primary {
+    width: 100%;
+    min-height: 46px;
+    border: 0;
+    border-radius: 999px;
+    background: #E6B851;
+    color: #000000;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.br-auth-popup .br-button-primary:hover,
+.br-auth-popup .br-button-primary:active { background: #E6B851; color: #000000; opacity: 0.92; }
+.br-auth-popup .br-button-primary:focus-visible { outline: 2px solid #E6B851; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .br-auth-popup { animation: none; }
+}
