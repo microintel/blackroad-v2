@@ -1183,11 +1183,6 @@ function attachEvents(page) {
         render(page);
     });
 
-    page.querySelectorAll("[data-modal]").forEach((layer) => {
-        layer.addEventListener("click", (event) => {
-            if (event.target === event.currentTarget) closeModals(page);
-        });
-    });
 }
 
 /* =========================================

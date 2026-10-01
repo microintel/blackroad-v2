@@ -1,6 +1,6 @@
 import { login, register, loginGuest } from "../../services/auth.js";
 import { navigate, hardNavigate } from "../../app/router.js";
-import { authBackground } from "./auth-background.js";
+import { authBackground, startParticles } from "./auth-background.js";
 
 /* Full-screen sign-in / register (rendered without the app shell).
    Scope changes on sign-in, and the data layer caches databases per
@@ -17,6 +17,20 @@ export function AuthScreen(mode) {
 
     el.innerHTML = `
         ${authBackground()}
+        <div class="br-auth-shell">
+        <aside class="br-auth-aside" aria-hidden="false">
+            <div class="br-auth-aside-brand">
+                <div class="br-brand-logo">B</div>
+                <div class="br-brand-name">BlackRoad</div>
+            </div>
+            <h1>Every rupee,<br>one clear view.</h1>
+            <p>Track income, stocks, deposits, lending and SIPs in one place.</p>
+            <ul class="br-auth-points">
+                <li>Your data stays on this device</li>
+                <li>Works offline as an installed app</li>
+                <li>Light and dark themes</li>
+            </ul>
+        </aside>
         <div class="br-auth-card">
             <div class="br-auth-brand">
                 <div class="br-brand-logo">B</div>
@@ -37,8 +51,9 @@ export function AuthScreen(mode) {
             <form class="br-auth-form" novalidate>
                 ${isLogin ? "" : `<label>Full name<input name="name" class="br-input" autocomplete="name" required></label>`}
                 <label>Email<input name="email" type="email" class="br-input" autocomplete="email" required></label>
-                <label>Password<input name="password" type="password" class="br-input" autocomplete="${isLogin ? "current-password" : "new-password"}" required></label>
-                ${isLogin ? "" : `<label>Confirm password<input name="confirmPassword" type="password" class="br-input" autocomplete="new-password" required></label>`}
+                ${isLogin ? "" : `<div class="br-auth-row">`}
+                <label>Password<span class="br-auth-pw"><input name="password" type="password" class="br-input" autocomplete="${isLogin ? "current-password" : "new-password"}" required><button type="button" class="br-auth-eye" data-eye aria-label="Show password" aria-pressed="false">Show</button></span></label>
+                ${isLogin ? "" : `<label>Confirm password<input name="confirmPassword" type="password" class="br-input" autocomplete="new-password" required></label></div>`}
                 <p class="br-auth-error" role="alert" hidden></p>
                 <button type="submit" class="br-button br-button-primary">${isLogin ? "Sign in" : "Create account"}</button>
             </form>
@@ -54,7 +69,26 @@ export function AuthScreen(mode) {
 
             <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
         </div>
+        </div>
     `;
+
+    startParticles(el);
+
+    // Show / hide password (display only; the value is submitted as before).
+    const eye = el.querySelector("[data-eye]");
+    eye.addEventListener("click", () => {
+        const pw = el.querySelector('input[name="password"]');
+        const show = pw.type === "password";
+        pw.type = show ? "text" : "password";
+        eye.textContent = show ? "Hide" : "Show";
+        eye.setAttribute("aria-pressed", String(show));
+        eye.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    });
+
+    // Desktop: start typing straight away. Skipped on touch so the keyboard doesn't jump up.
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        requestAnimationFrame(() => el.querySelector("input")?.focus({ preventScroll: true }));
+    }
 
     const form = el.querySelector("form");
     const err = el.querySelector(".br-auth-error");

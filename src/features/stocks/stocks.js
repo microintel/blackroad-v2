@@ -1523,24 +1523,6 @@ function attachEvents(page) {
         }
     });
 
-    page.querySelector("[data-txn-modal]").addEventListener(
-        "click",
-        (event) => {
-            if (event.target === event.currentTarget) {
-                closeTxnModal(page);
-            }
-        }
-    );
-
-    ["[data-txn-detail-modal]", "[data-search-modal]", "[data-clear-modal]"].forEach((sel) => {
-        page.querySelector(sel).addEventListener("click", (event) => {
-            if (event.target !== event.currentTarget) return;
-            if (sel === "[data-search-modal]") closeSearch(page);
-            else if (sel === "[data-clear-modal]") page.querySelector("[data-clear-modal]").hidden = true;
-            else closeTxnDetail(page);
-        });
-    });
-
     // Ctrl/Cmd+K -> search, Esc -> close the top open modal.
     // Removes itself once the page has been replaced by another route.
     const onKey = (event) => {
@@ -1568,23 +1550,6 @@ function attachEvents(page) {
     };
     document.addEventListener("keydown", onKey);
 
-    page.querySelector("[data-detail-modal]").addEventListener(
-        "click",
-        (event) => {
-            if (event.target === event.currentTarget) {
-                closeDetail(page);
-            }
-        }
-    );
-
-    page.querySelector("[data-delete-modal]").addEventListener(
-        "click",
-        (event) => {
-            if (event.target === event.currentTarget) {
-                closeDeleteModal(page);
-            }
-        }
-    );
 }
 
 /* =========================================

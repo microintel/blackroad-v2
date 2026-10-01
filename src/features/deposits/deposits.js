@@ -453,14 +453,6 @@ function attachEvents(page) {
         }
     });
 
-    page.querySelectorAll(".br-modal-layer").forEach((layer) => {
-        layer.addEventListener("click", (event) => {
-            if (event.target !== event.currentTarget) return;
-            if (layer.hasAttribute("data-fd-modal")) closeFdModal(page);
-            else if (layer.hasAttribute("data-close-modal")) cancelClose(page);
-            else cancelDelete(page);
-        });
-    });
 }
 
 /* =========================================

@@ -981,37 +981,11 @@ function attachEvents(page) {
     }
 
 
-    /*
-     * Close modal when clicking backdrop
-     */
 
     const modal =
         page.querySelector(
             "[data-income-modal]"
         );
-
-
-    if (modal) {
-
-        modal.addEventListener(
-            "click",
-            (event) => {
-
-                if (
-                    event.target ===
-                    modal
-                ) {
-
-                    closeIncomeModal(
-                        page
-                    );
-
-                }
-
-            }
-        );
-
-    }
 
 
     /*

@@ -251,7 +251,7 @@ export async function readBackupFile(file) {
         }
 
         if (!data || typeof data.stores !== "object") {
-            throw new Error(`Backup section "${name}" is damaged.`);
+            throw new Error("Part of this backup file is damaged.");
         }
 
         const known = Object.values(DATABASES[module].stores);
@@ -264,7 +264,7 @@ export async function readBackupFile(file) {
             }
 
             if (!Array.isArray(records)) {
-                throw new Error(`Store "${name} / ${storeName}" is damaged.`);
+                throw new Error("Part of this backup file is damaged.");
             }
 
             stores[storeName] = records;

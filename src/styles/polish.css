@@ -1,0 +1,533 @@
+/* =========================================================
+   MODULE POLISH  (presentation only)
+   Stocks, Deposits, Lending, Mutual Fund (Step-up),
+   Financial Intelligence, Accounting, Data, Notifications,
+   Account. Income and Dashboard are excluded on purpose.
+   Theme tokens only, so Light and Dark both work.
+
+   UX rules applied:
+   1. One border level  - borders only where they separate (cards, modals, controls); never nested. No grey fills.
+   2. Clear hierarchy   - one heading style, quiet labels, strong numbers.
+   3. Feedback          - hover, press and focus states on everything tappable.
+   4. Consistent rhythm - one spacing scale between sections.
+   5. Fitts's law       - 44px tap targets on touch screens.
+   6. Calm motion       - short fades, disabled for reduced-motion users.
+   ========================================================= */
+
+.br-page:not(.br-income):not(.br-dash) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-5);
+}
+
+/* ---------- 1. Page heading ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-page-heading h2 {
+    font-size: 24px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-page-heading p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ---------- 2. Cards ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-card {
+    padding: var(--br-space-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--br-radius-lg);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-card-heading {
+    margin-bottom: var(--br-space-4);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-card-heading h3,
+.br-page:not(.br-income):not(.br-dash) .br-card > h3 {
+    font-size: var(--br-font-size-lg);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-card-heading p,
+.br-page:not(.br-income):not(.br-dash) .br-muted {
+    color: var(--text-secondary);
+    font-size: var(--br-font-size-sm);
+}
+
+/* Summary stat cards: small quiet label above a strong, aligned number */
+.br-page:not(.br-income):not(.br-dash) .br-grid > .br-card:has(> .br-stat),
+.br-page:not(.br-income):not(.br-dash) .br-grid > .br-stat {
+    min-width: 0;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-stat { gap: 6px; }
+
+.br-page:not(.br-income):not(.br-dash) .br-stat-label {
+    color: var(--text-secondary);
+    font-size: var(--br-font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-stat-value {
+    font-size: 22px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 3. Tabs: scrollable, clear active state ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-income-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-income-tabs::-webkit-scrollbar { display: none; }
+.br-page:not(.br-income):not(.br-dash) .br-income-tab { flex: 0 0 auto; white-space: nowrap; }
+
+/* ---------- 4. Buttons: press feedback ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-button {
+    cursor: pointer;
+    transition: background var(--br-transition-fast), color var(--br-transition-fast), transform var(--br-transition-fast);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-button:active { transform: scale(0.97); }
+
+.br-page:not(.br-income):not(.br-dash) .br-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+
+/* ---------- 5. Forms ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-input,
+.br-page:not(.br-income):not(.br-dash) .br-select,
+.br-page:not(.br-income):not(.br-dash) .br-textarea {
+    background: var(--input-background);
+    border-color: var(--input-border);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-input:focus,
+.br-page:not(.br-income):not(.br-dash) .br-select:focus,
+.br-page:not(.br-income):not(.br-dash) .br-textarea:focus {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-input::placeholder { color: var(--text-muted); }
+
+.br-page:not(.br-income):not(.br-dash) .br-field-help {
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.ac-stack label,
+.ac-row label,
+.br-form-grid > label { letter-spacing: 0.005em; }
+
+.ac-error { font-size: var(--br-font-size-xs); font-weight: 500; }
+
+/* ---------- 6. Tables: sticky header, tabular numbers, row hover ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-table-wrap {
+    border: 0;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--br-surface);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-table td { font-variant-numeric: tabular-nums; }
+.br-page:not(.br-income):not(.br-dash) .br-table tbody tr { transition: background var(--br-transition-fast); }
+.br-page:not(.br-income):not(.br-dash) .br-table tbody tr:hover { background: var(--hover-background); }
+
+/* ---------- 7. Badges: readable on both themes ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-badge { font-weight: 600; }
+
+/* ---------- 8. Empty states: invite the next action ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-empty-state {
+    min-height: 180px;
+    gap: 4px;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-empty-state strong { font-size: var(--br-font-size-lg); }
+
+/* ---------- 9. Module details ---------- */
+
+/* Stocks */
+.br-detail-grid > div {
+    padding: var(--br-space-3);
+    background: var(--br-surface-hover);
+    border-radius: var(--br-radius-md);
+}
+
+.br-detail-grid .k {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+}
+
+.br-stock-link { transition: color var(--br-transition-fast); }
+.br-stock-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Lending + Mutual fund progress */
+.ll-progress { height: 8px; border-radius: var(--br-radius-full); }
+.ll-progress-fill { border-radius: var(--br-radius-full); transition: width var(--br-transition-slow); }
+
+.ll-bar-track { border-radius: var(--br-radius-full); overflow: hidden; }
+.ll-bar-fill { border-radius: var(--br-radius-full); transition: width var(--br-transition-slow); }
+.ll-bar-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.ll-year-head {
+    padding: var(--br-space-2) var(--br-space-3);
+    border-radius: var(--br-radius-md);
+    transition: background var(--br-transition-fast);
+}
+
+.ll-year-head:hover { background: var(--hover-background); }
+.ll-loan-detail { padding-left: var(--br-space-4); }
+
+.su-row,
+.su-pending-row {
+    padding: var(--br-space-3);
+    border-radius: var(--br-radius-md);
+    transition: background var(--br-transition-fast);
+}
+
+.su-row:hover { background: var(--hover-background); }
+.su-stack { gap: var(--br-space-3); }
+
+/* Accounting */
+.ac-layout { gap: var(--br-space-5); }
+.ac-live-row:last-child,
+.ac-line:last-child { border-bottom: 0; }
+
+.ac-total {
+    padding-top: var(--br-space-3);
+    border-bottom: 0;
+}
+
+.ac-net {
+    padding: var(--br-space-3);
+    background: var(--br-gold-surface);
+    border-radius: var(--br-radius-md);
+}
+
+.ac-live-row,
+.ac-line { font-variant-numeric: tabular-nums; }
+
+/* Notifications */
+.nf-item {
+    margin: 0 calc(var(--br-space-2) * -1);
+    padding: var(--br-space-3) var(--br-space-2);
+    border-radius: var(--br-radius-md);
+    transition: background var(--br-transition-fast);
+}
+
+.nf-item:hover { background: var(--hover-background); }
+.nf-item:active { background: var(--active-background); }
+.nf-side { font-variant-numeric: tabular-nums; }
+
+/* Account */
+.ac-avatar { width: 56px; height: 56px; font-size: var(--br-font-size-xl); letter-spacing: 0.02em; }
+.ac-plan-row { padding: var(--br-space-3); background: var(--br-surface-hover); border-radius: var(--br-radius-md); }
+.ac-account-grid { gap: var(--br-space-5); }
+
+/* Data management */
+.dm-progress progress {
+    appearance: none;
+    height: 8px;
+    border: 0;
+    border-radius: var(--br-radius-full);
+    overflow: hidden;
+    background: var(--active-background);
+}
+
+.dm-progress progress::-webkit-progress-bar { background: var(--active-background); }
+.dm-progress progress::-webkit-progress-value { background: var(--accent); border-radius: var(--br-radius-full); }
+.dm-progress progress::-moz-progress-bar { background: var(--accent); }
+
+/* Financial Intelligence: tactile cards */
+
+/* ---------- 10. Modals and toasts ---------- */
+
+.br-modal { animation: br-pop 180ms ease-out; }
+.br-modal-layer,
+.br-modal-backdrop { animation: br-fade 160ms ease-out; }
+.br-modal-footer { gap: var(--br-space-2); }
+
+.br-toast { font-weight: 500; }
+
+@keyframes br-pop {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes br-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Page content eases in once per route change */
+.br-page:not(.br-income):not(.br-dash) > * { animation: br-fade 200ms ease-out; }
+
+/* ---------- 11. Responsive + touch ---------- */
+
+@media (max-width: 900px) {
+    .br-page:not(.br-income):not(.br-dash) .br-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .br-page:not(.br-income):not(.br-dash) .br-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+    .br-page:not(.br-income):not(.br-dash) { gap: var(--br-space-4); }
+    .br-page:not(.br-income):not(.br-dash) .br-card { padding: var(--br-space-4); }
+    .br-page:not(.br-income):not(.br-dash) .br-grid-2,
+    .br-page:not(.br-income):not(.br-dash) .br-grid-3 { grid-template-columns: 1fr; }
+    .br-page:not(.br-income):not(.br-dash) .br-stat-value { font-size: 20px; }
+    .br-page:not(.br-income):not(.br-dash) .br-page-actions { justify-content: flex-start; }
+    .br-modal-footer { flex-direction: column-reverse; }
+    .br-modal-footer .br-button { width: 100%; }
+    .nf-item { flex-wrap: wrap; }
+    .nf-side { align-items: flex-start; text-align: left; }
+}
+
+@media (pointer: coarse) {
+    .br-page:not(.br-income):not(.br-dash) .br-button,
+    .br-page:not(.br-income):not(.br-dash) .br-input,
+    .br-page:not(.br-income):not(.br-dash) .br-select,
+    .br-page:not(.br-income):not(.br-dash) .br-income-tab { min-height: 44px; }
+}
+
+/* ---------- 12. Accessibility ---------- */
+
+.br-page:not(.br-income):not(.br-dash) .br-button:focus-visible,
+.br-page:not(.br-income):not(.br-dash) .br-income-tab:focus-visible,
+.nf-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-modal,
+    .br-modal-layer,
+    .br-modal-backdrop,
+    .br-page > * { animation: none; }
+    .br-button:active { transform: none; }
+    .ll-progress-fill,
+    .ll-bar-fill { transition: none; }
+}
+
+
+/* =========================================================
+   FLAT PASS: no grey fills, one border level
+   Rule: a container gets a border only to separate it from the
+   page. Anything inside a bordered container has no border and
+   no fill. Controls (inputs, buttons) keep their own outline.
+   ========================================================= */
+
+/* Nothing nested inside a card repeats its border or fill */
+.br-page:not(.br-income):not(.br-dash) .br-card .br-card,
+.br-page:not(.br-income):not(.br-dash) .br-card .br-table-wrap,
+.br-page:not(.br-income):not(.br-dash) .br-card .br-toolbar,
+.br-page:not(.br-income):not(.br-dash) .br-card .br-empty-state {
+    border: 0;
+    background: transparent;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-card .br-card { padding: 0; }
+
+/* Standalone containers: a single border, no fill */
+.br-page:not(.br-income):not(.br-dash) > .br-table-wrap,
+.br-page:not(.br-income):not(.br-dash) > .br-toolbar {
+    background: transparent;
+    border: 1px solid var(--border);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-table-wrap { background: transparent; }
+.br-page:not(.br-income):not(.br-dash) .br-table th { background: var(--surface); }
+.br-page:not(.br-income):not(.br-dash) .br-table tbody tr:hover { background: transparent; }
+
+/* Empty states: text only */
+.br-page:not(.br-income):not(.br-dash) .br-empty-state { background: transparent; border: 0; }
+
+/* Hover = outline, never a grey fill (only on clickable rows) */
+.ll-year-head:hover,
+.su-row:hover,
+.nf-item:hover {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.nf-item:active { background: transparent; box-shadow: inset 0 0 0 1px var(--text-muted); }
+.su-row:last-child { box-shadow: none; }
+
+/* Buttons: outline instead of grey */
+.br-page:not(.br-income):not(.br-dash) .br-button:not(.br-button-primary):not(.br-button-danger) {
+    background: transparent;
+    border: 1px solid var(--border);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-button:not(.br-button-primary):not(.br-button-danger):hover {
+    background: transparent;
+    border-color: var(--text-secondary);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-button-primary { border: 0; }
+.br-page:not(.br-income):not(.br-dash) .br-button-danger { border: 0; }
+
+/* Tabs: selected = gold outline, no grey pill */
+.br-page:not(.br-income):not(.br-dash) .br-income-tabs:not(.br-tabs-flat) { background: transparent; padding: 0; gap: var(--br-space-2); }
+
+.br-page:not(.br-income):not(.br-dash) .br-income-tabs:not(.br-tabs-flat) .br-income-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+}
+
+.br-page:not(.br-income):not(.br-dash) .br-income-tabs:not(.br-tabs-flat) .br-income-tab.active {
+    background: transparent;
+    border-color: var(--br-gold);
+}
+
+/* Neutral badges: outline only. Coloured badges keep their tint. */
+.br-page:not(.br-income):not(.br-dash) .br-badge:not([class*="br-badge-"]) {
+    background: transparent;
+    border: 1px solid var(--border);
+}
+
+/* Inset blocks: no grey boxes */
+.br-detail-grid > div,
+.ac-plan-row,
+.ac-net { background: transparent; padding-left: 0; padding-right: 0; }
+
+.ll-month-row { background: transparent; border-bottom: 1px solid var(--border); }
+
+/* Progress tracks: outline, not grey fill */
+.ll-progress,
+.ll-bar-track,
+.dm-progress progress {
+    background: transparent;
+    border: 1px solid var(--border);
+    height: 10px;
+    box-sizing: border-box;
+}
+
+.dm-progress progress::-webkit-progress-bar { background: transparent; }
+
+/* Modals and toasts float, so they need one edge */
+.br-modal { background: var(--surface); border: 1px solid var(--border); }
+.br-toast { background: var(--surface); border: 1px solid var(--border); }
+.br-modal-header,
+.br-modal-footer { border: 0; }
+
+/* ---------- Financial Intelligence ---------- */
+
+.br-fi .br-fi-card,
+.br-fi .br-fi-primary {
+    --fi-inset: transparent;
+    --fi-track: transparent;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+
+.br-fi .br-fi-card:hover { border-color: var(--border); }
+
+.br-fi .br-fi-slot,
+.br-fi .br-fi-note,
+.br-fi .br-fi-icon { background: transparent; }
+
+.br-fi .br-fi-bar { border: 1px solid var(--border); box-sizing: border-box; height: 10px; }
+.br-fi .br-fi-pill { background: transparent; border: 1px solid var(--border); }
+.br-fi .br-fi-node::after { background: var(--border); }
+
+/* ---------- Login / Register ---------- */
+
+.br-auth-card { background: var(--surface); border: 1px solid var(--border); }
+.br-auth-tabs { background: transparent; padding: 0; gap: var(--br-space-2); }
+.br-auth-tabs a { border: 1px solid var(--border); }
+.br-auth-tabs a.is-active { background: transparent; border-color: var(--br-gold); }
+.br-auth-alt .br-button { background: transparent; border: 1px solid var(--border); }
+.br-auth-alt .br-button:hover { background: transparent; border-color: var(--text-secondary); }
+.br-auth-error { margin: 0; }
+
+
+/* ---------- Data management: progress + storage ---------- */
+
+.dm-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--br-space-3); margin-bottom: var(--br-space-2); }
+.dm-progress-head p { margin: 0; }
+.dm-progress-head strong { font-variant-numeric: tabular-nums; font-size: var(--br-font-size-lg); color: var(--br-gold-text); }
+.dm-progress progress { height: 12px; }
+
+.dm-storage { display: grid; gap: var(--br-space-4); }
+.dm-storage-top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--br-space-4); }
+.dm-storage-top strong { font-size: var(--br-font-size-xl); font-variant-numeric: tabular-nums; }
+.dm-storage-value { font-size: 32px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+.dm-meter {
+    height: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--br-radius-full);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.dm-meter > span { display: block; height: 100%; min-width: 4px; background: var(--br-gold); border-radius: inherit; transition: width var(--br-transition-slow); }
+
+.dm-storage-rows { display: grid; gap: var(--br-space-2); }
+
+.dm-storage-rows > div {
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-2);
+    font-size: var(--br-font-size-sm);
+    color: var(--br-text-secondary);
+}
+
+.dm-storage-rows strong { margin-left: auto; color: var(--br-text); font-variant-numeric: tabular-nums; }
+
+.dm-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dm-dot-data { background: var(--br-gold); }
+.dm-dot-app { background: var(--br-info); }
+.dm-storage .br-field-help .br-button { margin-left: var(--br-space-2); min-height: 30px; }
+
+
+/* Success popup (Data Management) */
+.dm-success { max-width: 400px; }
+.dm-success-body { display: flex; flex-direction: column; align-items: center; gap: var(--br-space-3); text-align: center; padding-top: var(--br-space-7); }
+.dm-success-body h3 { margin: 0; font-size: var(--br-font-size-xl); }
+.dm-success-body p { margin: 0; line-height: 1.5; }
+
+.dm-success-icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border: 2px solid var(--success);
+    border-radius: 50%;
+    color: var(--success);
+    font-size: 28px;
+    font-weight: 700;
+    animation: br-pop 260ms ease-out;
+}
+
+.dm-success .br-modal-footer { justify-content: center; }
+.dm-success .br-modal-footer .br-button { min-width: 140px; }

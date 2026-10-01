@@ -32,10 +32,6 @@ export function Sidebar() {
 
         </div>
 
-        <div class="br-credit-tag">
-            A Microintel project
-        </div>
-
 
         <nav
             class="br-sidebar-nav"

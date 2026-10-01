@@ -1,14 +1,151 @@
-/* Decorative background for the Login and Register screens only.
-   Pure markup: a faint gold data network, flowing lines, an oversized
-   BlackRoad mark and a soft glow. It is aria-hidden and never takes
-   clicks, so it cannot affect the forms. */
+/* Interactive particle network for the Login and Register screens.
+   Behaves like particles.js (linked dots, hover "grab" lines to the
+   cursor, click to add particles) but is self-contained, so it works
+   offline in this PWA with no library or network needed.
+   Flat colour only: no gradients. The canvas is aria-hidden and never
+   takes clicks, so it cannot affect the forms. */
+
+const GOLD = "212, 175, 55";
+const LINK_DIST = 140;
+const GRAB_DIST = 190;
+const MAX_PARTICLES = 160;
 
 export function authBackground() {
-    return `
-        <div class="br-auth-bg" aria-hidden="true">
-            <span class="br-auth-glow"></span>
-            <svg class="br-auth-net" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" focusable="false"><defs><linearGradient id="brAuthFlow" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#D4AF37" stop-opacity="0"/><stop offset=".5" stop-color="#D4AF37" stop-opacity=".22"/><stop offset="1" stop-color="#D4AF37" stop-opacity="0"/></linearGradient></defs><g fill="none" stroke="url(#brAuthFlow)" stroke-width="1"><path d="M-40 640 C 260 520, 420 760, 720 640 S 1180 470, 1480 580"/><path d="M-40 700 C 300 600, 480 820, 760 700 S 1200 560, 1480 650" opacity=".7"/><path d="M-40 230 C 280 120, 520 330, 800 220 S 1200 120, 1480 200" opacity=".8"/><path d="M-40 290 C 320 200, 560 390, 840 280 S 1220 190, 1480 260" opacity=".5"/></g><g stroke="#D4AF37" stroke-opacity=".13" stroke-width="1"><line x1="477" y1="157" x2="581" y2="117"/><line x1="477" y1="157" x2="423" y2="354"/><line x1="928" y1="91" x2="995" y2="235"/><line x1="928" y1="91" x2="730" y2="61"/><line x1="730" y1="61" x2="581" y2="117"/><line x1="155" y1="387" x2="67" y2="474"/><line x1="155" y1="387" x2="232" y2="486"/><line x1="1171" y1="134" x2="995" y2="235"/><line x1="1171" y1="134" x2="1383" y2="129"/><line x1="338" y1="557" x2="232" y2="486"/><line x1="338" y1="557" x2="464" y2="522"/><line x1="1338" y1="515" x2="1400" y2="421"/><line x1="1338" y1="515" x2="1285" y2="687"/><line x1="577" y1="850" x2="395" y2="726"/><line x1="577" y1="850" x2="821" y2="765"/><line x1="94" y1="751" x2="147" y2="585"/><line x1="112" y1="203" x2="239" y2="115"/><line x1="112" y1="203" x2="273" y2="225"/><line x1="969" y1="389" x2="995" y2="235"/><line x1="969" y1="389" x2="1131" y2="360"/><line x1="464" y1="522" x2="423" y2="354"/><line x1="655" y1="282" x2="581" y2="117"/><line x1="655" y1="282" x2="477" y2="157"/><line x1="823" y1="471" x2="969" y2="389"/><line x1="823" y1="471" x2="952" y2="672"/><line x1="952" y1="672" x2="821" y2="765"/><line x1="952" y1="672" x2="1142" y2="717"/><line x1="1189" y1="824" x2="1142" y2="717"/><line x1="1189" y1="824" x2="1323" y2="860"/><line x1="1400" y1="720" x2="1285" y2="687"/><line x1="1400" y1="720" x2="1323" y2="860"/><line x1="423" y1="354" x2="273" y2="225"/><line x1="273" y1="225" x2="239" y2="115"/><line x1="1131" y1="360" x2="995" y2="235"/><line x1="103" y1="30" x2="239" y2="115"/><line x1="103" y1="30" x2="112" y2="203"/><line x1="395" y1="726" x2="338" y2="557"/><line x1="395" y1="726" x2="464" y2="522"/><line x1="67" y1="474" x2="147" y2="585"/><line x1="1142" y1="717" x2="1285" y2="687"/><line x1="147" y1="585" x2="232" y2="486"/></g><g fill="#D4AF37"><circle cx="477" cy="157" r="3" fill-opacity="0.38"/><circle cx="477" cy="157" r="9" fill="none" stroke="#D4AF37" stroke-opacity=".12"/><circle cx="928" cy="91" r="2" fill-opacity="0.22"/><circle cx="730" cy="61" r="2" fill-opacity="0.22"/><circle cx="155" cy="387" r="2" fill-opacity="0.22"/><circle cx="1171" cy="134" r="2" fill-opacity="0.22"/><circle cx="338" cy="557" r="2" fill-opacity="0.22"/><circle cx="1338" cy="515" r="3" fill-opacity="0.38"/><circle cx="1338" cy="515" r="9" fill="none" stroke="#D4AF37" stroke-opacity=".12"/><circle cx="577" cy="850" r="2" fill-opacity="0.22"/><circle cx="94" cy="751" r="2" fill-opacity="0.22"/><circle cx="112" cy="203" r="2" fill-opacity="0.22"/><circle cx="969" cy="389" r="2" fill-opacity="0.22"/><circle cx="464" cy="522" r="2" fill-opacity="0.22"/><circle cx="655" cy="282" r="3" fill-opacity="0.38"/><circle cx="655" cy="282" r="9" fill="none" stroke="#D4AF37" stroke-opacity=".12"/><circle cx="995" cy="235" r="2" fill-opacity="0.22"/><circle cx="823" cy="471" r="2" fill-opacity="0.22"/><circle cx="1383" cy="129" r="2" fill-opacity="0.22"/><circle cx="952" cy="672" r="2" fill-opacity="0.22"/><circle cx="821" cy="765" r="2" fill-opacity="0.22"/><circle cx="1189" cy="824" r="3" fill-opacity="0.38"/><circle cx="1189" cy="824" r="9" fill="none" stroke="#D4AF37" stroke-opacity=".12"/><circle cx="1400" cy="720" r="2" fill-opacity="0.22"/><circle cx="423" cy="354" r="2" fill-opacity="0.22"/><circle cx="273" cy="225" r="2" fill-opacity="0.22"/><circle cx="1131" cy="360" r="2" fill-opacity="0.22"/><circle cx="581" cy="117" r="2" fill-opacity="0.22"/><circle cx="103" cy="30" r="3" fill-opacity="0.38"/><circle cx="103" cy="30" r="9" fill="none" stroke="#D4AF37" stroke-opacity=".12"/><circle cx="239" cy="115" r="2" fill-opacity="0.22"/><circle cx="1400" cy="421" r="2" fill-opacity="0.22"/><circle cx="395" cy="726" r="2" fill-opacity="0.22"/><circle cx="232" cy="486" r="2" fill-opacity="0.22"/><circle cx="67" cy="474" r="2" fill-opacity="0.22"/><circle cx="1142" cy="717" r="3" fill-opacity="0.38"/><circle cx="1142" cy="717" r="9" fill="none" stroke="#D4AF37" stroke-opacity=".12"/><circle cx="1323" cy="860" r="2" fill-opacity="0.22"/><circle cx="147" cy="585" r="2" fill-opacity="0.22"/><circle cx="1285" cy="687" r="2" fill-opacity="0.22"/></g><g fill="#FFFFFF" fill-opacity=".035"><rect x="60" y="827" width="6" height="33" rx="1"/><rect x="76" y="805" width="6" height="55" rx="1"/><rect x="92" y="808" width="6" height="52" rx="1"/><rect x="108" y="834" width="6" height="26" rx="1"/><rect x="124" y="819" width="6" height="41" rx="1"/><rect x="140" y="804" width="6" height="56" rx="1"/><rect x="156" y="812" width="6" height="48" rx="1"/><rect x="172" y="802" width="6" height="58" rx="1"/><rect x="188" y="805" width="6" height="55" rx="1"/><rect x="204" y="838" width="6" height="22" rx="1"/><rect x="220" y="804" width="6" height="56" rx="1"/><rect x="236" y="842" width="6" height="18" rx="1"/><rect x="252" y="812" width="6" height="48" rx="1"/><rect x="268" y="826" width="6" height="34" rx="1"/></g></svg>
-            <svg class="br-auth-mark" viewBox="0 0 400 400" focusable="false"><rect x="14" y="14" width="372" height="372" rx="84" fill="none" stroke="#D4AF37" stroke-width="3"/><text x="200" y="278" text-anchor="middle" font-size="260" font-weight="700" fill="#D4AF37" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" letter-spacing="-8">B</text></svg>
-        </div>
-    `;
+    return `<div class="br-auth-bg" aria-hidden="true"><canvas class="br-auth-canvas"></canvas></div>`;
+}
+
+export function startParticles(root) {
+    const canvas = root.querySelector(".br-auth-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let w = 0, h = 0, dpr = 1, raf = 0;
+    let particles = [];
+    const mouse = { x: null, y: null };
+
+    const make = (x, y) => {
+        const a = Math.random() * Math.PI * 2;
+        const s = 0.25 + Math.random() * 0.45;
+        return { x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: 1 + Math.random() * 1.6 };
+    };
+
+    const targetCount = () => {
+        const n = Math.round((w * h) / 11000);
+        return Math.max(28, Math.min(w < 700 ? 55 : 110, n));
+    };
+
+    const resize = () => {
+        const rect = root.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = Math.max(1, rect.width);
+        h = Math.max(1, rect.height);
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const want = targetCount();
+        while (particles.length < want) particles.push(make(Math.random() * w, Math.random() * h));
+        if (particles.length > want) particles.length = want;
+    };
+
+    const draw = (move) => {
+        ctx.clearRect(0, 0, w, h);
+
+        for (const p of particles) {
+            if (move) {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > w) p.vx *= -1;
+                if (p.y < 0 || p.y > h) p.vy *= -1;
+                p.x = Math.min(w, Math.max(0, p.x));
+                p.y = Math.min(h, Math.max(0, p.y));
+            }
+        }
+
+        ctx.lineWidth = 1;
+        for (let i = 0; i < particles.length; i++) {
+            const a = particles[i];
+            for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j];
+                const d = Math.hypot(a.x - b.x, a.y - b.y);
+                if (d < LINK_DIST) {
+                    ctx.strokeStyle = `rgba(${GOLD}, ${0.28 * (1 - d / LINK_DIST)})`;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+            }
+            if (mouse.x !== null) {
+                const d = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+                if (d < GRAB_DIST) {
+                    ctx.strokeStyle = `rgba(${GOLD}, ${0.7 * (1 - d / GRAB_DIST)})`;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    ctx.stroke();
+                    // gentle pull toward the cursor
+                    if (move) { a.x += (mouse.x - a.x) * 0.006; a.y += (mouse.y - a.y) * 0.006; }
+                }
+            }
+        }
+
+        ctx.fillStyle = `rgba(${GOLD}, 0.75)`;
+        for (const p of particles) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    };
+
+    const loop = () => {
+        if (!root.isConnected) return stop();
+        draw(true);
+        raf = requestAnimationFrame(loop);
+    };
+
+    const local = (e) => {
+        const r = root.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+    };
+
+    const onMove = (e) => { const p = local(e); mouse.x = p.x; mouse.y = p.y; };
+    const onLeave = () => { mouse.x = null; mouse.y = null; };
+    const onClick = (e) => {
+        const p = local(e);
+        for (let i = 0; i < 4 && particles.length < MAX_PARTICLES; i++) {
+            particles.push(make(p.x + (Math.random() - 0.5) * 20, p.y + (Math.random() - 0.5) * 20));
+        }
+    };
+    const onVisibility = () => {
+        cancelAnimationFrame(raf);
+        if (!document.hidden && !reduced) raf = requestAnimationFrame(loop);
+    };
+
+    function stop() {
+        cancelAnimationFrame(raf);
+        window.removeEventListener("resize", resize);
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onLeave);
+        document.removeEventListener("mouseleave", onLeave);
+        window.removeEventListener("click", onClick);
+        document.removeEventListener("visibilitychange", onVisibility);
+    }
+
+    // Wait a frame so the element has its real size.
+    requestAnimationFrame(() => {
+        resize();
+        window.addEventListener("resize", resize);
+        window.addEventListener("mousemove", onMove, { passive: true });
+        window.addEventListener("touchmove", onMove, { passive: true });
+        window.addEventListener("touchend", onLeave);
+        document.addEventListener("mouseleave", onLeave);
+        window.addEventListener("click", onClick);
+        document.addEventListener("visibilitychange", onVisibility);
+        if (reduced) draw(false); else loop();
+    });
 }

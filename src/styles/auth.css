@@ -34,8 +34,8 @@
 
 /* =========================================================
    Login / Register background
-   Always black + gold, in Light and Dark alike. Everything here
-   sits behind the card at very low contrast.
+   Flat black with an interactive particle canvas (see
+   auth-background.js). No gradients, shadows or glows.
    ========================================================= */
 
 .br-auth {
@@ -54,49 +54,131 @@
     overflow: hidden;
 }
 
-.br-auth-net {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    -webkit-mask-image: radial-gradient(ellipse 90% 85% at 50% 50%, #000 35%, transparent 100%);
-            mask-image: radial-gradient(ellipse 90% 85% at 50% 50%, #000 35%, transparent 100%);
-}
-
-/* Soft gold glow centred behind the card */
-.br-auth-glow {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: min(900px, 120vw);
-    aspect-ratio: 1;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(closest-side, rgba(212, 175, 55, .13), rgba(212, 175, 55, .05) 55%, transparent 100%);
-}
-
-/* Oversized BlackRoad mark, cropped by the bottom-right corner */
-.br-auth-mark {
-    position: absolute;
-    right: -6vw;
-    bottom: -10vw;
-    width: min(46vw, 640px);
-    height: auto;
-    opacity: .04;
-    transform: rotate(-8deg);
-}
+.br-auth-canvas { display: block; }
 
 .br-auth-card {
     position: relative;
-    border: 1px solid rgba(212, 175, 55, .14);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, .65), 0 0 60px rgba(212, 175, 55, .06);
+    background: var(--br-surface-soft);
+    border: 0;
+    box-shadow: none;
 }
 
-@media (max-width: 480px) {
-    .br-auth-glow { top: 36%; width: 150vw; }
-    .br-auth-mark { width: 78vw; right: -18vw; bottom: -14vw; opacity: .045; }
-    .br-auth-net { opacity: .8; }
+
+/* =========================================================
+   Layout: phone = single card (unchanged).
+   Desktop = brand panel on the left, form on the right.
+   ========================================================= */
+
+.br-auth-shell { width: 100%; display: grid; justify-items: center; }
+.br-auth-aside { display: none; }
+
+.br-auth-pw { position: relative; display: block; }
+.br-auth-pw .br-input { padding-right: 64px; }
+
+.br-auth-eye {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    min-height: 32px;
+    padding: 0 var(--br-space-3);
+    border: 0;
+    border-radius: var(--br-radius-sm);
+    background: transparent;
+    color: var(--br-text-secondary);
+    font-size: var(--br-font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .br-auth-bg * { animation: none !important; }
+.br-auth-eye:hover { color: var(--br-gold-text); }
+
+.br-auth-row { display: grid; gap: var(--br-space-4); }
+
+@media (min-width: 1024px) {
+
+    .br-auth { padding: var(--br-space-8) var(--br-space-9); }
+
+    .br-auth-shell {
+        max-width: 1120px;
+        grid-template-columns: minmax(0, 1fr) 460px;
+        gap: 96px;
+        align-items: center;
+        justify-items: stretch;
+    }
+
+    .br-auth-aside {
+        display: flex;
+        flex-direction: column;
+        gap: var(--br-space-5);
+        min-width: 0;
+    }
+
+    .br-auth-aside-brand { display: flex; align-items: center; gap: var(--br-space-3); margin-bottom: var(--br-space-6); }
+    .br-auth-aside-brand .br-brand-name { font-size: var(--br-font-size-xl); font-weight: 650; }
+
+    .br-auth-aside h1 {
+        margin: 0;
+        font-size: 52px;
+        line-height: 1.08;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--br-text);
+    }
+
+    .br-auth-aside > p {
+        margin: 0;
+        max-width: 420px;
+        font-size: var(--br-font-size-lg);
+        line-height: 1.6;
+        color: var(--br-text-secondary);
+    }
+
+    .br-auth-points { list-style: none; margin: var(--br-space-3) 0 0; padding: 0; display: grid; gap: var(--br-space-3); }
+
+    .br-auth-points li {
+        display: flex;
+        align-items: center;
+        gap: var(--br-space-3);
+        color: var(--br-text-secondary);
+        font-size: var(--br-font-size-md);
+    }
+
+    .br-auth-points li::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--br-gold);
+        flex: none;
+    }
+
+    .br-auth-card {
+        max-width: none;
+        width: 100%;
+        padding: var(--br-space-8) var(--br-space-7);
+    }
+
+    /* The aside already carries the brand, so the card starts with the form */
+    .br-auth-card .br-auth-brand { display: none; }
+    .br-auth-card h2 { font-size: var(--br-font-size-2xl); letter-spacing: -0.015em; }
+    .br-auth-card > p { margin-bottom: var(--br-space-6); }
+    .br-auth-form { gap: var(--br-space-5); }
+    .br-auth-form .br-input { min-height: var(--br-control-height-lg); }
+    .br-auth-form .br-button-primary { min-height: var(--br-control-height-lg); font-size: var(--br-font-size-lg); }
+    .br-auth-row { grid-template-columns: 1fr 1fr; }
+    .br-auth-alt { margin-top: var(--br-space-6); }
+}
+
+@media (min-width: 1024px) and (max-width: 1180px) {
+    .br-auth-shell { gap: 56px; grid-template-columns: minmax(0, 1fr) 420px; }
+    .br-auth-aside h1 { font-size: 42px; }
+}
+
+/* Short desktop windows: keep everything on one screen */
+@media (min-width: 1024px) and (max-height: 760px) {
+    .br-auth { padding-top: var(--br-space-5); padding-bottom: var(--br-space-5); }
+    .br-auth-card { padding: var(--br-space-6) var(--br-space-7); }
+    .br-auth-form { gap: var(--br-space-4); }
+    .br-auth-aside h1 { font-size: 40px; }
 }

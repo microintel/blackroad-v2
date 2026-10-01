@@ -80,11 +80,6 @@ export function confirmDialog({
         cancelBtn.addEventListener("click", () => close(false));
         okBtn.addEventListener("click", () => close(true));
 
-        /* Outside click only dismisses (keeps you signed in). */
-        layer.addEventListener("click", (event) => {
-            if (event.target === layer) close(false);
-        });
-
         document.addEventListener("keydown", onKey, true);
         document.body.appendChild(layer);
 
