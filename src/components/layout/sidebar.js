@@ -32,11 +32,19 @@ export function Sidebar() {
 
         </div>
 
+        <div class="br-credit-tag">
+            A Microintel project
+        </div>
+
 
         <nav
             class="br-sidebar-nav"
             aria-label="Main navigation"
         ></nav>
+
+        <div class="br-sidebar-credit">
+            Developed by <strong>Microintel</strong>
+        </div>
 
     `;
 

@@ -131,6 +131,11 @@ function buildShell(route) {
     main.appendChild(topbar);
     main.appendChild(content);
 
+    const footer = document.createElement("footer");
+    footer.className = "br-footer";
+    footer.innerHTML = 'Developed by <strong>Microintel</strong>';
+    main.appendChild(footer);
+
     const backdrop = document.createElement("div");
     backdrop.className = "br-drawer-backdrop";
 

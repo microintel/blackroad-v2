@@ -51,6 +51,8 @@ export function AuthScreen(mode) {
                        <a href="#/login" data-go="/login" class="br-button">Sign in</a>`}
                 <button type="button" class="br-button br-auth-guest" data-guest>Continue as guest (read-only)</button>
             </div>
+
+            <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
         </div>
     `;
 
