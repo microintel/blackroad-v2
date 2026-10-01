@@ -209,6 +209,7 @@ async function loadStorage(page) {
             <div>
                 <div class="dm-storage-value">${formatBytes(total)}</div>
                 <div class="br-muted">used on this device${quota ? ` of ${formatBytes(quota)} available` : ""}</div>
+                <div class="br-field-help">Your records are ${formatBytes(dataBytes)}. The rest is app files and the device's own housekeeping, which can vary slightly after a restore.</div>
             </div>
             ${quota ? `<strong>${pct < 1 ? "<1" : pct.toFixed(1)}%</strong>` : ""}
         </div>

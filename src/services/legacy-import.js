@@ -182,11 +182,30 @@ async function applyIncome(list) {
         })
     );
 
+    // Skip records that are already stored, so importing the same file
+    // twice does not create duplicates.
+    const sig = (e) => JSON.stringify([
+        Number(e.income) || 0,
+        e.date || "",
+        e.from || "",
+        e.category || "",
+        (e.transactions || []).map((t) => [
+            Number(t.amount) || 0, t.date || "", t.description || "", t.category || "", t.type || ""
+        ])
+    ]);
+
+    const seen = new Set((await store.getEntries()).map(sig));
+    let added = 0;
+
     for (const entry of entries) {
+        const key = sig(entry);
+        if (seen.has(key)) continue;
+        seen.add(key);
         await store.saveEntry(entry);
+        added += 1;
     }
 
-    return entries.length;
+    return added;
 }
 
 async function applyStepUp(profiles) {
@@ -197,9 +216,14 @@ async function applyStepUp(profiles) {
         const name =
             (item.profileName || "Imported SIP").trim() || "Imported SIP";
 
-        const pid = await store.saveProfile({ name });
+        const existing = (await store.getProfiles()).find(
+            (p) => (p.name || "").trim().toLowerCase() === name.toLowerCase()
+        );
 
-        if (item.settings) {
+        const pid = existing ? existing.id : await store.saveProfile({ name });
+
+        // Only a brand-new SIP takes the file's settings; an existing one keeps its own.
+        if (item.settings && !existing) {
             await store.saveSettings(
                 pid,
                 normalizeSettings({ ...item.settings, id: pid })
@@ -207,8 +231,14 @@ async function applyStepUp(profiles) {
         }
 
         if (Array.isArray(item.entries)) {
+            const dates = new Set(
+                existing ? (await store.getProfileEntries(pid)).map((e) => e.date) : []
+            );
+
             for (const en of item.entries) {
                 const { id, profileId, ...rest } = en;
+                if (rest.date && dates.has(rest.date)) continue;
+                dates.add(rest.date);
                 await store.saveEntry(pid, rest);
                 written += 1;
             }
