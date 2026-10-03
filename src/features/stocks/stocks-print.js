@@ -1,5 +1,5 @@
 import {
-    getTxnPnLMap, calculateMonthlySummary, calculateAllTimeSummary,
+    getTxnPnLMap, mtfSplit, calculateMonthlySummary, calculateAllTimeSummary,
     fmtMoney, fmtSigned, pnlClass, fmtDate
 } from "./stocks-service.js";
 
@@ -44,7 +44,7 @@ export function printStocksReport(ym, transactions, prices) {
                 <td>${esc(t.name)} (${esc(t.symbol)})</td>
                 <td class="num">${t.quantity}</td>
                 <td class="num">${fmtMoney(t.price)}</td>
-                <td class="num">${fmtMoney(t.quantity * t.price, true)}</td>
+                <td class="num">${fmtMoney(t.quantity * t.price, true)}${t.type === "BUY" && t.isMTF && t.mtfOwn != null ? `<div style="font-size:9.5px;color:#6b7078;">Mine ${fmtMoney(mtfSplit(t).own, true)} · MTF ${fmtMoney(mtfSplit(t).funded, true)}</div>` : ""}</td>
                 <td class="num ${hasPnl ? "pr-" + pnlClass(pnl[t.id]) : ""}">${hasPnl ? fmtSigned(pnl[t.id], true) : "—"}</td>
                 <td>${t.isMTF ? "MTF" : ""}</td>
             </tr>`;
@@ -73,6 +73,7 @@ export function printStocksReport(ym, transactions, prices) {
             <div><span>Realized P&amp;L (${isAll ? "all time" : "month"})</span><b class="${cls(s.realizedPnLThisMonth)}">${fmtSigned(s.realizedPnLThisMonth, true)}</b></div>
             <div><span>Current portfolio</span><b>${fmtMoney(s.currentPortfolioValue, true)}</b></div>
             <div><span>Unrealized P&amp;L (now)</span><b class="${cls(s.unrealizedPnL)}">${fmtSigned(s.unrealizedPnL, true)}</b></div>
+            ${s.investedFunded > 0 ? `<div><span>Invested · my amount</span><b>${fmtMoney(s.investedOwn, true)}</b></div><div><span>Invested · MTF funded</span><b>${fmtMoney(s.investedFunded, true)}</b></div>` : ""}
         </div>
         <div class="pr-section">Transaction ledger</div>
         <table class="pr-table">

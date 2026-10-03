@@ -82,12 +82,39 @@ function commitTheme(next, persist) {
     window.dispatchEvent(new CustomEvent("br:theme-change", { detail: { theme: next } }));
 }
 
-/* Radius that reaches the farthest corner from the click, so the circle
+/* Radius that reaches the farthest corner from the origin, so the circle
    always covers the whole screen. */
 function revealRadius(x, y) {
     return Math.hypot(
         Math.max(x, window.innerWidth - x),
         Math.max(y, window.innerHeight - y)
+    );
+}
+
+/* Centre of an element in viewport pixels, or null if it is not on screen. */
+function centreOf(el) {
+    if (!el || !el.isConnected) return null;
+    const r = el.getBoundingClientRect();
+    if (!r.width && !r.height) return null;
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+/* Where the circle starts. Always the theme button itself: the live position
+   of the element that was pressed, else the click point, else whichever
+   theme button is on the page. It never falls back to a fixed corner while a
+   toggle exists. Read again when the animation starts, so a layout shift
+   during the switch (scrollbar, header reflow) cannot move the start point
+   away from the icon. */
+function resolveOrigin(origin) {
+    return (
+        centreOf(origin && origin.el) ||
+        (origin && Number.isFinite(origin.x) && Number.isFinite(origin.y)
+            ? { x: origin.x, y: origin.y }
+            : null) ||
+        centreOf(document.querySelector('[data-action="toggle-theme"]')) || {
+            x: window.innerWidth - 40,
+            y: 32
+        }
     );
 }
 
@@ -108,9 +135,16 @@ function revealTheme(next, persist, origin) {
         try { activeTransition.skipTransition(); } catch { /* already finished */ }
     }
 
-    const x = origin && Number.isFinite(origin.x) ? origin.x : window.innerWidth - 40;
-    const y = origin && Number.isFinite(origin.y) ? origin.y : 32;
+    // Fix the circle on the icon BEFORE the snapshot is taken. theme.css
+    // starts the new snapshot as a zero-size circle at this point, so there is
+    // no frame where the new theme shows anywhere else.
+    const { x, y } = resolveOrigin(origin);
     const r = revealRadius(x, y);
+    const rs = root().style;
+    rs.setProperty("--br-vt-x", x + "px");
+    rs.setProperty("--br-vt-y", y + "px");
+    rs.setProperty("--br-vt-r", r + "px");
+    rs.setProperty("--br-vt-ms", WIPE_MS + "ms");
 
     // Per-element colour transitions would be caught half-way in the new
     // snapshot, so they are switched off for the length of the reveal.
@@ -120,28 +154,13 @@ function revealTheme(next, persist, origin) {
 
     activeTransition = transition;
 
-    transition.ready
-        .then(() => {
-            root().animate(
-                {
-                    clipPath: [
-                        `circle(0px at ${x}px ${y}px)`,
-                        `circle(${r}px at ${x}px ${y}px)`
-                    ]
-                },
-                {
-                    duration: WIPE_MS,
-                    easing: EASE,
-                    pseudoElement: "::view-transition-new(root)"
-                }
-            );
-        })
-        .catch(() => { /* theme is already applied by the callback */ });
-
     transition.finished.finally(() => {
         if (activeTransition === transition) {
             activeTransition = null;
             root().classList.remove("br-vt-switching");
+            ["--br-vt-x", "--br-vt-y", "--br-vt-r", "--br-vt-ms"].forEach((k) =>
+                root().style.removeProperty(k)
+            );
         }
     });
 
@@ -192,7 +211,7 @@ export function setTheme(theme, origin = null) {
     return applyTheme(theme, { persist: true, animate: true, origin });
 }
 
-/* `origin` is {x, y} in viewport pixels (where the toggle was pressed). */
+/* `origin` is {el, x, y}: the pressed button and its centre in viewport pixels. */
 export function toggleTheme(origin = null) {
     return setTheme(getTheme() === "dark" ? "light" : "dark", origin);
 }

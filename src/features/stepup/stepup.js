@@ -82,11 +82,12 @@ export async function StepUp() {
     store = await dataService.getStepUpStore();
 
     tab = "overview";
+    lastViewKey = "";
     historyLimit = 30;
     historyDate = "";
 
     const page = document.createElement("section");
-    page.className = "br-page";
+    page.className = "br-page br-income br-stepup";
 
     page.innerHTML = `
         <div class="br-page-heading">
@@ -319,6 +320,8 @@ async function switchProfile(page, id) {
    RENDER
 ========================================= */
 
+let lastViewKey = "";
+
 function render(page) {
     page.querySelectorAll("[data-su-tab]").forEach((b) =>
         b.classList.toggle("active", b.dataset.suTab === tab)
@@ -337,12 +340,20 @@ function render(page) {
         return;
     }
 
+    // Presentation only: replay the soft entrance when the view changes, not on
+    // every data refresh (so adding an entry does not make the page flicker).
+    const viewKey = tab + ":" + profile.id;
+    const viewChanged = viewKey !== lastViewKey;
+    lastViewKey = viewKey;
+
     if (tab === "settings") content.innerHTML = settingsHTML();
     else if (!settings) content.innerHTML = needSettingsHTML();
     else if (tab === "overview") content.innerHTML = overviewHTML();
     else if (tab === "history") content.innerHTML = historyHTML();
     else if (tab === "fund") content.innerHTML = fundHTML();
     else content.innerHTML = ledgerHTML();
+
+    content.classList.toggle("su-enter", viewChanged);
 
     drawCharts(page);
 

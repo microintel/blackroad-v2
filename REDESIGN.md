@@ -60,3 +60,24 @@ Scope: presentation only. No stores, services, calculations, routes, APIs or dat
 - Each card shows a "How this works" panel with the rule and this example's own numbers. The What-If sliders recalculate a copy of the month and change nothing else.
 - To go live later: build an object with the shape of `EXAMPLE_DATA` from real data and pass it to `FinancialIntelligence(data)`. The engine and cards need no changes.
 - sw.js CACHE_VERSION is now v19.
+
+## Stocks: Income-style UI + MTF "my amount" vs "MTF funded"
+
+Scope: Stocks module only (stocks.js, stocks-service.js, stocks-print.js, stocks.css), the `copy` icon, and the service-worker cache bump (v46 -> v47). No store, schema, route or IndexedDB change.
+
+- The page now carries `.br-income`, so tabs, buttons, inputs, modals and tables follow the Income look and both themes.
+- MTF buys can record the margin: new optional field `mtfOwn` on a BUY transaction (what you paid). Trade value - mtfOwn = broker-funded. Transactions without it behave exactly as before (fully your money; shown as "MTF · margin not set").
+- Selling releases "my amount" and "MTF funded" in proportion to the quantity sold. P&L, average price and invested value are unchanged.
+- New figures (derived, never stored): my amount, MTF funded, leverage, net equity (value - MTF funded), return on my amount. CSV gets two columns appended at the end.
+
+## Theme circle origin + Mutual Fund (StepUp) restyle
+
+Scope: presentation only. No store, service, calculation, route or schema was touched. Service-worker cache v47 -> v48.
+
+- **Theme circle:** `preferences.js` now resolves the circle's centre from the live theme button (`origin.el`, falling back to the click point, then to any `[data-action="toggle-theme"]` on the page, never a fixed corner while a toggle exists). The centre is read again when the animation starts, so a layout shift during the switch cannot move it away from the icon. `app.js` passes the pressed button along with its coordinates.
+- **Mutual Fund:** the page carries `.br-income .br-stepup`, so tabs, buttons, inputs, cards, tables and modals follow the Income look in Light and Dark (same approach as Stocks). `stepup.css` adds a `.br-stepup` block: tabular numbers, stat-card hover lift with a gain/loss arrow, gain/loss colours that survive the Income table rules, sticky table headers with row hover, animated goal progress, soft entrance on tab / SIP change (replayed only when the view changes, not on every data refresh), keyboard focus rings, scrollable tabs and stacked forms on phones. All motion respects `prefers-reduced-motion`.
+- `stepup.js`: page class, plus a `lastViewKey` flag that toggles `su-enter` on the content wrapper. Nothing else changed.
+
+### Update: circle is now CSS-driven and starts at zero size on the icon
+- The reveal used to be started from JS after the browser reported the transition ready, so the new theme could show for a frame or two before the circle began. `preferences.js` now sets `--br-vt-x / --br-vt-y / --br-vt-r` (icon centre, radius to the farthest corner) before the snapshot, and `theme.css` gives `::view-transition-new(root)` a `circle(0)` at that point plus a keyframe animation to full size. The vars are removed when the transition ends. Cache v48 -> v49.
+- Verified by sampling the pseudo-element's clip-path on every frame after a click: on desktop and phone, on Dashboard, Mutual Fund and Income, dark to light and back, the centre never leaves the icon and the radius starts at 0.

@@ -4,7 +4,8 @@ import { confirmLogout } from "../components/confirm-dialog.js";
 import { getRoute, initRouter, hardNavigate, replaceRoute, currentPath } from "./router.js";
 import { renderView } from "./views.js";
 import { navigate } from "./router.js";
-import { getSession, currentUser, logout } from "../services/auth.js";
+import { getSession, currentUser, logout, isGuestSync } from "../services/auth.js";
+import { seedGuestData } from "../services/guest-seed.js";
 import { AuthScreen } from "../features/auth/auth-screen.js";
 import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
@@ -114,7 +115,11 @@ function buildShell(route) {
         .querySelector('[data-action="toggle-theme"]')
         ?.addEventListener("click", (event) => {
             const r = event.currentTarget.getBoundingClientRect();
-            toggleTheme({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+            toggleTheme({
+                el: event.currentTarget,
+                x: r.left + r.width / 2,
+                y: r.top + r.height / 2
+            });
         });
 
     // Logout
@@ -176,6 +181,13 @@ async function renderApp() {
     if (!(await passesGate(route))) route = getRoute();
 
     if (myId !== renderId) return;
+
+    // Guests are read-only: load the demo data from /sample.json before any page reads it.
+    if (isGuestSync() && route.module !== "login" && route.module !== "register") {
+        await seedGuestData();
+
+        if (myId !== renderId) return;
+    }
 
     if (route.module === "login" || route.module === "register") {
         root.innerHTML = "";

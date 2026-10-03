@@ -79,3 +79,251 @@
     border-radius: 50%;
     margin-right: 6px;
 }
+
+
+/* =========================================================
+   MUTUAL FUND — Income-style UI + UX polish
+   Everything below is scoped to .br-stepup (the page also
+   carries .br-income, so tabs, buttons, inputs, cards, modals
+   and tables follow the Income look in both themes).
+   Presentation only: no markup, data or logic depends on it.
+   ========================================================= */
+
+/* ---------- Numbers: aligned, easy to scan ---------- */
+.br-stepup .br-stat-value,
+.br-stepup .br-table td,
+.br-stepup .br-table th,
+.br-stepup .su-row,
+.br-stepup .su-pending-row {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Heading + profile bar ---------- */
+.br-stepup .br-page-heading { align-items: flex-end; }
+
+.br-stepup [data-su-profilebar] { flex: 0 0 auto; }
+
+/* The bar's inline style allows wrapping; on wide screens keep it on one row. */
+.br-stepup [data-su-profilebar] > div { flex-wrap: nowrap !important; }
+
+.br-stepup [data-su-profilebar] .br-select {
+    width: auto;
+    min-width: 180px;
+    max-width: 100%;
+}
+
+/* ---------- Stat cards: lift, accent edge, gain / loss cue ---------- */
+.br-stepup .br-stat {
+    border: 1px solid transparent;
+    transition: transform .18s ease, border-color .18s ease;
+}
+
+@media (hover: hover) {
+    .br-stepup .br-stat:hover {
+        transform: translateY(-2px);
+        border-color: var(--border, var(--br-border));
+    }
+}
+
+.br-stepup .br-stat-value.su-pos::before,
+.br-stepup .br-stat-value.su-neg::before {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: .6em;
+    vertical-align: .18em;
+}
+.br-stepup .br-stat-value.su-pos::before { content: "▲"; }
+.br-stepup .br-stat-value.su-neg::before { content: "▼"; }
+
+.br-stepup .br-stat-label {
+    letter-spacing: .02em;
+}
+
+/* ---------- Gain / loss colours inside tables ---------- */
+.br-stepup .br-table .su-pos,
+.br-stepup .br-table .su-neg { font-weight: 600; }
+.br-stepup .br-table td.su-pos,
+.br-stepup .br-table .su-pos { color: var(--success, var(--br-success)); }
+.br-stepup .br-table td.su-neg,
+.br-stepup .br-table .su-neg { color: var(--danger, var(--br-danger)); }
+
+/* Toolbars (History filter, Growth selector): one tidy row that wraps on phones */
+.br-stepup .br-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+/* Income lets toolbar inputs grow to fill the row; here they keep a fixed width
+   so the sort button sits beside the date field. */
+.br-stepup .br-toolbar .br-input { flex: 0 1 200px; }
+
+.br-stepup .br-toolbar-left { flex: 1 1 auto; }
+
+.br-stepup .br-toolbar-left,
+.br-stepup .br-toolbar-right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ---------- Tables: sticky header, row hover, calm density ---------- */
+.br-stepup .br-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--br-radius-md, 10px);
+}
+
+.br-stepup .br-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface-secondary, var(--br-surface));
+    white-space: nowrap;
+}
+
+.br-stepup .br-table tbody tr {
+    transition: background-color .14s ease;
+}
+
+@media (hover: hover) {
+    .br-stepup .br-table tbody tr:hover {
+        background: var(--hover-background, var(--br-surface-soft));
+    }
+}
+
+.br-stepup .br-table td:last-child .br-button + .br-button,
+.br-stepup .br-table td .br-button + .br-button { margin-left: 6px; }
+
+/* ---------- Goal progress: animated fill ---------- */
+.br-stepup .ll-progress {
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--border, var(--br-border));
+}
+
+.br-stepup .ll-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent, #D4AF37);
+    transform-origin: left center;
+    animation: su-grow .9s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+@keyframes su-grow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+/* ---------- Pending allocation rows + badges ---------- */
+.br-stepup .su-pending-row {
+    border-radius: var(--br-radius-sm, 8px);
+    padding-inline: 10px;
+    margin-inline: -10px;
+    transition: background-color .14s ease;
+}
+
+@media (hover: hover) {
+    .br-stepup .su-pending-row:hover { background: var(--hover-background, var(--br-surface-soft)); }
+}
+
+/* ---------- Inline forms ---------- */
+.br-stepup .su-inline-form .br-input { min-width: 170px; }
+
+.br-stepup .su-inline-form label span,
+.br-stepup .su-stack label span {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--br-text-secondary);
+}
+
+.br-stepup .br-card h3 { letter-spacing: -.01em; }
+
+/* ---------- Charts ---------- */
+.br-stepup canvas[data-su-chart] {
+    max-width: 100%;
+    border-radius: var(--br-radius-sm, 8px);
+}
+
+/* ---------- Empty states ---------- */
+.br-stepup .br-empty-state {
+    padding-block: 48px;
+}
+
+/* ---------- Soft entrance when a tab / SIP changes ---------- */
+@media (prefers-reduced-motion: no-preference) {
+    .br-stepup [data-su-content].su-enter > * {
+        animation: su-rise .38s cubic-bezier(.2, .7, .2, 1) both;
+    }
+    .br-stepup [data-su-content].su-enter > *:nth-child(2) { animation-delay: .05s; }
+    .br-stepup [data-su-content].su-enter > *:nth-child(3) { animation-delay: .10s; }
+    .br-stepup [data-su-content].su-enter > *:nth-child(4) { animation-delay: .15s; }
+    .br-stepup [data-su-content].su-enter > *:nth-child(5) { animation-delay: .20s; }
+    .br-stepup [data-su-content].su-enter > *:nth-child(n+6) { animation-delay: .25s; }
+
+    .br-stepup .br-income-tab { transition: color .15s ease, border-color .15s ease, background-color .15s ease; }
+    .br-stepup .br-button { transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .1s ease; }
+    .br-stepup .br-button:active:not(:disabled) { transform: scale(.97); }
+}
+
+@keyframes su-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-stepup .ll-progress-fill { animation: none; }
+    .br-stepup .br-stat { transition: none; transform: none; }
+}
+
+/* ---------- Keyboard focus ---------- */
+.br-stepup .br-income-tab:focus-visible,
+.br-stepup .br-button:focus-visible,
+.br-stepup .br-select:focus-visible,
+.br-stepup .br-input:focus-visible {
+    outline: 2px solid var(--accent, #D4AF37);
+    outline-offset: 2px;
+}
+
+/* ---------- Tablet / phone ---------- */
+@media (max-width: 1100px) {
+    .br-stepup .br-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 768px) {
+    .br-stepup .br-page-heading { align-items: stretch; }
+    .br-stepup [data-su-profilebar],
+    .br-stepup [data-su-profilebar] > div { width: 100%; }
+    .br-stepup [data-su-profilebar] > div { flex-wrap: nowrap !important; }
+    .br-stepup [data-su-profilebar] .br-select { flex: 1 1 140px; min-width: 0; }
+
+    /* Tabs scroll sideways instead of wrapping or clipping */
+    .br-stepup .br-income-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .br-stepup .br-income-tabs::-webkit-scrollbar { display: none; }
+    .br-stepup .br-income-tab { flex: 0 0 auto; white-space: nowrap; }
+
+    .br-stepup .su-inline-form { align-items: stretch; }
+    .br-stepup .su-inline-form > label,
+    .br-stepup .su-inline-form > .br-button { flex: 1 1 100%; }
+    .br-stepup .su-inline-form .br-input { width: 100%; min-width: 0; }
+
+    .br-stepup .br-stat .br-stat-value { font-size: 1.25rem; }
+    .br-stepup .su-pending-row { margin-inline: 0; padding-inline: 0; }
+    .br-stepup .su-pending-row > div { width: 100%; }
+}
+
+@media (max-width: 420px) {
+    .br-stepup .br-grid-4,
+    .br-stepup .br-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}

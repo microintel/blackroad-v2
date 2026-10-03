@@ -10,13 +10,14 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v46";
+const CACHE_VERSION = "v50";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
     "./",
     "./index.html",
     "./manifest.json",
+    "./sample.json",
     "./assets/audio/click.mp3",
     "./assets/icons/android-icon-192x192.png",
     "./assets/icons/icon512_maskable.png",
@@ -93,6 +94,7 @@ const SHELL = [
     "./src/features/stocks/stocks.js",
     "./src/services/auth.js",
     "./src/services/backup-service.js",
+    "./src/services/guest-seed.js",
     "./src/services/legacy-import.js",
     "./src/services/preferences.js",
     "./src/styles/accounting.css",

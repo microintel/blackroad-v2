@@ -242,13 +242,26 @@
    (see preferences.js and skeleton.css).
    --------------------------------------------------------- */
 
-/* Circular reveal from the toggle (View Transitions). preferences.js animates the new
-   theme's snapshot with a clip-path; the browser's default cross-fade is
-   switched off so the old theme simply stays underneath until covered. */
+/* Circular reveal from the toggle (View Transitions). preferences.js sets
+   --br-vt-x / --br-vt-y to the centre of the theme icon and --br-vt-r to the
+   radius that reaches the farthest corner. The new theme's snapshot is a
+   zero-size circle on the icon from its very first frame and grows from there,
+   so nothing of the new theme can appear anywhere else. The browser's default
+   cross-fade is off; the old theme stays underneath until covered. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+    clip-path: circle(0px at var(--br-vt-x, 100%) var(--br-vt-y, 0px));
+    animation: br-theme-reveal var(--br-vt-ms, 520ms) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes br-theme-reveal {
+    from { clip-path: circle(0px at var(--br-vt-x, 100%) var(--br-vt-y, 0px)); }
+    to   { clip-path: circle(var(--br-vt-r, 150vmax) at var(--br-vt-x, 100%) var(--br-vt-y, 0px)); }
 }
 
 ::view-transition-old(root) { z-index: 1; }

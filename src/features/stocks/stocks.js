@@ -26,7 +26,8 @@ import {
     pnlClass,
     fmtDate,
     getSymbolTransactions,
-    getSymbolName
+    getSymbolName,
+    mtfSplit
 } from "./stocks-service.js";
 
 import { printStocksReport } from "./stocks-print.js";
@@ -46,77 +47,66 @@ let editingTxnId = null;
 let pollTimer = null;
 let refreshing = false;
 let detailSymbol = null;
+let holdingFilter = "all";
+let flashSymbol = null;
+let flashTxnId = null;
+let saving = false;
 
 export async function Stocks() {
     store = await dataService.getStocksStore();
 
     const page = document.createElement("section");
-    page.className = "br-page";
+    page.className = "br-page br-income br-stocks";
 
     page.innerHTML = `
 
-        <div class="br-page-heading">
-            <div>
-                <h2>Stocks</h2>
-                <p>Your equity portfolio, transactions and reports.</p>
-            </div>
-
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <span class="br-muted" data-live-status></span>
-
-                <button
-                    type="button"
-                    class="br-button"
-                    data-action="open-search"
-                >
-                    Search
-                </button>
-
-                <button
-                    type="button"
-                    class="br-button"
-                    data-action="refresh-prices"
-                >
-                    Refresh prices
-                </button>
-
-                <button
-                    type="button"
-                    class="br-button br-button-primary"
-                    data-action="add-txn"
-                >
-                    ${icon("plus", { size: 18 })}
-                    Add transaction
-                </button>
-            </div>
-        </div>
-
-        <div class="br-income-tabs br-tabs-flat">
-            <button type="button" class="br-income-tab active" data-stocks-tab="holdings">Holdings</button>
-            <button type="button" class="br-income-tab" data-stocks-tab="transactions">Transactions</button>
+        <div class="br-income-tabs" role="group" aria-label="Stocks views">
+            <button type="button" class="br-income-tab active" data-stocks-tab="holdings">Holdings <span class="stk-count" data-count="holdings"></span></button>
+            <button type="button" class="br-income-tab" data-stocks-tab="transactions">Transactions <span class="stk-count" data-count="transactions"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="analytics">Analytics</button>
             <button type="button" class="br-income-tab" data-stocks-tab="reports">Reports</button>
         </div>
 
         <!-- SUMMARY -->
-        <div class="br-grid br-grid-4" data-stocks-summary></div>
+        <section class="inc-summary" aria-label="Portfolio summary">
+            <div class="inc-metric inc-metric-primary">
+                <span class="inc-label">Current value</span>
+                <div class="inc-total-row">
+                    <strong class="inc-amount inc-amount-lg" data-sum-value>${fmtMoney(0, true)}</strong>
+                    <div class="stk-actions">
+                        <button type="button" class="br-button stk-icon-btn" data-action="open-search" aria-label="Search" title="Search (Ctrl+K)">${icon("search", { size: 18 })}</button>
+                        <button type="button" class="br-button stk-icon-btn" data-action="refresh-prices" aria-label="Refresh prices" title="Refresh prices">${icon("refresh-cw", { size: 18 })}</button>
+                        <button type="button" class="br-button br-button-primary inc-add" data-action="add-txn" aria-label="Add transaction" title="Add transaction">${icon("plus", { size: 18 })}</button>
+                    </div>
+                </div>
+                <span class="inc-hint" data-live-status>Your equity portfolio</span>
+            </div>
+            <div class="inc-metrics" data-stocks-summary></div>
+        </section>
 
         <!-- HOLDINGS -->
-        <div data-stocks-view="holdings">
-            <section class="br-card" style="margin-top:20px;">
-                <div class="br-card-heading">
+        <div class="inc-view" data-stocks-view="holdings">
+            <section class="stk-mtf" data-mtf-summary hidden></section>
+
+            <section class="inc-section">
+                <div class="inc-section-head">
                     <div>
                         <h3>Active holdings</h3>
-                        <p class="br-muted">Stocks you currently hold, valued at the last known price.</p>
+                        <p>Stocks you currently hold, valued at the last known price.</p>
+                    </div>
+                    <div class="br-chip-row" data-hold-filters role="group" aria-label="Filter holdings" hidden>
+                        <button type="button" class="br-chip active" data-action="hold-filter" data-filter="all">All</button>
+                        <button type="button" class="br-chip" data-action="hold-filter" data-filter="mtf">MTF</button>
+                        <button type="button" class="br-chip" data-action="hold-filter" data-filter="own">My money only</button>
                     </div>
                 </div>
                 <div data-holdings-list></div>
             </section>
         </div>
 
-        <!-- TRANSACTIONS -->
+                <!-- TRANSACTIONS -->
         <div data-stocks-view="transactions" hidden>
-            <section class="br-card" style="margin-top:20px;">
+            <section class="br-card">
                 <div class="br-toolbar">
                     <div class="br-toolbar-left">
                         <div class="br-search-box">
@@ -128,6 +118,7 @@ export async function Stocks() {
                             <option value="">All types</option>
                             <option value="BUY">Buy</option>
                             <option value="SELL">Sell</option>
+                            <option value="MTF">MTF buys</option>
                         </select>
 
                         <select class="br-select" data-txn-filter-tag>
@@ -163,14 +154,14 @@ export async function Stocks() {
 
         <!-- REPORTS -->
         <div data-stocks-view="analytics" hidden>
-            <div class="br-grid br-grid-3" style="margin-top:20px;" data-an-insights></div>
+            <div class="br-grid br-grid-3" data-an-insights></div>
 
-            <section class="br-card" style="margin-top:20px;">
+            <section class="br-card">
                 <div class="br-card-heading"><h3>How you're doing overall</h3></div>
                 <div data-an-overall></div>
             </section>
 
-            <div class="br-grid br-grid-2" style="margin-top:20px;">
+            <div class="br-grid br-grid-2">
                 <section class="br-card">
                     <div class="br-card-heading"><h3>Where your money is spread</h3></div>
                     <div data-an-alloc></div>
@@ -182,14 +173,14 @@ export async function Stocks() {
                 </section>
             </div>
 
-            <section class="br-card" style="margin-top:20px;">
+            <section class="br-card">
                 <div class="br-card-heading"><h3>Portfolio health</h3></div>
                 <div data-an-health></div>
             </section>
         </div>
 
         <div data-stocks-view="reports" hidden>
-            <section class="br-card" style="margin-top:20px;">
+            <section class="br-card">
                 <div class="br-card-heading">
                     <div>
                         <h3>Monthly report</h3>
@@ -207,7 +198,7 @@ export async function Stocks() {
                 <p class="br-field-help">Choose "Save as PDF" in the print dialog to keep a one-page copy of this period.</p>
             </section>
 
-            <section class="br-card" style="margin-top:20px;">
+            <section class="br-card">
                 <div class="br-card-heading">
                     <div>
                         <h3>Clear all stocks data</h3>
@@ -220,62 +211,51 @@ export async function Stocks() {
 
         <!-- ADD / EDIT TRANSACTION MODAL -->
         <div class="br-modal-layer" data-txn-modal hidden>
-            <div class="br-modal" role="dialog" aria-modal="true">
+            <div class="br-modal" role="dialog" aria-modal="true" aria-labelledby="stk-txn-title">
                 <div class="br-modal-header">
                     <div>
-                        <h3 data-txn-modal-title>Add transaction</h3>
+                        <h3 id="stk-txn-title" data-txn-modal-title>Add transaction</h3>
                         <p class="br-muted">Stored in the existing BlackRoad stocks ledger.</p>
                     </div>
-                    <button type="button" class="br-button" data-action="close-txn-modal">×</button>
+                    <button type="button" class="br-modal-close" data-action="close-txn-modal" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
 
-                <form data-txn-form>
-                    <div class="br-modal-body">
-                        <p class="br-field-help" data-txn-error style="display:none;color:var(--br-danger);"></p>
+                <form data-txn-form novalidate>
+                    <div class="inc-form-error" data-txn-error role="alert" hidden></div>
 
-                        <div class="br-form-grid">
-                            <label>
-                                <span>Type</span>
-                                <select name="type" class="br-select" data-txn-type>
-                                    <option value="BUY">Buy</option>
-                                    <option value="SELL">Sell</option>
-                                </select>
-                            </label>
+                    <div class="inc-fields">
+                        ${fieldHTML("Type", `<select name="type" data-txn-type><option value="BUY">Buy</option><option value="SELL">Sell</option></select>`)}
+                        ${fieldHTML("Date", `<input name="date" type="date" required>`)}
+                        ${fieldHTML("Symbol", `<input name="symbol" type="text" list="stk-symbols" placeholder="RELIANCE" autocomplete="off" autocapitalize="characters" required><datalist id="stk-symbols" data-symbol-list></datalist>`)}
+                        ${fieldHTML("Stock name", `<input name="name" type="text" placeholder="Reliance Industries" autocomplete="off" required>`)}
+                        ${fieldHTML("Quantity", `<input name="quantity" type="number" inputmode="decimal" step="0.000001" min="0" placeholder="0" required><span class="inc-hint" data-qty-hint></span>`)}
+                        ${fieldHTML("Price per share", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="price" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></span>`)}
+                        ${fieldHTML("Notes (#tags supported)", `<input name="notes" type="text" autocomplete="off">`, "stk-span-2")}
+                    </div>
 
-                            <label>
-                                <span>Date</span>
-                                <input name="date" type="date" class="br-input" required>
-                            </label>
+                    <div class="stk-total" data-txn-total></div>
 
-                            <label>
-                                <span>Stock name</span>
-                                <input name="name" type="text" class="br-input" placeholder="Reliance Industries" required>
-                            </label>
+                    <!-- MTF: "my amount" + broker-funded part -->
+                    <div class="inc-modal-section stk-mtf-box" data-mtf-box>
+                        <label class="stk-switch">
+                            <input name="isMTF" type="checkbox">
+                            <span class="stk-switch-ui" aria-hidden="true"></span>
+                            <span class="stk-switch-text">
+                                <strong>Bought with MTF</strong>
+                                <small>The broker funds part of the trade. You pay only your margin.</small>
+                            </span>
+                        </label>
 
-                            <label>
-                                <span>Symbol</span>
-                                <input name="symbol" type="text" class="br-input" placeholder="RELIANCE" required>
-                            </label>
+                        <div class="stk-mtf-fields" data-mtf-fields hidden>
+                            <input type="hidden" name="mtfMode" value="amount">
+                            <div class="stk-seg" role="group" aria-label="Enter margin as">
+                                <button type="button" class="active" data-action="mtf-mode" data-mode="amount">My amount (₹)</button>
+                                <button type="button" data-action="mtf-mode" data-mode="percent">Margin (%)</button>
+                            </div>
 
-                            <label>
-                                <span>Quantity</span>
-                                <input name="quantity" type="number" step="0.000001" min="0" class="br-input" required>
-                            </label>
+                            ${fieldHTML("<span data-mtf-label>My amount (paid from my funds)</span>", `<input name="mtfValue" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">`)}
 
-                            <label>
-                                <span>Price</span>
-                                <input name="price" type="number" step="0.01" min="0" class="br-input" required>
-                            </label>
-
-                            <label>
-                                <span>Notes (#tags supported)</span>
-                                <input name="notes" type="text" class="br-input">
-                            </label>
-
-                            <label style="display:flex;align-items:center;gap:8px;">
-                                <input name="isMTF" type="checkbox">
-                                <span>Bought via MTF</span>
-                            </label>
+                            <div class="stk-preview" data-mtf-preview></div>
                         </div>
                     </div>
 
@@ -292,7 +272,7 @@ export async function Stocks() {
             <div class="br-modal" role="dialog" aria-modal="true">
                 <div class="br-modal-header">
                     <h3 data-txn-detail-title>Transaction</h3>
-                    <button type="button" class="br-button" data-action="close-txn-detail">×</button>
+                    <button type="button" class="br-modal-close" data-action="close-txn-detail" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
                 <div class="br-modal-body">
                     <div class="br-detail-grid" data-txn-detail-grid></div>
@@ -311,7 +291,7 @@ export async function Stocks() {
             <div class="br-modal" role="dialog" aria-modal="true">
                 <div class="br-modal-header">
                     <h3>Search</h3>
-                    <button type="button" class="br-button" data-action="close-search">×</button>
+                    <button type="button" class="br-modal-close" data-action="close-search" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
                 <div class="br-modal-body">
                     <input type="search" class="br-input" style="width:100%;" placeholder="Search stocks, transactions, notes, tags…" data-search-input>
@@ -328,7 +308,7 @@ export async function Stocks() {
                         <h3 data-detail-title>Stock detail</h3>
                         <p class="br-muted">Everything about this one holding.</p>
                     </div>
-                    <button type="button" class="br-button" data-action="close-detail">×</button>
+                    <button type="button" class="br-modal-close" data-action="close-detail" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
                 <div class="br-modal-body">
                     <div class="br-detail-grid" data-detail-grid></div>
@@ -342,7 +322,7 @@ export async function Stocks() {
                     <div data-detail-chart></div>
                     <div class="br-chart-tip" data-detail-tip></div>
 
-                    <h4 style="margin-top:20px;">Every buy and sell</h4>
+                    <h4>Every buy and sell</h4>
                     <div class="br-table-wrap">
                         <table class="br-table">
                             <thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>Price</th></tr></thead>
@@ -496,6 +476,25 @@ function renderAll(page) {
     renderTagFilter(page);
     renderReports(page);
     renderAnalytics(page);
+    renderSymbolList(page);
+    updateCounts(page);
+    flashTxnId = null;
+    flashSymbol = null;
+}
+
+function renderSymbolList(page) {
+    page.querySelector("[data-symbol-list]").innerHTML = getAllSymbols(transactions)
+        .map((sym) => `<option value="${escapeAttribute(sym)}">${escapeHTML(getSymbolName(sym, transactions))}</option>`)
+        .join("");
+}
+
+function updateCounts(page) {
+    const set = (key, n) => {
+        const el = page.querySelector(`[data-count="${key}"]`);
+        if (el) el.textContent = n > 0 ? n : "";
+    };
+    set("holdings", getActiveHoldings(transactions, prices).length);
+    set("transactions", transactions.length);
 }
 
 /* =========================================
@@ -504,21 +503,78 @@ function renderAll(page) {
 
 function renderSummary(page) {
     const totals = calculatePortfolioTotals(transactions, prices);
-    const el = page.querySelector("[data-stocks-summary]");
 
-    el.innerHTML = `
-        ${statCard("Invested", fmtMoney(totals.investedValue, true))}
-        ${statCard("Current value", fmtMoney(totals.currentValue, true))}
-        ${statCard(
-            "Unrealized P&L",
-            fmtSigned(totals.unrealizedPnL, true),
-            pnlClass(totals.unrealizedPnL)
-        )}
-        ${statCard(
-            "Realized P&L",
-            fmtSigned(totals.realizedPnL, true),
-            pnlClass(totals.realizedPnL)
-        )}
+    const value = page.querySelector("[data-sum-value]");
+    if (value) value.textContent = fmtMoney(totals.currentValue, true);
+
+    const metric = (label, val, hint, tone) => `
+        <div class="inc-metric">
+            <span class="inc-label">${label}</span>
+            <strong class="inc-amount${tone ? " br-pnl-" + tone : ""}">${val}</strong>
+            <span class="inc-hint">${hint}</span>
+        </div>`;
+
+    page.querySelector("[data-stocks-summary]").innerHTML =
+        metric(
+            "Invested",
+            fmtMoney(totals.investedValue, true),
+            totals.hasMTF
+                ? `Mine ${fmtMoney(totals.ownInvested, true)} + MTF ${fmtMoney(totals.fundedInvested, true)}`
+                : "Cost of open holdings"
+        ) +
+        metric("Unrealized P&amp;L", fmtSigned(totals.unrealizedPnL, true), fmtPct(totals.unrealizedPnLPct), pnlClass(totals.unrealizedPnL)) +
+        metric("Realized P&amp;L", fmtSigned(totals.realizedPnL, true), "Booked from sales", pnlClass(totals.realizedPnL)) +
+        metric("Total P&amp;L", fmtSigned(totals.totalPnL, true), fmtPct(totals.totalPnLPct), pnlClass(totals.totalPnL));
+
+    renderMtfSummary(page, totals);
+}
+
+// "My amount" vs "MTF funded" side by side
+function splitBar(own, funded) {
+    const total = own + funded;
+    const ownPct = total > 0 ? Math.max(0, Math.min(100, (own / total) * 100)) : 100;
+    return `<div class="stk-split" role="img" aria-label="My amount ${ownPct.toFixed(0)}%, MTF funded ${(100 - ownPct).toFixed(0)}%">
+        <span class="stk-split-own" style="width:${ownPct.toFixed(2)}%"></span>
+        <span class="stk-split-mtf" style="width:${(100 - ownPct).toFixed(2)}%"></span>
+    </div>`;
+}
+
+function renderMtfSummary(page, totals) {
+    const box = page.querySelector("[data-mtf-summary]");
+
+    if (!totals.hasMTF) {
+        box.hidden = true;
+        box.innerHTML = "";
+        return;
+    }
+
+    const m = (label, val, hint, tone) => `
+        <div class="inc-metric">
+            <span class="inc-label">${label}</span>
+            <strong class="inc-amount${tone ? " br-pnl-" + tone : ""}">${val}</strong>
+            <span class="inc-hint">${hint}</span>
+        </div>`;
+
+    box.hidden = false;
+    box.innerHTML = `
+        <div class="inc-section-head">
+            <div>
+                <h3>MTF position</h3>
+                <p>Your own money and the broker-funded part, kept apart.</p>
+            </div>
+        </div>
+        ${splitBar(totals.ownInvested, totals.fundedInvested)}
+        <div class="stk-split-legend">
+            <span><i class="own"></i>My amount</span>
+            <span><i class="mtf"></i>MTF funded</span>
+        </div>
+        <div class="stk-mtf-metrics">
+            ${m("My amount", fmtMoney(totals.ownInvested, true), "Paid from my funds")}
+            ${m("MTF funded", fmtMoney(totals.fundedInvested, true), "Funded by the broker")}
+            ${m("Leverage", totals.leverage.toFixed(2) + "×", "Position ÷ my amount")}
+            ${m("Net equity", fmtMoney(totals.netEquity, true), "Value after repaying MTF")}
+            ${m("Return on my amount", fmtPct(totals.returnOnOwnPct), "Unrealized P&amp;L ÷ my amount", pnlClass(totals.returnOnOwnPct))}
+        </div>
     `;
 }
 
@@ -537,78 +593,89 @@ function statCard(label, value, tone) {
 
 function renderHoldings(page) {
     const container = page.querySelector("[data-holdings-list]");
-    const holdings = getActiveHoldings(transactions, prices).sort(
+    const all = getActiveHoldings(transactions, prices).sort(
         (a, b) => b.currentValue - a.currentValue
     );
 
-    if (holdings.length === 0) {
-        container.innerHTML =
-            '<div class="br-empty-state">No active holdings yet. Add a transaction to get started.</div>';
+    // The MTF filter only matters once an MTF holding exists
+    const anyMtf = all.some((h) => h.isMTF);
+    const filters = page.querySelector("[data-hold-filters]");
+    filters.hidden = !anyMtf;
+    if (!anyMtf) holdingFilter = "all";
+    filters.querySelectorAll("[data-filter]").forEach((b) =>
+        b.classList.toggle("active", b.dataset.filter === holdingFilter)
+    );
+
+    const holdings = all.filter((h) =>
+        holdingFilter === "mtf" ? h.isMTF : holdingFilter === "own" ? !h.isMTF : true
+    );
+
+    if (all.length === 0) {
+        container.innerHTML = `
+            <div class="inc-empty">
+                ${icon("chart-candlestick", { size: 22 })}
+                <h4>No active holdings yet</h4>
+                <p>Add your first buy and your portfolio, P&amp;L and allocation will appear here.</p>
+                <button type="button" class="br-button br-button-primary" data-action="add-txn">${icon("plus", { size: 18 })} Add transaction</button>
+            </div>`;
         return;
     }
 
-    container.innerHTML = `
-        <div class="br-table-wrap">
-            <table class="br-table">
-                <thead>
-                    <tr>
-                        <th>Stock</th>
-                        <th>Qty</th>
-                        <th>Avg price</th>
-                        <th>Current price</th>
-                        <th>Invested</th>
-                        <th>Current value</th>
-                        <th>P&amp;L</th>
-                        <th>Weight</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${holdings
-                        .map((h) => {
-                            const weight = calculatePortfolioWeight(
-                                h.symbol,
-                                transactions,
-                                prices
-                            );
+    if (holdings.length === 0) {
+        container.innerHTML = `<div class="inc-empty"><h4>No holdings in this filter</h4><p>Switch to “All” to see everything.</p></div>`;
+        return;
+    }
 
-                            return `
-                                <tr>
-                                    <td>
-                                        <div><button type="button" class="br-stock-link" data-action="open-detail" data-symbol="${escapeAttribute(h.symbol)}">${escapeHTML(h.name)}</button></div>
-                                        <div class="br-muted">${escapeHTML(h.symbol)}${
-                                h.isMTF
-                                    ? ' <span class="br-badge br-badge-warning">MTF</span>'
-                                    : ""
-                            }</div>
-                                    </td>
-                                    <td>${h.quantity}</td>
-                                    <td>${fmtMoney(h.avgPrice)}</td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            class="br-input"
-                                            style="width:110px;"
-                                            value="${h.currentPrice}"
-                                            data-price-input="${escapeAttribute(h.symbol)}"
-                                        >
-                                    </td>
-                                    <td>${fmtMoney(h.investedValue, true)}</td>
-                                    <td>${fmtMoney(h.currentValue, true)}</td>
-                                    <td class="br-pnl-${pnlClass(h.unrealizedPnL)}">
-                                        ${fmtSigned(h.unrealizedPnL, true)}
-                                        <div class="br-muted">${fmtPct(h.unrealizedPnLPct)}</div>
-                                    </td>
-                                    <td>${weight.toFixed(1)}%</td>
-                                </tr>
-                            `;
-                        })
-                        .join("")}
-                </tbody>
-            </table>
-        </div>
-    `;
+    const stat = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+
+    container.innerHTML = `<div class="stk-list">${holdings
+        .map((h) => {
+            const weight = calculatePortfolioWeight(h.symbol, transactions, prices);
+
+            const badge = h.hasMargin
+                ? `<span class="br-badge br-badge-warning">MTF ${h.leverage.toFixed(1)}×</span>`
+                : h.isMTF
+                ? `<span class="br-badge br-badge-warning" title="Margin not recorded — edit the MTF buy to add it">MTF · margin not set</span>`
+                : "";
+
+            const mtfBlock = h.hasMargin
+                ? `<div class="stk-card-mtf">
+                        ${splitBar(h.ownInvested, h.fundedInvested)}
+                        <div class="stk-card-mtf-line">
+                            <span><i class="own"></i>Mine <strong>${fmtMoney(h.ownInvested, true)}</strong></span>
+                            <span><i class="mtf"></i>MTF <strong>${fmtMoney(h.fundedInvested, true)}</strong></span>
+                            <span>Net equity <strong>${fmtMoney(h.netEquity, true)}</strong></span>
+                            <span>On my amount <strong class="br-pnl-${pnlClass(h.returnOnOwnPct)}">${fmtPct(h.returnOnOwnPct)}</strong></span>
+                        </div>
+                   </div>`
+                : "";
+
+            return `
+                <article class="inc-entry stk-card${h.symbol === flashSymbol ? " stk-flash" : ""}">
+                    <div class="stk-card-top">
+                        <div class="stk-id">
+                            <button type="button" class="br-stock-link stk-name" data-action="open-detail" data-symbol="${escapeAttribute(h.symbol)}">${escapeHTML(h.name)}</button>
+                            <div class="inc-meta">${escapeHTML(h.symbol)} ${badge}</div>
+                        </div>
+                        <div class="stk-value">
+                            <strong>${fmtMoney(h.currentValue, true)}</strong>
+                            <span class="br-pnl-${pnlClass(h.unrealizedPnL)}">${fmtSigned(h.unrealizedPnL, true)} · ${fmtPct(h.unrealizedPnLPct)}</span>
+                        </div>
+                    </div>
+                    <dl class="stk-stats">
+                        ${stat("Qty", h.quantity)}
+                        ${stat("Avg price", fmtMoney(h.avgPrice))}
+                        ${stat("Invested", fmtMoney(h.investedValue, true))}
+                        ${stat("Weight", weight.toFixed(1) + "%")}
+                        <div class="stk-price">
+                            <dt>Current price</dt>
+                            <dd><input type="number" inputmode="decimal" step="0.01" min="0" class="br-input" value="${h.currentPrice}" aria-label="Current price of ${escapeAttribute(h.symbol)}" data-price-input="${escapeAttribute(h.symbol)}"></dd>
+                        </div>
+                    </dl>
+                    ${mtfBlock}
+                </article>`;
+        })
+        .join("")}</div>`;
 }
 
 /* =========================================
@@ -637,6 +704,7 @@ function openTxnDetail(page, id) {
         cell("Shares", t.quantity),
         cell("Price per share", fmtMoney(t.price)),
         cell("Total amount", fmtMoney(round2(t.quantity * t.price), true)),
+        ...mtfDetailCells(t, cell),
         pnl !== undefined && pnl !== null
             ? cell("Realized P&L", fmtSigned(pnl, true), "br-pnl-" + pnlClass(pnl))
             : "",
@@ -650,6 +718,19 @@ function openTxnDetail(page, id) {
         .join(" ");
 
     page.querySelector("[data-txn-detail-modal]").hidden = false;
+}
+
+function mtfDetailCells(t, cell) {
+    if (t.type !== "BUY" || !t.isMTF) return [];
+    const sp = mtfSplit(t);
+    if (t.mtfOwn === undefined || t.mtfOwn === null) {
+        return [cell("MTF margin", "Not set")];
+    }
+    return [
+        cell("My amount", fmtMoney(sp.own, true)),
+        cell("MTF funded", fmtMoney(sp.funded, true)),
+        cell("Leverage", sp.own > 0 ? (sp.total / sp.own).toFixed(2) + "×" : "—")
+    ];
 }
 
 function closeTxnDetail(page) {
@@ -850,6 +931,9 @@ function renderAnalytics(page) {
             ${statCard("Largest holding", largestPct.toFixed(1) + "%")}
             ${statCard("Top 3 holdings", top3Pct.toFixed(1) + "%")}
             ${statCard("Total invested", fmtMoney(totals.investedValue, true))}
+            ${totals.hasMTF ? statCard("My amount", fmtMoney(totals.ownInvested, true)) : ""}
+            ${totals.hasMTF ? statCard("MTF funded", fmtMoney(totals.fundedInvested, true)) : ""}
+            ${totals.hasMTF ? statCard("Net equity (after MTF)", fmtMoney(totals.netEquity, true)) : ""}
         </div>
         <p class="br-muted" style="margin-top:12px;">${escapeHTML(weighted[0].name)} makes up ${largestPct.toFixed(1)}% of your portfolio. This is informational only, not investment advice.</p>
     `;
@@ -898,7 +982,9 @@ function getFilteredTransactions(page) {
 
     return transactions
         .filter((t) => {
-            if (typeFilter && t.type !== typeFilter) return false;
+            if (typeFilter === "MTF") {
+                if (!(t.type === "BUY" && t.isMTF)) return false;
+            } else if (typeFilter && t.type !== typeFilter) return false;
             if (
                 tagFilter &&
                 !extractTags(t.notes).includes(tagFilter)
@@ -924,7 +1010,7 @@ function renderTransactions(page) {
     const list = getFilteredTransactions(page);
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="br-empty-state">No transactions match.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No matching transactions" : "No transactions yet"}</h4><p>${transactions.length ? "Try a different search or filter." : "Your buys and sells will be listed here."}</p></div></td></tr>`;
         return;
     }
 
@@ -933,7 +1019,7 @@ function renderTransactions(page) {
             const pnl = t.type === "SELL" ? pnlMap[t.id] : undefined;
 
             return `
-                <tr data-action="view-txn" data-id="${t.id}" style="cursor:pointer;">
+                <tr data-action="view-txn" data-id="${t.id}" class="stk-row${t.id === flashTxnId ? " stk-flash" : ""}">
                     <td>${escapeHTML(t.date)}</td>
                     <td>
                         <span class="br-badge ${
@@ -949,19 +1035,28 @@ function renderTransactions(page) {
                     </td>
                     <td>${t.quantity}</td>
                     <td>${fmtMoney(t.price)}</td>
-                    <td>${fmtMoney(round2(t.quantity * t.price), true)}</td>
+                    <td>${fmtMoney(round2(t.quantity * t.price), true)}${txnSplitNote(t)}</td>
                     <td class="${
                         pnl !== undefined ? "br-pnl-" + pnlClass(pnl) : ""
                     }">${pnl !== undefined ? fmtSigned(pnl, true) : "—"}</td>
-                    <td>
-                        <button type="button" class="br-button" data-action="edit-txn" data-id="${t.id}">${icon("pencil", { size: 16 })}Edit</button>
-                        <button type="button" class="br-button" data-action="duplicate-txn" data-id="${t.id}">Duplicate</button>
-                        <button type="button" class="br-button br-button-danger" data-action="delete-txn" data-id="${t.id}">${icon("trash-2", { size: 16 })}Delete</button>
+                    <td class="stk-row-actions">
+                        <button type="button" class="inc-icon-button" data-action="edit-txn" data-id="${t.id}" aria-label="Edit transaction" title="Edit">${icon("pencil", { size: 16 })}</button>
+                        <button type="button" class="inc-icon-button" data-action="duplicate-txn" data-id="${t.id}" aria-label="Duplicate transaction" title="Duplicate">${icon("copy", { size: 16 })}</button>
+                        <button type="button" class="inc-icon-button inc-icon-danger" data-action="delete-txn" data-id="${t.id}" aria-label="Delete transaction" title="Delete">${icon("trash-2", { size: 16 })}</button>
                     </td>
                 </tr>
             `;
         })
         .join("");
+}
+
+function txnSplitNote(t) {
+    if (t.type !== "BUY" || !t.isMTF) return "";
+    if (t.mtfOwn === undefined || t.mtfOwn === null) {
+        return '<div class="br-muted stk-sub">MTF · margin not set</div>';
+    }
+    const sp = mtfSplit(t);
+    return `<div class="br-muted stk-sub">Mine ${fmtMoney(sp.own, true)} · MTF ${fmtMoney(sp.funded, true)}</div>`;
 }
 
 function renderTagFilter(page) {
@@ -1018,6 +1113,8 @@ function renderReportSummary(page, ym) {
             pnlClass(summary.realizedPnLThisMonth)
         )}
         ${statCard("Transactions", String(summary.transactionCount))}
+        ${summary.investedFunded > 0 ? statCard("Invested · my amount", fmtMoney(summary.investedOwn, true)) : ""}
+        ${summary.investedFunded > 0 ? statCard("Invested · MTF funded", fmtMoney(summary.investedFunded, true)) : ""}
     `;
 }
 
@@ -1028,13 +1125,13 @@ function renderReportSummary(page, ym) {
 function openTxnModal(page, id, duplicate) {
     const modal = page.querySelector("[data-txn-modal]");
     const form = page.querySelector("[data-txn-form]");
-    const errorEl = page.querySelector("[data-txn-error]");
 
-    errorEl.style.display = "none";
     form.reset();
+    clearTxnErrors(page);
     // A duplicate is saved as a brand-new transaction through the
     // normal validated save path, so it never carries the source id.
     editingTxnId = id && !duplicate ? id : null;
+    form.mtfMode.value = "amount";
 
     if (id) {
         const t = transactions.find((x) => x.id === id);
@@ -1052,6 +1149,9 @@ function openTxnModal(page, id, duplicate) {
         form.price.value = t.price;
         form.notes.value = t.notes || "";
         form.isMTF.checked = !!t.isMTF;
+        if (t.mtfOwn !== undefined && t.mtfOwn !== null) {
+            form.mtfValue.value = t.mtfOwn;
+        }
     } else {
         page.querySelector("[data-txn-modal-title]").textContent =
             "Add transaction";
@@ -1059,16 +1159,162 @@ function openTxnModal(page, id, duplicate) {
         form.date.value = new Date().toISOString().slice(0, 10);
     }
 
+    setMtfMode(page, "amount", true);
+    updateTxnForm(page);
     modal.hidden = false;
+
+    // Land the cursor where typing is most likely to start
+    setTimeout(() => (id ? form.quantity : form.symbol).focus(), 30);
 }
+
 function closeTxnModal(page) {
     page.querySelector("[data-txn-modal]").hidden = true;
     editingTxnId = null;
 }
 
+/* ---------- field helpers ---------- */
+
+function fieldHTML(label, control, extraClass = "") {
+    return `
+        <div class="inc-field ${extraClass}">
+            <label>
+                <span class="inc-field-label">${label}</span>
+                ${control}
+            </label>
+            <p class="inc-error" data-error hidden></p>
+        </div>`;
+}
+
+function fieldError(input, message) {
+    const field = input.closest(".inc-field");
+    const p = field && field.querySelector("[data-error]");
+
+    if (message) {
+        input.setAttribute("aria-invalid", "true");
+        if (p) { p.textContent = message; p.hidden = false; }
+    } else {
+        input.removeAttribute("aria-invalid");
+        if (p) { p.textContent = ""; p.hidden = true; }
+    }
+}
+
+function clearTxnErrors(page) {
+    const form = page.querySelector("[data-txn-form]");
+    form.querySelectorAll("[aria-invalid]").forEach((el) => fieldError(el, ""));
+    const banner = page.querySelector("[data-txn-error]");
+    banner.hidden = true;
+    banner.textContent = "";
+}
+
+/* ---------- MTF input: "my amount" or margin % ---------- */
+
+function setMtfMode(page, mode, silent) {
+    const form = page.querySelector("[data-txn-form]");
+    const prev = form.mtfMode.value;
+    const total = round2(Number(form.quantity.value) * Number(form.price.value));
+    const raw = form.mtfValue.value.trim();
+
+    // Keep what was typed meaningful when switching units
+    if (!silent && prev !== mode && raw !== "" && total > 0) {
+        const v = Number(raw);
+        if (!isNaN(v)) {
+            form.mtfValue.value =
+                mode === "percent"
+                    ? String(round2((v / total) * 100))
+                    : String(round2((total * v) / 100));
+        }
+    }
+
+    form.mtfMode.value = mode;
+    form.querySelectorAll("[data-mode]").forEach((b) =>
+        b.classList.toggle("active", b.dataset.mode === mode)
+    );
+
+    const input = form.mtfValue;
+    input.max = mode === "percent" ? "100" : "";
+    input.placeholder = mode === "percent" ? "25" : "0.00";
+    page.querySelector("[data-mtf-label]").textContent =
+        mode === "percent" ? "Margin you pay (% of trade value)" : "My amount (paid from my funds)";
+
+    if (!silent) updateTxnForm(page);
+}
+
+// Own money for the current form values (undefined if not entered)
+function readMtfOwn(form, total) {
+    const raw = form.mtfValue.value.trim();
+    if (raw === "") return undefined;
+    const v = Number(raw);
+    if (isNaN(v) || v < 0) return NaN;
+    return form.mtfMode.value === "percent"
+        ? round2((total * v) / 100)
+        : round2(v);
+}
+
+// Everything that reacts live while the form is being filled
+function updateTxnForm(page) {
+    const form = page.querySelector("[data-txn-form]");
+    const isBuy = form.type.value === "BUY";
+    const qty = Number(form.quantity.value) || 0;
+    const price = Number(form.price.value) || 0;
+    const total = round2(qty * price);
+
+    page.querySelector("[data-txn-total]").innerHTML =
+        total > 0
+            ? `<span>Trade value</span><strong>${fmtMoney(total)}</strong>`
+            : `<span>Trade value appears here</span>`;
+
+    // MTF only applies to buys
+    page.querySelector("[data-mtf-box]").hidden = !isBuy;
+    const mtfOn = isBuy && form.isMTF.checked;
+    page.querySelector("[data-mtf-fields]").hidden = !mtfOn;
+
+    // Sell helper: what you can sell + one-tap "sell all"
+    const hint = page.querySelector("[data-qty-hint]");
+    const sym = form.symbol.value.trim().toUpperCase();
+    if (!isBuy && sym) {
+        const others = transactions.filter((t) => t.id !== editingTxnId);
+        const held = calculateStockHolding(sym, others, prices).quantity;
+        hint.innerHTML = held > 0
+            ? `You hold ${held} · <button type="button" class="stk-link" data-action="sell-all" data-qty="${held}">Sell all</button>`
+            : `You don't hold ${escapeHTML(sym)}`;
+    } else {
+        hint.textContent = "";
+    }
+
+    // MTF preview: trade value = my amount + MTF funded
+    const preview = page.querySelector("[data-mtf-preview]");
+    if (!mtfOn) { preview.innerHTML = ""; return; }
+
+    const own = readMtfOwn(form, total);
+    if (own === undefined || isNaN(own) || total <= 0) {
+        preview.innerHTML = `<p class="inc-hint">Enter your margin to see how the trade splits between your money and the broker's.</p>`;
+        return;
+    }
+    if (own > total + 0.004) {
+        preview.innerHTML = `<p class="inc-hint" style="color:var(--danger)">My amount is more than the trade value.</p>`;
+        return;
+    }
+
+    const funded = round2(total - own);
+    const lev = own > 0 ? (total / own).toFixed(2) + "×" : "—";
+    const pct = total > 0 ? ((own / total) * 100).toFixed(1) : "0";
+
+    preview.innerHTML = `
+        ${splitBar(own, funded)}
+        <div class="stk-preview-grid">
+            <div><span>My amount</span><strong>${fmtMoney(own)}</strong><em>${pct}% margin</em></div>
+            <div><span>MTF funded</span><strong>${fmtMoney(funded)}</strong><em>by the broker</em></div>
+            <div><span>Leverage</span><strong>${lev}</strong><em>trade ÷ mine</em></div>
+        </div>`;
+}
+
 async function saveTxn(page) {
+    if (saving) return;
+
     const form = page.querySelector("[data-txn-form]");
     const errorEl = page.querySelector("[data-txn-error]");
+
+    clearTxnErrors(page);
 
     const type = form.type.value;
     const date = form.date.value;
@@ -1077,27 +1323,50 @@ async function saveTxn(page) {
     const quantity = Number(form.quantity.value);
     const price = Number(form.price.value);
     const notes = form.notes.value.trim();
-    const isMTF = form.isMTF.checked;
+    const isBuy = type === "BUY";
+    const total = round2(quantity * price);
 
-    if (
-        !date ||
-        !name ||
-        !symbol ||
-        !quantity ||
-        quantity <= 0 ||
-        isNaN(price) ||
-        price < 0
-    ) {
-        errorEl.textContent =
-            "Fill in date, stock name, symbol, a positive quantity, and a valid price.";
-        errorEl.style.display = "block";
-        return;
-    }
+    let ok = true;
+    const bad = (el, msg) => {
+        fieldError(el, msg);
+        if (ok) el.focus();
+        ok = false;
+    };
+
+    if (!date) bad(form.date, "Pick a date.");
+    if (!symbol) bad(form.symbol, "Enter the stock symbol.");
+    if (!name) bad(form.name, "Enter the stock name.");
+    if (!quantity || quantity <= 0) bad(form.quantity, "Enter a quantity above 0.");
+    if (form.price.value === "" || isNaN(price) || price < 0) bad(form.price, "Enter a valid price.");
 
     const id = editingTxnId;
-    const existing = id
-        ? transactions.find((t) => t.id === id)
-        : null;
+    const existing = id ? transactions.find((t) => t.id === id) : null;
+
+    // MTF = my amount + broker-funded part
+    const wantsMtf = isBuy && form.isMTF.checked;
+    let mtfOwn;
+
+    if (wantsMtf) {
+        const raw = form.mtfValue.value.trim();
+        // Older MTF buys never recorded a margin; let them be re-saved as-is
+        const legacy = !!existing && existing.isMTF && (existing.mtfOwn === undefined || existing.mtfOwn === null);
+        const v = Number(raw);
+
+        if (raw === "") {
+            if (!legacy) bad(form.mtfValue, "Enter how much of this buy is your own money.");
+        } else if (isNaN(v) || v < 0) {
+            bad(form.mtfValue, "Enter a valid amount.");
+        } else if (form.mtfMode.value === "percent") {
+            if (v <= 0 || v > 100) bad(form.mtfValue, "Margin must be between 0 and 100%.");
+            else mtfOwn = round2((total * v) / 100);
+        } else if (v > total + 0.004) {
+            bad(form.mtfValue, `Can't be more than the trade value (${fmtMoney(total)}).`);
+        } else {
+            mtfOwn = round2(v);
+        }
+    }
+
+    if (!ok) return;
 
     const candidate = {
         id: id || genId(),
@@ -1109,26 +1378,43 @@ async function saveTxn(page) {
         quantity,
         price,
         notes,
-        isMTF
+        // A sell keeps whatever flag it already had; the box is buy-only
+        isMTF: isBuy ? wantsMtf : !!(existing && existing.isMTF)
     };
+    if (mtfOwn !== undefined) candidate.mtfOwn = mtfOwn;
 
     const check = validateTransaction(candidate, id, transactions);
     if (!check.ok) {
-        errorEl.textContent = `You don't have that many shares to sell — you only hold ${check.available}.`;
-        errorEl.style.display = "block";
+        if (!id) seqCounter--;
+        fieldError(form.quantity, `You only hold ${check.available} share(s) to sell.`);
+        form.quantity.focus();
         return;
     }
 
-    if (id) {
-        const idx = transactions.findIndex((t) => t.id === id);
-        transactions[idx] = candidate;
-    } else {
-        transactions.push(candidate);
-    }
+    saving = true;
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
 
-    await persist();
-    closeTxnModal(page);
-    renderAll(page);
+    try {
+        if (id) {
+            const idx = transactions.findIndex((t) => t.id === id);
+            transactions[idx] = candidate;
+        } else {
+            transactions.push(candidate);
+        }
+
+        await persist();
+        flashTxnId = candidate.id;
+        flashSymbol = candidate.symbol;
+        closeTxnModal(page);
+        renderAll(page);
+    } catch (err) {
+        errorEl.textContent = err?.message || "Could not save the transaction.";
+        errorEl.hidden = false;
+    } finally {
+        saving = false;
+        submit.disabled = false;
+    }
 }
 
 /* =========================================
@@ -1246,6 +1532,15 @@ function renderDetail(page) {
         cell("Worth now", fmtMoney(h.currentValue, true)),
         cell("Unrealized P&L", fmtSigned(h.unrealizedPnL, true), "br-pnl-" + pnlClass(h.unrealizedPnL)),
         cell("Growth", fmtPct(h.unrealizedPnLPct), "br-pnl-" + pnlClass(h.unrealizedPnLPct)),
+        ...(h.hasMargin
+            ? [
+                  cell("My amount", fmtMoney(h.ownInvested, true)),
+                  cell("MTF funded", fmtMoney(h.fundedInvested, true)),
+                  cell("Leverage", h.leverage.toFixed(2) + "×"),
+                  cell("Net equity", fmtMoney(h.netEquity, true)),
+                  cell("Return on my amount", fmtPct(h.returnOnOwnPct), "br-pnl-" + pnlClass(h.returnOnOwnPct))
+              ]
+            : []),
         cell("Bought in total", h.totalBuyQty),
         cell("Sold in total", h.totalSellQty),
         cell("Realized P&L", fmtSigned(h.realizedPnL, true), "br-pnl-" + pnlClass(h.realizedPnL))
@@ -1463,6 +1758,14 @@ function attachEvents(page) {
             closeDetail(page);
         } else if (action === "refresh-prices") {
             await refreshPrices(page, false);
+        } else if (action === "hold-filter") {
+            holdingFilter = actionEl.dataset.filter;
+            renderHoldings(page);
+        } else if (action === "mtf-mode") {
+            setMtfMode(page, actionEl.dataset.mode);
+        } else if (action === "sell-all") {
+            page.querySelector("[data-txn-form]").quantity.value = actionEl.dataset.qty;
+            updateTxnForm(page);
         }
     });
 
@@ -1476,6 +1779,24 @@ function attachEvents(page) {
     page.addEventListener("input", (event) => {
         if (event.target.matches("[data-search-input]")) {
             renderSearchResults(page, event.target.value);
+            return;
+        }
+
+        // Add / edit form: clear that field's error, keep previews live
+        if (event.target.closest("[data-txn-form]")) {
+            const form = event.target.closest("[data-txn-form]");
+            fieldError(event.target, "");
+
+            // Known symbol -> fill the name and last price for you
+            if (event.target === form.symbol) {
+                const sym = form.symbol.value.trim().toUpperCase();
+                if (getAllSymbols(transactions).includes(sym)) {
+                    if (!form.name.value.trim()) form.name.value = getSymbolName(sym, transactions);
+                    if (form.price.value === "" && prices[sym] != null) form.price.value = prices[sym];
+                }
+            }
+
+            updateTxnForm(page);
             return;
         }
 
@@ -1521,6 +1842,15 @@ function attachEvents(page) {
         if (event.target.matches("[data-report-month]")) {
             renderReportSummary(page, event.target.value);
         }
+    });
+
+    page.addEventListener("wheel", (event) => {
+        const el = event.target;
+        if (el.matches?.('input[type="number"]') && document.activeElement === el) el.blur();
+    }, { passive: true });
+
+    page.addEventListener("focusin", (event) => {
+        if (event.target.matches?.("[data-price-input]")) event.target.select();
     });
 
     // Ctrl/Cmd+K -> search, Esc -> close the top open modal.

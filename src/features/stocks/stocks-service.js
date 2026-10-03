@@ -31,6 +31,30 @@ export function round6(n) {
     return Math.round((Number(n) + Number.EPSILON) * 1e6) / 1e6;
 }
 
+/*
+ * MTF split of one BUY. A normal buy is 100% the investor's own
+ * money. An MTF buy is "my amount + MTF": mtfOwn is what the
+ * investor paid (the margin), the rest of the trade value is funded
+ * by the broker. Old MTF buys saved before margins were tracked have
+ * no mtfOwn and keep behaving as fully own money (set: false).
+ */
+export function mtfSplit(t) {
+    const total = round2(t.quantity * t.price);
+    const hasMargin =
+        !!t.isMTF &&
+        t.type === "BUY" &&
+        t.mtfOwn !== undefined &&
+        t.mtfOwn !== null &&
+        !isNaN(Number(t.mtfOwn));
+
+    if (!hasMargin) {
+        return { total, own: total, funded: 0, set: !t.isMTF };
+    }
+
+    const own = Math.min(total, Math.max(0, round2(Number(t.mtfOwn))));
+    return { total, own, funded: round2(total - own), set: true };
+}
+
 export function getSymbolTransactions(symbol, transactions) {
     return transactions
         .filter((t) => t.symbol === symbol)
@@ -54,6 +78,8 @@ export function replaySymbol(symbol, transactions) {
 
     let qty = 0;
     let totalCost = 0;
+    let ownCost = 0;
+    let fundedCost = 0;
     let realizedPnL = 0;
     let totalBuyQty = 0;
     let totalSellQty = 0;
@@ -62,6 +88,9 @@ export function replaySymbol(symbol, transactions) {
     for (const t of txns) {
         if (t.type === "BUY") {
             totalCost = round2(totalCost + t.quantity * t.price);
+            const split = mtfSplit(t);
+            ownCost = round2(ownCost + split.own);
+            fundedCost = round2(fundedCost + split.funded);
             qty = round6(qty + t.quantity);
             totalBuyQty = round6(totalBuyQty + t.quantity);
         } else {
@@ -84,6 +113,11 @@ export function replaySymbol(symbol, transactions) {
 
             realizedPnL = round2(realizedPnL + txnRealized);
             txnPnL[t.id] = txnRealized;
+            // Selling releases my amount and the MTF-funded part in the
+            // same proportion as they sit in the position.
+            const keep = qty > 0 ? 1 - t.quantity / qty : 0;
+            ownCost = round2(ownCost * keep);
+            fundedCost = round2(fundedCost * keep);
             totalCost = round2(totalCost - costBasis);
             qty = round6(qty - t.quantity);
             totalSellQty = round6(totalSellQty + t.quantity);
@@ -94,6 +128,8 @@ export function replaySymbol(symbol, transactions) {
         quantity: qty,
         avgPrice: qty > 0 ? round2(totalCost / qty) : 0,
         investedValue: qty > 0 ? round2(totalCost) : 0,
+        ownInvested: qty > 0 ? round2(ownCost) : 0,
+        fundedInvested: qty > 0 ? round2(fundedCost) : 0,
         realizedPnL,
         totalBuyQty,
         totalSellQty,
@@ -152,6 +188,13 @@ export function calculateStockHolding(symbol, transactions, prices) {
             ? round2((unrealizedPnL / r.investedValue) * 100)
             : 0;
 
+    // "My amount" vs MTF-funded. Whatever the broker funded must be
+    // repaid, so my equity today = current value - funded part.
+    const fundedInvested = Math.min(r.fundedInvested, r.investedValue);
+    const ownInvested = round2(r.investedValue - fundedInvested);
+    const netEquity = round2(currentValue - fundedInvested);
+    const hasMargin = fundedInvested > 0;
+
     return {
         symbol,
         name,
@@ -165,7 +208,18 @@ export function calculateStockHolding(symbol, transactions, prices) {
         realizedPnL: r.realizedPnL,
         totalBuyQty: r.totalBuyQty,
         totalSellQty: r.totalSellQty,
-        isMTF: hasMTFBuy(symbol, transactions)
+        isMTF: hasMTFBuy(symbol, transactions),
+        ownInvested,
+        fundedInvested,
+        netEquity,
+        hasMargin,
+        leverage: hasMargin && ownInvested > 0
+            ? round2(r.investedValue / ownInvested)
+            : 1,
+        // Gain/loss measured against the money I actually put in
+        returnOnOwnPct: ownInvested > 0
+            ? round2((unrealizedPnL / ownInvested) * 100)
+            : 0
     };
 }
 
@@ -191,6 +245,13 @@ export function calculatePortfolioTotals(transactions, prices) {
             ? round2((unrealizedPnL / investedValue) * 100)
             : 0;
 
+    // My amount vs MTF-funded split of the open positions
+    const fundedInvested = round2(
+        holdings.reduce((s, h) => s + h.fundedInvested, 0)
+    );
+    const ownInvested = round2(investedValue - fundedInvested);
+    const netEquity = round2(currentValue - fundedInvested);
+
     // Realized P&L summed across every symbol ever traded, not just
     // active ones, so a fully-sold stock's profit is never dropped.
     const realizedPnL = round2(
@@ -213,7 +274,19 @@ export function calculatePortfolioTotals(transactions, prices) {
         realizedPnL,
         totalPnL,
         totalPnLPct,
-        holdingsCount: holdings.length
+        holdingsCount: holdings.length,
+        ownInvested,
+        fundedInvested,
+        netEquity,
+        hasMTF: fundedInvested > 0,
+        leverage:
+            fundedInvested > 0 && ownInvested > 0
+                ? round2(investedValue / ownInvested)
+                : 1,
+        returnOnOwnPct:
+            ownInvested > 0
+                ? round2((unrealizedPnL / ownInvested) * 100)
+                : 0
     };
 }
 
@@ -270,6 +343,16 @@ export function getAllTags(transactions) {
     return [...set].sort();
 }
 
+// Split of the BUY value in a set of transactions into my amount
+// and MTF-funded.
+function buySplit(list) {
+    const buys = list.filter((t) => t.type === "BUY").map(mtfSplit);
+    return {
+        investedOwn: round2(buys.reduce((s, b) => s + b.own, 0)),
+        investedFunded: round2(buys.reduce((s, b) => s + b.funded, 0))
+    };
+}
+
 export function calculateMonthlySummary(yyyyMm, transactions, prices) {
     const inMonth = transactions.filter(
         (t) => t.date && t.date.slice(0, 7) === yyyyMm
@@ -296,6 +379,7 @@ export function calculateMonthlySummary(yyyyMm, transactions, prices) {
 
     return {
         month: yyyyMm,
+        ...buySplit(inMonth),
         invested,
         withdrawn,
         transactionCount: inMonth.length,
@@ -320,6 +404,7 @@ export function calculateAllTimeSummary(transactions, prices) {
 
     return {
         month: "all",
+        ...buySplit(transactions),
         invested,
         withdrawn,
         transactionCount: transactions.length,
@@ -353,7 +438,9 @@ export function transactionsToCSV(transactions) {
         "Price",
         "Amount",
         "MTF",
-        "Notes"
+        "Notes",
+        "My Amount",
+        "MTF Funded"
     ];
 
     const rows = transactions
@@ -374,7 +461,9 @@ export function transactionsToCSV(transactions) {
             t.price,
             round2(t.quantity * t.price),
             t.isMTF ? "Yes" : "No",
-            (t.notes || "").replace(/"/g, '""')
+            (t.notes || "").replace(/"/g, '""'),
+            t.type === "BUY" ? mtfSplit(t).own : "",
+            t.type === "BUY" ? mtfSplit(t).funded : ""
         ]);
 
     const csvLines = [header, ...rows].map((r) =>
