@@ -1358,3 +1358,70 @@
 .br-income .br-statement-view-year { display: none; }
 .br-income #statement-unit-year:checked ~ .br-statement-view-year { display: block; }
 .br-income #statement-unit-year:checked ~ .br-statement-view-month { display: none; }
+
+/* Ledger grouping: Year -> Month (collapsible) */
+.inc-group-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-2, 8px);
+    padding: 0 var(--br-space-2, 8px);
+    border: 0;
+    background: transparent;
+    color: var(--br-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.inc-group-year {
+    min-height: 44px;
+    margin-top: var(--br-space-3, 12px);
+    border-bottom: 1px solid var(--br-border);
+    font-size: 17px;
+}
+
+.inc-group-month {
+    min-height: 36px;
+    margin: var(--br-space-2, 8px) 0;
+    padding-left: var(--br-space-4, 16px);
+    font-size: 14px;
+    color: var(--br-text-secondary);
+}
+
+.inc-group-head:hover strong { color: var(--br-gold-text); }
+
+.inc-group-head:focus-visible {
+    outline: 2px solid var(--br-gold);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.inc-group-chevron { display: inline-flex; transition: transform var(--br-transition-fast, .15s); }
+.inc-group:not(.is-collapsed) > .inc-group-head .inc-group-chevron { transform: rotate(90deg); }
+
+.inc-group-meta {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    color: var(--br-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.inc-group.is-collapsed > .inc-group-body { display: none; }
+
+@media (max-width: 639px) {
+    .inc-group-head { flex-wrap: wrap; }
+    .inc-group-meta { margin-left: 24px; justify-content: flex-start; width: 100%; }
+}
+
+/* Statement rows open that period in the ledger */
+.br-statement-table tbody tr[data-month-key],
+.br-statement-table tbody tr[data-year-key] { cursor: pointer; }
+
+.br-statement-table tbody tr[data-month-key]:hover,
+.br-statement-table tbody tr[data-year-key]:hover { background: var(--hover-background); }

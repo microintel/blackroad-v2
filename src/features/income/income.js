@@ -37,6 +37,9 @@ let isSaving = false;
 /* Ledger performance: only this many entries are drawn at once. */
 const LEDGER_PAGE = 30;
 let ledgerLimit = LEDGER_PAGE;
+
+/* Collapsed ledger groups ("y2026", "m2026-03"); kept across redraws. */
+const collapsedGroups = new Set();
 let searchTimer = null;
 let lastFocused = null;
 
@@ -514,6 +517,42 @@ function attachEvents(page) {
     page.addEventListener(
         "click",
         async (event) => {
+
+            /*
+             * Ledger groups: collapse / expand a year or month
+             */
+
+            const groupToggle =
+                event.target.closest("[data-group-toggle]");
+
+            if (groupToggle) {
+                const group = groupToggle.closest("[data-group]");
+                const key = group.dataset.group;
+                const nowCollapsed = !group.classList.contains("is-collapsed");
+
+                group.classList.toggle("is-collapsed", nowCollapsed);
+                groupToggle.setAttribute("aria-expanded", String(!nowCollapsed));
+
+                if (nowCollapsed) collapsedGroups.add(key);
+                else collapsedGroups.delete(key);
+
+                return;
+            }
+
+            /*
+             * Statement: a month or year row opens that period in the ledger
+             */
+
+            const periodRow =
+                event.target.closest("tr[data-month-key], tr[data-year-key]");
+
+            if (periodRow && !event.target.closest("a, button, input, select, textarea")) {
+                openPeriodInLedger(
+                    page,
+                    periodRow.dataset.monthKey || periodRow.dataset.yearKey
+                );
+                return;
+            }
 
             /*
              * Income tab
@@ -1377,6 +1416,172 @@ function resetLedgerDates(page) {
     });
 }
 
+/* ---------------------------------------------------------
+   Ledger grouping: Year -> Month -> entries (newest first).
+   Only the first `ledgerLimit` entries are drawn; group totals
+   cover every entry that matches the current filters.
+--------------------------------------------------------- */
+
+const MONTH_NAMES = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
+
+function groupTotals(list) {
+    return list.reduce(
+        (sum, entry) => {
+            sum.count += 1;
+
+            if (!isInvestmentSaleIncomeEntry(entry)) {
+                sum.income += Number(entry.income) || 0;
+            }
+
+            sum.expense += Number(entry.expense) || 0;
+
+            return sum;
+        },
+        { count: 0, income: 0, expense: 0 }
+    );
+}
+
+function groupHeader(kind, key, title, totals, open) {
+    return `
+        <button type="button" class="inc-group-head inc-group-${kind}"
+            data-group-toggle="${key}" aria-expanded="${open}">
+            <span class="inc-group-chevron" aria-hidden="true">${icon("chevron-right", { size: 16 })}</span>
+            <strong>${title}</strong>
+            <span class="inc-group-meta">
+                ${totals.count} ${totals.count === 1 ? "entry" : "entries"}
+                <span class="inc-group-sep">·</span>
+                <span class="inc-c-income">${formatMoney(totals.income)}</span>
+                <span class="inc-group-sep">·</span>
+                <span class="inc-c-expense">${formatMoney(totals.expense)}</span>
+            </span>
+        </button>
+    `;
+}
+
+function renderGroupedEntries(allEntries, autoOpen) {
+    const visible = allEntries.slice(0, ledgerLimit);
+
+    const yearOf = (entry) => (entry.date || "").slice(0, 4) || "Undated";
+    const monthOf = (entry) => (entry.date || "").slice(0, 7);
+
+    /* Totals for each group come from all matching entries, not just the visible page. */
+    const yearTotals = new Map();
+    const monthTotals = new Map();
+
+    const bucket = (map, key) => {
+        if (!map.has(key)) map.set(key, []);
+        return map.get(key);
+    };
+
+    allEntries.forEach((entry) => {
+        bucket(yearTotals, yearOf(entry)).push(entry);
+        bucket(monthTotals, monthOf(entry)).push(entry);
+    });
+
+    /* Visible entries grouped in order (input is already newest first). */
+    const years = [];
+
+    visible.forEach((entry) => {
+        const y = yearOf(entry);
+        const m = monthOf(entry);
+
+        let year = years[years.length - 1];
+
+        if (!year || year.key !== y) {
+            year = { key: y, months: [] };
+            years.push(year);
+        }
+
+        let month = year.months[year.months.length - 1];
+
+        if (!month || month.key !== m) {
+            month = { key: m, entries: [] };
+            year.months.push(month);
+        }
+
+        month.entries.push(entry);
+    });
+
+    return years
+        .map((year) => {
+            const yKey = "y" + year.key;
+            const yOpen = !collapsedGroups.has(yKey);
+
+            return `
+                <section class="inc-group inc-year${yOpen ? "" : " is-collapsed"}" data-group="${yKey}">
+                    ${groupHeader("year", yKey, year.key, groupTotals(yearTotals.get(year.key)), yOpen)}
+
+                    <div class="inc-group-body">
+                        ${year.months
+                            .map((month) => {
+                                const mKey = "m" + month.key;
+                                const mOpen = !collapsedGroups.has(mKey);
+                                const monthIndex = Number(month.key.slice(5, 7)) - 1;
+                                const title = MONTH_NAMES[monthIndex]
+                                    ? `${MONTH_NAMES[monthIndex]} ${month.key.slice(0, 4)}`
+                                    : "No date";
+
+                                return `
+                                    <section class="inc-group inc-month${mOpen ? "" : " is-collapsed"}" data-group="${mKey}">
+                                        ${groupHeader("month", mKey, title, groupTotals(monthTotals.get(month.key)), mOpen)}
+
+                                        <div class="inc-group-body">
+                                            ${month.entries
+                                                .map((entry) =>
+                                                    renderEntry(
+                                                        entry,
+                                                        expandedEntries.has(entry.id) ||
+                                                            autoOpen.has(entry.id)
+                                                    )
+                                                )
+                                                .join("")}
+                                        </div>
+                                    </section>`;
+                            })
+                            .join("")}
+                    </div>
+                </section>`;
+        })
+        .join("");
+}
+
+/* Open one statement period (a month "2026-03" or a year "2026") in the ledger. */
+function openPeriodInLedger(page, key) {
+    const isMonth = /^\d{4}-\d{2}$/.test(key);
+
+    if (isMonth) {
+        const [y, m] = key.split("-").map(Number);
+        const last = new Date(y, m, 0).getDate();
+
+        dateFrom = `${key}-01`;
+        dateTo = `${key}-${String(last).padStart(2, "0")}`;
+    } else {
+        dateFrom = `${key}-01-01`;
+        dateTo = `${key}-12-31`;
+    }
+
+    currentSearch = "";
+
+    const box = page.querySelector("[data-income-search]");
+    if (box) box.value = "";
+
+    page.querySelectorAll("[data-ledger-from]").forEach((i) => { i.value = dateFrom; });
+    page.querySelectorAll("[data-ledger-to]").forEach((i) => { i.value = dateTo; });
+
+    /* Make sure the chosen period is not hidden by an earlier collapse. */
+    collapsedGroups.delete("y" + key.slice(0, 4));
+    if (isMonth) collapsedGroups.delete("m" + key);
+
+    switchIncomeView(page, "ledger");
+    ledgerLimit = Infinity;
+    renderLedger(page);
+
+    page.querySelector("[data-ledger]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function openEntryInLedger(page, entryId) {
     expandedEntries.add(Number(entryId));
     clearTimeout(searchTimer);
@@ -2011,21 +2216,10 @@ function renderLedger(
                 <span role="columnheader" class="inc-actions-head">Actions</span>
             </div>
 
-            ${entries
-                .slice(0, ledgerLimit)
-                .map(
-                    (entry) =>
-                        renderEntry(
-                            entry,
-                            expandedEntries.has(
-                                entry.id
-                            ) ||
-                                autoOpen.has(
-                                    entry.id
-                                )
-                        )
-                )
-                .join("")}
+            ${renderGroupedEntries(
+                entries,
+                autoOpen
+            )}
 
         </div>
 
