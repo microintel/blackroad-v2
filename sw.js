@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v50";
+const CACHE_VERSION = "v54";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -29,6 +29,7 @@ const SHELL = [
     "./src/components/chart-colors.js",
     "./src/components/chart-tooltip.js",
     "./src/components/icons.js",
+    "./src/components/motion.js",
     "./src/components/skeleton.js",
     "./src/components/layout/mobile-nav.js",
     "./src/components/layout/sidebar.js",
@@ -50,6 +51,8 @@ const SHELL = [
     "./src/components/confirm-dialog.js",
     "./src/features/accounting/accounting-service.js",
     "./src/features/accounting/accounting.js",
+    "./src/features/calculators/calculators-service.js",
+    "./src/features/calculators/calculators.js",
     "./src/features/dashboard/dashboard-service.js",
     "./src/features/dashboard/dashboard.js",
     "./src/features/dashboard/intelligence/cash-flow.js",
@@ -82,6 +85,8 @@ const SHELL = [
     "./src/features/income/income.js",
     "./src/features/lending/lending-service.js",
     "./src/features/lending/lending.js",
+    "./src/features/networth/networth-service.js",
+    "./src/features/networth/networth.js",
     "./src/features/notifications/notifications-service.js",
     "./src/features/notifications/notifications.js",
     "./src/features/stepup/stepup-charts.js",
@@ -99,6 +104,7 @@ const SHELL = [
     "./src/services/preferences.js",
     "./src/styles/accounting.css",
     "./src/styles/auth.css",
+    "./src/styles/calculators.css",
     "./src/styles/chart-tooltip.css",
     "./src/styles/themes.css",
     "./src/styles/mobile.css",
@@ -106,11 +112,13 @@ const SHELL = [
     "./src/styles/polish.css",
     "./src/styles/components.css",
     "./src/styles/dashboard.css",
+    "./src/styles/networth.css",
     "./src/styles/global.css",
     "./src/styles/income.css",
     "./src/styles/intelligence.css",
     "./src/styles/layout.css",
     "./src/styles/lending.css",
+    "./src/styles/motion.css",
     "./src/styles/notifications.css",
     "./src/styles/skeleton.css",
     "./src/styles/stepup.css",

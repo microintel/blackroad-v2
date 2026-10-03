@@ -1,0 +1,87 @@
+/* =========================================================
+   MOTION
+   Sliding tab indicator, press feedback, softer hovers.
+   Loaded last. Page and panel transitions are driven from
+   components/motion.js (Web Animations API).
+   ========================================================= */
+
+:root {
+    --br-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+
+/* ---------- Sliding tab indicator ---------- */
+
+.br-income-tabs.br-tabs-ink-on { position: relative; }
+
+.br-income-tabs.br-tabs-ink-on > .br-income-tab {
+    position: relative;
+    z-index: 1;
+}
+
+.br-tab-ink {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform, width;
+}
+
+.br-income-tabs.br-tabs-ink-on[data-ink-ready] > .br-tab-ink { opacity: 1; }
+
+/* the slide itself is switched on one frame after the first placement */
+.br-income-tabs.br-tabs-ink-on[data-ink-animate] > .br-tab-ink {
+    transition:
+        transform 340ms var(--br-ease-out),
+        width 340ms var(--br-ease-out),
+        height 340ms var(--br-ease-out);
+}
+
+/* underlined tabs: the moving line replaces the active tab's own border */
+.br-income-tabs.br-tabs-ink-on[data-ink="line"] > .br-tab-ink {
+    background: var(--accent, var(--br-gold));
+}
+
+.br-income-tabs.br-tabs-ink-on[data-ink="line"][data-ink-ready] > .br-income-tab.active {
+    border-bottom-color: transparent;
+}
+
+/* filled tabs: a block that slides behind the labels */
+.br-income-tabs.br-tabs-ink-on[data-ink="block"] > .br-tab-ink {
+    background: var(--br-surface-active);
+    border-radius: var(--br-radius-sm);
+}
+
+.br-income-tabs.br-tabs-ink-on[data-ink="block"][data-ink-ready] > .br-income-tab.active {
+    background: transparent;
+}
+
+
+/* ---------- Tab labels: colour eases, press gives feedback ---------- */
+
+.br-income-tab {
+    transition:
+        color 180ms ease,
+        background-color 180ms ease,
+        transform 120ms ease;
+}
+
+.br-income-tab:active { transform: scale(0.97); }
+
+.br-button:active:not(:disabled) { transform: scale(0.98); }
+
+
+@media (prefers-reduced-motion: reduce) {
+    .br-tab-ink,
+    .br-income-tabs.br-tabs-ink-on[data-ink-animate] > .br-tab-ink,
+    .br-income-tab {
+        transition: none;
+    }
+
+    .br-income-tab:active,
+    .br-button:active:not(:disabled) { transform: none; }
+}

@@ -1273,6 +1273,46 @@ function renderActiveView(page) {
 
     if (!container) return;
 
+    renderViewInto(page, container, view);
+}
+
+/*
+ * Statement, Statistics and Jump-to are pure functions of the entries (and
+ * the theme, which charts read when drawn), and building them is the slow
+ * part of switching tabs. Once drawn they are kept, and drawn again only
+ * when the entries or the theme change. Compare, Search and Expand depend
+ * on their own state and are always redrawn.
+ */
+const CACHEABLE_VIEWS = new Set(["statement", "statistics", "jumpto"]);
+const entryListIds = new WeakMap();
+let entryListSeq = 0;
+
+function viewCacheToken() {
+    let id = entryListIds.get(currentEntries);
+
+    if (!id) {
+        id = ++entryListSeq;
+        entryListIds.set(currentEntries, id);
+    }
+
+    const root = document.documentElement;
+
+    return [
+        id,
+        root.getAttribute("data-theme"),
+        root.getAttribute("data-accent"),
+        root.getAttribute("data-style")
+    ].join("|");
+}
+
+function renderViewInto(page, container, view) {
+    const cacheable = CACHEABLE_VIEWS.has(view);
+    const token = cacheable ? viewCacheToken() : "";
+
+    if (cacheable && container.dataset.renderedFor === token && container.firstChild) {
+        return;
+    }
+
     if (view === "statement") {
         container.innerHTML = renderIncomeStatement(currentEntries);
     } else if (view === "statistics") {
@@ -1288,6 +1328,44 @@ function renderActiveView(page) {
     } else if (view === "jumpto") {
         container.innerHTML = renderIncomeJumpTo(currentEntries);
     }
+
+    if (cacheable) container.dataset.renderedFor = token;
+}
+
+/*
+ * Build the heavy tabs in the background, one per idle moment, so the first
+ * time you open them there is nothing left to wait for.
+ */
+let prerenderHandle = 0;
+
+function prerenderHeavyViews(page) {
+    const idle = (fn) =>
+        window.requestIdleCallback
+            ? window.requestIdleCallback(fn, { timeout: 4000 })
+            : setTimeout(fn, 600);
+
+    const token = ++prerenderHandle;
+    const queue = ["statement", "statistics", "jumpto"];
+
+    const step = () => {
+        if (token !== prerenderHandle || !page.isConnected) return;
+
+        const view = queue.shift();
+
+        if (!view) return;
+
+        const container = page.querySelector(
+            `[data-income-view-container="${view}"]`
+        );
+
+        if (container && view !== currentIncomeView) {
+            renderViewInto(page, container, view);
+        }
+
+        idle(step);
+    };
+
+    setTimeout(() => idle(step), 800);
 }
 
 function resetLedgerDates(page) {
@@ -1320,6 +1398,8 @@ function openEntryInLedger(page, entryId) {
 
 function jumpToMonth(page, monthKey) {
     switchIncomeView(page, "statement");
+    const monthRadio = page.querySelector("#statement-unit-month");
+    if (monthRadio) monthRadio.checked = true;
     const row = page.querySelector(`[data-month-key="${monthKey}"]`);
     if (row) {
         row.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1419,6 +1499,8 @@ async function loadEntries(
         if (currentIncomeView !== "ledger") {
             renderActiveView(page);
         }
+
+        prerenderHeavyViews(page);
 
     } catch (error) {
 

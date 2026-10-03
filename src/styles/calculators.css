@@ -1,0 +1,250 @@
+/* =========================================================
+   CALCULATORS (Tools): SIP, Step-up SIP, Lumpsum
+   ========================================================= */
+
+.br-calc { gap: var(--br-space-5); }
+
+.cl-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    gap: var(--br-space-5);
+    align-items: start;
+}
+
+.cl-results { display: flex; flex-direction: column; gap: var(--br-space-4); min-width: 0; }
+
+.cl-inputs { display: flex; flex-direction: column; gap: var(--br-space-5); position: sticky; top: var(--br-space-4); }
+.cl-inputs-head h3 { margin: 0 0 4px; }
+.cl-inputs-head p { margin: 0; }
+
+
+/* ---------- Fields ---------- */
+
+.cl-field { display: flex; flex-direction: column; gap: var(--br-space-2); }
+
+.cl-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--br-space-3);
+}
+
+.cl-field-head label {
+    color: var(--br-text-secondary);
+    font-size: var(--br-font-size-sm);
+    font-weight: 500;
+}
+
+.cl-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.cl-affix { color: var(--br-text-muted); font-size: var(--br-font-size-sm); }
+
+.cl-num {
+    width: 118px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.cl-num::-webkit-outer-spin-button,
+.cl-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.cl-range-scale {
+    display: flex;
+    justify-content: space-between;
+    color: var(--br-text-muted);
+    font-size: var(--br-font-size-xs);
+}
+
+/* Slider: filled part up to the thumb (--p is set from JS) */
+.cl-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+}
+
+.cl-range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--accent) var(--p, 0%), var(--br-surface-active) var(--p, 0%));
+}
+
+.cl-range::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--br-surface-active);
+}
+
+.cl-range::-moz-range-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--accent);
+}
+
+.cl-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -7px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--br-bg, #fff);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 120ms ease;
+}
+
+.cl-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--br-bg, #fff);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cl-range:active::-webkit-slider-thumb { transform: scale(1.15); }
+
+.cl-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+
+/* ---------- Results ---------- */
+
+.cl-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--br-space-5);
+}
+
+.cl-hero-main { min-width: 0; display: flex; flex-direction: column; gap: var(--br-space-2); }
+.cl-hero-main p { margin: 0; }
+
+.cl-total {
+    font-size: var(--br-font-size-metric, 32px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.cl-real { color: var(--br-text-secondary); font-size: var(--br-font-size-sm); }
+.cl-real strong { color: var(--br-text); }
+
+.cl-gain { color: var(--br-success); }
+
+.cl-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--br-space-4);
+}
+
+.cl-stats .br-stat-value { font-size: var(--br-font-size-xl); overflow-wrap: anywhere; }
+
+.cl-donut { position: relative; flex: 0 0 auto; width: 140px; height: 140px; }
+.cl-donut svg { display: block; }
+
+.cl-donut-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.cl-donut-label strong { font-size: var(--br-font-size-xl); font-variant-numeric: tabular-nums; }
+.cl-donut-label span { color: var(--br-text-muted); font-size: var(--br-font-size-xs); }
+
+.cl-legend {
+    display: flex;
+    gap: var(--br-space-4);
+    margin: var(--br-space-2) 0;
+    color: var(--br-text-secondary);
+    font-size: var(--br-font-size-sm);
+}
+
+.cl-legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 3px;
+}
+
+.cl-chart { overflow: hidden; color: var(--br-text); }
+.cl-chart svg { display: block; max-width: 100%; height: auto; }
+
+/* Bars grow up from the baseline the first time a tab opens */
+.cl-bar { transform-box: fill-box; transform-origin: 50% 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .cl-grow { animation: cl-grow 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+}
+
+@keyframes cl-grow { from { transform: scaleY(0); opacity: 0; } to { transform: none; opacity: 1; } }
+
+
+/* ---------- Breakdown table ---------- */
+
+.cl-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cl-details summary::-webkit-details-marker { display: none; }
+
+.cl-details summary::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--br-text-muted);
+    border-bottom: 2px solid var(--br-text-muted);
+    transform: rotate(45deg);
+    transition: transform 200ms ease;
+}
+
+.cl-details[open] summary::after { transform: rotate(-135deg); }
+
+.cl-table { margin-top: var(--br-space-3); max-height: 420px; overflow: auto; }
+.cl-table th, .cl-table td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cl-table thead th { position: sticky; top: 0; background: var(--br-surface, var(--br-bg)); z-index: 1; }
+.cl-r { text-align: right; }
+
+.cl-note { margin: 0; }
+
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+    .cl-layout { grid-template-columns: 1fr; }
+    .cl-inputs { position: static; }
+}
+
+@media (max-width: 640px) {
+    .cl-hero { flex-direction: column; align-items: flex-start; }
+    .cl-donut { align-self: center; }
+    .cl-stats { grid-template-columns: 1fr; }
+    .cl-total { font-size: 26px; }
+    .cl-num { width: 104px; }
+}
+
+@media (pointer: coarse) {
+    .cl-range { height: 36px; }
+}

@@ -4,7 +4,8 @@ export const navigation = [
     {
         title: "Overview",
         items: [
-            { label: "Dashboard", path: "/dashboard", icon: "layout-dashboard" }
+            { label: "Dashboard", path: "/dashboard", icon: "layout-dashboard" },
+            { label: "Net Worth", path: "/networth", icon: "trending-up" }
         ]
     },
 
@@ -23,6 +24,7 @@ export const navigation = [
         title: "Tools",
         items: [
             { label: "Financial Intelligence", path: "/intelligence", icon: "brain" },
+            { label: "Calculators", path: "/calculators", icon: "calculator" },
             { label: "Accounting", path: "/accounting", icon: "receipt" },
             { label: "Data Management", path: "/data", icon: "database" },
             { label: "Notifications", path: "/notifications", icon: "bell" },

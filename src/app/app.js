@@ -1,8 +1,9 @@
 import { Sidebar } from "../components/layout/sidebar.js";
 import { Topbar } from "../components/layout/topbar.js";
 import { confirmLogout } from "../components/confirm-dialog.js";
-import { getRoute, initRouter, hardNavigate, replaceRoute, currentPath } from "./router.js";
-import { renderView } from "./views.js";
+import { getRoute, routeFor, initRouter, hardNavigate, replaceRoute, currentPath } from "./router.js";
+import { renderView, prefetchView, warmViews } from "./views.js";
+import { pageLeave, pageEnter, initTabs } from "../components/motion.js";
 import { navigate } from "./router.js";
 import { getSession, currentUser, logout, isGuestSync } from "../services/auth.js";
 import { seedGuestData } from "../services/guest-seed.js";
@@ -198,24 +199,63 @@ async function renderApp() {
     // Main application shell: reuse it when it is already on screen.
     let shell = root.querySelector(":scope > .br-app-shell");
     let content;
+    let leave = null;
 
     if (shell) {
         updateShell(shell, route);
         content = shell.querySelector(".br-content");
-        window.scrollTo(0, 0);
+
+        // The old page fades out while the new one is already loading.
+        leave = pageLeave(content);
     } else {
         root.innerHTML = "";
         ({ shell, content } = buildShell(route));
         root.appendChild(shell);
     }
 
-    // Show the page frame straight away; the skeleton fills it while data loads.
-    content.classList.remove("br-view-in");
-    content.replaceChildren(pageSkeleton(skeletonVariantFor(route.module)));
+    // Start loading the page now; this runs alongside the fade-out above.
+    let ready = false;
+    const loading = loadView(route);
+    loading.then(() => { ready = true; });
 
-    let html = null;
-    let node = null;
+    if (leave) {
+        await leave.done;
 
+        if (myId !== renderId) return;
+    }
+
+    // Still loading once the old page is gone: show the skeleton frame.
+    if (!leave || !ready) {
+        window.scrollTo(0, 0);
+        content.replaceChildren(pageSkeleton(skeletonVariantFor(route.module)));
+
+        if (leave) leave.cancel();
+    }
+
+    const { html, node } = await loading;
+
+    if (myId !== renderId) return;
+
+    window.scrollTo(0, 0);
+
+    if (node) content.replaceChildren(node);
+    else content.innerHTML = html;
+
+    // Soft entrance for the new page, then the sliding tab indicators.
+    pageEnter(content);
+    initTabs(content);
+
+    // Once the first page is up, load the other pages' code in the background.
+    if (!warmed) {
+        warmed = true;
+        warmViews();
+    }
+}
+
+let warmed = false;
+
+/* Load a page's view. Resolves to { html } or { node }, never rejects. */
+async function loadView(route) {
     try {
         // Views can return either:
         // 1. HTML string
@@ -223,40 +263,54 @@ async function renderApp() {
         // 3. Promise resolving to either
         const view = await renderView(route);
 
-        if (typeof view === "string") {
-            html = view;
-        } else if (view instanceof Node) {
-            node = view;
-        } else {
-            console.error(
-                "BlackRoad: Invalid view returned for route:",
-                route
-            );
+        if (typeof view === "string") return { html: view, node: null };
 
-            html = errorCard("Unable to load page", "The page returned an invalid view.");
-        }
+        if (view instanceof Node) return { html: null, node: view };
+
+        console.error(
+            "BlackRoad: Invalid view returned for route:",
+            route
+        );
+
+        return {
+            html: errorCard("Unable to load page", "The page returned an invalid view."),
+            node: null
+        };
     } catch (error) {
         console.error(
             "BlackRoad: Error rendering route:",
             error
         );
 
-        html = errorCard("Something went wrong", "This page could not be loaded.");
+        return {
+            html: errorCard("Something went wrong", "This page could not be loaded."),
+            node: null
+        };
     }
+}
 
-    if (myId !== renderId) return;
+/* Start loading a section's code as soon as the pointer or a finger is on
+   its link, so the click itself has nothing left to wait for. */
+function watchNavIntent() {
+    const warm = (event) => {
+        const link = event.target.closest?.(".br-nav-item[href^='#/'], .br-bottom-item[data-path]");
 
-    if (node) content.replaceChildren(node);
-    else content.innerHTML = html;
+        if (!link) return;
 
-    // Fade the real page in once.
-    void content.offsetWidth;
-    content.classList.add("br-view-in");
+        const path = link.dataset.path || link.getAttribute("href").slice(1);
+
+        prefetchView(routeFor(path)?.module);
+    };
+
+    document.addEventListener("pointerover", warm, { passive: true });
+    document.addEventListener("touchstart", warm, { passive: true });
 }
 
 document.addEventListener(
     "DOMContentLoaded",
     async () => {
+        watchNavIntent();
+
         // Initial page
         await renderApp();
 

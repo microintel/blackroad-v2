@@ -18,6 +18,9 @@ export function renderIncomeStatement(
     const rows =
         buildMonthlyRows(entries);
 
+    const yearRows =
+        buildYearlyRows(rows);
+
     return `
         <section class="br-statement">
 
@@ -84,8 +87,8 @@ export function renderIncomeStatement(
                         <h3>Financial statement</h3>
 
                         <p class="br-muted">
-                            Monthly cash-flow breakdown from your
-                            existing Income ledger.
+                            Monthly and yearly cash-flow breakdown
+                            from your existing Income ledger.
                         </p>
                     </div>
 
@@ -101,7 +104,7 @@ export function renderIncomeStatement(
 
                 ${
                     rows.length
-                        ? renderMonthlyTable(rows)
+                        ? renderPeriodViews(rows, yearRows)
                         : emptyStatement()
                 }
 
@@ -315,8 +318,81 @@ function buildMonthlyRows(
     );
 }
 
+/* One row per calendar year: the monthly rows added together. */
+function buildYearlyRows(
+    monthRows
+) {
+    const years = new Map();
+
+    monthRows.forEach((row) => {
+        const year = row.date.getFullYear();
+
+        if (!years.has(year)) {
+            years.set(year, {
+                key: String(year),
+                date: new Date(year, 0, 1),
+                income: 0,
+                expense: 0,
+                investment: 0,
+                sales: 0,
+                gainLoss: 0,
+                entries: 0,
+                transactions: 0
+            });
+        }
+
+        const total = years.get(year);
+
+        total.income += row.income;
+        total.expense += row.expense;
+        total.investment += row.investment;
+        total.sales += row.sales;
+        total.gainLoss += row.gainLoss;
+        total.entries += row.entries;
+        total.transactions += row.transactions;
+    });
+
+    return [...years.values()].sort((a, b) =>
+        b.key.localeCompare(a.key)
+    );
+}
+
+/*
+ * Months / Years toggle. Both tables are drawn and a CSS-only radio
+ * switch shows one of them, so it keeps working when the Statement
+ * view is served from the render cache.
+ */
+function renderPeriodViews(
+    monthRows,
+    yearRows
+) {
+    return `
+        <input type="radio" class="br-statement-radio"
+            name="statement-unit" id="statement-unit-month"
+            value="month" checked>
+        <input type="radio" class="br-statement-radio"
+            name="statement-unit" id="statement-unit-year"
+            value="year">
+
+        <div class="br-statement-toggle" role="group"
+            aria-label="Statement period">
+            <label for="statement-unit-month">Months</label>
+            <label for="statement-unit-year">Years</label>
+        </div>
+
+        <div class="br-statement-view br-statement-view-month">
+            ${renderMonthlyTable(monthRows)}
+        </div>
+
+        <div class="br-statement-view br-statement-view-year">
+            ${renderMonthlyTable(yearRows, "year")}
+        </div>
+    `;
+}
+
 function renderMonthlyTable(
-    rows
+    rows,
+    unit = "month"
 ) {
     return `
         <div
@@ -352,13 +428,17 @@ function renderMonthlyTable(
                                 const mk = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, "0")}`;
 
                                 return `
-                                    <tr data-month-key="${mk}">
+                                    <tr ${unit === "year" ? `data-year-key="${row.key}"` : `data-month-key="${mk}"`}>
 
                                         <td>
                                             <strong>
-                                                ${formatMonth(
-                                                    row.date
-                                                )}
+                                                ${
+                                                    unit === "year"
+                                                        ? row.date.getFullYear()
+                                                        : formatMonth(
+                                                              row.date
+                                                          )
+                                                }
                                             </strong>
 
                                             <small

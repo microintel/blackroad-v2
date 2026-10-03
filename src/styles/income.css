@@ -1310,3 +1310,51 @@
     .inc-txn { padding: var(--br-space-2) 0; gap: var(--br-space-3); }
     .inc-txn-text { gap: 2px; }
 }
+
+/* Statement: Months / Years toggle (CSS-only; radios sit before the views) */
+.br-income .br-statement-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+.br-income .br-statement-toggle {
+    display: flex;
+    gap: 2px;
+    width: fit-content;
+    margin-bottom: var(--br-space-4, 16px);
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--hover-background);
+}
+
+.br-income .br-statement-toggle label {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--br-space-4, 16px);
+    border-radius: 999px;
+    color: var(--br-text-muted);
+    font-size: var(--br-font-size-xs, 12px);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.br-income #statement-unit-month:checked ~ .br-statement-toggle label[for="statement-unit-month"],
+.br-income #statement-unit-year:checked ~ .br-statement-toggle label[for="statement-unit-year"] {
+    background: var(--br-surface);
+    color: var(--br-gold-text);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+}
+
+.br-income #statement-unit-year:focus-visible ~ .br-statement-toggle label[for="statement-unit-year"],
+.br-income #statement-unit-month:focus-visible ~ .br-statement-toggle label[for="statement-unit-month"] {
+    outline: 2px solid var(--br-gold);
+    outline-offset: 1px;
+}
+
+.br-income .br-statement-view-year { display: none; }
+.br-income #statement-unit-year:checked ~ .br-statement-view-year { display: block; }
+.br-income #statement-unit-year:checked ~ .br-statement-view-month { display: none; }

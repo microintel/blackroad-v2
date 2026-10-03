@@ -10,6 +10,11 @@ const routes = {
         module: "dashboard"
     },
 
+    "/networth": {
+        title: "Net Worth Evolution",
+        module: "networth"
+    },
+
     "/income": {
         title: "Income & Expenses",
         module: "income"
@@ -44,6 +49,11 @@ const routes = {
     "/intelligence": {
         title: "Financial Intelligence",
         module: "intelligence"
+    },
+
+    "/calculators": {
+        title: "Calculators",
+        module: "calculators"
     },
 
     "/accounting": {
@@ -98,6 +108,11 @@ export function currentPath() {
 /* href for a route, for <a> tags. */
 export function hrefFor(path) {
     return "#" + path;
+}
+
+/* The route definition for a path, or undefined. */
+export function routeFor(path) {
+    return routes[path];
 }
 
 export function getRoute() {

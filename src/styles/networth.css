@@ -1,0 +1,72 @@
+/* =========================================================
+   NET WORTH EVOLUTION  (features/networth)
+   Uses only the shared --br-* tokens and existing components
+   (.br-card, .br-select, .br-dash-pills), so it follows the theme.
+   ========================================================= */
+
+.nw-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-4);
+}
+
+.nw-controls .br-dash-pills { margin-bottom: 0; }
+
+.nw-year { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+
+.nw-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-4);
+}
+
+@media (min-width: 900px) {
+    .nw-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.nw-summary:empty { display: none; }
+
+.nw-stat { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.nw-stat .br-stat-label { font-size: var(--br-font-size-xs); }
+
+.nw-stat-value {
+    color: var(--br-text);
+    font-size: var(--br-font-size-xl, 1.5rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.nw-stat-sub { color: var(--br-text-muted); font-size: 11px; }
+
+.nw-chart-card .br-card-heading h3 { display: flex; align-items: center; gap: 8px; }
+
+.nw-chart { display: block; width: 100%; height: auto; max-width: 100%; overflow: visible; }
+
+.nw-grid { stroke: var(--br-border); stroke-width: 1; }
+.nw-grid-zero { stroke: var(--br-border-strong); stroke-dasharray: 4 4; }
+
+.nw-axis { fill: var(--br-text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.nw-axis-off { opacity: .5; }
+
+.nw-line {
+    fill: none;
+    stroke: var(--br-gold);
+    stroke-width: 2.25;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.nw-area { fill: var(--br-gold); opacity: .1; stroke: none; pointer-events: none; }
+
+.nw-dot { fill: var(--br-surface); stroke: var(--br-gold); stroke-width: 2; pointer-events: none; }
+.nw-dot-last { fill: var(--br-gold); }
+
+.nw-note { margin: var(--br-space-3) 0 0; }
+
+.nw-empty { min-height: 240px; }

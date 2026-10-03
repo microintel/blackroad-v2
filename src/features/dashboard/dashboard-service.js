@@ -44,7 +44,7 @@ function symbolTransactions(symbol, transactions) {
         );
 }
 
-function replaySymbol(symbol, transactions) {
+export function replaySymbol(symbol, transactions) {
     const list = symbolTransactions(symbol, transactions);
 
     let quantity = 0;
@@ -73,7 +73,7 @@ function replaySymbol(symbol, transactions) {
     };
 }
 
-function currentPrice(symbol, transactions, prices) {
+export function currentPrice(symbol, transactions, prices) {
     if (
         prices[symbol] !== undefined &&
         prices[symbol] !== null
@@ -261,7 +261,7 @@ function growAmount(principal, ratePct, years, compounding) {
     return P * Math.pow(1 + r / (100 * n), n * years);
 }
 
-function depositMetrics(row, asOfISO) {
+export function depositMetrics(row, asOfISO) {
     const asOf =
         asOfISO || new Date().toISOString().slice(0, 10);
 
