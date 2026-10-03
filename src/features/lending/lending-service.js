@@ -8,6 +8,8 @@
      balance < 0  -> you owe them  ("You'll give")
    ========================================================= */
 
+import { isUSD, usd } from "../../services/currency.js";
+
 export function computeBalance(entries) {
     let totalGave = 0;
     let totalGot = 0;
@@ -45,6 +47,8 @@ export function summarizePeople(parties, entries) {
 
 export function fmtMoney(n) {
     const num = Number(n) || 0;
+
+    if (isUSD()) return usd(num);
 
     return (
         "₹" +

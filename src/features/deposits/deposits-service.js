@@ -4,6 +4,8 @@
    and interest figures match the old app exactly.
    ========================================================= */
 
+import { isUSD, usd } from "../../services/currency.js";
+
 const COMPOUNDS_PER_YEAR = {
     quarterly: 4,
     monthly: 12,
@@ -170,6 +172,7 @@ export function daysUntil(dateStr) {
 }
 
 export function formatINR(n) {
+    if (isUSD()) return usd(n, { whole: true });
     const sign = n < 0 ? "-" : "";
     const abs = Math.abs(Math.round(n));
     return sign + "₹" + abs.toLocaleString("en-IN");

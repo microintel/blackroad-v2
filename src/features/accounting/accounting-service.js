@@ -6,6 +6,7 @@
    dashboard services; nothing is copied or written back.
    ========================================================= */
 
+import { isUSD, usd } from "../../services/currency.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -167,6 +168,7 @@ async function loadJsPDF() {
 
 function formatPDF(value) {
     const n = Number(value) || 0;
+    if (isUSD()) return usd(n, { whole: true });
     const sign = n < 0 ? "-" : "";
 
     return sign + "Rs. " + Math.abs(Math.round(n)).toLocaleString("en-IN");

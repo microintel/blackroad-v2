@@ -336,3 +336,8 @@
 
     .br-header-actions { gap: 0; }
 }
+
+
+/* INR / USD display toggle (next to the theme button) */
+.br-currency-toggle.is-busy { opacity: 0.55; pointer-events: none; }
+.br-currency-toggle.is-error { color: var(--br-danger); }

@@ -1,3 +1,4 @@
+import { isUSD, usd } from "../../services/currency.js";
 import { icon } from "../../components/icons.js";
 import { COLORS } from "../../components/chart-colors.js";
 import { dataService } from "../../data/data-service.js";
@@ -33,6 +34,10 @@ import {
 } from "./stepup-fund.js";
 
 import { drawChart } from "./stepup-charts.js";
+
+/* Amounts shown in the chosen currency (stored + typed values stay rupees). */
+const sipAmt = (n) => (isUSD() ? usd(n, { whole: true }) : "₹" + Number(n).toLocaleString("en-IN"));
+const navTxt = (n) => (isUSD() ? usd(n) : "₹" + n);
 
 /* =========================================
    STATE
@@ -449,8 +454,8 @@ function overviewHTML() {
                     posNeg(s.today.pct),
                     todaySub
                 )}
-                ${statCard("SIP instalments", s.sips, "", settings.sipSchedule.length > 1 ? "stepped" : "×₹" + Number(settings.sipAmount).toLocaleString("en-IN"))}
-                ${statCard("Units held", s.unitsHeld.toFixed(4), "", `NAV ₹${s.navValue.toFixed(2)} (sim)`)}
+                ${statCard("SIP instalments", s.sips, "", settings.sipSchedule.length > 1 ? "stepped" : "×" + sipAmt(settings.sipAmount))}
+                ${statCard("Units held", s.unitsHeld.toFixed(4), "", `NAV ${navTxt(s.navValue)} (sim)`)}
             </div>
             <div class="br-grid br-grid-4" style="margin-top:16px;">
                 ${statCard("Days active", s.daysActive + "d")}
@@ -694,7 +699,7 @@ function goalProjectionHTML(series) {
 function drawCharts(page) {
     if (!settings) return;
 
-    const rupee = (n) => "₹" + fmtK(n).replace(/^₹/, "");
+    const rupee = (n) => (isUSD() ? fmtK(n) : "₹" + fmtK(n).replace(/^₹/, ""));
 
     const portfolio = page.querySelector('[data-su-chart="portfolio"]');
 
@@ -996,8 +1001,8 @@ async function autoFillAllocationNav(page, form) {
         }
 
         status.textContent = hit.exact
-            ? `NAV fetched for ${hit.actualDate} — ₹${hit.nav}`
-            : `No trading on ${dateIso} — using ${hit.actualDate}'s NAV (₹${hit.nav})`;
+            ? `NAV fetched for ${hit.actualDate} — ${navTxt(hit.nav)}`
+            : `No trading on ${dateIso} — using ${hit.actualDate}'s NAV (${navTxt(hit.nav)})`;
     } catch (_) {
         status.textContent = "Couldn't fetch NAV right now — enter manually.";
     }
@@ -1043,7 +1048,7 @@ function historyHTML() {
                             (r) => `<tr>
                         <td>${escapeHTML(r.date)}</td>
                         <td class="${posNeg(r.percentChange)}">${r.percentChange >= 0 ? "+" : ""}${r.percentChange.toFixed(2)}%</td>
-                        <td>${r.sipAdded ? `₹${r.sipTotal.toLocaleString("en-IN")}${r.sipCount > 1 ? ` (×${r.sipCount})` : ""}` : "—"}</td>
+                        <td>${r.sipAdded ? `${sipAmt(r.sipTotal)}${r.sipCount > 1 ? ` (×${r.sipCount})` : ""}` : "—"}</td>
                         <td>${fmt(r.investedAmount)}</td>
                         <td>${fmt(r.portfolioValue)}</td>
                         <td class="${posNeg(r.dailyReturnAmount)}">${r.dailyReturnAmount >= 0 ? "+" : ""}${fmt(r.dailyReturnAmount)}</td>
@@ -1094,7 +1099,7 @@ function ledgerHTML() {
                     (r) => `
                 <div class="su-pending-row">
                     <div>
-                        <strong>₹${r.amount.toLocaleString("en-IN")}</strong>
+                        <strong>${sipAmt(r.amount)}</strong>
                         <span class="br-muted"> · scheduled ${escapeHTML(r.date)}${r.paymentDate ? ` · paid ${escapeHTML(r.paymentDate)}` : ""}</span>
                         <span class="br-badge ${STATUS_BADGE[r.status] || ""}">${ALLOC_STATUS_LABEL[r.status] || r.status}</span>
                     </div>
@@ -1125,7 +1130,7 @@ function ledgerHTML() {
                         .map(
                             (r) => `<tr>
                         <td>${escapeHTML(r.date)}</td>
-                        <td>₹${r.amount.toLocaleString("en-IN")}</td>
+                        <td>${sipAmt(r.amount)}</td>
                         <td>${r.stepChange ? `<span class="${r.stepChange > 0 ? "su-pos" : "su-neg"}">${r.stepChange > 0 ? icon("arrow-up-right", { size: 14 }) : icon("arrow-down-right", { size: 14 })} ${Math.abs(r.stepChange).toLocaleString("en-IN")}</span>` : "—"}</td>
                         <td><span class="br-badge ${STATUS_BADGE[r.status] || ""}">${ALLOC_STATUS_LABEL[r.status] || r.status}</span></td>
                         <td>${r.navValue != null ? Number(r.navValue).toFixed(4) : "—"}</td>
@@ -1186,7 +1191,7 @@ function settingsHTML() {
                   const arrow =
                       prev === null ? "" : seg.amount > prev ? icon("arrow-up-right", { size: 14 }) + " " : seg.amount < prev ? icon("arrow-down-right", { size: 14 }) + " " : "";
                   return `<div class="su-row">
-                    <span><strong>${arrow}₹${seg.amount.toLocaleString("en-IN")}</strong>
+                    <span><strong>${arrow}${sipAmt(seg.amount)}</strong>
                     <span class="br-muted"> from ${escapeHTML(seg.fromDate)}</span></span>
                     ${
                         i === 0
@@ -1487,7 +1492,7 @@ async function addStep(page, form) {
     try {
         await afterSettingsChange(
             page,
-            `${verb} to ₹${newAmt.toLocaleString("en-IN")} from ${from} ✓`
+            `${verb} to ${sipAmt(newAmt)} from ${from} ✓`
         );
     } catch (e) {
         toast(page, "Couldn't save — " + errMsg(e));

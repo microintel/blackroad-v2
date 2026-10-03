@@ -1,3 +1,4 @@
+import { isUSD, usd } from "../../services/currency.js";
 const INVESTMENT_CATEGORIES = [
     "Mutual Fund",
     "SIP",
@@ -706,6 +707,8 @@ export function uid() {
 export function formatMoney(
     value
 ) {
+    if (isUSD()) return usd(value || 0);
+
     return (
         "₹" +
         Number(

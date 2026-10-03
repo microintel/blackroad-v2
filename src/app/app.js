@@ -10,7 +10,8 @@ import { seedGuestData } from "../services/guest-seed.js";
 import { AuthScreen } from "../features/auth/auth-screen.js";
 import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
-import { themeToggleContent } from "../components/layout/topbar.js";
+import { themeToggleContent, currencyToggleContent } from "../components/layout/topbar.js";
+import { initCurrency, toggleCurrency, getCurrency } from "../services/currency.js";
 import { initChartTooltips } from "../components/chart-tooltip.js";
 import { pageSkeleton, skeletonVariantFor } from "../components/skeleton.js";
 
@@ -25,6 +26,34 @@ window.addEventListener("br:theme-change", (event) => {
         button.innerHTML = ui.icon;
         button.setAttribute("aria-label", ui.label);
         button.setAttribute("title", ui.label);
+    });
+});
+
+// Currency (INR / USD) display switch. The rate is fetched at most once a
+// day (see services/currency.js). On a change, the header button is updated
+// and the current page is drawn again so every amount uses the new currency.
+initCurrency();
+
+window.addEventListener("br:currency-change", (event) => {
+    const ui = currencyToggleContent(event.detail?.currency || getCurrency());
+    document.querySelectorAll('[data-action="toggle-currency"]').forEach((button) => {
+        button.innerHTML = ui.icon;
+        button.setAttribute("aria-label", ui.label);
+        button.setAttribute("title", ui.label);
+        button.classList.remove("is-busy", "is-error");
+    });
+
+    if (document.querySelector("#app > .br-app-shell")) {
+        renderApp().catch((error) => console.error("BlackRoad: Route rendering error:", error));
+    }
+});
+
+window.addEventListener("br:currency-error", () => {
+    document.querySelectorAll('[data-action="toggle-currency"]').forEach((button) => {
+        button.classList.remove("is-busy");
+        button.classList.add("is-error");
+        button.setAttribute("title", "USD rate unavailable right now. Showing rupees.");
+        setTimeout(() => button.classList.remove("is-error"), 2500);
     });
 });
 
@@ -121,6 +150,14 @@ function buildShell(route) {
                 x: r.left + r.width / 2,
                 y: r.top + r.height / 2
             });
+        });
+
+    // INR / USD display toggle
+    topbar
+        .querySelector('[data-action="toggle-currency"]')
+        ?.addEventListener("click", (event) => {
+            event.currentTarget.classList.add("is-busy");
+            toggleCurrency();
         });
 
     // Logout

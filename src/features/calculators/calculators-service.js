@@ -12,6 +12,8 @@
        yearly: [{ year, sip, invested, value, returns }] }
    ========================================================= */
 
+import { isUSD, usd, usdShort } from "../../services/currency.js";
+
 const num = (n) => (Number.isFinite(n) ? n : 0);
 
 function finish(years, inflation, invested, value, yearly, finalSip = 0) {
@@ -71,6 +73,8 @@ export function lumpsumPlan({ amount, rate, years, inflation = 0 }) {
 /* ---------------- formatting ---------------- */
 
 export function inr(n) {
+    if (isUSD()) return usd(num(n), { whole: true });
+
     const v = Math.round(num(n));
 
     return (v < 0 ? "-" : "") + "₹" + Math.abs(v).toLocaleString("en-IN");
@@ -78,6 +82,8 @@ export function inr(n) {
 
 /* ₹1.25 L, ₹3.4 Cr: short labels for chart axes. */
 export function inrShort(n) {
+    if (isUSD()) return usdShort(num(n));
+
     const v = Math.abs(num(n));
     const sign = n < 0 ? "-" : "";
     const trim = (x) => String(+x.toFixed(2));

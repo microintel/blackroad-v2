@@ -1,3 +1,4 @@
+import { isUSD, usd } from "../../services/currency.js";
 import {
     entryIncomeAmount,
     entryInvestmentSaleDisplayAmount,
@@ -10,6 +11,8 @@ import { tipAttr } from "../../components/chart-tooltip.js";
 
 function formatMoney(value) {
     const amount = Number(value) || 0;
+
+    if (isUSD()) return usd(amount);
 
     return new Intl.NumberFormat("en-IN", {
         style: "currency",

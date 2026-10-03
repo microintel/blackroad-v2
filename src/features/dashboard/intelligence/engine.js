@@ -6,6 +6,7 @@
    tested and changed in one place.
    ========================================================= */
 
+import { isUSD, usd } from "../../../services/currency.js";
 import { EMERGENCIES } from "./example-data.js";
 
 const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
@@ -13,6 +14,7 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const round1 = (v) => Math.round(v * 10) / 10;
 
 export const inr = (n) =>
+    isUSD() ? usd(n, { whole: true }).replace("-", "−") :
     (n < 0 ? "−" : "") + "₹" + Math.round(Math.abs(n)).toLocaleString("en-IN");
 
 export const signedInr = (n) => (n > 0 ? "+" : "") + inr(n);

@@ -6,12 +6,16 @@
    (DB access moved into StepUpStore; this file is pure logic.)
    ========================================================= */
 
+import { isUSD, usd, usdShort } from "../../services/currency.js";
+
 /* ---------------- formatting / dates (old helpers.js) ---------------- */
 
 export function fmt(n) {
+  if (isUSD()) return usd(n);
   return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 export function fmtK(n) {
+  if (isUSD()) return usdShort(n);
   return Math.abs(n) >= 1e5 ? '₹' + (n / 1e5).toFixed(2) + 'L' : fmt(n);
 }
 export function fmtPct(n) {

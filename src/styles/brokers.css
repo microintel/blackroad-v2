@@ -1,0 +1,123 @@
+/* Brokerage Report Readers */
+.bk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--br-space-4);
+}
+
+.bk-card {
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-3);
+    color: inherit;
+    text-decoration: none;
+    transition: background var(--br-transition-fast), border-color var(--br-transition-fast);
+}
+
+.bk-card:hover { background: var(--br-surface-soft); }
+
+.bk-logo {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--br-radius-md);
+    background: #ffffff;
+    border: 1px solid var(--br-border, rgba(128, 128, 128, 0.25));
+}
+
+.bk-img {
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    object-fit: contain;
+}
+
+/* shown only when the logo image cannot load */
+.bk-logo.is-letter {
+    background: var(--br-surface-soft);
+    color: var(--br-gold);
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.bk-body { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.bk-name { color: var(--br-text); font-size: 16px; }
+.bk-note { font-size: 13px; }
+
+.bk-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--br-gold);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Broker detail: header, report list, "working on it" notice */
+.bk-detail-head {
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-4);
+    flex-wrap: wrap;
+}
+
+.bk-site {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    color: var(--br-gold);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.bk-reports {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--br-space-3);
+}
+
+.bk-report {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-3);
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.bk-report:hover,
+.bk-report.is-active { background: var(--br-surface-soft); }
+.bk-report.is-active { border-color: var(--br-gold); }
+
+.bk-report-icon {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: var(--br-radius-md);
+    background: var(--br-surface-soft);
+    color: var(--br-gold);
+}
+
+.bk-working {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--br-space-3);
+    margin-top: var(--br-space-4);
+    color: var(--br-gold);
+}
+
+.bk-working strong { color: var(--br-text); }
+.bk-working p { margin: 4px 0 0; }

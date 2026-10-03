@@ -1,3 +1,4 @@
+import { isUSD, usd } from "../../services/currency.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -24,6 +25,7 @@ import {
 
 export function formatINR(value) {
     const number = Number(value) || 0;
+    if (isUSD()) return usd(number, { whole: true });
     const sign = number < 0 ? "-" : "";
     const abs = Math.abs(Math.round(number));
 

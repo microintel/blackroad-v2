@@ -1,5 +1,6 @@
 import { icon } from "../icons.js";
 import { getTheme } from "../../services/preferences.js";
+import { getCurrency } from "../../services/currency.js";
 
 /* The button shows the theme you would switch TO: a sun while the
    app is dark, a moon while it is light. app.js wires the click. */
@@ -11,9 +12,20 @@ export function themeToggleContent(theme) {
     };
 }
 
+/* The button shows the currency you would switch TO, as an icon: a dollar
+   sign while amounts are in rupees, a rupee sign while they are in dollars. */
+export function currencyToggleContent(currency) {
+    const toRupee = currency === "USD";
+    return {
+        icon: icon(toRupee ? "indian-rupee" : "dollar-sign", { size: 20 }),
+        label: toRupee ? "Showing US dollars. Switch to rupees" : "Showing rupees. Switch to US dollars"
+    };
+}
+
 export function Topbar(title) {
 
     const themeUi = themeToggleContent(getTheme());
+    const curUi = currencyToggleContent(getCurrency());
 
     return `
 
@@ -51,6 +63,17 @@ export function Topbar(title) {
                     title="${themeUi.label}"
                 >
                     ${themeUi.icon}
+                </button>
+
+
+                <button
+                    class="br-icon-button br-currency-toggle"
+                    type="button"
+                    data-action="toggle-currency"
+                    aria-label="${curUi.label}"
+                    title="${curUi.label}"
+                >
+                    ${curUi.icon}
                 </button>
 
 

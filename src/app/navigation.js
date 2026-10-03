@@ -26,6 +26,7 @@ export const navigation = [
             { label: "Financial Intelligence", path: "/intelligence", icon: "brain" },
             { label: "Calculators", path: "/calculators", icon: "calculator" },
             { label: "Accounting", path: "/accounting", icon: "receipt" },
+            { label: "Brokerage Report Readers", path: "/brokers", icon: "file-chart-column" },
             { label: "Data Management", path: "/data", icon: "database" },
             { label: "Notifications", path: "/notifications", icon: "bell" },
             { label: "Account", path: "/account", icon: "user-round" }

@@ -11,6 +11,8 @@
  * the income-service.js pattern.
  */
 
+import { isUSD, usd } from "../../services/currency.js";
+
 export function genId() {
     return (
         "txn_" +
@@ -498,6 +500,7 @@ const inrWhole = new Intl.NumberFormat("en-IN", {
 
 export function fmtMoney(n, whole) {
     const v = Number(n) || 0;
+    if (isUSD()) return usd(v, { whole: !!whole });
     return (whole ? inrWhole : inrFull).format(v);
 }
 

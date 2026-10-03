@@ -1,3 +1,4 @@
+import { isUSD, usdShort } from "../../services/currency.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { icon, FEATURE_ICON } from "../../components/icons.js";
 import { formatINR } from "../dashboard/dashboard-service.js";
@@ -56,6 +57,8 @@ function niceTicks(min, max, count = 4) {
 }
 
 function tickLabel(value) {
+    if (isUSD()) return usdShort(value);
+
     const abs = Math.abs(value);
     const [unit, suffix] = abs >= 1e7 ? [1e7, "Cr"] : abs >= 1e5 ? [1e5, "L"] : abs >= 1e3 ? [1e3, "K"] : [1, ""];
     const text = String(parseFloat((abs / unit).toFixed(2)));

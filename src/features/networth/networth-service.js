@@ -1,3 +1,4 @@
+import { isUSD, usdShort } from "../../services/currency.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -500,6 +501,8 @@ export function formatCompactINR(value, digits = 2) {
     const n = Number(value) || 0;
     const sign = n < 0 ? "-" : "";
     const abs = Math.abs(n);
+
+    if (isUSD()) return usdShort(n);
 
     if (abs >= 1e7) return `${sign}₹${(abs / 1e7).toFixed(digits)}Cr`;
     if (abs >= 1e5) return `${sign}₹${(abs / 1e5).toFixed(digits)}L`;
