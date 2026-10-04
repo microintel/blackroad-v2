@@ -52,9 +52,9 @@
     border-radius: var(--br-radius-md);
     background: var(--br-gold);
     color: #000000;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.04em;
 }
 
 .br-brand-name {

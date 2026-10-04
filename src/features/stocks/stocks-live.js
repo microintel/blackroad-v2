@@ -8,7 +8,13 @@
 
 export const LTP_API_BASE = "https://indian-stock-ltp.vercel.app/api/ltp";
 export const CHART_API_BASE = "https://indian-stock-ltp.vercel.app/api/chart";
+export const LOGO_API_BASE = "https://indian-stock-ltp.vercel.app/api/logo";
 export const LIVE_PRICE_POLL_MS = 3000;
+
+/* Logo/icon image for a stock symbol (plain <img> request). */
+export function stockLogoUrl(symbol) {
+    return `${LOGO_API_BASE}?symbol=${encodeURIComponent(symbol)}`;
+}
 
 export async function fetchLTP(symbol) {
     const res = await fetch(

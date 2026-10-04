@@ -16,7 +16,7 @@ export function Sidebar() {
         <div class="br-brand">
 
             <div class="br-brand-logo" aria-hidden="true">
-                B
+                BR
             </div>
 
             <div>

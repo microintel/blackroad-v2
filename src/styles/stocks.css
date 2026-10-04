@@ -69,6 +69,10 @@
     .pr-table th { text-align: left; padding: 8px 8px; font-size: 9.5px; text-transform: uppercase; color: #2f6fe0; border-bottom: 1.5px solid #1f3a93; }
     .pr-table td { padding: 6px 8px; border-bottom: 1px solid #e7e9ec; }
     .pr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .pr-stock { display: inline-flex; align-items: center; gap: 8px; }
+    .pr-logo { position: relative; flex: none; width: 26px; height: 26px; border-radius: 7px; overflow: hidden; background: #f1f2f4; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: #6b7078; }
+    .pr-logo::before { content: attr(data-initials); position: absolute; }
+    .pr-logo img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
     .pr-pill { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
     .pr-pill.buy { background: rgba(28,154,91,.12); color: #1c9a5b; }
     .pr-pill.sell { background: rgba(213,75,90,.12); color: #d54b5a; }
@@ -109,7 +113,7 @@
 @media (hover: hover) { .stk-card:hover { background: var(--hover-background); } }
 
 .stk-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--br-space-3); }
-.stk-id { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.stk-id { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .stk-name { font-size: 15px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .stk-id .inc-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 
@@ -249,3 +253,46 @@
 @media (prefers-reduced-motion: reduce) {
     .stk-flash, .stk-card.stk-flash { animation: none; }
 }
+
+
+/* =========================================================
+   STOCK LOGO (from /api/logo?symbol=)
+   Initials sit behind the image as a fallback if it fails.
+   ========================================================= */
+.stk-logo {
+    position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    overflow: hidden; background: var(--hover-background, rgba(127,127,127,.12));
+    font-weight: 700; color: var(--text-secondary);
+}
+.stk-logo::before { content: attr(data-initials); position: absolute; letter-spacing: .02em; }
+.stk-logo img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; background: transparent; padding: 0; }
+.stk-logo-lg { width: 64px; height: 64px; border-radius: 16px; font-size: 18px; }
+.stk-logo-xl { width: 104px; height: 104px; border-radius: 24px; font-size: 30px; }
+
+.stk-detail-head { display: flex; align-items: center; gap: var(--br-space-4); min-width: 0; }
+.stk-detail-head > div { min-width: 0; }
+.stk-detail-head [data-detail-logo]:empty { display: none; }
+
+@media (max-width: 480px) {
+    .stk-logo-lg { width: 56px; height: 56px; border-radius: 14px; }
+    .stk-logo-xl { width: 84px; height: 84px; border-radius: 20px; }
+}
+
+/* Transactions table: small logo beside stock name */
+.stk-logo-sm { width: 40px; height: 40px; border-radius: 11px; font-size: 12px; }
+.stk-txn-stock { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.stk-txn-stock-text { min-width: 0; }
+
+/* Add / edit form: live logo + price for the typed symbol */
+.stk-sym-preview {
+    display: flex; align-items: center; gap: var(--br-space-3);
+    padding: var(--br-space-3); margin-bottom: var(--br-space-4);
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--hover-background, rgba(127,127,127,.08));
+}
+.stk-sym-preview[hidden] { display: none; }
+.stk-sym-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.stk-sym-info strong { font-size: 15px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stk-sym-info span { font-size: 13px; font-variant-numeric: tabular-nums; }
+.stk-sym-preview .br-button { flex: none; }
+.stk-sym-preview .br-button[hidden] { display: none; }

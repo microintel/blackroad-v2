@@ -32,7 +32,14 @@ import {
 
 import { printStocksReport } from "./stocks-print.js";
 import { isGuestSync } from "../../services/auth.js";
-import { fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS } from "./stocks-live.js";
+import { fetchLTP, fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS, stockLogoUrl } from "./stocks-live.js";
+
+/* Stock logo from the symbol. If the image fails to load, the
+   capture-phase error handler below swaps it for the symbol's initials. */
+function stockLogoHTML(symbol, size) {
+    const sym = String(symbol || "");
+    return `<span class="stk-logo stk-logo-${size}" data-initials="${escapeAttribute(sym.slice(0, 2).toUpperCase())}"><img src="${escapeAttribute(stockLogoUrl(sym))}" alt="${escapeAttribute(sym)} logo" loading="lazy" decoding="async" data-stk-logo></span>`;
+}
 
 let store = null;
 
@@ -223,6 +230,16 @@ export async function Stocks() {
                 <form data-txn-form novalidate>
                     <div class="inc-form-error" data-txn-error role="alert" hidden></div>
 
+                    <!-- Live logo + LTP for the typed symbol -->
+                    <div class="stk-sym-preview" data-sym-preview hidden>
+                        <span data-sym-logo></span>
+                        <div class="stk-sym-info">
+                            <strong data-sym-title></strong>
+                            <span class="br-muted" data-sym-ltp></span>
+                        </div>
+                        <button type="button" class="br-button" data-action="use-ltp" data-sym-use hidden>Use price</button>
+                    </div>
+
                     <div class="inc-fields">
                         ${fieldHTML("Type", `<select name="type" data-txn-type><option value="BUY">Buy</option><option value="SELL">Sell</option></select>`)}
                         ${fieldHTML("Date", `<input name="date" type="date" required>`)}
@@ -304,9 +321,12 @@ export async function Stocks() {
         <div class="br-modal-layer" data-detail-modal hidden>
             <div class="br-modal" role="dialog" aria-modal="true" style="width:min(820px,100%);">
                 <div class="br-modal-header">
-                    <div>
-                        <h3 data-detail-title>Stock detail</h3>
-                        <p class="br-muted">Everything about this one holding.</p>
+                    <div class="stk-detail-head">
+                        <span data-detail-logo></span>
+                        <div>
+                            <h3 data-detail-title>Stock detail</h3>
+                            <p class="br-muted">Everything about this one holding.</p>
+                        </div>
                     </div>
                     <button type="button" class="br-modal-close" data-action="close-detail" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
@@ -653,6 +673,7 @@ function renderHoldings(page) {
             return `
                 <article class="inc-entry stk-card${h.symbol === flashSymbol ? " stk-flash" : ""}">
                     <div class="stk-card-top">
+                        ${stockLogoHTML(h.symbol, "lg")}
                         <div class="stk-id">
                             <button type="button" class="br-stock-link stk-name" data-action="open-detail" data-symbol="${escapeAttribute(h.symbol)}">${escapeHTML(h.name)}</button>
                             <div class="inc-meta">${escapeHTML(h.symbol)} ${badge}</div>
@@ -1030,8 +1051,13 @@ function renderTransactions(page) {
                         ${t.isMTF ? '<span class="br-badge br-badge-warning">MTF</span>' : ""}
                     </td>
                     <td>
-                        <div>${escapeHTML(t.name)}</div>
-                        <div class="br-muted">${escapeHTML(t.symbol)}</div>
+                        <div class="stk-txn-stock">
+                            ${stockLogoHTML(t.symbol, "sm")}
+                            <div class="stk-txn-stock-text">
+                                <div>${escapeHTML(t.name)}</div>
+                                <div class="br-muted">${escapeHTML(t.symbol)}</div>
+                            </div>
+                        </div>
                     </td>
                     <td>${t.quantity}</td>
                     <td>${fmtMoney(t.price)}</td>
@@ -1122,12 +1148,94 @@ function renderReportSummary(page, ym) {
    TRANSACTION MODAL
 ========================================= */
 
+/* ---------- live symbol lookup (logo + LTP) ---------- */
+
+let symLookupTimer = null;
+let symLookupReq = 0;
+let symLookupLtp = null;
+
+function resetSymPreview(page) {
+    clearTimeout(symLookupTimer);
+    symLookupReq++;
+    symLookupLtp = null;
+    const box = page.querySelector("[data-sym-preview]");
+    box.hidden = true;
+    page.querySelector("[data-sym-logo]").innerHTML = "";
+    page.querySelector("[data-sym-logo]").dataset.symbol = "";
+    page.querySelector("[data-sym-use]").hidden = true;
+}
+
+// Waits until typing pauses (or fires right away on blur / list pick)
+function scheduleSymLookup(page, immediate) {
+    clearTimeout(symLookupTimer);
+    const form = page.querySelector("[data-txn-form]");
+    if (!form.symbol.value.trim()) {
+        resetSymPreview(page);
+        return;
+    }
+    symLookupTimer = setTimeout(() => lookupSymbol(page), immediate ? 0 : 700);
+}
+
+async function lookupSymbol(page) {
+    const form = page.querySelector("[data-txn-form]");
+    const sym = form.symbol.value.trim().toUpperCase();
+    if (!sym) return resetSymPreview(page);
+
+    const req = ++symLookupReq;
+    const box = page.querySelector("[data-sym-preview]");
+    const logoHost = page.querySelector("[data-sym-logo]");
+    const ltpEl = page.querySelector("[data-sym-ltp]");
+    const useBtn = page.querySelector("[data-sym-use]");
+
+    box.hidden = false;
+    useBtn.hidden = true;
+    symLookupLtp = null;
+    page.querySelector("[data-sym-title]").textContent =
+        getAllSymbols(transactions).includes(sym) ? `${getSymbolName(sym, transactions)} (${sym})` : sym;
+    ltpEl.textContent = "Fetching live price…";
+
+    if (logoHost.dataset.symbol !== sym) {
+        logoHost.dataset.symbol = sym;
+        logoHost.innerHTML = stockLogoHTML(sym, "lg");
+    }
+
+    let ltp = null;
+    try {
+        ltp = await fetchLTP(sym);
+    } catch (err) {
+        ltp = null;
+    }
+
+    // Symbol changed (or modal closed) while we were waiting — drop this result
+    if (req !== symLookupReq) return;
+
+    if (typeof ltp === "number" && isFinite(ltp) && ltp >= 0) {
+        symLookupLtp = ltp;
+        ltpEl.textContent = `Live price ${fmtMoney(ltp)}`;
+
+        const priceEl = form.price;
+        if (priceEl.value === "" || priceEl.dataset.autoFilled === "1") {
+            // Empty (or still our own earlier suggestion) -> fill it in
+            priceEl.value = ltp;
+            priceEl.dataset.autoFilled = "1";
+            updateTxnForm(page);
+        } else if (Number(priceEl.value) !== ltp) {
+            // The user typed / saved their own price — never overwrite it
+            useBtn.hidden = false;
+        }
+    } else {
+        ltpEl.textContent = "Live price unavailable — enter it manually";
+    }
+}
+
 function openTxnModal(page, id, duplicate) {
     const modal = page.querySelector("[data-txn-modal]");
     const form = page.querySelector("[data-txn-form]");
 
     form.reset();
     clearTxnErrors(page);
+    resetSymPreview(page);
+    delete form.price.dataset.autoFilled;
     // A duplicate is saved as a brand-new transaction through the
     // normal validated save path, so it never carries the source id.
     editingTxnId = id && !duplicate ? id : null;
@@ -1163,11 +1271,15 @@ function openTxnModal(page, id, duplicate) {
     updateTxnForm(page);
     modal.hidden = false;
 
+    // Editing / duplicating: show the logo + live price right away
+    if (id && form.symbol.value.trim()) lookupSymbol(page);
+
     // Land the cursor where typing is most likely to start
     setTimeout(() => (id ? form.quantity : form.symbol).focus(), 30);
 }
 
 function closeTxnModal(page) {
+    resetSymPreview(page);
     page.querySelector("[data-txn-modal]").hidden = true;
     editingTxnId = null;
 }
@@ -1523,6 +1635,13 @@ function renderDetail(page) {
     page.querySelector("[data-detail-title]").textContent =
         `${h.name} (${h.symbol})`;
 
+    // Only rebuild the logo when the symbol changes (renderDetail re-runs on price updates)
+    const logoHost = page.querySelector("[data-detail-logo]");
+    if (logoHost.dataset.symbol !== h.symbol) {
+        logoHost.dataset.symbol = h.symbol;
+        logoHost.innerHTML = stockLogoHTML(h.symbol, "xl");
+    }
+
     page.querySelector("[data-detail-grid]").innerHTML = [
         cell("Shares you own", h.quantity),
         cell("Average price paid", fmtMoney(h.avgPrice)),
@@ -1686,6 +1805,17 @@ function switchTab(page, tab) {
 ========================================= */
 
 function attachEvents(page) {
+    page.addEventListener(
+        "error",
+        (event) => {
+            const img = event.target;
+            if (img && img.matches && img.matches("img[data-stk-logo]")) {
+                img.remove();
+            }
+        },
+        true
+    );
+
     page.addEventListener("click", async (event) => {
         const tabBtn = event.target.closest("[data-stocks-tab]");
         if (tabBtn) {
@@ -1743,6 +1873,14 @@ function attachEvents(page) {
             const id = txnDetailId;
             closeTxnDetail(page);
             if (id) openDeleteModal(page, id);
+        } else if (action === "use-ltp") {
+            const form = page.querySelector("[data-txn-form]");
+            if (symLookupLtp != null) {
+                form.price.value = symLookupLtp;
+                form.price.dataset.autoFilled = "1";
+                actionEl.hidden = true;
+                updateTxnForm(page);
+            }
         } else if (action === "open-search") {
             openSearch(page);
         } else if (action === "close-search") {
@@ -1792,9 +1930,20 @@ function attachEvents(page) {
                 const sym = form.symbol.value.trim().toUpperCase();
                 if (getAllSymbols(transactions).includes(sym)) {
                     if (!form.name.value.trim()) form.name.value = getSymbolName(sym, transactions);
-                    if (form.price.value === "" && prices[sym] != null) form.price.value = prices[sym];
+                    if (form.price.value === "" && prices[sym] != null) {
+                        form.price.value = prices[sym];
+                        form.price.dataset.autoFilled = "1";
+                    }
                 }
+                // Picked from the suggestion list -> look up now; typing -> after a short pause
+                scheduleSymLookup(
+                    page,
+                    !event.inputType || event.inputType === "insertReplacementText"
+                );
             }
+
+            // A hand-typed price is the user's own: stop auto-filling over it
+            if (event.target === form.price) delete form.price.dataset.autoFilled;
 
             updateTxnForm(page);
             return;
@@ -1810,6 +1959,11 @@ function attachEvents(page) {
     });
 
     page.addEventListener("change", async (event) => {
+        if (event.target.matches('[data-txn-form] [name="symbol"]')) {
+            scheduleSymLookup(page, true);
+            return;
+        }
+
         if (event.target.matches("[data-detail-price]") && detailSymbol) {
             const val = Number(event.target.value);
             if (isNaN(val) || val < 0) return;

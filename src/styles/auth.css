@@ -230,8 +230,9 @@
     border-radius: 14px;
     background: var(--au-a);
     color: #000000;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
+    letter-spacing: -0.04em;
 }
 
 .br-auth .br-brand-name,

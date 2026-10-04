@@ -72,7 +72,7 @@ export function AuthScreen(mode) {
         <div class="br-auth-shell">
         <aside class="br-auth-aside" aria-hidden="false">
             <div class="br-auth-aside-brand">
-                <div class="br-brand-logo">B</div>
+                <div class="br-brand-logo">BR</div>
                 <div class="br-brand-name">BlackRoad</div>
             </div>
             <h1>${copy.title}</h1>
@@ -83,7 +83,7 @@ export function AuthScreen(mode) {
         </aside>
         <div class="br-auth-card">
             <div class="br-auth-brand">
-                <div class="br-brand-logo">B</div>
+                <div class="br-brand-logo">BR</div>
                 <div>
                     <div class="br-brand-name">BlackRoad</div>
                     <div class="br-brand-subtitle">Finance</div>

@@ -3,6 +3,7 @@ import {
     fmtMoney, fmtSigned, pnlClass, fmtDate
 } from "./stocks-service.js";
 import { startReportProgress } from "../../components/report-progress.js";
+import { stockLogoUrl } from "./stocks-live.js";
 
 /* Print / Save-as-PDF report (same approach as the old app):
    build a hidden #br-print-report, hand it to window.print().
@@ -22,7 +23,7 @@ export async function printStocksReport(ym, transactions, prices) {
     });
     try {
         buildReport(ym, transactions, prices);
-        await progress.ready();          // wait for the bar to reach 100%
+        await Promise.all([progress.ready(), waitForLogos()]);   // bar at 100% + logos loaded
     } catch (err) {
         console.error("Stocks report failed:", err);
         progress.fail(err.message || String(err));
@@ -62,7 +63,7 @@ function buildReport(ym, transactions, prices) {
             return `<tr>
                 <td>${fmtDate(t.date)}</td>
                 <td><span class="pr-pill ${t.type === "BUY" ? "buy" : "sell"}">${esc(t.type)}</span></td>
-                <td>${esc(t.name)} (${esc(t.symbol)})</td>
+                <td><span class="pr-stock"><span class="pr-logo" data-initials="${esc(String(t.symbol || "").slice(0, 2).toUpperCase())}"><img src="${esc(stockLogoUrl(t.symbol))}" alt="" data-pr-logo></span><span>${esc(t.name)} (${esc(t.symbol)})</span></span></td>
                 <td class="num">${t.quantity}</td>
                 <td class="num">${fmtMoney(t.price)}</td>
                 <td class="num">${fmtMoney(t.quantity * t.price, true)}${t.type === "BUY" && t.isMTF && t.mtfOwn != null ? `<div style="font-size:9.5px;color:#6b7078;">Mine ${fmtMoney(mtfSplit(t).own, true)} · MTF ${fmtMoney(mtfSplit(t).funded, true)}</div>` : ""}</td>
@@ -114,4 +115,30 @@ function openPrint() {
     window.addEventListener("afterprint", done);
     // let the DOM paint before the print dialog opens
     setTimeout(() => window.print(), 60);
+}
+
+/* Logos are fetched live, so make sure they have loaded (or failed) before
+   the print dialog opens — otherwise the PDF would be missing them.
+   A failed logo is removed so the initials fallback shows. Max wait: 6s. */
+function waitForLogos() {
+    const host = document.getElementById("br-print-report");
+    if (!host) return Promise.resolve();
+    const imgs = Array.from(host.querySelectorAll("img[data-pr-logo]"));
+
+    const loads = imgs.map((img) => {
+        const fail = () => img.remove();
+        if (img.complete) {
+            if (img.naturalWidth === 0) fail();
+            return Promise.resolve();
+        }
+        return new Promise((resolve) => {
+            img.addEventListener("load", resolve, { once: true });
+            img.addEventListener("error", () => { fail(); resolve(); }, { once: true });
+        });
+    });
+
+    return Promise.race([
+        Promise.all(loads),
+        new Promise((resolve) => setTimeout(resolve, 6000))
+    ]);
 }
