@@ -25,6 +25,11 @@ body.br-no-scroll { overflow: hidden; }
     .br-header-left { flex: 1; min-width: 0; }
     .br-page-title { overflow: hidden; text-overflow: ellipsis; }
     .br-icon-button, .br-mobile-menu { width: 44px; height: 44px; }
+    /* The menu button and the action icons keep their size; a long page
+       title is shortened with "..." instead of squeezing them. */
+    .br-mobile-menu, .br-icon-button { flex: 0 0 auto; }
+    .br-header-actions { flex-shrink: 0; }
+    .br-header-left > div { min-width: 0; }
 
     /* ---------- Drawer ---------- */
     .br-sidebar {

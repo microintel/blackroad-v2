@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v57";
+const CACHE_VERSION = "v75";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -53,7 +53,14 @@ const SHELL = [
     "./src/features/accounting/accounting.js",
     "./src/features/calculators/calculators-service.js",
     "./src/features/calculators/calculators.js",
+    "./src/features/connect/connect-broker.js",
     "./src/features/brokers/brokers.js",
+    "./src/features/brokers/angel-pnl/angel-fonts.js",
+    "./src/features/brokers/angel-pnl/angel-libs.js",
+    "./src/features/brokers/angel-pnl/angel-parser.js",
+    "./src/features/brokers/angel-pnl/angel-pdf.js",
+    "./src/features/brokers/angel-pnl/angel-pnl.js",
+    "./src/features/brokers/angel-pnl/angel-render.js",
     "./src/features/dashboard/dashboard-service.js",
     "./src/features/dashboard/dashboard.js",
     "./src/features/dashboard/intelligence/cash-flow.js",
@@ -107,7 +114,9 @@ const SHELL = [
     "./src/styles/accounting.css",
     "./src/styles/auth.css",
     "./src/styles/calculators.css",
+    "./src/styles/angel-pnl.css",
     "./src/styles/brokers.css",
+    "./src/styles/connect-broker.css",
     "./src/styles/chart-tooltip.css",
     "./src/styles/themes.css",
     "./src/styles/mobile.css",
@@ -122,6 +131,9 @@ const SHELL = [
     "./src/styles/layout.css",
     "./src/styles/lending.css",
     "./src/styles/motion.css",
+    "./src/styles/ux.css",
+    "./src/app/ux.js",
+    "./src/services/bank-logos.js",
     "./src/styles/notifications.css",
     "./src/styles/skeleton.css",
     "./src/styles/stepup.css",

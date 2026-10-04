@@ -1,0 +1,183 @@
+/* =========================================================
+   UX LAYER (loaded last) - calmer, cleaner, easier to scan.
+   Visual only: no feature, data or calculation is changed.
+   ========================================================= */
+
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* ---------- Focus: clear for keyboard, invisible for mouse ---------- */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; border-radius: var(--br-radius-sm); }
+
+/* ---------- Rhythm: one consistent gap between blocks ---------- */
+.br-page { gap: var(--br-space-5); }
+.br-page-heading h2 { font-size: 24px; letter-spacing: -0.02em; }
+.br-page-heading p { color: var(--br-text-muted); font-size: var(--br-font-size-sm); line-height: 1.5; }
+
+/* ---------- Header: quiet, with a soft divider only once scrolled ---------- */
+.br-header { backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    background: color-mix(in srgb, var(--br-bg) 88%, transparent); transition: box-shadow .2s; }
+.br-header.is-scrolled { box-shadow: 0 1px 0 var(--br-border); }
+
+/* ---------- Cards: more air, softer hierarchy ---------- */
+.br-card { padding: var(--br-space-5); transition: background .2s; }
+.br-card-heading { margin-bottom: var(--br-space-4); }
+.br-card h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.br-stat-label { color: var(--br-text-muted); font-size: 12px; font-weight: 500; letter-spacing: .02em; }
+.br-stat-value, .br-dash-tile-value { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.br-table td, .br-table th { font-variant-numeric: tabular-nums; }
+
+/* Clickable cards feel clickable */
+a.br-card, .br-dash-tile { transition: background .2s, transform .15s; }
+@media (hover: hover) {
+    a.br-card:hover, .br-dash-tile:hover { background: var(--br-surface-hover); }
+}
+a.br-card:active, .br-dash-tile:active, .br-button:active { transform: scale(.985); }
+
+/* ---------- Buttons: one primary action stands out ---------- */
+.br-button { transition: background .15s, color .15s, transform .12s; }
+.br-button-primary { font-weight: 600; }
+
+/* ---------- Inputs: comfortable, 16px stops iOS zoom ---------- */
+.br-input, .br-select, .br-textarea { transition: box-shadow .15s, background .15s; }
+.br-input:focus, .br-select:focus, .br-textarea:focus { box-shadow: 0 0 0 2px var(--br-gold-muted); }
+
+/* ---------- Sidebar: collapsible groups (see ux.js) ---------- */
+.br-nav-section-title { display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none; border-radius: var(--br-radius-sm); transition: color .15s;
+    letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+.br-nav-section-title:hover { color: var(--br-text); }
+.br-nav-section-title::after { content: ""; width: 7px; height: 7px; margin-right: 6px;
+    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg); transition: transform .2s; opacity: .7; }
+.br-nav-section.is-collapsed .br-nav-section-title::after { transform: rotate(-45deg); }
+.br-nav-section.is-collapsed .br-nav-item { display: none; }
+.br-nav-item { transition: background .15s, color .15s, padding .15s; }
+@media (hover: hover) { .br-nav-item:hover { padding-left: calc(var(--br-space-3) + 2px); } }
+
+/* ---------- Tabs: swipe sideways instead of wrapping into clutter ---------- */
+.br-income-tabs, .br-tabs-flat { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.br-income-tabs::-webkit-scrollbar, .br-tabs-flat::-webkit-scrollbar { display: none; }
+.br-income-tab { flex: 0 0 auto; scroll-snap-align: center; }
+
+/* ---------- Tables: scroll inside their box, never the page ---------- */
+.br-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---------- Modals: gentle entrance ---------- */
+.br-modal, .br-confirm { animation: br-ux-rise .22s cubic-bezier(.2,.8,.2,1); }
+@keyframes br-ux-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Page change: soft fade ---------- */
+.br-content > .br-page, .br-content > div:first-child { animation: br-ux-fade .25s ease-out; }
+@keyframes br-ux-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Back to top ---------- */
+.br-ux-top { position: fixed; right: 16px; bottom: 24px; width: 42px; height: 42px; display: grid; place-items: center;
+    border: 0; border-radius: 50%; background: var(--br-surface-hover); color: var(--br-text);
+    opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .2s, transform .2s; z-index: 150; cursor: pointer; }
+.br-ux-top.is-visible { opacity: 1; pointer-events: auto; transform: none; }
+.br-ux-top svg { width: 18px; height: 18px; }
+
+/* ---------- Desktop: roomier, narrower reading width ---------- */
+@media (min-width: 1101px) {
+    .br-content { padding-top: var(--br-space-5); }
+    .br-page { gap: var(--br-space-6); }
+}
+
+/* ---------- Mobile: thumb-friendly, one thing at a time ---------- */
+@media (max-width: 768px) {
+    .br-card { padding: var(--br-space-4); border-radius: var(--br-radius-lg); }
+    .br-page { gap: var(--br-space-4); }
+    .br-page-heading h2 { font-size: 21px; }
+    .br-page-heading p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .br-button, .br-input, .br-select { min-height: 44px; }
+    .br-input, .br-select, .br-textarea { font-size: 16px; }
+    .br-page-actions, .br-toolbar { gap: var(--br-space-2); }
+    .br-page-actions .br-button { flex: 1 1 auto; }
+    .br-bottom-nav { background: color-mix(in srgb, var(--br-surface) 92%, transparent);
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 -1px 0 var(--br-border); }
+    .br-bottom-item { position: relative; transition: color .15s; }
+    .br-bottom-item.is-active::before { content: ""; position: absolute; top: 0; width: 24px; height: 3px;
+        border-radius: 0 0 4px 4px; background: var(--br-gold); }
+    /* Modals become bottom sheets */
+    .br-modal-layer, .br-confirm-layer { align-items: flex-end !important; padding: 0 !important; }
+    .br-modal { width: 100%; max-height: 92vh; border-radius: 20px 20px 0 0;
+        padding-bottom: calc(var(--br-space-5) + env(safe-area-inset-bottom)); }
+    .br-modal-header { position: sticky; top: 0; background: inherit; z-index: 1; }
+    .br-modal-footer { position: sticky; bottom: 0; background: inherit; }
+    .br-ux-top { bottom: calc(var(--br-bottom-nav-height, 60px) + env(safe-area-inset-bottom) + 16px); }
+}
+
+/* ---------- Respect user motion settings ---------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+
+/* =========================================================
+   ACCOUNT + ACCOUNTING: no card may stretch or leave a hole.
+   Cause 1: accounting.css makes EVERY .ac-side sticky, so the Account
+           page's left column also slid down while scrolling.
+   Cause 2: two fixed columns of different heights leave empty space
+           under the shorter one.
+   ========================================================= */
+
+/* ---------- Account: cards flow into two even columns ---------- */
+.ac-account-grid { display: block; position: static; column-count: 2; column-gap: var(--br-space-5); }
+.ac-account-grid > .ac-side { display: contents; position: static; }
+.ac-account-grid .br-card { break-inside: avoid; -webkit-column-break-inside: avoid; margin-bottom: var(--br-space-5); }
+.ac-account-grid .br-card:last-child { margin-bottom: 0; }
+.ac-account-grid .br-card[style*="margin"] { margin-top: 0 !important; }
+.ac-head { min-width: 0; }
+.ac-head > * { min-width: 0; }
+.ac-plan-row { flex-wrap: wrap; }
+.ac-stack label, .ac-stack .br-input { min-width: 0; max-width: 100%; }
+.br-page > .br-card[style*="margin-top"] { margin-top: 0 !important; }
+
+@media (max-width: 960px) {
+    .ac-account-grid { column-count: 1; }
+    .ac-account-grid .br-card:last-child { margin-bottom: 0; }
+}
+
+/* ---------- Accounting: summary column stays put, main column can grow ---------- */
+.ac-layout { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: var(--br-space-5); align-items: start; }
+.ac-layout > .ac-side,
+.ac-layout > .ac-main { min-width: 0; gap: var(--br-space-4); }
+.ac-layout > .ac-side {
+    position: sticky;
+    top: calc(var(--br-header-height) + var(--br-space-4));
+    max-height: calc(100vh - var(--br-header-height) - var(--br-space-7));
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+.ac-line > span:first-child, .ac-live-row > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.ac-line > span:last-child, .ac-live-row > strong { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ac-row { flex-wrap: wrap; align-items: flex-end; }
+.ac-row > * { min-width: 0; }
+.ac-row label { flex: 1 1 140px; }
+.br-page-actions { display: flex; flex-wrap: wrap; gap: var(--br-space-2); }
+
+@media (max-width: 960px) {
+    .ac-layout { grid-template-columns: minmax(0, 1fr); }
+    .ac-layout > .ac-side { position: static; max-height: none; overflow: visible; }
+    .ac-donut { margin-top: var(--br-space-3); }
+}
+
+
+/* =========================================================
+   ACCOUNTING: cards flow into two balanced columns (like Account),
+   so the short summary column no longer leaves a hole under it.
+   Order is unchanged: Net worth, Live data, Banks, Additional assets,
+   Cash & investments, Breakdown.
+   ========================================================= */
+
+.ac-layout { display: block; column-count: 2; column-gap: var(--br-space-5); }
+.ac-layout > .ac-side,
+.ac-layout > .ac-main { display: contents; position: static; max-height: none; overflow: visible; }
+.ac-layout .br-card { break-inside: avoid; -webkit-column-break-inside: avoid; margin-bottom: var(--br-space-4); }
+.ac-layout .ac-main > .br-card:last-child { margin-bottom: 0; }
+
+@media (max-width: 960px) {
+    .ac-layout { column-count: 1; }
+}

@@ -16,6 +16,7 @@ const loaders = {
         ),
     calculators: () => import("../features/calculators/calculators.js").then((m) => m.Calculators),
     accounting: () => import("../features/accounting/accounting.js").then((m) => m.Accounting),
+    connectbroker: () => import("../features/connect/connect-broker.js").then((m) => m.ConnectBroker),
     brokers: () => import("../features/brokers/brokers.js").then((m) => m.Brokers),
     data: () => import("../features/data/data-management.js").then((m) => m.DataManagement),
     notifications: () => import("../features/notifications/notifications.js").then((m) => m.Notifications),

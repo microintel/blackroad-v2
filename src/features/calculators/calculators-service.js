@@ -70,6 +70,100 @@ export function lumpsumPlan({ amount, rate, years, inflation = 0 }) {
     return finish(years, inflation, amount, value, yearly);
 }
 
+
+/* Goal planner: the monthly SIP needed to reach a target.
+   `goal` is in today's money and is raised by inflation to the goal date.
+   Money already invested (`corpus`) grows once a year, like Lumpsum. */
+export function goalPlan({ goal, rate, years, corpus = 0, inflation = 0 }) {
+    const target = goal * Math.pow(1 + inflation / 100, years);
+    const corpusFV = corpus * Math.pow(1 + rate / 100, years);
+    const gap = Math.max(0, target - corpusFV);
+
+    const i = rate / 12 / 100;
+    const n = years * 12;
+    const factor = i > 0 ? ((Math.pow(1 + i, n) - 1) / i) * (1 + i) : n;
+    const requiredSip = gap > 0 && factor > 0 ? gap / factor : 0;
+
+    const base = sipPlan({ amount: requiredSip, rate, years });
+
+    const yearly = base.yearly.map((d) => {
+        const grown = corpus * Math.pow(1 + rate / 100, d.year);
+        const invested = d.invested + corpus;
+        const value = d.value + grown;
+
+        return { year: d.year, sip: d.sip, invested, value, returns: value - invested };
+    });
+
+    const invested = base.invested + corpus;
+    const value = base.value + corpusFV;
+
+    return {
+        years, goalToday: goal, target, corpusFV, requiredSip,
+        onTrack: gap === 0, sipTotal: base.invested,
+        invested, value, returns: value - invested, yearly
+    };
+}
+
+/* Systematic withdrawal: take a fixed amount every month (paid at the start
+   of the month), the rest keeps earning, compounded monthly. */
+function runSwp(corpus, withdraw, rate, years, step) {
+    const i = rate / 12 / 100;
+    const yearly = [];
+    let balance = corpus;
+    let w = withdraw;
+    let withdrawn = 0;
+    let months = 0;
+    let depleted = false;
+
+    for (let y = 1; y <= years; y++) {
+        const start = balance;
+        let taken = 0;
+
+        for (let m = 0; m < 12 && !depleted; m++) {
+            if (balance <= w) {
+                taken += balance;
+                balance = 0;
+                depleted = true;
+                months++;
+                break;
+            }
+
+            balance = (balance - w) * (1 + i);
+            taken += w;
+            months++;
+        }
+
+        withdrawn += taken;
+        yearly.push({ year: y, withdrawn: taken, balance, interest: balance - start + taken });
+        w *= 1 + step / 100;
+    }
+
+    return { balance, withdrawn, months, depleted, yearly };
+}
+
+export function swpPlan({ corpus, withdraw, rate, years, step = 0, inflation = 0 }) {
+    const r = runSwp(corpus, withdraw, rate, years, step);
+
+    /* Largest first withdrawal that still lasts the whole period. */
+    let lo = 0;
+    let hi = corpus;
+
+    for (let k = 0; k < 50; k++) {
+        const mid = (lo + hi) / 2;
+
+        if (runSwp(corpus, mid, rate, years, step).depleted) hi = mid;
+        else lo = mid;
+    }
+
+    const interest = r.balance + r.withdrawn - corpus;
+
+    return {
+        years, corpus, ...r, interest: Math.max(0, interest),
+        sustainable: lo,
+        realBalance: num(r.balance / Math.pow(1 + inflation / 100, years))
+    };
+}
+
 /* ---------------- formatting ---------------- */
 
 export function inr(n) {

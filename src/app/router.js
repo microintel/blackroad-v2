@@ -61,6 +61,11 @@ const routes = {
         module: "accounting"
     },
 
+    "/connect-broker": {
+        title: "Connect Broker",
+        module: "connectbroker"
+    },
+
     "/brokers": {
         title: "Brokerage Report Readers",
         module: "brokers"

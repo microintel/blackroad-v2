@@ -1,0 +1,89 @@
+/* =========================================================
+   ANGEL ONE PROFIT & LOSS READER  (Brokerage Report Readers)
+   Uses only theme tokens (--br-*), so it follows Light / Dark
+   and the accent. Class prefix: ap-
+   ========================================================= */
+
+.ap-root { display: flex; flex-direction: column; gap: var(--br-space-5); }
+
+/* ---------- Upload ---------- */
+
+.ap-drop { display: flex; flex-direction: column; align-items: center; gap: var(--br-space-3); padding: var(--br-space-8) var(--br-space-6); text-align: center; border: 1px dashed var(--br-border-strong); }
+.ap-drop.is-drag { border-color: var(--br-gold); background: var(--br-gold-surface); }
+.ap-drop.is-compact { flex-direction: row; flex-wrap: wrap; justify-content: space-between; text-align: left; padding: var(--br-space-4) var(--br-space-5); }
+.ap-drop.is-compact .ap-drop-icon, .ap-drop.is-compact p { display: none; }
+.ap-drop.is-compact h3 { margin: 0; }
+.ap-drop h3 { margin: 0; }
+.ap-drop p { max-width: 520px; margin: 0 0 var(--br-space-2); line-height: 1.6; }
+.ap-drop-icon { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: var(--br-gold-surface); color: var(--br-gold-text); }
+
+.ap-error { padding: 12px 14px; border-radius: var(--br-radius-md); background: var(--br-danger-soft); color: var(--br-danger); font-size: var(--br-font-size-sm); line-height: 1.5; }
+
+.ap-chips { display: flex; flex-wrap: wrap; gap: var(--br-space-2); }
+.ap-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid var(--br-border); border-radius: var(--br-radius-full); font-size: var(--br-font-size-sm); }
+.ap-chip b { font-weight: 600; }
+.ap-chip em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ap-chip button { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: 50%; background: none; color: var(--br-text-muted); cursor: pointer; }
+.ap-chip button:hover { color: var(--br-danger); background: var(--br-danger-soft); }
+
+/* ---------- Report ---------- */
+
+.ap-report { display: flex; flex-direction: column; gap: var(--br-space-5); }
+.ap-sheet { display: flex; flex-direction: column; gap: var(--br-space-5); border: 1px solid var(--br-border); }
+.ap-sheet-head h3 { margin: 2px 0 4px; font-size: var(--br-font-size-xl); word-break: break-word; }
+.ap-sheet-head p { margin: 2px 0 0; font-size: var(--br-font-size-sm); }
+.ap-eyebrow { color: var(--br-gold-text); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ap-client { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: var(--br-space-2); color: var(--br-text-secondary); font-size: var(--br-font-size-sm); }
+.ap-client b { color: var(--br-text); }
+
+.ap-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--br-space-3); }
+.ap-stat { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: var(--br-space-4); border: 1px solid var(--br-hairline); border-radius: var(--br-radius-md); background: var(--br-surface); }
+.ap-stat-value { font-size: var(--br-font-size-xl); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.is-pos { color: var(--br-success); }
+.is-neg { color: var(--br-danger); }
+.ap-stat-value.is-pos, .ap-stat-value.is-neg { font-weight: 700; }
+td.is-pos, td.is-neg { font-weight: 600; }
+
+.ap-charts { display: flex; flex-wrap: wrap; gap: var(--br-space-6); align-items: center; }
+.ap-chart { flex: 1 1 240px; min-width: 0; }
+.ap-chart-title { margin-bottom: var(--br-space-3); color: var(--br-gold-text); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ap-pie-row { display: flex; align-items: center; gap: var(--br-space-4); }
+.ap-pie-row svg { flex-shrink: 0; }
+.ap-legend { display: flex; flex-direction: column; gap: 8px; font-size: var(--br-font-size-sm); }
+.ap-legend i { display: inline-block; width: 9px; height: 9px; margin-right: 8px; border-radius: 2px; }
+.ap-bars { display: block; width: 100%; max-width: 420px; height: auto; }
+
+.ap-section-label { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--br-space-2); margin-bottom: var(--br-space-3); color: var(--br-gold-text); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.ap-section-label .br-badge { text-transform: none; letter-spacing: 0; display: inline-flex; align-items: center; gap: 4px; }
+
+.ap-table-wrap { border: 1px solid var(--br-hairline); max-height: 70vh; overflow: auto; }
+.ap-table { min-width: 0; width: max-content; min-width: 100%; font-variant-numeric: tabular-nums; }
+.ap-table th, .ap-table td { padding: 9px 12px; white-space: nowrap; }
+.ap-table thead th { position: sticky; top: 0; z-index: 1; background: var(--br-surface-soft); color: var(--br-gold-text); font-weight: 600; }
+.ap-table .num { text-align: right; }
+.ap-table tr.is-total td { font-weight: 700; background: var(--br-surface-soft); border-top: 1px solid var(--br-border-strong); }
+.ap-table tr[hidden] { display: none; }
+
+.ap-warn { margin: 0 0 var(--br-space-3); padding: 8px 12px; border-radius: var(--br-radius-md); background: var(--br-warning-soft); color: var(--br-warning); font-size: var(--br-font-size-xs); line-height: 1.5; }
+.ap-note { margin: 0; color: var(--br-text-muted); font-size: var(--br-font-size-xs); }
+.ap-empty { margin: 0; font-size: var(--br-font-size-sm); }
+.ap-legend-note ul { margin: 0; padding: 0; list-style: none; color: var(--br-text-muted); font-size: var(--br-font-size-xs); }
+.ap-legend-note li { padding: 2px 0; }
+
+@media (max-width: 640px) {
+    .ap-drop { padding: var(--br-space-6) var(--br-space-4); }
+    .ap-sheet { padding: var(--br-space-4); }
+    .ap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ap-stat-value { font-size: var(--br-font-size-lg); }
+    .ap-pie-row { flex-direction: column; align-items: flex-start; }
+    .ap-actions .br-button { flex: 1; }
+}
+
+
+/* ---------- Toolbar above the reader ---------- */
+
+.ap-toolbar { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--br-space-4); }
+.ap-toolbar h3 { margin: 0 0 4px; font-size: var(--br-font-size-xl); }
+.ap-toolbar p { margin: 0; font-size: var(--br-font-size-sm); }
+.ap-actions { display: flex; flex-wrap: wrap; gap: var(--br-space-2); }

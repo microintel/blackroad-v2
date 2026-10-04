@@ -27,6 +27,9 @@ const REPORTS = [
     { id: "ledger", label: "Ledger", note: "Funds added, withdrawn and charged", icon: "banknote" }
 ];
 
+/* Reports that have a working reader. Everything else shows "Working on it". */
+const hasReader = (b, reportId) => b.name === "Angel One" && reportId === "pnl";
+
 const esc = (v) =>
     String(v ?? "")
         .replaceAll("&", "&amp;")
@@ -77,33 +80,20 @@ function detailView(b, activeReport) {
             </button>
         </div>
 
-        <section class="br-card bk-detail-head">
-            ${logoHTML(b)}
-            <div class="bk-body">
-                <strong class="bk-name">${esc(b.name)}</strong>
-                <span class="br-muted bk-note">${esc(b.note)}</span>
-            </div>
-            <a class="bk-site" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">
-                ${esc(b.cta)} ${icon("arrow-up-right", { size: 16 })}
-            </a>
-        </section>
-
-        <div class="bk-reports">
+        <div class="br-income-tabs br-tabs-flat" role="group" aria-label="${esc(b.name)} reports">
             ${REPORTS.map(
                 (r) => `
-                <button type="button" class="br-card bk-report${r.id === activeReport ? " is-active" : ""}" data-report="${r.id}">
-                    <span class="bk-report-icon">${icon(r.icon, { size: 20 })}</span>
-                    <span class="bk-body">
-                        <strong>${esc(r.label)}</strong>
-                        <span class="br-muted bk-note">${esc(r.note)}</span>
-                    </span>
-                    ${icon("chevron-right", { size: 18 })}
-                </button>`
+                <button type="button"
+                    class="br-income-tab${r.id === activeReport ? " active" : ""}"
+                    data-report="${r.id}"
+                    aria-pressed="${r.id === activeReport}">${esc(r.label)}</button>`
             ).join("")}
         </div>
 
         ${
-            active
+            active && hasReader(b, active.id)
+                ? `<div data-reader-mount></div>`
+                : active
                 ? `<section class="br-card bk-working" role="status" aria-live="polite">
                     ${icon("clock", { size: 20 })}
                     <div>
@@ -123,8 +113,38 @@ export async function Brokers() {
     let broker = -1;
     let report = "";
 
+    // Created the first time Angel One -> Profit & Loss is opened, then reused
+    // so an uploaded file is not lost when the page re-draws.
+    let angelReader = null;
+
+    async function mountReader() {
+        const mount = page.querySelector("[data-reader-mount]");
+
+        if (!mount) return;
+
+        try {
+            if (!angelReader) {
+                const { AngelPnl } = await import("./angel-pnl/angel-pnl.js");
+                angelReader = AngelPnl();
+            }
+
+            // The user may have moved on while the code was loading.
+            const stillThere = page.querySelector("[data-reader-mount]");
+
+            if (stillThere) stillThere.replaceChildren(angelReader);
+        } catch (error) {
+            console.error("BlackRoad: Angel One reader failed to load", error);
+
+            mount.innerHTML = `<section class="br-card bk-working" role="status">
+                ${icon("circle-alert", { size: 20 })}
+                <div><strong>Could not load the reader</strong>
+                <p class="br-muted">Please check your connection and try again.</p></div></section>`;
+        }
+    }
+
     function render() {
         page.innerHTML = broker < 0 ? listView() : detailView(BROKERS[broker], report);
+        mountReader();
     }
 
     page.addEventListener("click", (event) => {
@@ -132,7 +152,7 @@ export async function Brokers() {
 
         if (card) {
             broker = Number(card.dataset.broker);
-            report = "";
+            report = REPORTS[0].id;
             render();
             window.scrollTo(0, 0);
             return;
@@ -151,7 +171,6 @@ export async function Brokers() {
         if (item) {
             report = item.dataset.report;
             render();
-            page.querySelector(".bk-working")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
     });
 

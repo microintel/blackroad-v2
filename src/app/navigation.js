@@ -5,7 +5,8 @@ export const navigation = [
         title: "Overview",
         items: [
             { label: "Dashboard", path: "/dashboard", icon: "layout-dashboard" },
-            { label: "Net Worth", path: "/networth", icon: "trending-up" }
+            { label: "Net Worth", path: "/networth", icon: "trending-up" },
+            { label: "Connect Broker", path: "/connect-broker", icon: "plug" }
         ]
     },
 

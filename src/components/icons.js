@@ -94,6 +94,7 @@ const ICONS = {
     x: P("M18 6 6 18") + P("m6 6 12 12"),
     "circle-check": C(12, 12, 10) + P("m9 12 2 2 4-4"),
     "circle-alert": C(12, 12, 10) + P("M12 8v4") + P("M12 16h.01"),
+    plug: P("M12 22v-5") + P("M9 8V2") + P("M15 8V2") + P("M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"),
     clock: C(12, 12, 10) + P("M12 6v6l4 2"),
     menu: P("M4 12h16") + P("M4 6h16") + P("M4 18h16"),
     "log-out": P("M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4") + P("m16 17 5-5-5-5") + P("M21 12H9"),
@@ -113,9 +114,25 @@ const ICONS = {
     "briefcase-business":
         P("M12 12h.01") + P("M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2") +
         P("M22 13a18.15 18.15 0 0 1-20 0") + R(2, 6, 20, 14, 2),
+    upload:
+        P("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4") + P("m17 8-5-5-5 5") + P("M12 3v12"),
+    download:
+        P("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4") + P("m7 10 5 5 5-5") + P("M12 15V3"),
     "refresh-cw":
         P("M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8") + P("M21 3v5h-5") +
-        P("M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16") + P("M8 16H3v5")
+        P("M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16") + P("M8 16H3v5"),
+    "piggy-bank":
+        P("M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z") +
+        P("M16 10h.01") + P("M2 8v1a2 2 0 0 0 2 2h1"),
+    "hand-coins":
+        P("M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17") +
+        P("m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9") +
+        P("m2 16 6 6") + C(16, 9, 2.9) + C(6, 5, 3),
+    layers:
+        P("M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z") +
+        P("M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12") +
+        P("M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"),
+    gem: P("M6 3h12l4 6-10 13L2 9Z") + P("M11 3 8 9l4 13 4-13-3-6") + P("M2 9h20")
 };
 
 /* Feature -> icon, so every screen names the same thing the same way. */
@@ -147,5 +164,19 @@ export function icon(name, opts = {}) {
         `<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" ` +
         `viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" ` +
         `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`
+    );
+}
+
+/* Standalone SVG with a fixed colour (no currentColor), for places that
+   cannot inherit CSS - e.g. drawing the icon onto a canvas for the PDF. */
+export function iconSvg(name, opts = {}) {
+    const size = opts.size || 96;
+    const color = opts.color || "#000000";
+    const stroke = opts.stroke || 1.9;
+
+    return (
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" ` +
+        `fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">` +
+        `${ICONS[name] || ""}</svg>`
     );
 }

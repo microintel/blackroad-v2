@@ -9,18 +9,26 @@ import {
     exportPDF,
     formatINR
 } from "./accounting-service.js";
+import { loadBankIndex, findSlug, logoUrl } from "../../services/bank-logos.js";
+import { icon } from "../../components/icons.js";
+import { currentUser, isGuestSync } from "../../services/auth.js";
+
+let bankIndex = {};
 
 let live = { mf: 0, peopleReceivable: 0, liabilities: 0 };
 let toastTimer = null;
 
 const NUMBER_FIELDS = [
-    ["cash", "Cash"],
-    ["fd", "Fixed Deposit"],
-    ["stock", "Stocks"],
-    ["demat", "Demat Account"],
-    ["pending", "Pending Amount"],
-    ["other", "Other Assets"]
+    ["cash", "Cash", "banknote"],
+    ["fd", "Fixed Deposit", "piggy-bank"],
+    ["stock", "Stocks", "chart-candlestick"],
+    ["demat", "Demat Account", "briefcase-business"],
+    ["pending", "Pending Amount", "clock"],
+    ["other", "Other Assets", "layers"]
 ];
+
+/* Small icon tile used next to asset names. */
+const ico = (name) => `<span class="ac-ico">${icon(name, { size: 16 })}</span>`;
 
 export async function Accounting() {
     const page = document.createElement("section");
@@ -54,9 +62,9 @@ export async function Accounting() {
                         <h3>Live data</h3>
                         <button type="button" class="br-button" data-action="refresh">Refresh</button>
                     </div>
-                    <div class="ac-live-row"><span>Mutual Funds</span><strong data-live="mf">₹0</strong></div>
-                    <div class="ac-live-row"><span>Loans &amp; Liabilities</span><strong data-live="liab">₹0</strong></div>
-                    <div class="ac-live-row"><span>Lending Receivable</span><strong data-live="recv">₹0</strong></div>
+                    <div class="ac-live-row"><span class="ac-label-ico">${ico("chart-pie")}Mutual Funds</span><strong data-live="mf">₹0</strong></div>
+                    <div class="ac-live-row"><span class="ac-label-ico">${ico("coins")}Loans &amp; Liabilities</span><strong data-live="liab">₹0</strong></div>
+                    <div class="ac-live-row"><span class="ac-label-ico">${ico("hand-coins")}Lending Receivable</span><strong data-live="recv">₹0</strong></div>
                     <p class="br-field-help">Pulled automatically from Mutual Fund and Lending. Everything else is entered manually.</p>
                 </section>
             </div>
@@ -78,9 +86,9 @@ export async function Accounting() {
                     <div class="br-card-heading"><h3>Cash, investments &amp; other</h3></div>
                     <div class="br-form-grid">
                         ${NUMBER_FIELDS.map(
-                            ([id, label]) => `
+                            ([id, label, ic]) => `
                             <label>
-                                <span>${label}</span>
+                                <span class="ac-label-ico">${ico(ic)}${label}</span>
                                 <input type="number" class="br-input" data-field="${id}" placeholder="0" inputmode="decimal">
                             </label>`
                         ).join("")}
@@ -94,6 +102,14 @@ export async function Accounting() {
             </div>
         </div>
 
+        <div class="ac-savebar">
+            <div class="ac-savebar-net">
+                <span>Net worth</span>
+                <strong data-net-bar>₹0</strong>
+            </div>
+            <button type="button" class="br-button br-button-primary" data-action="save">Calculate &amp; Save</button>
+        </div>
+
         <div class="br-toast" data-ac-toast></div>
     `;
 
@@ -103,6 +119,7 @@ export async function Accounting() {
     fillForm(page, saved || EMPTY_MANUAL);
     bindEvents(page);
     render(page);
+    prepareBankNames(page);
 
     return page;
 }
@@ -116,9 +133,15 @@ function fillForm(page, data) {
     banks.innerHTML = "";
     customs.innerHTML = "";
 
-    (data.banks && data.banks.length ? data.banks : [0]).forEach((b) =>
-        addBank(page, b)
-    );
+    (data.banks || []).forEach((b, i) => {
+        const name = (data.bankNames || [])[i] || "";
+        const amount = Number(b) || 0;
+
+        /* Skip the old empty placeholder row; keep any row that has a name or money. */
+        if (!name && !amount) return;
+
+        addBank(page, amount, name);
+    });
 
     (data.customs || []).forEach((c) => addCustom(page, c.name, c.amt));
 
@@ -135,6 +158,9 @@ function gather(page) {
         banks: [...page.querySelectorAll("[data-bank]")].map(
             (i) => Number(i.value) || 0
         ),
+        bankNames: [...page.querySelectorAll("[data-bank-name]")].map(
+            (i) => i.value.trim()
+        ),
         customs: [...page.querySelectorAll("[data-custom-row]")].map((r) => ({
             name: r.querySelector("[data-custom-name]").value || "Additional",
             amt: Number(r.querySelector("[data-custom-amt]").value) || 0
@@ -148,20 +174,218 @@ function gather(page) {
     };
 }
 
-function addBank(page, value = "") {
+function addBank(page, value = "", name = "") {
     const row = document.createElement("div");
-    row.className = "ac-row";
+    row.className = "ac-row ac-bank-row";
 
     row.innerHTML = `
+        <div class="ac-bank-name">
+            <span>Bank</span>
+            <span class="ac-bank-field">
+                <span class="ac-bank-logo" hidden></span>
+                <strong class="ac-bank-title" data-bank-title></strong>
+                <input type="hidden" data-bank-name>
+            </span>
+        </div>
         <label>
-            <span>Bank balance</span>
+            <span>Balance</span>
             <input type="number" class="br-input" data-bank placeholder="0" inputmode="decimal">
         </label>
+        <button type="button" class="br-button" data-edit-bank title="Edit bank">Edit</button>
         <button type="button" class="br-button" data-remove title="Remove">×</button>
     `;
 
     row.querySelector("[data-bank]").value = value || "";
     page.querySelector("[data-banks]").appendChild(row);
+    setBankName(row, name);
+
+    return row;
+}
+
+function setBankName(row, name) {
+    row.querySelector("[data-bank-name]").value = name;
+    row.querySelector("[data-bank-title]").textContent = name || "Unnamed bank";
+    showBankLogo(row);
+}
+
+/* Popup for adding / editing a bank. Resolves { name, balance } or null. */
+function bankDialog(initial = {}) {
+    return new Promise((resolve) => {
+        const previous = document.activeElement;
+        const editing = Boolean(initial.name || initial.balance);
+
+        const layer = document.createElement("div");
+        layer.className = "br-modal-layer";
+
+        layer.innerHTML = `
+            <div class="br-modal" role="dialog" aria-modal="true" aria-labelledby="ac-bank-dlg-title">
+                <div class="br-modal-header">
+                    <h3 id="ac-bank-dlg-title">${editing ? "Edit bank" : "Add bank"}</h3>
+                    <button type="button" class="br-modal-close" data-dlg-close aria-label="Close">×</button>
+                </div>
+                <div class="br-modal-body">
+                    <label>
+                        <span>Bank name</span>
+                        <input type="text" class="br-input" data-dlg-name list="ac-bank-list"
+                            placeholder="e.g. HDFC Bank" autocomplete="off" autocapitalize="words">
+                    </label>
+                    <div class="ac-dlg-preview"><span class="ac-bank-logo" hidden></span><span class="br-muted" data-dlg-hint>Pick or type a bank name</span></div>
+                    <label>
+                        <span>Balance</span>
+                        <input type="number" class="br-input" data-dlg-balance placeholder="0" inputmode="decimal">
+                    </label>
+                    <p class="br-field-help" data-dlg-error hidden></p>
+                </div>
+                <div class="br-modal-footer">
+                    <button type="button" class="br-button" data-dlg-close>Cancel</button>
+                    <button type="button" class="br-button br-button-primary" data-dlg-save>Save</button>
+                </div>
+            </div>
+        `;
+
+        const nameInput = layer.querySelector("[data-dlg-name]");
+        const balInput = layer.querySelector("[data-dlg-balance]");
+        const errorEl = layer.querySelector("[data-dlg-error]");
+        const hint = layer.querySelector("[data-dlg-hint]");
+        const previewRow = layer.querySelector(".ac-dlg-preview");
+
+        nameInput.value = initial.name || "";
+        balInput.value = initial.balance || "";
+
+        /* Live logo preview inside the popup, using the same row logic. */
+        const preview = () => {
+            const slug = findSlug(nameInput.value, bankIndex);
+
+            hint.textContent = nameInput.value.trim()
+                ? slug ? "Logo found" : "No logo for this name — it will be saved without one"
+                : "Pick or type a bank name";
+
+            const holder = { querySelector: (sel) => (sel === ".ac-bank-logo" ? previewRow.querySelector(".ac-bank-logo") : nameInput) };
+
+            showBankLogo(holder);
+        };
+
+        let done = false;
+
+        const close = (result) => {
+            if (done) return;
+            done = true;
+            document.removeEventListener("keydown", onKey, true);
+            layer.remove();
+
+            if (previous && previous.isConnected && previous.focus) previous.focus();
+
+            resolve(result);
+        };
+
+        const submit = () => {
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                errorEl.textContent = "Enter a bank name.";
+                errorEl.hidden = false;
+                nameInput.focus();
+                return;
+            }
+
+            close({ name, balance: Number(balInput.value) || 0 });
+        };
+
+        const onKey = (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                close(null);
+            } else if (event.key === "Enter" && event.target.matches("input")) {
+                event.preventDefault();
+                submit();
+            }
+        };
+
+        layer.addEventListener("click", (event) => {
+            if (event.target === layer || event.target.closest("[data-dlg-close]")) close(null);
+        });
+
+        layer.querySelector("[data-dlg-save]").addEventListener("click", submit);
+        nameInput.addEventListener("input", () => { errorEl.hidden = true; preview(); });
+        nameInput.addEventListener("change", preview);
+
+        document.addEventListener("keydown", onKey, true);
+        document.body.appendChild(layer);
+
+        /* Make sure suggestions exist even if the page list is not ready yet. */
+        ensureBankList(layer);
+        preview();
+        nameInput.focus();
+    });
+}
+
+/* Bank name -> slug -> raw GitHub logo. No match, or the image fails to load
+   (offline), and only the name is shown. */
+function showBankLogo(row) {
+    const box = row.querySelector(".ac-bank-logo");
+    const slug = findSlug(row.querySelector("[data-bank-name]").value, bankIndex);
+
+    if (!slug) {
+        box.hidden = true;
+        box.textContent = "";
+        return;
+    }
+
+    if (box.dataset.slug === slug && !box.hidden) return;
+
+    const img = new Image();
+
+    img.alt = "";
+    img.decoding = "async";
+    img.referrerPolicy = "no-referrer";
+    img.onload = () => {
+        box.dataset.slug = slug;
+        box.replaceChildren(img);
+        box.hidden = false;
+    };
+    img.onerror = () => {
+        /* SVG failed (blocked or wrong content type) -> try the PNG next to it. */
+        if (!img.dataset.png) {
+            img.dataset.png = "1";
+            img.src = logoUrl(slug, "png");
+            return;
+        }
+
+        console.warn("BlackRoad bank logos: could not load", img.src);
+        box.hidden = true;
+        box.textContent = "";
+    };
+    img.src = logoUrl(slug);
+}
+
+/* Datalist of bank names, appended once to <body> so the popup can use it too. */
+function ensureBankList(root) {
+    let list = document.getElementById("ac-bank-list");
+
+    if (!list) {
+        list = document.createElement("datalist");
+        list.id = "ac-bank-list";
+        (root || document.body).appendChild(list);
+    }
+
+    if (!list.children.length) {
+        list.innerHTML = Object.values(bankIndex)
+            .sort((a, b) => a.localeCompare(b))
+            .map((n) => `<option value="${escapeHTML(n)}"></option>`)
+            .join("");
+    }
+}
+
+/* Fill the bank-name suggestions and logos once the dataset index is in. */
+async function prepareBankNames(page) {
+    bankIndex = await loadBankIndex();
+
+    const old = document.getElementById("ac-bank-list");
+    if (old) old.remove();
+
+    ensureBankList(page);
+
+    page.querySelectorAll(".ac-bank-row").forEach(showBankLogo);
 }
 
 function addCustom(page, name = "", amt = "") {
@@ -171,7 +395,7 @@ function addCustom(page, name = "", amt = "") {
 
     row.innerHTML = `
         <label>
-            <span>Asset name</span>
+            <span class="ac-label-ico">${ico("gem")}Asset name</span>
             <input type="text" class="br-input" data-custom-name placeholder="e.g. Provident Fund">
         </label>
         <label>
@@ -199,7 +423,7 @@ function render(page) {
                 .map(
                     (r) => `
                 <div class="ac-line">
-                    <span>${escapeHTML(r.label)}${r.live ? ' <span class="br-badge br-badge-success">Live</span>' : ""}</span>
+                    <span class="ac-label-ico">${r.icon ? ico(r.icon) : ""}${escapeHTML(r.label)}${r.live ? ' <span class="br-badge br-badge-success">Live</span>' : ""}</span>
                     <span>${formatINR(r.value)} (${pct(r.value)}%)</span>
                 </div>`
                 )
@@ -221,6 +445,9 @@ function render(page) {
 
     const net = page.querySelector("[data-net]");
     net.textContent = formatINR(result.net);
+
+    const netBar = page.querySelector("[data-net-bar]");
+    if (netBar) netBar.textContent = formatINR(result.net);
 
     page.querySelector('[data-live="mf"]').textContent = formatINR(live.mf);
     page.querySelector('[data-live="liab"]').textContent =
@@ -273,13 +500,37 @@ function bindEvents(page) {
             return;
         }
 
+        const editBtn = event.target.closest("[data-edit-bank]");
+
+        if (editBtn) {
+            const row = editBtn.closest(".ac-bank-row");
+            const result = await bankDialog({
+                name: row.querySelector("[data-bank-name]").value,
+                balance: Number(row.querySelector("[data-bank]").value) || ""
+            });
+
+            if (result) {
+                row.querySelector("[data-bank]").value = result.balance || "";
+                setBankName(row, result.name);
+                render(page);
+            }
+
+            return;
+        }
+
         const button = event.target.closest("[data-action]");
         if (!button) return;
 
         switch (button.dataset.action) {
-            case "add-bank":
-                addBank(page);
+            case "add-bank": {
+                const result = await bankDialog();
+
+                if (result) {
+                    addBank(page, result.balance, result.name);
+                    render(page);
+                }
                 break;
+            }
 
             case "add-custom":
                 addCustom(page);
@@ -306,7 +557,24 @@ function bindEvents(page) {
 
             case "pdf":
                 try {
-                    await exportPDF(page.__result);
+                    const data = gather(page);
+
+                    let userName = "";
+
+                    try {
+                        userName = isGuestSync()
+                            ? "Guest User"
+                            : ((await currentUser()) || {}).name || "";
+                    } catch { /* export without a name */ }
+
+                    await exportPDF(page.__result, {
+                        userName,
+                        banks: data.banks.map((amount, i) => ({
+                            amount,
+                            name: data.bankNames[i] || "",
+                            slug: findSlug(data.bankNames[i] || "", bankIndex)
+                        }))
+                    });
                     toast(page, "PDF exported");
                 } catch (error) {
                     console.error(error);

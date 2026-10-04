@@ -14,6 +14,7 @@ import { themeToggleContent, currencyToggleContent } from "../components/layout/
 import { initCurrency, toggleCurrency, getCurrency } from "../services/currency.js";
 import { initChartTooltips } from "../components/chart-tooltip.js";
 import { pageSkeleton, skeletonVariantFor } from "../components/skeleton.js";
+import { initUX } from "./ux.js";
 
 initPreferences();
 initChartTooltips();
@@ -347,6 +348,7 @@ document.addEventListener(
     "DOMContentLoaded",
     async () => {
         watchNavIntent();
+        initUX();
 
         // Initial page
         await renderApp();
