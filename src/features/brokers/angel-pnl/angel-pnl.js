@@ -10,6 +10,7 @@
    ========================================================= */
 
 import { icon } from "../../../components/icons.js";
+import { startReportProgress } from "../../../components/report-progress.js";
 import { loadXlsx } from "./angel-libs.js";
 import { readAngelWorkbook, esc } from "./angel-parser.js";
 import { renderAngelReport, angelYearChips } from "./angel-render.js";
@@ -155,11 +156,20 @@ export function AngelPnl() {
         label.textContent = "Generating PDF…";
         state.error = "";
 
+        const progress = startReportProgress({
+            title: "Creating your P&L report",
+            steps: ["Reading your P&L data", "Verifying totals & charges", "Designing report pages", "Finalizing PDF"],
+            doneTitle: "PDF downloaded",
+            doneText: "Your Equity P&L report has been saved."
+        });
+
         try {
             const { downloadAngelPdf } = await import("./angel-pdf.js");
-            await downloadAngelPdf(state.years);
+            await downloadAngelPdf(state.years, { beforeSave: () => progress.ready() });
+            progress.complete();
         } catch (err) {
             console.error("Angel One PDF failed:", err);
+            progress.fail(err.message || String(err));
             state.error = "Could not generate the PDF: " + (err.message || err);
             render();
             return;

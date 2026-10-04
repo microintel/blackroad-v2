@@ -11,6 +11,7 @@ import {
 } from "./accounting-service.js";
 import { loadBankIndex, findSlug, logoUrl } from "../../services/bank-logos.js";
 import { icon } from "../../components/icons.js";
+import { startReportProgress } from "../../components/report-progress.js";
 import { currentUser, isGuestSync } from "../../services/auth.js";
 
 let bankIndex = {};
@@ -555,7 +556,13 @@ function bindEvents(page) {
                 }
                 break;
 
-            case "pdf":
+            case "pdf": {
+                const progress = startReportProgress({
+                    title: "Creating your accounting report",
+                    steps: ["Collecting your balances", "Calculating net worth", "Laying out the report", "Finalizing PDF"],
+                    doneTitle: "PDF downloaded",
+                    doneText: "Your accounting report has been saved."
+                });
                 try {
                     const data = gather(page);
 
@@ -568,6 +575,7 @@ function bindEvents(page) {
                     } catch { /* export without a name */ }
 
                     await exportPDF(page.__result, {
+                        beforeSave: () => progress.ready(),
                         userName,
                         banks: data.banks.map((amount, i) => ({
                             amount,
@@ -575,12 +583,15 @@ function bindEvents(page) {
                             slug: findSlug(data.bankNames[i] || "", bankIndex)
                         }))
                     });
+                    progress.complete();
                     toast(page, "PDF exported");
                 } catch (error) {
                     console.error(error);
+                    progress.fail("The PDF library failed to load — check your connection and try again.");
                     toast(page, "PDF library failed to load — check your connection");
                 }
                 break;
+            }
         }
     });
 }

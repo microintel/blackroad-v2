@@ -1,0 +1,176 @@
+/* =========================================================
+   REPORT PROGRESS OVERLAY
+   Shown while a PDF is generated / a print report is prepared.
+   Flat and monochrome (no gradients, no accent colours); uses the
+   app's theme text/border tokens, so it follows light & dark.
+   ========================================================= */
+
+.br-rp {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, .55);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity .28s ease;
+}
+.br-rp.is-in { opacity: 1; }
+.br-rp.is-out { opacity: 0; pointer-events: none; }
+
+.br-rp-card {
+    position: relative;
+    width: min(380px, 100%);
+    padding: 30px 26px 24px;
+    text-align: center;
+    color: var(--br-text, #fff);
+    background: var(--br-surface, #141414);
+    border: 1px solid var(--br-border, #2a2a2a);
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+    overflow: hidden;
+    transform: translateY(14px) scale(.97);
+    transition: transform .38s cubic-bezier(.2, .9, .3, 1.15);
+}
+.br-rp.is-in .br-rp-card { transform: none; }
+
+/* ---------- ring ---------- */
+.br-rp-ring {
+    position: relative;
+    width: 128px;
+    height: 128px;
+    margin: 0 auto 18px;
+}
+.br-rp-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.br-rp-track { fill: none; stroke: var(--br-border, #2a2a2a); stroke-width: 7; }
+.br-rp-arc {
+    fill: none;
+    stroke: var(--br-text, #fff);
+    stroke-width: 7;
+    stroke-linecap: round;
+}
+.br-rp-check {
+    fill: none;
+    stroke: var(--br-text, #fff);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 80;
+    stroke-dashoffset: 80;
+    /* the svg is rotated -90deg for the ring; undo it for the tick */
+    transform: rotate(90deg);
+    transform-origin: 60px 60px;
+}
+
+.br-rp-pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    padding-top: 40px;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+}
+.br-rp-pct small { font-size: 14px; font-weight: 600; margin-left: 2px; color: var(--br-text-muted, #999); }
+
+/* ---------- text ---------- */
+.br-rp-title { margin: 0 0 4px; font-size: 18px; font-weight: 650; letter-spacing: -.01em; }
+.br-rp-sub { margin: 0 0 18px; min-height: 20px; font-size: 13px; color: var(--br-text-secondary, #aaa); }
+
+/* ---------- bar ---------- */
+.br-rp-bar {
+    height: 5px;
+    margin-bottom: 18px;
+    border-radius: 99px;
+    background: var(--br-border, #2a2a2a);
+    overflow: hidden;
+}
+.br-rp-bar i {
+    position: relative;
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--br-text, #fff);
+    transform-origin: left;
+    transform: scaleX(0);
+    overflow: hidden;
+}
+
+/* ---------- steps ---------- */
+.br-rp-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 9px;
+    text-align: left;
+}
+.br-rp-steps li {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-size: 13px;
+    color: var(--br-text-muted, #777);
+    transition: color .3s ease, transform .3s ease;
+}
+.br-rp-dot {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--br-border-strong, #444);
+    transition: background .3s ease, border-color .3s ease;
+}
+.br-rp-dot svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: var(--br-text-inverse, #000);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transform: scale(.4);
+    transition: opacity .25s ease, transform .3s cubic-bezier(.2, .9, .3, 1.4);
+}
+.br-rp-steps li.is-active { color: var(--br-text, #fff); font-weight: 550; transform: translateX(3px); }
+.br-rp-steps li.is-active .br-rp-dot {
+    border-color: var(--br-text, #fff);
+    border-top-color: transparent;
+    animation: br-rp-spin .8s linear infinite;
+}
+.br-rp-steps li.is-done { color: var(--br-text-secondary, #aaa); }
+.br-rp-steps li.is-done .br-rp-dot { background: var(--br-text, #fff); border-color: var(--br-text, #fff); }
+.br-rp-steps li.is-done .br-rp-dot svg { opacity: 1; transform: none; }
+
+/* ---------- success ---------- */
+.br-rp.is-success .br-rp-pct { opacity: 0; transition: opacity .2s ease; }
+.br-rp.is-success .br-rp-check { animation: br-rp-draw .55s .1s ease forwards; }
+.br-rp.is-success .br-rp-ring { animation: br-rp-pop .5s ease; }
+
+/* ---------- error ---------- */
+.br-rp-close { margin-top: 18px; width: 100%; }
+.br-rp-close[hidden] { display: none; }
+
+body.br-rp-open { overflow: hidden; }
+
+/* never part of a printout */
+@media print { .br-rp { display: none !important; } }
+
+@keyframes br-rp-spin { to { transform: rotate(360deg); } }
+@keyframes br-rp-draw { to { stroke-dashoffset: 0; } }
+@keyframes br-rp-pop { 0% { transform: scale(.9); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .br-rp, .br-rp-card, .br-rp-steps li, .br-rp-dot, .br-rp-dot svg { transition: none; }
+    .br-rp-steps li.is-active .br-rp-dot,
+    .br-rp.is-success .br-rp-ring { animation: none; }
+}

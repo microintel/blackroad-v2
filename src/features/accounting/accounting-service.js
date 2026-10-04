@@ -575,5 +575,7 @@ export async function exportPDF(result, extras = {}) {
         doc.text("Page " + p + " of " + pages, R, FOOTER_Y, { align: "right" });
     }
 
+    if (extras.beforeSave) await extras.beforeSave();   /* progress UI: wait for 100% before downloading */
+
     doc.save("blackroad-accounting-" + now.toISOString().slice(0, 10) + ".pdf");
 }

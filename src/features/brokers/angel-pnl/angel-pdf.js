@@ -410,7 +410,7 @@ function pdfDrawMultiYearSummary(doc, years, generatedAt, client){
 /* ---------------------------------------------------------
    Public: Angel One equity P&L
    --------------------------------------------------------- */
-export async function downloadAngelPdf(years){
+export async function downloadAngelPdf(years, hooks = {}){
   const jsPDF = await loadPdfLibs();
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4', compress:true });
   ensurePdfFonts(doc);
@@ -442,5 +442,6 @@ export async function downloadAngelPdf(years){
     clientShown = true;
   }); });
 
+  if(hooks.beforeSave) await hooks.beforeSave();   /* progress UI: wait for 100% before downloading */
   doc.save(`BlackRoad-Angel-One-Equity-PnL-${new Date().toISOString().slice(0,10)}.pdf`);
 }

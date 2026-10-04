@@ -2,6 +2,7 @@ import {
     getTxnPnLMap, mtfSplit, calculateMonthlySummary, calculateAllTimeSummary,
     fmtMoney, fmtSigned, pnlClass, fmtDate
 } from "./stocks-service.js";
+import { startReportProgress } from "../../components/report-progress.js";
 
 /* Print / Save-as-PDF report (same approach as the old app):
    build a hidden #br-print-report, hand it to window.print().
@@ -12,7 +13,27 @@ const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (c) =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-export function printStocksReport(ym, transactions, prices) {
+export async function printStocksReport(ym, transactions, prices) {
+    const progress = startReportProgress({
+        title: "Preparing your equity report",
+        steps: ["Gathering transactions", "Computing P&L summary", "Preparing print layout", "Opening print dialog"],
+        doneTitle: "Report ready",
+        doneText: "Opening the print dialog…"
+    });
+    try {
+        buildReport(ym, transactions, prices);
+        await progress.ready();          // wait for the bar to reach 100%
+    } catch (err) {
+        console.error("Stocks report failed:", err);
+        progress.fail(err.message || String(err));
+        return;
+    }
+    progress.complete("Opening the print dialog…", { autoClose: 700 });
+    // let the overlay fade out before the print dialog takes over
+    setTimeout(openPrint, 800);
+}
+
+function buildReport(ym, transactions, prices) {
     const isAll = ym === "all";
     const s = isAll
         ? calculateAllTimeSummary(transactions, prices)
@@ -82,6 +103,9 @@ export function printStocksReport(ym, transactions, prices) {
         </table>
         <div class="pr-footer"><span>Informational only, not investment advice.</span><span>BlackRoad</span></div>`;
 
+}
+
+function openPrint() {
     document.body.classList.add("br-printing");
     const done = () => {
         document.body.classList.remove("br-printing");
