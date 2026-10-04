@@ -1,6 +1,7 @@
 import { navigation } from "../../app/navigation.js";
 import { navigate, currentPath, hrefFor } from "../../app/router.js";
 import { icon } from "../icons.js";
+import { BROKER_EVENT, isAngelConnected } from "../../services/angel-session.js";
 
 
 export function Sidebar() {
@@ -111,6 +112,32 @@ export function Sidebar() {
                 }
             );
 
+
+            // "Connected" label on Connect Broker while a broker is linked.
+            if (item.path === "/connect-broker") {
+                const tag = document.createElement("span");
+
+                tag.className = "br-nav-connected";
+                tag.title = "Connected";
+                tag.setAttribute("role", "img");
+                tag.setAttribute("aria-label", "Connected");
+                link.appendChild(tag);
+
+                let seen = false;
+
+                const sync = () => {
+                    if (link.isConnected) seen = true;
+                    else if (seen) {
+                        window.removeEventListener(BROKER_EVENT, sync);
+                        return;
+                    }
+
+                    tag.hidden = !isAngelConnected();
+                };
+
+                window.addEventListener(BROKER_EVENT, sync);
+                sync();
+            }
 
             sectionElement.appendChild(link);
 

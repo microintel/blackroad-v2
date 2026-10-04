@@ -103,3 +103,103 @@
     .cb-detail { padding: var(--br-space-6) var(--br-space-4); }
     .cb-connect { width: 100%; }
 }
+
+
+/* =========================================================
+   Angel One connect (prefix ac-). Theme tokens only.
+   ========================================================= */
+
+.ac-root { display: flex; flex-direction: column; gap: var(--br-space-6); width: 100%; min-width: 0; }
+
+.ac-form { display: flex; flex-direction: column; gap: var(--br-space-5); }
+
+.ac-error,
+.ac-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--br-space-3);
+    padding: var(--br-space-3) var(--br-space-4);
+    border-radius: var(--br-radius-md);
+    font-size: var(--br-font-size-sm);
+    line-height: 1.5;
+}
+.ac-error[hidden] { display: none; }
+.ac-error { color: var(--br-danger); background: var(--br-danger-soft); }
+.ac-notice { color: var(--br-success); background: var(--br-success-soft); }
+.ac-error > svg,
+.ac-notice > svg { flex-shrink: 0; margin-top: 1px; }
+
+.ac-loading { display: flex; align-items: flex-start; gap: var(--br-space-3); }
+.ac-loading > .ac-spin { color: var(--br-gold); margin-top: 2px; }
+.ac-loading p { margin: 2px 0 0; font-size: var(--br-font-size-sm); }
+
+.ac-spin { display: inline-flex; animation: ac-spin 1s linear infinite; }
+@keyframes ac-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ac-spin { animation: none; } }
+
+.ac-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--br-space-4); flex-wrap: wrap; }
+.ac-bar-info { display: flex; align-items: center; gap: var(--br-space-3); flex-wrap: wrap; min-width: 0; }
+.ac-bar-actions { display: flex; gap: var(--br-space-3); }
+.ac-bar .br-button:disabled { opacity: .6; cursor: not-allowed; }
+
+.ac-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--br-space-4); }
+
+.ac-section { min-width: 0; }
+.ac-section .br-card-heading:last-child { margin-bottom: 0; }
+.ac-account .v { overflow-wrap: anywhere; }
+
+.ac-table { min-width: 900px; font-variant-numeric: tabular-nums; }
+.ac-table th,
+.ac-table td { white-space: nowrap; }
+.ac-table.ac-table-sm { min-width: 0; }
+
+@media (max-width: 640px) {
+    .ac-bar-actions { width: 100%; }
+    .ac-bar-actions .br-button { flex: 1; }
+}
+
+
+/* ---- Popup, Connected labels ---- */
+
+.ac-dialog { width: min(440px, 100%); }
+.ac-dialog .br-modal-header { margin-bottom: var(--br-space-5); }
+.ac-dialog .br-modal-header p { margin: 0; font-size: var(--br-font-size-sm); }
+.ac-dialog .br-modal-footer { margin-top: var(--br-space-5); }
+.ac-dialog .br-button:disabled { opacity: .6; cursor: not-allowed; }
+.ac-layer { z-index: 600; }
+
+.cb-card { position: relative; }
+.cb-connected { margin-top: calc(var(--br-space-2) * -1); }
+
+/* Sidebar: a small green dot beside "Connect Broker" while a broker is linked
+   (a text label would cut the menu name off in the narrow sidebar). */
+.br-nav-connected {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-left: auto;
+    border-radius: 50%;
+    background: var(--br-success);
+}
+.br-nav-connected[hidden] { display: none; }
+
+
+/* ---- Angel One: "How to setup" (bigger than the Connect button) ---- */
+
+.cb-detail .cb-setup {
+    min-width: 280px;
+    min-height: 56px;
+    padding: 0 var(--br-space-6);
+    font-size: var(--br-font-size-lg);
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--br-gold-text);
+    background: var(--br-surface-hover);
+    border: 1px solid var(--br-gold);
+}
+.cb-detail .cb-setup:hover { color: var(--br-gold-text); }
+.cb-setup .br-icon { color: var(--br-gold); }
+
+@media (max-width: 640px) {
+    .cb-detail .cb-setup { width: 100%; min-width: 0; min-height: 56px; }
+}

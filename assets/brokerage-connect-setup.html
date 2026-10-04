@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/png;base64,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">
+<title>BlackRoad — Brokerage Connection Setup (Angel One SmartAPI)</title>
+<style>
+  :root{
+    --bg:#000; --card:#000; --card2:#000; --text:#f5f5f5;
+    --muted:#a7a7a7; --gold:#e8b84b; --gold2:#f5cf6e; --border:#2c2c2c;
+    --green:#4ade80; --blue:#5aa2ff; --purple:#a78bfa; --pink:#f472b6; --orange:#fb923c; --cyan:#22d3ee; --red:#f87171;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.55;overflow-x:hidden;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  a{color:var(--gold2)}
+  img,svg{max-width:100%}
+  :focus-visible{outline:2px solid var(--gold2);outline-offset:3px;border-radius:6px}
+  .wrap{max-width:1040px;margin:auto;padding:28px 18px 70px}
+
+  /* icons */
+  .ic{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:2;
+      stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+  .ic.sm{width:16px;height:16px}
+
+  /* header */
+  header{
+    display:grid;grid-template-columns:1fr;gap:22px;align-items:center;
+    padding:30px 22px;margin-bottom:24px;
+    border:1px solid transparent;border-radius:22px;
+    background:linear-gradient(#000,#000) padding-box,
+      linear-gradient(120deg,var(--gold),var(--orange),var(--pink),var(--purple),var(--blue),var(--cyan),var(--green)) border-box;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;color:var(--gold);font-size:14px}
+  .brand img{width:44px;height:44px;border-radius:10px;display:block}
+  h1{font-size:clamp(30px,6vw,54px);line-height:1.05;margin:10px 0}
+  h2{font-size:clamp(20px,3.4vw,25px);margin:0;line-height:1.2}
+  h3{margin:0 0 7px}
+  p{color:#d0d0d0}
+  .intro{font-size:clamp(15px,2.4vw,17px);max-width:750px}
+  .hero-art{display:none;width:200px;height:200px}
+  .notice{
+    display:flex;gap:12px;align-items:flex-start;
+    border:1px solid #3a3a3a;border-left:4px solid var(--gold);padding:14px 16px;background:#000;
+    border-radius:10px;color:#ddd;margin-top:20px
+  }
+  .notice .ic{color:var(--gold);margin-top:3px}
+  .demo-banner{
+    display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;padding:14px 16px;
+    border:1px solid #5a2a2a;border-left:4px solid var(--red);border-radius:12px;background:#140808;color:#f3d5d5;
+  }
+  .demo-banner .ic{color:var(--red);margin-top:3px}
+  .demo-banner strong{color:var(--red);letter-spacing:.04em}
+
+  /* buttons / links */
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 0}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 16px;
+    border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;
+    background:var(--a,var(--gold));color:#000;border:1px solid var(--a,var(--gold));
+    transition:filter .15s,transform .15s;
+  }
+  .btn:hover{filter:brightness(1.12)}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#000;color:var(--a,var(--gold2));border-color:var(--a,#4a3d1c)}
+  .btn.ghost:hover{background:#0c0c0c;filter:none}
+
+  /* process nav */
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;min-height:40px;
+    border:1px solid #333;background:#000;padding:8px 13px;border-radius:999px;
+    font-size:13px;color:var(--text);text-decoration:none;
+  }
+  a.pill{border-color:var(--a,#333)}
+  a.pill:hover{background:#0c0c0c}
+  .pill .ic{color:var(--a,var(--gold))}
+  .flow .arr{color:#777}
+
+  /* steps */
+  .step{
+    --a:var(--gold);
+    position:relative;background:#000;border:1px solid var(--border);border-top:3px solid var(--a);
+    border-radius:20px;padding:22px;margin:18px 0;scroll-margin-top:16px;
+    box-shadow:0 -14px 30px -22px var(--a);
+  }
+  .step-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .stepnum{
+    width:42px;height:42px;flex:none;border-radius:50%;display:grid;place-items:center;
+    background:var(--a);color:#000;font-weight:900;font-size:18px;
+  }
+  .badge{
+    width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;
+    background:#000;border:1px solid var(--a);color:var(--a);margin-left:auto;
+  }
+  .badge .ic{width:22px;height:22px}
+  .split{display:grid;grid-template-columns:1fr;gap:18px;margin-top:16px}
+  .split > *{min-width:0}
+  .path{
+    display:inline-block;padding:8px 11px;border:1px solid #303030;
+    background:#000;border-radius:9px;color:#ddd;font-family:monospace;
+    max-width:100%;overflow-wrap:anywhere;
+  }
+  .visual{
+    margin:0;border:1px solid #292929;border-radius:16px;
+    padding:16px;background:#000;
+  }
+  .visual.center{text-align:center}
+  .visual figcaption{color:#888;font-size:12px;margin-top:10px}
+  .visual svg.art{display:block;margin:0 auto;height:auto}
+  .browser{
+    border:1px solid #333;border-radius:13px;overflow:hidden;background:#000;
+  }
+  .bar{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;background:#000;
+    color:#8a8a8a;font-size:12px;min-width:0;
+  }
+  .dots{display:flex;gap:5px;flex:none}
+  .dots i{width:9px;height:9px;border-radius:50%;background:#333;display:block}
+  .bar .url{
+    flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    background:#000;border-radius:6px;padding:3px 9px;
+  }
+  .screen{padding:18px}
+  .mock-title{font-weight:800;font-size:18px;margin-bottom:12px;color:var(--a,#fff)}
+  .mock-field{
+    display:flex;align-items:center;gap:9px;min-height:38px;
+    border:1px solid #3a3a3a;border-radius:7px;margin:8px 0;
+    padding:8px 10px;color:#777;background:#000;font-size:13px;overflow-wrap:anywhere;
+  }
+  .mock-field .ic{color:#6a6a6a}
+  .mock-btn{
+    display:inline-flex;align-items:center;gap:7px;background:var(--a,var(--gold));color:#000;
+    padding:8px 13px;border-radius:7px;font-weight:800;font-size:13px;margin-top:5px
+  }
+  .checklist{padding-left:0;list-style:none;margin:0}
+  .checklist li{margin:10px 0;padding-left:30px;position:relative;color:#ddd}
+  .checklist li:first-child{margin-top:0}
+  .checklist li:before{
+    content:"";position:absolute;left:0;top:.2em;width:18px;height:18px;
+    background:var(--a);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .credential{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;margin-top:16px
+  }
+  .cred{padding:13px;border:1px solid #292929;border-radius:12px;background:#000}
+  .cred b{display:flex;align-items:center;gap:8px;color:var(--a);font-size:13px;margin-bottom:3px}
+  .cred span{color:#ccc;font-size:13px}
+  .note{
+    display:flex;gap:12px;align-items:flex-start;border-radius:13px;padding:14px;margin-top:16px;color:#ddd
+  }
+  .note > .ic{margin-top:3px;width:20px;height:20px}
+  .warning{background:#000;border:1px solid var(--orange)}
+  .warning > .ic{color:var(--orange)}
+  .success{background:#000;border:1px solid var(--green)}
+  .success > .ic{color:var(--green)}
+  .risk li b{color:#fff}
+  .compare{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+  .cmp{border:1px solid;border-radius:14px;padding:14px;background:#000}
+  .cmp b{display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:6px}
+  .cmp ul{margin:0;padding-left:18px;color:#ddd;font-size:14px}
+  .cmp li{margin:5px 0}
+  .cmp.bad{border-color:var(--red)} .cmp.bad b{color:var(--red)}
+  .cmp.good{border-color:var(--green)} .cmp.good b{color:var(--green)}
+  @media(min-width:700px){.compare{grid-template-columns:1fr 1fr}}
+  footer{text-align:center;color:#777;padding-top:25px;font-size:13px}
+  footer .actions{justify-content:center;margin-bottom:16px}
+
+  /* authenticator countdown ring */
+  .ring{stroke-dasharray:75.4;stroke-dashoffset:0;animation:tick 30s linear infinite;transform:rotate(-90deg);transform-box:fill-box;transform-origin:center}
+  @keyframes tick{0%{stroke-dashoffset:0;stroke:#f5cf6e}80%{stroke:#f5cf6e}100%{stroke-dashoffset:75.4;stroke:#f87171}}
+
+  /* ---------- responsive ---------- */
+  @media(min-width:820px){
+    header{grid-template-columns:1fr auto;padding:36px 34px}
+    .hero-art{display:block}
+    .step{padding:28px}
+    .split.two{grid-template-columns:1.1fr 1fr;align-items:start;gap:26px}
+  }
+  @media(max-width:700px){
+    .wrap{padding:16px 12px 45px}
+    header,.step{border-radius:16px}
+    header{padding:22px 16px}
+    .step{padding:18px 15px}
+    .actions .btn{flex:1 1 100%;justify-content:center}
+
+    /* nav → tidy 2-column grid */
+    .flow.nav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .flow.nav .arr{display:none}
+    .flow.nav .pill{border-radius:12px;font-size:12.5px;padding:8px 10px}
+    /* chain → vertical */
+    .flow.chain{flex-direction:column;align-items:stretch}
+    .flow.chain .pill{justify-content:center}
+    .flow.chain .arr{text-align:center;transform:rotate(90deg)}
+    .badge{width:38px;height:38px}
+    .stepnum{width:38px;height:38px;font-size:16px}
+    .visual{padding:12px}
+    .screen{padding:14px}
+  }
+  @media(max-width:380px){
+    .flow.nav{grid-template-columns:1fr}
+    .brand{font-size:12px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .ring{animation:none}
+    .btn{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="i-app" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M14 9l2 2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/></symbol>
+    <symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12 7c-1-1.5-3-2-4.5-1C5.5 7.2 5 10 6.5 13c1 2 2.2 4.5 4 4.5.8 0 1.1-.5 1.5-.5s.7.5 1.5.5c1.8 0 3-2.5 4-4.5"/><path d="M12 7c0-2 1-3.5 3-4"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1 0-4h13"/><path d="M3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M21 12h-4a2 2 0 0 0 0 4h4z"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<div class="demo-banner" role="alert">
+  <svg class="ic"><use href="#i-alert"/></svg>
+  <div><strong>DEMO ONLY:</strong> This page only demonstrates the working flow of a brokerage connection setup.
+  It is <strong>not a live integration</strong> &mdash; there is no real use of the BlackRoad API here.
+  It was created for demonstration purposes only, so please <strong>do not use it</strong> for real brokerage connections or enter real credentials.</div>
+</div>
+
+
+<header>
+  <div>
+    <div class="brand">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAIAAAAErfB6AAAZcklEQVR42u2de5Ce1X3fv9/fOc972V3dkGQhEMKIiw0UjLkYbIMvtSYEXOPabmhTp57UnWTSNnZdJ5lp02baaZNxekk7ZaZOppOmbZLB9Yxd17GxIY7tgLExNgaMbXAQN4EQEkISWu3u+77Pc87v2z+ed1erCyAhKgl0vnNGWo129933fJ5zzu92fsutt34ARa9dWZmCArioAC4qgIsK4KICuKgALiqAC+CiArioAC4qgIsK4KICuOgFFY/uy1Vm8JiIxwcwkQgv0///VYIJVdmiiwrgArioAC4qgIsK4KICuKgALiqAiwrgArioAC4qgIsK4KICuKgALiqAC+CiArioAC4qgIsK4KICuKgALoCLCuCiArioAC4qgIsK4KICuKgALoCLCuCiAnh/USSwMI72u+37Pu3fAjX/X3zRr2slHtUrA9BBvUp04nQvsePykgScav/IhB/GHO8/ZwaYKBCUUQDkBBUIEySSMh4KnugAqCAi07jv27/Mt8J9HwcA7YuK0PiNHmfFY/+SyZLToEBkMlUeNT/veIkVt4AjAaLTgUQnYWB0gY2A4AGgW24IE00H7B+RAtmYYAByyHTRjxQGkQECHaIiMiybQLUbiFE0uuA63oyPA+DgoRKccE5lcyIB8bBXkACRIBHMooGSp5xycuVMJ0OAgIZAlXuAxLw/GAflhLnJGpvqddELfsRLWBDgSSl7cpd7zgCNQCCcEpFPhEV8HAA7zEMeoff7f/rgT56c6XRIt5c+CdXOlQiFGDudzuolvfVrJ1et1IbTl5y2emLJBENT59plls0AVXJRB5PzFjBC7fzu93fumUFlAQd9ohaf1fPnugRAJGOIVcTKFd3Vy6eWTYSlfdEGdZ1zIi3RPKsPAGiOL+N4PF5UgBqv7vrR7tvv3x57HSQ7/FNw36HHHKJihVOXTV6wfsk1l53+zqtOPWtt1+uZ5JDFFJIJB82vCYRSIEZN9ek//sl3H9rT7XXkeqkTQvsdF8FoeVm/Wr1k8vSVnfPPW3HZBadefN7K1SuSj2ZTYwoJFHXyrWDQgxA8dKt+1e9N9npKQWzmbVLq0M+8xnOrMWTJHEpZm3dg8zM7b7tny7lfXfJ3r7/wxo1nLO/PjkbJjAc/N5Qb5i2AoNTpNjZRseP7ndV6AZN7YS8hMuR5+3Tauntw/+ODr96zY+nkpvM3rPiZt6+74R1nnLHS02DoNLB9JnW8rOrwa79w/lG4KM6XY3+SQIPeF2/f8sTWmRiC5JI5M+DyIErtVnjgcMElSpRczCYE0CpZhyFMPLe7uf0HT2/avOuNG05/3YrJ5APQxv4MnXTARAMyCBnqFL/4zae37Bh2Ymj9pXYEgaAbwYWv3zeMhEgYaWYWI6sqdmI/pbh529y37tv6/R9uW7pk6rwNq4A5OA0BdGt3+SO35tqf6NUY6Nh3xrk5mOmRHslkyqB8/yGY0JGq+XcrJzMlZrqYzRKqqtOJS2+7c/vHP3X3A0/Odqo+srVPIWVQWLw6tWhpHvAkNWbJRMFygFcOZHom2pGobJ6tcTZqfT3PrkGK3uv2JsPUfQ/Xv/57P7jpfz8ySMsjLLPJ7AAC/WiaEr6KI1ntgmnjEg6JVWCsyMXDQsM4CuZmoIG00LpAohQcsY6pgVzeWbL03s3P//Z/vXPbbsQISIRMXPRmeRg7kwcmhhFCTZqhMgRDMIxfv/XEbezhxcYqQVleE51Jm/Pwn/74Rzfd/NjIJg0CmvaBOvYbdTwRAFORaIicLWdGJDX1HBAOmJBxTIMj0S10YgwhKsPp8wtUypbN81Svuuv+4c23PPKJj1ygvHfsQ4s4TGNOkjp1ZgpDZx29Ch4An7fYRBI0MzNzupuIZKI8NFndmDodDlOn+wdf+OGKZf6PP3gWR7NupMyQT0bA7aw7IRNqnbk6XvGmdWF/u8RbPrLsaa7Ozzwz++SWuZ0zZG8iWjYleuWWMsg8AWV2qs//xZZr37HhwjP6TTMbQCAeZlzSyb6lZROkmdANguiZAiEhC/I8Sj4zaOqMWHU7kdBQiPSqchPQGCJCg6lPf/bBi89d+c6Lls3Ve43R4H5svaYTArDoAuhmCBrVbzp3+e/9+tWx3iPaYtu7jXBkpDrb9HTY9PTsF7+x6ZZvPj2d+qhMngiLzmwphVGX1ebtw69/69G/9vcu8jRLOnRYnY/NOJqrr7j81H/5j95a5emMKLpJhAkQmLLqejQ3O9j8zMy9f7X3znufeeq5Yej10IZcWXvIrioJE4E7pvlHf/bIZedfFhn8eHjEJ8gWTZGgm2wQlDznwYz77P4mwoIDrEisWhpPXdl7y8WXXnX+mt/+w/u216GiSXA6gegBQGb89gO7fnGmmewyyWIb1VI4nA1los/zzkDMAkbOECTJx14XSVQBHV2+8sbrw8OPnfPfPvfTP/v21sb6QBtaIWUmd9S9Tv/b9z9794+fe88lU7M1ZRnH1jM+odKFWjBujcYDBzEeBljO3syOfDT9wfee9bGPXNbLiR44H9CmKCAE27J9ZvuuYQhxPsnEw/w5sqseNXWd6jo1da7rXDdp1KS6SXXdDOt6dtTMDaabvOuN5+JTv3H5R9+3gfUeWAAiNXZ8HWYW9+zN3/zO5gZ9g6BjPeGv1nwwiRBAIM/t+LmNp1158YrRqLHFG5IULOzcWz/97Gy0rskJza+elza0CLB9rA4lI2mwgODdPMtJ3/WxD5+/8crX1aOhGEwkIJNkoiP0fvDQ3u27UxVw7AMer+KEvxOgKdkpPb/mynUKo8WpmzbcNGw4O3SSgo7wBHxJV8qkqhIq2IxzxVT+8HsvWtJLWU6xjceBgBqL3Lyjfuq5uRh57ANar2bACISySdD61au6AY7MgzjIM+ECMskD0o5HtYc0QBaUraaxaeYuOWfqgtcvaZoBrV3D4+esovYO/Olt02Q49tnDVxfgAypBPDgF5pAqbw0rHRCf6gSb6EUpgQuRhldoEakKTreULHRzQOIpS3H+WSuhPN7gxy8YAjVs0rYdM85qAfzJCdgX7a86lOkjgJRRNMEEUUESwu6ZQcrw4IJRBgpUdl8+FdesWpLdBQYnFJw6jMdoHFajnCIFHuRiEa3XE6xN8sti0KqVkwY5FJQoczK4QM/g3AgSTbms4Bf9UdkojHJoUlA2JQOZlf3HT2wbClXuBMGtEb3jlpOvO7V3+uqJnEUzjDP/R7SG9GLhrrYCDC464USqKhIBpNiWEEiEFImQU2o/uwB+wXi1YFCER3qggolqYtWdfHhz+PpdT1rHzOWEo4LkDNHTu65Ye8oS5CQAbrmNd74iu/R8bd++JIUDMzNDeVt00taZySlHpNCtjGQ5g194Qq2W1QRMwTwwC7nu97hj1P3PN9//1HZ2Q+Vokjnhkd3Zxi8+p//+d53laW4+IysCr2gGflFVpdneYefRzc8LBkhoWTpgkDohr1japY5DLCueSBA5DhO1s7b/sUePBKAsNggMsWI1+eBT+ab/ec8tdzxtvT48O2lSZd406ZTO8Fc//NbXn8rRnAczE4Eg+iv4TM9X8zC7VZ34+Ob8o8f2hioSi+NlJuV+j+vWLoeSdKwRn1iA22MLViFMknkxDEObz2kyw8ygs/WJmbsfePZPbn3w4S2zE51ljRw0o0XZ3GCwZDL/s1+84tqrXjcaztAqIdMhBsDni7t02BAPXcFNgJJocrgUYu8vv/vTLc/l2O1ADVRx7IozKS+ZCKuXT8CT8VgTPjFi0WgPrghHL+KHm6Y//h9/EDFcfGIRbCs66qTn9/jmJ5/b9vwosd/tLFVuAlEzpJFHDS46u/exv/Om9169JqVpIBAZ4/L2hbKrl6LLDMHpgjlIycehkn2Fuy6BibkTzTpLO1/51q4/+sKjFiLdhQAmAcErxTRq/Nx1U2eumWjSQHasq7ROoBXc5pQsxu3P7f0/fzG9XyoJMBklmQsQo1W9fjVZoalRN7FjnpdVg3POmth45Xkf2Hjm+lWhrmdJkPnIw78SK6eROSJlhBySiaaFqq1xDNNi3yzunsaX/u9T/+WzD26bYbeiDgxW5b7qd19x6rIlzWgu0yKO7a/zPEEAt3umi8ows4l+n+AB2f72cG6TslmoM0JGJgyZK/r1Jz9y5fuuOW3N6pzy3NzMMLahYkk8Yps5ZFWy7JMjjZzB1TFvzTQCzEIzauqRntmF+x7fedu3Nn3/vj01O91K2j8iquCjES9et+y6t5+Z0wh0g+vYGrYnFGARkCgYPHP/uw55zCnsu3xEBA8mgD6bqs/9+WN3fO+x816//LprzrronEnkuSYnox1pes4dsWffe3jHR3/rDmt3Whk0rpcTmNybJg1HacfO4Y7pOil0OhOB3q5dLnpHjhjy3AeuO3v92qoeDI0VlXUSGlmar3xs1ycoMhxg7hoESO39HwYKTuUg9yz6INvdm3a6M35vx+e/sfmGq8/4hRvOPfM0a4azdsTRQVno7JjW1vt2iklU8Laya9EDR4PRQqy6VYcOb+AVwUWfIwuhnpm+/m2rbvzZM1M9R7YVwdUxLoU/gUp2AKPaovRhk5sDYgIcV0Ptiy64KuuEUDFmRLdOpyuTIWx9Pt/0hUfv/NEz/+qXr3rrxcua0R4yHFFwQ8pVUM8qoOOkc3EOoz0oJDrdkCGDq6Jljn0gtQns2dnBVRcu+c1fuWxVB6MMspI1LfqT0chy0gQaBg0uef3SD21c6wfWp3H+qqc1mXOj9NiTc9/76fZnns2BQLfrTriyUAWGauqBR2c++e9v/zefvOZnLu2lQfLgAZTscI5kwiRmiTIAHmROUpkwj4Q7BYVxOEs0OFq6dKPlzHo0eMebpn77Vy8/Z00cjUY0ARmHXXHwWvWDAcjz4Ix1q3/5xjczP794lxbnb2YCQsxiM/LHtu7587t2fvaWJx7bPexWgZ4pgzpQ7va7T+0cfOqmO0//1+++cH2om5HYmT//XsIPVmsJEOCIgolkhMwAsAY9eBDb+2f7DhkqJHAwqlf39P4b1v6Tn79o7TIOhiMLC694HOKGJ9QWzfasVZ4dzO1hntlvRsg2dN/GF0CLsAvW640b1r/zLWt/5/e/850HZjr9ibZyyiR3xN6Sh7aO/uDmH/+733hzx8wlwOavfb74CpbJYMFpgIJCtiy6uYnIjEGHyHfR1e/md7/5lI9ed8HVl08ah8NRsKADAl8nYSy6TZ22MaYIVYYYyWhYPAIRzAIZ2v+iZ/qgrkazg8vO0ac+ccUl500OG1cIzgzQcoQyJ/m17z971w93Vp1JSYd5cyQzNo7h3OxwbjgY1HPDueFcXc/Vzdygmc2jubpGPiDtSHKItHqp/dYvXXPt25alNGyyLKTjftU/nhjL14AsuhAEk0wIwH6G9Njm4r5cUBAMzIGzszpv/cQ//aW3fPzf3j5dV8b2er1DHoPvmtEttz919aWrA+jIQAWkF33cqCZvWNvZeOWZEaOMaHCAbg63iN6e0ei2u554bhpx0Z1TSVUVtuyY+drdPz37jHVRjXkPTAc4xifrGdym6JHBLLosadzWQYu2zQxoviKCAJwI8iCTWTM7e9X5S6++5JQvfWt76C8Hk5gdMXiwoAc27Xpu9/D05apTeMkZJpnr+vzXr/7n//CKXn5WiiJNzNZIFp2501k2wU9/9mFM9BZX8REYaeJzX3n8ureuO3tNNWq8rb075El0Um3RaOOzVGBrlaq99+mCFo02HzzufwEBMh/7TqmxvLQ7evcV62IMUiYyvAsos6nMdu5ptu4cBuvMHwQvGapE8twM9owGw3q4tx7ONYO5ZjCXRjP13Jzq3X/r2g3nnN6v0xAwKTgdkDz0OmHT07Ofv/VJt0mxpkAYxgMmY8kHH0bMa1GKYrzrBXrHXKtPWdLrhDbx69Y2W6EFTs8223aMEOL8pVQexsvQaMYwrso2kEGsELqpzhvWdz547RtDA4WaTFQQTMyQGLqf/fpf/fDR6W416U7KgXbguNwFfxVXVRqc4/w9TQHIMSgSdAgmJhPhJubkYTCKAonwcq2ecRBDlojAZvqG96w7/8yldZ3MMF/AJUeOsbf5OX3mlieyd4xtBb7ma/pLRccR7uxttIFysPaA3TNp1ORxbHJcmGwE550aHskByP3xWus+gTURNbKzXucfuvaMKrV2QQY8ugEmpW6n/5Vvb7vnoZ1VN/q+i+zHaxm8ivkurA+61UNfes8DO2drN3NrbyqyvYzETsyT/WxyKb+8NaTxPfUAmCyLMTeD9737jEvPWzqqa6MMyiYoiKky7NjT/K8vbdpb98DgMII8To7wiQOYh/onDxoHxJucMiT1+pM/fmTmG995nFVfyGxbNECkcvKlU93T1kwoJxqOpJxjMeAMZqpj3gWyQmoarFtpf/uGN8QoCVRMJsAdwZG73eprd++4/ftbu92eRKCtvT0OjE8UwO2qA1yWBYM7HHA/eMhdklxyV5I5JqaqLTu6/+F/3PPk7roXLStkwiCKQSEpr14a157Sy55e9ioyNyi6jZwJChTMWNezP3vVqddcuHy2GcpCcLY3nCEzC3tH4U++vGnXdBVDznQgvLxn6zUBmG221c1jyCGad7rxhUbVi1Wn6vS6/V5/Yqo3iBO33T/6xO/ecce9z4fOUrkTIhzIYk7myLjswpWrlltKeb4ny8v+KbVghBNQCiun/Offe97yjmXVtqhUw9273c7dD+z+8h2PV51Jlwtwy9n8GE/tCZIP9gXfxRimB/aTJ9MBlS2LokF0wT3t2Fk/8vSe7/5k2z33Prtnr8XJiSwRwZAJCCZDcqyc8GvffnonNEMYgVeqo5EgQ2jqve+5YtU7L133pbu2xG5/vl6nfQI08P6ffuWxjVetXrO8anKycVX2yQfY5FR0WMNh6MV7Htz193/zq9i/ocaCZdyGrT1rbujTg5wRu7FX9ZE8EzaueFIEzACfm934nlPfctHqZjBDVkQa1yof9VYpugdXtiX95sb3bbjz/m1zzUJbkXF1aLcbHnhi7xe/8fTHfu7sUZ4OijbusHmSAeZ8qFmAgXNNNfN8zUMUpy10QCIREb3Ti8FDAw6JgBxcIkRKrIyj0d5z1/o/uPGN/VCPEtps3ytn6FAQGYej0dUXTW28Ys3n/3JLZ2JS4+p2AQjKMrv5ts0b37Z+w9pebpqTx8hq79+NK3UEa6/3mGLMFtlU0apQHWrEKoROCFVgx41uCQJzVDYnFzoORgzrvacs8V/7lasvOrvTjGoEJ5w6oKnYy3deTAxeEXLkpaH+8PvOW7m8ymkcQh/ffoT6YfKhrTM337rJEIGU7SQwsii2hhAlMIkA2nZlDsgtA4I7dMghSZAkd7Q1HzKnqc3UgoGEjeYGZ6723/nYW29425pmMIS1Ra/u42bRpJLY2u2k7CDKDlGg6PkFPCtB4/5N5EyTLr9g+d+4el1qRmAg2noPOGmeutb7wu2b731sul/1Dr7A/BoE7JbdEpFFJBtXghPWjnG3QNihnOB23Rv2dRV00mVSMBDuaWYwZ773b75lxR/+i2uvv2ZFPdrJcX31QrljW9cYg1QptV23DopDt0FOmUCZmNqLa4c6MsZ9wAOaG68/Z93rbJQzyTwu5lQmYqye2ZE+8+XNs+iSJ0OfLMWYlXNlIhUNym2x3WHs6osdFXO6h4ScXfC5aOn05Z1L3rD22nec9p6r1izvYjQcmNnBa0/tvV4kUyWrZCOSC2X2NMCs7cJgQlCVguMQvQPGl9noFphTM3vJhqkPvfOsmz73MKpl5iAdcJEm9Kolt9657bp3rdt46fLB3MDstV1VyZxhApVnmebQ9Og1jggwYTQz71ZcPjWxvB/OXbf8kgtWX3bR6W9Y31vSGw2aZrZBh+1FAz/ggGht4EwlhWYwTIPByJXnvadglkYjNe4WnS40hB/CvVk4Z8f9ZDM0+ND153zlrkd+8uTzE+xkMFtD5baYcOvM7H//zI8vPecdS7rIjmN2059bb/3AUVhKDY/8IoYpg5D6dz00vX2akSTSETqIMmNVWa+XV62sVkxVyye7k90on01Nyk4jTKE97g/qDCzAJHhsfDT5hdu3Pr1jGGNYuHJCsmmaC85asfHtq0KeAaq2lFPIB0c9Fj4kJDGEiW98b9cPHt3ZZ3Agz9dwEp7pU6b3//XT1qzspOSHD1iwo2lhehwAExRpyqHbDwyEO51H1DG3hdGaWynLkdwzaoJkpIxwMWUa21rr/f1XU6DHFEYdJzsTZm2BpBY9PlLOuR6KQTCDo22IdMC7aCsAQcgMypaCsxumcgVHW3cZZIkAPIoSUxrVRxpoOUrAx2GLFtp9k2kwmF8KetmPGMW2e44xzLcKdUFAaJtLHnR0miBZMlmmVM8IB/96lvbXQrT1ri601XoHvov5T0R7b5FuAgdpFo1EJgELLd/Hl3JAHusuLMcn0NHO+4KtcVSFLPta6hzY5Iwv/piN2xiHQ2WJ9+vgf5i+MhcusLcUueitjc/p4xElRNFrWgVwAVxUABcVwEUFcFEBXFQAFxXABXBRAVxUABcVwEUFcFEBXFQAF8BFBXBRAVxUABcVwEUFcFEBXFQAF8BFBXBRAVxUABcVwEUFcFEBXAAXFcBFBXBRAVx0LHSUPTqOV6P6k0o8boCFqDL/ZYsuKoCLCuCiArioAC6AiwrgogK4qAAuKoCLCuCiArgALiqAiwrgohNS/w/6Tf3Yw9NAZAAAAABJRU5ErkJggg==" alt="BlackRoad logo" width="44" height="44">
+      BLACKROAD • BROKERAGE CONNECTION SETUP
+    </div>
+    <h1>BlackRoad Brokerage Connection Setup</h1>
+    <p class="intro">
+      Connect your brokerage to BlackRoad in a few minutes. This guide uses <strong>Angel One SmartAPI</strong>:
+      you will create your SmartAPI app, get your API key, enable TOTP with Google Authenticator,
+      and then sign in to your brokerage from BlackRoad.
+    </p>
+    <div class="actions">
+      <a class="btn" href="https://smartapi.angelone.in/" target="_blank" rel="noopener noreferrer">
+        <svg class="ic"><use href="#i-globe"/></svg> Open SmartAPI portal
+      </a>
+      <a class="btn ghost" style="--a:var(--purple)" href="https://smartapi.angelone.in/enable-totp" target="_blank" rel="noopener noreferrer">
+        <svg class="ic"><use href="#i-shield"/></svg> Enable TOTP
+      </a>
+      <a class="btn ghost" style="--a:var(--pink)" href="#step5">
+        <svg class="ic"><use href="#i-phone"/></svg> Get Google Authenticator
+      </a>
+    </div>
+    <div class="notice">
+      <svg class="ic"><use href="#i-lock"/></svg>
+      <div><strong>Important:</strong> Keep your API key, Client ID, PIN and TOTP secret private.
+      BlackRoad should only store credentials according to your chosen security design.</div>
+    </div>
+  </div>
+
+  <!-- hero illustration -->
+  <svg class="hero-art" viewBox="0 0 200 200" role="img" aria-label="Shield with a key and a check mark">
+    <defs>
+      <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8b84b"/><stop offset=".5" stop-color="#f472b6"/><stop offset="1" stop-color="#5aa2ff"/></linearGradient>
+    </defs>
+    <rect x="6" y="6" width="188" height="188" rx="40" fill="#000" stroke="#2a2a2a"/>
+    <path d="M30 170 L100 40 L170 170" fill="none" stroke="#1d1d1d" stroke-width="22" stroke-linejoin="round"/>
+    <path d="M100 150v-14M100 122v-14M100 94v-14" stroke="#e8b84b" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>
+    <path d="M100 30l52 20v42c0 36-30 58-52 70-22-12-52-34-52-70V50z" fill="#000" stroke="url(#g1)" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="86" cy="96" r="14" fill="none" stroke="url(#g1)" stroke-width="5"/>
+    <path d="M97 106l26 26m-10-10l9-9m-1 21l9-9" fill="none" stroke="url(#g1)" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="150" cy="150" r="22" fill="#000" stroke="#4ade80" stroke-width="3"/>
+    <polyline points="140 150 148 158 162 142" fill="none" stroke="#4ade80" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</header>
+
+
+<nav class="flow nav" aria-label="Setup steps">
+  <a class="pill" href="#step1" style="--a:var(--gold)"><svg class="ic sm"><use href="#i-login"/></svg>1. SmartAPI login</a><span class="arr">→</span>
+  <a class="pill" href="#step2" style="--a:var(--blue)"><svg class="ic sm"><use href="#i-app"/></svg>2. Create app</a><span class="arr">→</span>
+  <a class="pill" href="#step3" style="--a:var(--green)"><svg class="ic sm"><use href="#i-key"/></svg>3. Copy API key</a><span class="arr">→</span>
+  <a class="pill" href="#step4" style="--a:var(--purple)"><svg class="ic sm"><use href="#i-shield"/></svg>4. Enable TOTP</a><span class="arr">→</span>
+  <a class="pill" href="#step5" style="--a:var(--pink)"><svg class="ic sm"><use href="#i-phone"/></svg>5. Google Authenticator</a><span class="arr">→</span>
+  <a class="pill" href="#step7" style="--a:var(--orange)"><svg class="ic sm"><use href="#i-plug"/></svg>6. BlackRoad login</a><span class="arr">→</span>
+  <a class="pill" href="#step10" style="--a:var(--red)"><svg class="ic sm"><use href="#i-logout"/></svg>7. Log out safely</a>
+</nav>
+
+<!-- STEP 1 -->
+<section class="step" id="step1" style="--a:var(--gold)">
+  <div class="step-head">
+    <div class="stepnum">1</div>
+    <h2>Open Angel One SmartAPI</h2>
+    <div class="badge"><svg class="ic"><use href="#i-globe"/></svg></div>
+  </div>
+  <p>Open the official Angel One SmartAPI developer portal in your browser.</p>
+  <div class="actions">
+    <a class="btn" href="https://smartapi.angelone.in/login" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-external"/></svg> Open SmartAPI login</a>
+    <a class="btn ghost" href="https://smartapi.angelone.in/" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-globe"/></svg> SmartAPI home</a>
+  </div>
+  <div class="split two">
+    <figure class="visual">
+      <div class="browser">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">smartapi.angelone.in</span></div>
+        <div class="screen">
+          <div class="mock-title">SmartAPI Login</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-user"/></svg>Client ID</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-lock"/></svg>PIN</div>
+          <span class="mock-btn"><svg class="ic sm"><use href="#i-login"/></svg>Login</span>
+        </div>
+      </div>
+    </figure>
+    <ul class="checklist">
+      <li>Enter your Angel One Client ID.</li>
+      <li>Enter your Angel One PIN.</li>
+      <li>Complete any OTP/validation requested by Angel One.</li>
+      <li>Continue to the SmartAPI dashboard.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section class="step" id="step2" style="--a:var(--blue)">
+  <div class="step-head">
+    <div class="stepnum">2</div>
+    <h2>Create a SmartAPI application</h2>
+    <div class="badge"><svg class="ic"><use href="#i-app"/></svg></div>
+  </div>
+  <p>After logging in, find the option to create a new application/project.</p>
+  <div class="actions">
+    <a class="btn" href="https://smartapi.angelone.in/" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-external"/></svg> Open SmartAPI dashboard</a>
+  </div>
+  <div class="split two">
+    <figure class="visual">
+      <div class="browser">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">SmartAPI Dashboard</span></div>
+        <div class="screen">
+          <div class="mock-title">Create App</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-app"/></svg>App Name — My BlackRoad App</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-globe"/></svg>Project URL — https://example.com</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-hash"/></svg>IP Address — Your required IP</div>
+          <span class="mock-btn"><svg class="ic sm"><use href="#i-app"/></svg>Create</span>
+        </div>
+      </div>
+    </figure>
+    <ul class="checklist">
+      <li>Choose any app name you want.</li>
+      <li>Enter the project/callback URL required by SmartAPI.</li>
+      <li>Enter the IP address requested by SmartAPI.</li>
+      <li>Review the information carefully.</li>
+      <li>Click <strong>Create</strong>.</li>
+    </ul>
+  </div>
+  <div class="note warning">
+    <svg class="ic"><use href="#i-alert"/></svg>
+    <div><strong>IP address:</strong> Use the IP value required by the current SmartAPI application
+    form and its documentation. Do not enter a random address just because this guide shows
+    an example.</div>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section class="step" id="step3" style="--a:var(--green)">
+  <div class="step-head">
+    <div class="stepnum">3</div>
+    <h2>Copy your API key and application details</h2>
+    <div class="badge"><svg class="ic"><use href="#i-key"/></svg></div>
+  </div>
+  <p>Once the application is created, open its details and copy the credentials provided by SmartAPI.</p>
+  <div class="split two">
+    <figure class="visual">
+      <div class="browser">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">Application Details</span></div>
+        <div class="screen">
+          <div class="mock-title">My BlackRoad App</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-key"/></svg>API Key — •••••••••••••</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-user"/></svg>Client ID — Your Client ID</div>
+          <span class="mock-btn"><svg class="ic sm"><use href="#i-copy"/></svg>Copy</span>
+        </div>
+      </div>
+    </figure>
+    <div class="credential" style="margin-top:0">
+      <div class="cred"><b><svg class="ic sm"><use href="#i-key"/></svg>API Key</b><span>Copy from your SmartAPI app.</span></div>
+      <div class="cred"><b><svg class="ic sm"><use href="#i-user"/></svg>Client ID</b><span>Your Angel One client identifier.</span></div>
+      <div class="cred"><b><svg class="ic sm"><use href="#i-lock"/></svg>PIN</b><span>Your Angel One trading/login PIN.</span></div>
+    </div>
+  </div>
+  <div class="note success">
+    <svg class="ic"><use href="#i-shield"/></svg>
+    <div><strong>Keep these ready:</strong> API Key + Client ID + PIN. You will enter them in BlackRoad.</div>
+  </div>
+</section>
+
+<!-- STEP 4 -->
+<section class="step" id="step4" style="--a:var(--purple)">
+  <div class="step-head">
+    <div class="stepnum">4</div>
+    <h2>Enable TOTP for Angel One</h2>
+    <div class="badge"><svg class="ic"><use href="#i-shield"/></svg></div>
+  </div>
+  <p>Now set up TOTP authentication for your Angel One account.</p>
+  <div class="actions">
+    <a class="btn" href="https://smartapi.angelone.in/enable-totp" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-external"/></svg> Open Enable TOTP page</a>
+  </div>
+  <div class="split two">
+    <figure class="visual">
+      <div class="browser">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">Angel One • TOTP Setup</span></div>
+        <div class="screen">
+          <div class="mock-title">Enable TOTP</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-user"/></svg>Client ID</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-lock"/></svg>PIN</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-hash"/></svg>OTP / Validation</div>
+          <span class="mock-btn"><svg class="ic sm"><use href="#i-shield"/></svg>Enable TOTP</span>
+        </div>
+      </div>
+    </figure>
+    <ul class="checklist">
+      <li>Open the official Angel One SmartAPI TOTP setup page (button above).</li>
+      <li>Select <strong>Enable TOTP</strong>.</li>
+      <li>Enter your Client ID.</li>
+      <li>Enter your PIN.</li>
+      <li>Complete the requested OTP/validation.</li>
+      <li>Angel One will provide a QR code for authenticator setup.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- STEP 5 -->
+<section class="step" id="step5" style="--a:var(--pink)">
+  <div class="step-head">
+    <div class="stepnum">5</div>
+    <h2>Scan the QR code with Google Authenticator</h2>
+    <div class="badge"><svg class="ic"><use href="#i-qr"/></svg></div>
+  </div>
+  <p>Install/open Google Authenticator on your phone and add the Angel One account.</p>
+  <div class="actions">
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-play"/></svg> Google Play</a>
+    <a class="btn ghost" href="https://apps.apple.com/app/google-authenticator/id388497605" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-apple"/></svg> App Store</a>
+  </div>
+  <div class="split two">
+    <figure class="visual center">
+      <svg class="art" width="190" viewBox="0 0 190 300" role="img" aria-label="Phone scanning a QR code (illustration)">
+        <rect x="5" y="5" width="180" height="290" rx="26" fill="#000" stroke="#3a3a3a" stroke-width="3"/>
+        <rect x="70" y="14" width="50" height="8" rx="4" fill="#222"/>
+        <rect x="18" y="34" width="154" height="236" rx="14" fill="#000"/>
+        <!-- fake QR (illustration only) -->
+        <g fill="#fff">
+          <rect x="50" y="90" width="90" height="90" rx="4"/>
+        </g>
+        <g fill="#000">
+          <rect x="56" y="96" width="26" height="26"/><rect x="108" y="96" width="26" height="26"/><rect x="56" y="148" width="26" height="26"/>
+          <rect x="90" y="96" width="10" height="10"/><rect x="90" y="114" width="10" height="10"/><rect x="90" y="132" width="10" height="10"/>
+          <rect x="108" y="132" width="10" height="10"/><rect x="124" y="148" width="10" height="10"/><rect x="108" y="160" width="10" height="14"/>
+          <rect x="90" y="150" width="10" height="10"/><rect x="62" y="132" width="10" height="8"/>
+        </g>
+        <g fill="#fff">
+          <rect x="63" y="103" width="12" height="12"/><rect x="115" y="103" width="12" height="12"/><rect x="63" y="155" width="12" height="12"/>
+        </g>
+        <!-- scan brackets -->
+        <g fill="none" stroke="#f0ca68" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M38 106V82h24M152 106V82h-24M38 188v24h24M152 188v24h-24"/>
+        </g>
+        <rect x="42" y="134" width="106" height="3" rx="1.5" fill="#f0ca68" opacity=".8"/>
+        <text x="95" y="250" fill="#a7a7a7" font-size="11" text-anchor="middle" font-family="system-ui,sans-serif">Scan QR code</text>
+      </svg>
+      <figcaption>Illustration only — never use a sample QR code.</figcaption>
+    </figure>
+    <ul class="checklist">
+      <li>Open Google Authenticator.</li>
+      <li>Tap the <strong>+</strong> button.</li>
+      <li>Select the option to scan a QR code.</li>
+      <li>Scan the QR code shown by Angel One.</li>
+      <li>Google Authenticator will create a 6-digit verification code.</li>
+    </ul>
+  </div>
+  <div class="note warning">
+    <svg class="ic"><use href="#i-alert"/></svg>
+    <div><strong>Never share the QR code or TOTP secret.</strong> Anyone who obtains the secret
+    may be able to generate your verification codes.</div>
+  </div>
+</section>
+
+<!-- STEP 6 -->
+<section class="step" id="step6" style="--a:var(--cyan)">
+  <div class="step-head">
+    <div class="stepnum">6</div>
+    <h2>Get the 6-digit TOTP</h2>
+    <div class="badge"><svg class="ic"><use href="#i-clock"/></svg></div>
+  </div>
+  <p>Google Authenticator continuously generates a temporary 6-digit code for your Angel One account.</p>
+  <div class="split two">
+    <figure class="visual center">
+      <svg class="art" width="190" viewBox="0 0 190 300" role="img" aria-label="Authenticator app showing a 6-digit code with a countdown (illustration)">
+        <rect x="5" y="5" width="180" height="290" rx="26" fill="#000" stroke="#3a3a3a" stroke-width="3"/>
+        <rect x="70" y="14" width="50" height="8" rx="4" fill="#222"/>
+        <rect x="18" y="34" width="154" height="236" rx="14" fill="#000"/>
+        <text x="30" y="62" fill="#a7a7a7" font-size="12" font-family="system-ui,sans-serif">Authenticator</text>
+        <rect x="28" y="80" width="134" height="86" rx="12" fill="#000" stroke="#3a2f14"/>
+        <text x="40" y="104" fill="#a7a7a7" font-size="11" font-family="system-ui,sans-serif">Angel One</text>
+        <text x="40" y="142" fill="#f0ca68" font-size="26" font-weight="800" letter-spacing="3" font-family="system-ui,sans-serif">123 456</text>
+        <g transform="translate(138 126)">
+          <circle r="12" fill="none" stroke="#2a2a2a" stroke-width="4"/>
+          <circle class="ring" r="12" fill="none" stroke="#f0ca68" stroke-width="4" stroke-linecap="round" />
+        </g>
+        <rect x="28" y="178" width="134" height="40" rx="10" fill="#000" stroke="#222"/>
+        <rect x="40" y="194" width="50" height="7" rx="3" fill="#2a2a2a"/>
+        <rect x="28" y="226" width="134" height="30" rx="10" fill="#000" stroke="#222"/>
+      </svg>
+      <figcaption>Example only — use the current code from your authenticator.</figcaption>
+    </figure>
+    <ul class="checklist">
+      <li>The code changes automatically after a short period.</li>
+      <li>When BlackRoad asks for a TOTP, enter the currently displayed 6-digit code.</li>
+      <li>If the code expires, wait for the next code and enter the new one.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- STEP 7 -->
+<section class="step" id="step7" style="--a:var(--orange)">
+  <div class="step-head">
+    <div class="stepnum">7</div>
+    <h2>Enter everything in BlackRoad</h2>
+    <div class="badge"><svg class="ic"><use href="#i-plug"/></svg></div>
+  </div>
+  <p>Return to the BlackRoad app and enter the credentials you obtained above.</p>
+  <div class="split two">
+    <figure class="visual">
+      <div class="browser">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">BlackRoad • Angel One Connection</span></div>
+        <div class="screen">
+          <div class="mock-title">Angel One Login</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-key"/></svg>API Key</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-user"/></svg>Client ID</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-lock"/></svg>PIN</div>
+          <div class="mock-field"><svg class="ic sm"><use href="#i-clock"/></svg>TOTP — 6 digit code</div>
+          <span class="mock-btn"><svg class="ic sm"><use href="#i-login"/></svg>Login to Angel One</span>
+        </div>
+      </div>
+    </figure>
+    <ul class="checklist">
+      <li>Paste your <strong>API Key</strong>.</li>
+      <li>Enter your <strong>Client ID</strong>.</li>
+      <li>Enter your <strong>PIN</strong>.</li>
+      <li>Open Google Authenticator and enter the current <strong>6-digit TOTP</strong>.</li>
+      <li>Tap <strong>Login</strong>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- STEP 8 -->
+<section class="step" id="step8" style="--a:var(--green)">
+  <div class="step-head">
+    <div class="stepnum">8</div>
+    <h2>After successful login</h2>
+    <div class="badge"><svg class="ic"><use href="#i-dash"/></svg></div>
+  </div>
+  <p>BlackRoad can use the authenticated session for the read-only features that your app supports.</p>
+  <div class="flow chain">
+    <div class="pill"><svg class="ic sm"><use href="#i-key"/></svg>Credentials</div><span class="arr">→</span>
+    <div class="pill"><svg class="ic sm"><use href="#i-shield"/></svg>Angel One authentication</div><span class="arr">→</span>
+    <div class="pill"><svg class="ic sm"><use href="#i-clock"/></svg>Session</div><span class="arr">→</span>
+    <div class="pill"><svg class="ic sm"><use href="#i-dash"/></svg>BlackRoad dashboard</div>
+  </div>
+  <div class="split two">
+    <figure class="visual center">
+      <svg class="art" width="100%" style="max-width:340px" viewBox="0 0 340 190" role="img" aria-label="Dashboard preview (illustration)">
+        <rect x="1" y="1" width="338" height="188" rx="12" fill="#000" stroke="#333"/>
+        <rect x="1" y="1" width="338" height="26" rx="12" fill="#000"/>
+        <circle cx="16" cy="14" r="4" fill="#333"/><circle cx="30" cy="14" r="4" fill="#333"/><circle cx="44" cy="14" r="4" fill="#333"/>
+        <rect x="14" y="40" width="96" height="46" rx="8" fill="#000" stroke="#3a2f14"/>
+        <rect x="122" y="40" width="96" height="46" rx="8" fill="#000" stroke="#1d4932"/>
+        <rect x="230" y="40" width="96" height="46" rx="8" fill="#000" stroke="#2a2a2a"/>
+        <rect x="24" y="52" width="40" height="6" rx="3" fill="#a7a7a7"/><rect x="24" y="66" width="60" height="10" rx="3" fill="#f0ca68"/>
+        <rect x="132" y="52" width="40" height="6" rx="3" fill="#a7a7a7"/><rect x="132" y="66" width="60" height="10" rx="3" fill="#6fd39a"/>
+        <rect x="240" y="52" width="40" height="6" rx="3" fill="#a7a7a7"/><rect x="240" y="66" width="60" height="10" rx="3" fill="#73a9ff"/>
+        <rect x="14" y="98" width="312" height="80" rx="8" fill="#000" stroke="#2a2a2a"/>
+        <polyline points="26,160 66,142 106,150 146,124 186,132 226,110 266,118 314,108" fill="none" stroke="#f0ca68" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <figcaption>Illustration of the BlackRoad dashboard.</figcaption>
+    </figure>
+    <div class="note success" style="margin-top:0">
+      <svg class="ic"><use href="#i-shield"/></svg>
+      <div><strong>Next login:</strong> If BlackRoad needs a fresh TOTP, simply open Google Authenticator
+      and enter the current 6-digit code. You normally do not need to scan the QR code again.</div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 9 -->
+<section class="step" id="step9" style="--a:var(--blue)">
+  <div class="step-head">
+    <div class="stepnum">9</div>
+    <h2>Security checklist</h2>
+    <div class="badge"><svg class="ic"><use href="#i-lock"/></svg></div>
+  </div>
+  <ul class="checklist">
+    <li>Never send your API key, PIN or TOTP secret to another person.</li>
+    <li>Never share screenshots containing your QR code or TOTP secret.</li>
+    <li>Use only the official Angel One/SmartAPI pages for account setup.</li>
+    <li>Do not use a sample QR code or sample 6-digit number from this guide.</li>
+    <li>Log out of BlackRoad when using a shared device.</li>
+  </ul>
+</section>
+
+<!-- STEP 10 : LOGOUT RISKS -->
+<section class="step danger" id="step10" style="--a:var(--red)">
+  <div class="step-head">
+    <div class="stepnum">!</div>
+    <h2>Always log out — what happens if you don't</h2>
+    <div class="badge"><svg class="ic"><use href="#i-logout"/></svg></div>
+  </div>
+  <p>
+    When you log in to Angel One, your brokerage details are turned into a <strong>JWT session token</strong>
+    (plus refresh and feed tokens). Think of it as a <strong>digital key to your account</strong>:
+    whoever holds it can talk to Angel One as you — <strong>without your PIN or TOTP</strong> —
+    until it expires or you log out.
+  </p>
+
+  <div class="split two">
+    <figure class="visual center">
+      <svg class="art" width="100%" style="max-width:340px" viewBox="0 0 340 200" role="img" aria-label="A JWT session token being copied by someone else (illustration)">
+        <rect x="1" y="1" width="338" height="198" rx="14" fill="#000" stroke="#f87171" stroke-opacity=".6"/>
+        <text x="18" y="30" fill="#f87171" font-size="12" font-weight="700" font-family="system-ui,sans-serif">SESSION TOKEN (JWT)</text>
+        <rect x="14" y="42" width="312" height="62" rx="8" fill="#000" stroke="#333"/>
+        <text x="24" y="64" font-size="12" font-family="monospace" fill="#f472b6">eyJhbGciOiJIUzUxMiJ9</text>
+        <text x="24" y="82" font-size="12" font-family="monospace" fill="#a78bfa">.eyJ1c2VybmFtZSI6IkExMjM0</text>
+        <text x="24" y="98" font-size="12" font-family="monospace" fill="#22d3ee">.xxxxxxxx-signature-xxxxxxxx</text>
+        <!-- you -->
+        <circle cx="52" cy="150" r="20" fill="#000" stroke="#4ade80" stroke-width="3"/>
+        <text x="52" y="155" fill="#4ade80" font-size="13" font-weight="700" text-anchor="middle" font-family="system-ui,sans-serif">You</text>
+        <!-- thief -->
+        <circle cx="288" cy="150" r="20" fill="#000" stroke="#f87171" stroke-width="3"/>
+        <text x="288" y="155" fill="#f87171" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui,sans-serif">Thief</text>
+        <path d="M80 150h68" stroke="#4ade80" stroke-width="3" stroke-dasharray="5 5" stroke-linecap="round"/>
+        <path d="M200 150h60" stroke="#f87171" stroke-width="3" stroke-linecap="round"/>
+        <path d="M252 143l9 7-9 7" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="170" y="146" fill="#fb923c" font-size="11" text-anchor="middle" font-family="system-ui,sans-serif">token copied</text>
+        <text x="170" y="178" fill="#a7a7a7" font-size="11" text-anchor="middle" font-family="system-ui,sans-serif">no PIN / TOTP needed</text>
+      </svg>
+      <figcaption>Illustration only — this is not a real token.</figcaption>
+    </figure>
+    <div>
+      <h3 style="color:var(--red)">If someone finds or copies your session token, they can:</h3>
+      <ul class="checklist risk">
+        <li style="--a:var(--red)"><b>See your account:</b> profile, holdings, positions, funds and order history.</li>
+        <li style="--a:var(--orange)"><b>Place, change or cancel orders</b> in your name, if the session allows trading — this can cause real money loss.</li>
+        <li style="--a:var(--pink)"><b>Stay logged in as you</b> in the background, with live market feed access, until the token expires.</li>
+        <li style="--a:var(--purple)"><b>Misuse your private data</b> — portfolio details, client ID and trading patterns.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-top:22px">How a token ends up in the wrong hands</h3>
+  <div class="credential">
+    <div class="cred" style="--a:var(--orange)"><b><svg class="ic sm"><use href="#i-phone"/></svg>Shared / public device</b><span>Browser or app still logged in after you leave.</span></div>
+    <div class="cred" style="--a:var(--pink)"><b><svg class="ic sm"><use href="#i-eye"/></svg>Screenshots &amp; screen share</b><span>Token, API key or logs visible in an image or call.</span></div>
+    <div class="cred" style="--a:var(--purple)"><b><svg class="ic sm"><use href="#i-alert"/></svg>Malware / unsafe extensions</b><span>Can read stored session data from the browser.</span></div>
+    <div class="cred" style="--a:var(--cyan)"><b><svg class="ic sm"><use href="#i-copy"/></svg>Pasted code &amp; logs</b><span>Tokens left in chats, emails, GitHub or support tickets.</span></div>
+  </div>
+
+  <h3 style="margin-top:22px">Without logout vs. with logout</h3>
+  <div class="compare">
+    <div class="cmp bad">
+      <b><svg class="ic"><use href="#i-x"/></svg>Not logging out</b>
+      <ul>
+        <li>Session token stays valid and usable.</li>
+        <li>Anyone with the device or token can act as you.</li>
+        <li>Possible unwanted orders and exposed account data.</li>
+      </ul>
+    </div>
+    <div class="cmp good">
+      <b><svg class="ic"><use href="#i-ok"/></svg>Logging out</b>
+      <ul>
+        <li>Session is closed and the token is invalidated.</li>
+        <li>A copied token is useless to anyone else.</li>
+        <li>Next login needs your PIN and a fresh TOTP.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note warning" style="margin-top:20px;border-color:var(--red)">
+    <svg class="ic" style="color:var(--red)"><use href="#i-alert"/></svg>
+    <div><strong>If you think your session or API key was exposed:</strong> log out of BlackRoad and
+    Angel One immediately, change your PIN, delete or regenerate the API key in the SmartAPI portal,
+    reset TOTP, review your orders and positions, and contact Angel One support.</div>
+  </div>
+  <div class="actions">
+    <a class="btn" href="https://smartapi.angelone.in/" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-external"/></svg> Manage API keys</a>
+    <a class="btn ghost" href="https://www.angelone.in/" target="_blank" rel="noopener noreferrer" style="--a:var(--orange)"><svg class="ic"><use href="#i-external"/></svg> Angel One support</a>
+  </div>
+</section>
+
+<footer>
+  <div class="actions">
+    <a class="btn ghost" href="https://smartapi.angelone.in/" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-external"/></svg> SmartAPI portal</a>
+    <a class="btn ghost" href="https://www.angelone.in/" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-external"/></svg> Angel One</a>
+    <a class="btn ghost" href="#top" onclick="window.scrollTo({top:0});return false;"><svg class="ic" style="transform:rotate(180deg)"><use href="#i-download"/></svg> Back to top</a>
+  </div>
+  <img src="data:image/png;base64,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" alt="" width="34" height="34" style="border-radius:8px;display:block;margin:0 auto 8px"> BlackRoad • Brokerage connection setup (Angel One SmartAPI)<br>
+  This guide is an instructional interface; always follow the current Angel One SmartAPI requirements.
+</footer>
+
+</div>
+
+</body>
+</html>

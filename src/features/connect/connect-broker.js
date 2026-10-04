@@ -10,6 +10,8 @@
    ========================================================= */
 
 import { icon } from "../../components/icons.js";
+import { AngelConnect, angelIsConnected, openLoginDialog, takeAngelNotice } from "./angel-connect.js";
+import { BROKER_EVENT } from "../../services/angel-session.js";
 
 /* `api` is the name of the broker's own developer API. */
 const BROKERS = [
@@ -21,6 +23,10 @@ const BROKERS = [
     { name: "HDFC Securities", domain: "hdfcsec.com", api: "InvestRight Open API", about: "HDFC Securities' API for orders, trades and holdings." },
     { name: "Kotak Securities", domain: "kotaksecurities.com", api: "Kotak Neo API", about: "Kotak Securities' API for trading on the Neo platform." }
 ];
+
+/* "How to setup" guide for Angel One. Put your file in the assets folder with this
+   name, or change the path here (an HTML page). */
+const ANGEL_SETUP_GUIDE = "./assets/brokerage-connect-setup.html";
 
 /* The broker's own icon, loaded from its domain (same approach as
    Brokerage Report Readers). Falls back to the first letter. */
@@ -37,6 +43,8 @@ const esc = (v) =>
 const logoHTML = (b, size) =>
     `<span class="cb-logo cb-logo-${size}" data-letter="${esc(b.name.charAt(0))}"><img class="cb-img" src="${esc(logoSrc(b))}" alt="${esc(b.name)} logo" loading="lazy" referrerpolicy="no-referrer"></span>`;
 
+const isAngel = (b) => b.name === "Angel One";
+
 function listView() {
     return `
         <div class="br-page-heading">
@@ -52,7 +60,12 @@ function listView() {
                 <button type="button" class="br-card cb-card" data-broker="${i}">
                     ${logoHTML(b, "lg")}
                     <strong class="cb-name">${esc(b.name)}</strong>
-                    <span class="cb-cta">Select ${icon("chevron-right", { size: 16 })}</span>
+                    ${
+                        isAngel(b) && angelIsConnected()
+                            ? `<span class="br-badge br-badge-success cb-connected">${icon("circle-check", { size: 14 })} Connected</span>`
+                            : ""
+                    }
+                    <span class="cb-cta">${isAngel(b) && angelIsConnected() ? "View data" : "Select"} ${icon("chevron-right", { size: 16 })}</span>
                 </button>`
             ).join("")}
         </div>
@@ -60,17 +73,26 @@ function listView() {
 }
 
 function detailView(b, connecting) {
+    // Once Angel One is connected, only its data is shown (no logo card), so nothing sits above it.
+    const angelOn = isAngel(b) && angelIsConnected();
+    const notice = isAngel(b) && !angelOn ? takeAngelNotice() : "";
+
     return `
         <div class="br-page-heading">
             <div>
                 <h2>${esc(b.name)}</h2>
-                <p>Connect your account through the broker's API.</p>
+                <p>${angelOn ? "Your connected account." : "Connect your account through the broker's API."}</p>
             </div>
 
             <button type="button" class="br-button" data-action="back">
                 ${icon("arrow-left", { size: 16 })} All brokers
             </button>
         </div>
+
+        ${
+            angelOn
+                ? `<div data-angel-mount></div>`
+                : `${notice ? `<div class="ac-notice" role="status">${icon("circle-check", { size: 18 })}<span>${esc(notice)}</span></div>` : ""}
 
         <section class="br-card cb-detail">
             ${logoHTML(b, "xl")}
@@ -81,13 +103,22 @@ function detailView(b, connecting) {
                 <p class="br-muted">${esc(b.about)}</p>
             </div>
 
+            ${
+                isAngel(b)
+                    ? `<a class="br-button cb-setup" href="${esc(ANGEL_SETUP_GUIDE)}" target="_blank" rel="noopener">
+                ${icon("file-chart-column", { size: 20 })} How to setup ${icon("arrow-up-right", { size: 20 })}
+            </a>`
+                    : ""
+            }
+
             <button type="button" class="br-button br-button-primary cb-connect" data-action="connect">
                 ${icon("plug", { size: 18 })} Connect ${esc(b.name)}
             </button>
-        </section>
+        </section>`
+        }
 
         ${
-            connecting
+            connecting && !isAngel(b)
                 ? `<section class="br-card cb-working" role="status" aria-live="polite">
                     ${icon("clock", { size: 20 })}
                     <div>
@@ -109,6 +140,9 @@ export async function ConnectBroker() {
 
     function render() {
         page.innerHTML = broker < 0 ? listView() : detailView(BROKERS[broker], connecting);
+
+        // The Angel One panel keeps its own state, so the same element is re-attached each time.
+        page.querySelector("[data-angel-mount]")?.replaceChildren(AngelConnect());
     }
 
     page.addEventListener("click", (event) => {
@@ -131,6 +165,12 @@ export async function ConnectBroker() {
         }
 
         if (event.target.closest('[data-action="connect"]')) {
+            // Angel One opens the login popup. Other brokers are not built yet.
+            if (isAngel(BROKERS[broker])) {
+                openLoginDialog();
+                return;
+            }
+
             connecting = true;
             render();
             page.querySelector(".cb-working")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -153,6 +193,19 @@ export async function ConnectBroker() {
         },
         true
     );
+
+    // Connecting / logging out redraws this page (and the Connected label on the list).
+    const onBrokerChange = () => {
+        if (!page.isConnected) {
+            window.removeEventListener(BROKER_EVENT, onBrokerChange);
+            return;
+        }
+
+        render();
+        window.scrollTo(0, 0);
+    };
+
+    window.addEventListener(BROKER_EVENT, onBrokerChange);
 
     render();
 

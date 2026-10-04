@@ -10,6 +10,8 @@
    keeps blocking writes in guest mode.
    ========================================================= */
 
+import { clearAngelSession } from "./angel-session.js";
+
 const ACTIVE_SCOPE_KEY = "br_active_scope";
 
 function lsGet(key) {
@@ -117,6 +119,8 @@ export async function getSession() {
 /* ---------------- actions ---------------- */
 
 export async function logout() {
+    // Signing out of BlackRoad also drops any linked broker (tab-only session).
+    clearAngelSession();
     stDelete("session", false);
     lsRemove(ACTIVE_SCOPE_KEY);
 }
