@@ -62,7 +62,7 @@ function comingSoon(feature) {
 }
 
 /* Plain profile icons for the guest picker, one solid colour per tier. */
-const AVATAR = (color) => `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#141414"/><circle cx="32" cy="24" r="10" fill="${color}"/><path d="M11 60c0-14 9-21 21-21s21 7 21 21z" fill="${color}"/></svg>`;
+const AVATAR = (color) => `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="24" r="10" fill="${color}"/><path d="M11 60c0-14 9-21 21-21s21 7 21 21z" fill="${color}"/></svg>`;
 const AVATARS = {
     "bottom-50": AVATAR("#6B7280"),
     "middle-40": AVATAR("#3B82F6"),
