@@ -63,6 +63,7 @@ function comingSoon(feature) {
 
 /* Plain profile icons for the guest picker, one solid colour per tier. */
 const AVATAR = (color) => `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="24" r="10" fill="${color}"/><path d="M11 60c0-14 9-21 21-21s21 7 21 21z" fill="${color}"/></svg>`;
+const TIER_COLOR = { "bottom-50": "#6B7280", "middle-40": "#3B82F6", "top-10": "#8B5CF6", "top-1": "#D4AF37" };
 const AVATARS = {
     "bottom-50": AVATAR("#6B7280"),
     "middle-40": AVATAR("#3B82F6"),
@@ -81,7 +82,7 @@ export function chooseGuestProfile(onPick) {
             <p id="br-guest-text">Pick a portfolio to explore. Everything is fictional and read-only.</p>
             <div class="br-guest-options">
                 ${Object.entries(GUEST_PROFILES).map(([id, p]) => `
-                    <button type="button" class="br-guest-option" data-profile="${id}">
+                    <button type="button" class="br-guest-option" data-profile="${id}" style="--tier:${TIER_COLOR[id] || '#6B7280'}">
                         <span class="br-guest-avatar">${AVATARS[id] || ""}</span>
                         <span class="br-guest-option-name">${p.label}</span>
                         <span class="br-guest-option-range">${p.range}</span>

@@ -12,6 +12,7 @@ import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
 import { themeToggleContent, currencyToggleContent } from "../components/layout/topbar.js";
 import { initCurrency, toggleCurrency, getCurrency } from "../services/currency.js";
+import { startCurrencyTransition, endCurrencyTransition } from "../components/currency-transition.js";
 import { initChartTooltips } from "../components/chart-tooltip.js";
 import { pageSkeleton, skeletonVariantFor } from "../components/skeleton.js";
 import { initUX } from "./ux.js";
@@ -45,11 +46,16 @@ window.addEventListener("br:currency-change", (event) => {
     });
 
     if (document.querySelector("#app > .br-app-shell")) {
-        renderApp().catch((error) => console.error("BlackRoad: Route rendering error:", error));
+        renderApp()
+            .catch((error) => console.error("BlackRoad: Route rendering error:", error))
+            .finally(() => endCurrencyTransition());
+    } else {
+        endCurrencyTransition();
     }
 });
 
 window.addEventListener("br:currency-error", () => {
+    endCurrencyTransition(true);
     document.querySelectorAll('[data-action="toggle-currency"]').forEach((button) => {
         button.classList.remove("is-busy");
         button.classList.add("is-error");
@@ -158,6 +164,7 @@ function buildShell(route) {
         .querySelector('[data-action="toggle-currency"]')
         ?.addEventListener("click", (event) => {
             event.currentTarget.classList.add("is-busy");
+            startCurrencyTransition(getCurrency() === "USD" ? "INR" : "USD");
             toggleCurrency();
         });
 

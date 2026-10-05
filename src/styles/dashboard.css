@@ -463,3 +463,21 @@
 .br-dash-start-item .br-icon:last-child { margin-left: auto; color: var(--br-text-muted); }
 .br-dash-start-text { display: flex; flex-direction: column; min-width: 0; }
 .br-dash-start-text small { color: var(--br-text-muted); font-size: var(--br-font-size-xs); }
+
+
+/* ---------- Guest wealth-tier badge ---------- */
+.br-dash-tier {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--tier);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--br-text);
+}
+.br-dash-tier i { width: 10px; height: 10px; border-radius: 50%; background: var(--tier); }
+.br-dash-tier b { font-weight: 700; color: var(--tier); }
+.br-dash-tier small { color: var(--br-text-secondary); font-size: 12px; }

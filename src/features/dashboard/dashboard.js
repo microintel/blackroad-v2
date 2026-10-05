@@ -1,5 +1,5 @@
 import { navigate } from "../../app/router.js";
-import { currentUser } from "../../services/auth.js";
+import { currentUser, isGuestSync, getGuestProfile, GUEST_PROFILES } from "../../services/auth.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { icon, FEATURE_ICON } from "../../components/icons.js";
 
@@ -395,6 +395,12 @@ export async function Dashboard() {
         ? `${greeting()}, ${escapeText(firstName(user))}`
         : greeting();
 
+    const TIER_COLORS = { "bottom-50": "#6B7280", "middle-40": "#3B82F6", "top-10": "#8B5CF6", "top-1": "#D4AF37" };
+    const tierId = isGuestSync() ? getGuestProfile() : null;
+    const tierBadge = tierId
+        ? `<span class="br-dash-tier" style="--tier:${TIER_COLORS[tierId]}"><i aria-hidden="true"></i><b>${GUEST_PROFILES[tierId].label}</b><small>${GUEST_PROFILES[tierId].range}</small></span>`
+        : "";
+
     const showMF = data.mutualFunds.hasData && data.series.length > 0;
 
     const grossTotal = data.totalAssets + data.totalLiabilities;
@@ -412,6 +418,7 @@ export async function Dashboard() {
                 <p class="br-dash-date">${longDate()}</p>
                 <h2>${hello}</h2>
                 <p class="br-dash-sub">Here’s how your money looks today.</p>
+                ${tierBadge}
             </div>
             ${initial ? `<button type="button" class="br-dash-avatar" data-path="/account" aria-label="Open account">${initial}</button>` : ""}
         </div>

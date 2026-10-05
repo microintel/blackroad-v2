@@ -556,3 +556,53 @@
     .br-confirm { border-radius: var(--br-radius-lg); }
     .br-confirm-footer .br-button { flex: 1; }
 }
+
+
+/* ---------- Currency switch animation ---------- */
+.br-fx-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: br-fx-in 0.25s ease both;
+}
+.br-fx-layer.is-out { animation: br-fx-out 0.25s ease both; }
+.br-fx-card { display: grid; justify-items: center; gap: 18px; padding: 28px; }
+.br-fx-coin {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    transform-style: preserve-3d;
+    animation: br-fx-flip 1s linear infinite;
+}
+.br-fx-face {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #D4AF37;
+    color: #111111;
+    font-size: 40px;
+    font-weight: 700;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+.br-fx-face--b { transform: rotateY(180deg); }
+.br-fx-text { margin: 0; color: #FFFFFF; font-size: 16px; font-weight: 600; letter-spacing: 0.01em; }
+.br-fx-bar { width: 180px; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
+.br-fx-bar i { display: block; height: 100%; width: 100%; background: #D4AF37; transform-origin: left; animation: br-fx-fill 2s linear both; }
+
+@keyframes br-fx-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes br-fx-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes br-fx-flip { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+@keyframes br-fx-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .br-fx-coin { animation: none; }
+    .br-fx-face--b { display: none; }
+}
