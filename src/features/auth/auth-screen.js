@@ -1,4 +1,4 @@
-import { login, register, loginGuest } from "../../services/auth.js";
+import { login, register, loginGuest, GUEST_PROFILES } from "../../services/auth.js";
 import { navigate, hardNavigate } from "../../app/router.js";
 import { authBackground, startParticles } from "./auth-background.js";
 
@@ -59,6 +59,58 @@ function comingSoon(feature) {
     document.addEventListener("keydown", onKey, true);
     document.body.appendChild(layer);
     layer.querySelector("[data-popup-ok]").focus();
+}
+
+/* Plain profile icons for the guest picker, one solid colour per tier. */
+const AVATAR = (color) => `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#141414"/><circle cx="32" cy="24" r="10" fill="${color}"/><path d="M11 60c0-14 9-21 21-21s21 7 21 21z" fill="${color}"/></svg>`;
+const AVATARS = {
+    "bottom-50": AVATAR("#6B7280"),
+    "middle-40": AVATAR("#3B82F6"),
+    "top-10": AVATAR("#8B5CF6"),
+    "top-1": AVATAR("#D4AF37")
+};
+
+/* Guest login: ask which sample portfolio to explore, then enter the app with it. */
+export function chooseGuestProfile(onPick) {
+    const previous = document.activeElement;
+    const layer = document.createElement("div");
+    layer.className = "br-auth-popup-layer";
+    layer.innerHTML = `
+        <div class="br-auth-popup br-auth-popup--wide" role="dialog" aria-modal="true" aria-labelledby="br-guest-title" aria-describedby="br-guest-text">
+            <h3 id="br-guest-title">Explore with sample data</h3>
+            <p id="br-guest-text">Pick a portfolio to explore. Everything is fictional and read-only.</p>
+            <div class="br-guest-options">
+                ${Object.entries(GUEST_PROFILES).map(([id, p]) => `
+                    <button type="button" class="br-guest-option" data-profile="${id}">
+                        <span class="br-guest-avatar">${AVATARS[id] || ""}</span>
+                        <span class="br-guest-option-name">${p.label}</span>
+                        <span class="br-guest-option-range">${p.range}</span>
+                    </button>`).join("")}
+            </div>
+            <button type="button" class="br-button" data-popup-cancel>Cancel</button>
+        </div>
+    `;
+
+    const close = () => {
+        document.removeEventListener("keydown", onKey, true);
+        layer.remove();
+        if (previous && previous.isConnected && previous.focus) previous.focus();
+    };
+    const onKey = (e) => {
+        if (e.key === "Escape") { e.preventDefault(); close(); }
+    };
+
+    layer.addEventListener("click", (e) => { if (e.target === layer) close(); });
+    layer.querySelector("[data-popup-cancel]").addEventListener("click", close);
+    layer.querySelectorAll("[data-profile]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+            layer.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+            onPick(btn.dataset.profile);
+        })
+    );
+    document.addEventListener("keydown", onKey, true);
+    document.body.appendChild(layer);
+    layer.querySelector("[data-profile]").focus();
 }
 
 export function AuthScreen(mode) {
@@ -176,9 +228,11 @@ export function AuthScreen(mode) {
         comingSoon(isLogin ? "Google sign-in" : "Google registration");
     });
 
-    el.querySelector("[data-guest]").addEventListener("click", async () => {
-        await loginGuest();
-        enterApp();
+    el.querySelector("[data-guest]").addEventListener("click", () => {
+        chooseGuestProfile(async (profile) => {
+            await loginGuest(profile);
+            enterApp();
+        });
     });
 
     return el;

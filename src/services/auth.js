@@ -11,6 +11,7 @@
    ========================================================= */
 
 import { clearAngelSession } from "./angel-session.js";
+import { DATABASES } from "../data/db-registry.js";
 
 const ACTIVE_SCOPE_KEY = "br_active_scope";
 
@@ -118,15 +119,56 @@ export async function getSession() {
 
 /* ---------------- actions ---------------- */
 
+/* Guest sample data lives in the "<baseName>::guest" databases. Delete them all
+   so nothing from a guest session is left behind. Never blocks logout for long. */
+function deleteGuestDatabases() {
+    const one = (name) => new Promise((resolve) => {
+        try {
+            const req = indexedDB.deleteDatabase(name);
+            req.onsuccess = req.onerror = req.onblocked = () => resolve();
+        } catch { resolve(); }
+    });
+
+    const all = Promise.all(
+        Object.values(DATABASES).map((c) => one(`${c.baseName}::guest`))
+    );
+
+    return Promise.race([all, new Promise((r) => setTimeout(r, 2000))]);
+}
+
 export async function logout() {
+    const wasGuest = getActiveScopeSync() === "guest";
+
     // Signing out of BlackRoad also drops any linked broker (tab-only session).
     clearAngelSession();
     stDelete("session", false);
     lsRemove(ACTIVE_SCOPE_KEY);
+
+    // Guest logout: remove the guest's stored data (sample databases + markers).
+    if (wasGuest) {
+        await deleteGuestDatabases();
+        lsRemove("br_guest_profile");
+        lsRemove("br_guest_seeded");
+    }
 }
 
-export async function loginGuest() {
-    stSet("session", { guest: true, ts: Date.now() }, false);
+/* Guest sample-data profiles (the four wealth tiers offered at guest login). */
+export const GUEST_PROFILES = {
+    "bottom-50": { label: "Bottom 50%", range: "Net worth up to ₹10 lakh", file: "samples/bottom-50.json" },
+    "middle-40": { label: "Middle 40%", range: "₹10 lakh – ₹1 crore", file: "samples/middle-40.json" },
+    "top-10": { label: "Top 10%", range: "₹1 crore – ₹50 crore", file: "samples/top-10.json" },
+    "top-1": { label: "Top 1%", range: "₹50 crore – ₹99 crore", file: "samples/top-1.json" }
+};
+
+export function getGuestProfile() {
+    const id = lsGet("br_guest_profile");
+    return id && GUEST_PROFILES[id] ? id : null;
+}
+
+export async function loginGuest(profile) {
+    const id = profile && GUEST_PROFILES[profile] ? profile : null;
+    stSet("session", { guest: true, profile: id, ts: Date.now() }, false);
+    if (id) lsSet("br_guest_profile", id);
     lsSet(ACTIVE_SCOPE_KEY, "guest");
 }
 

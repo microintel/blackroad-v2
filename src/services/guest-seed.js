@@ -14,9 +14,22 @@
 
 import { dataService } from "../data/data-service.js";
 import { DATABASES } from "../data/db-registry.js";
-import { isGuestSync } from "./auth.js";
+import { isGuestSync, getGuestProfile, GUEST_PROFILES } from "./auth.js";
 
-const SAMPLE_URL = new URL("../../sample.json", import.meta.url).href;
+const DEFAULT_SAMPLE_URL = new URL("../../sample.json", import.meta.url).href;
+
+/* The guest picks one of four wealth tiers at login; each has its own backup file.
+   With no choice stored (older guest sessions) the original sample.json is used. */
+function sampleSource() {
+    const profile = getGuestProfile();
+
+    if (!profile) return { id: "default", url: DEFAULT_SAMPLE_URL };
+
+    return {
+        id: profile,
+        url: new URL("../../" + GUEST_PROFILES[profile].file, import.meta.url).href
+    };
+}
 const SEEDED_KEY = "br_guest_seeded";
 
 const MODULES = Object.keys(DATABASES);
@@ -35,9 +48,9 @@ function lsSet(key, value) {
     try { localStorage.setItem(key, value); } catch { /* ignore */ }
 }
 
-async function fetchSample() {
-    const res = await fetch(SAMPLE_URL, { cache: "no-cache" });
-    if (!res.ok) throw new Error(`sample.json: HTTP ${res.status}`);
+async function fetchSample(url) {
+    const res = await fetch(url, { cache: "no-cache" });
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
 
     const payload = await res.json();
 
@@ -103,8 +116,10 @@ async function writeModule(module, stores) {
 async function seed() {
     if (!isGuestSync()) return false;
 
-    const payload = await fetchSample();
-    const version = String(payload.exportedAt || "1");
+    const source = sampleSource();
+    const payload = await fetchSample(source.url);
+    // The tier is part of the version, so switching tiers re-seeds the guest data.
+    const version = source.id + ":" + String(payload.exportedAt || "1");
 
     if (lsGet(SEEDED_KEY) === version && (await hasData())) return false;
 

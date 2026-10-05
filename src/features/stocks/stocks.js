@@ -437,7 +437,8 @@ async function refreshPrices(page, silent) {
 
         if (updated > 0) {
             Object.assign(prices, updates);
-            await persist();
+            // Guests are read-only: show the live prices but don't write them to the DB.
+            if (!isGuestSync()) await persist();
 
             // Don't rebuild the table under a price the user is typing
             const typing = document.activeElement?.matches?.(

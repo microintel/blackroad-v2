@@ -1,6 +1,7 @@
 import { confirmLogout } from "../../components/confirm-dialog.js";
 import { hardNavigate } from "../../app/router.js";
 import { AppearanceCard } from "./appearance.js";
+import { chooseGuestProfile } from "../auth/auth-screen.js";
 import {
     getSession,
     currentUser,
@@ -105,9 +106,11 @@ function renderSignedOut(page) {
         reloadApp();
     });
 
-    page.querySelector('[data-action="guest"]').addEventListener("click", async () => {
-        await loginGuest();
-        reloadApp();
+    page.querySelector('[data-action="guest"]').addEventListener("click", () => {
+        chooseGuestProfile(async (profile) => {
+            await loginGuest(profile);
+            reloadApp();
+        });
     });
 }
 
