@@ -152,8 +152,8 @@ export function AuthScreen(mode) {
             <p>${isLogin ? "Welcome back. Sign in to see your data." : "Your data stays on this device."}</p>
 
             <form class="br-auth-form" novalidate>
-                ${isLogin ? "" : `<label class="br-field"><input name="name" class="br-input" autocomplete="name" placeholder=" " required><span class="br-field-label">Full name</span></label>`}
-                <label class="br-field"><input name="email" type="email" class="br-input" autocomplete="email" placeholder=" " required><span class="br-field-label">Email</span></label>
+                ${isLogin ? "" : `<label class="br-field"><input name="name" class="br-input" autocomplete="name" enterkeyhint="next" placeholder=" " required><span class="br-field-label">Full name</span></label>`}
+                <label class="br-field"><input name="email" type="email" class="br-input" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next" placeholder=" " required><span class="br-field-label">Email</span></label>
                 ${isLogin ? "" : `<div class="br-auth-row">`}
                 <label class="br-field"><span class="br-auth-pw"><input name="password" type="password" class="br-input" autocomplete="${isLogin ? "current-password" : "new-password"}" placeholder=" " required><span class="br-field-label">Password</span><button type="button" class="br-auth-eye" data-eye aria-label="Show password" aria-pressed="false">Show</button></span></label>
                 ${isLogin ? "" : `<label class="br-field"><input name="confirmPassword" type="password" class="br-input" autocomplete="new-password" placeholder=" " required><span class="br-field-label">Confirm password</span></label></div>`}
@@ -162,7 +162,7 @@ export function AuthScreen(mode) {
             </form>
 
             <div class="br-auth-divider"><span>or</span></div>
-            <button type="button" class="br-auth-google" data-google>${GOOGLE_ICON}<span>${isLogin ? "Sign in with Google" : "Register with Google"}</span></button>
+            <button type="button" class="br-auth-google" data-google>${GOOGLE_ICON}<span><span class="br-auth-long">${isLogin ? "Sign in with " : "Register with "}</span>Google</span></button>
 
             <div class="br-auth-alt">
                 ${isLogin
@@ -170,7 +170,7 @@ export function AuthScreen(mode) {
                        <a href="#/register" data-go="/register" class="br-button">Create an account</a>`
                     : `<span>Already have an account?</span>
                        <a href="#/login" data-go="/login" class="br-button">Sign in</a>`}
-                <button type="button" class="br-button br-auth-guest" data-guest>Continue as guest (read-only)</button>
+                <button type="button" class="br-button br-auth-guest" data-guest>Continue as guest<span class="br-auth-long"> (read-only)</span></button>
             </div>
 
             <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>

@@ -752,3 +752,102 @@
 @media (prefers-reduced-motion: reduce) {
     .br-guest-option { animation: none; transition: none; }
 }
+
+
+/* =========================================================
+   PHONE ONLY (<= 640px): minimal login / register + guest picker
+   Desktop and tablet are untouched.
+   ========================================================= */
+
+@media (min-width: 641px) {
+    .br-auth .br-auth-long { display: inline; }
+}
+
+@media (max-width: 640px) {
+
+    /* ---- Less text: tabs already say Sign in / Register ---- */
+    .br-auth .br-auth-long,
+    .br-auth .br-auth-card > h2,
+    .br-auth .br-auth-card > p,
+    .br-auth .br-auth-aside h1,
+    .br-auth .br-auth-alt > span,
+    .br-auth .br-auth-alt > a.br-button { display: none !important; }
+
+    /* Brand sits quietly at the top */
+    .br-auth .br-auth-aside { padding: calc(env(safe-area-inset-top) + 28px) 24px 12px; }
+    .br-auth .br-auth-aside-brand .br-brand-name { font-size: 22px; }
+    :root .br-auth .br-auth-aside-brand .br-brand-logo { width: 38px; height: 38px; flex-basis: 38px; font-size: 16px; border-radius: 12px; }
+
+    /* Sheet: tighter and calmer */
+    .br-auth .br-auth-card { padding: 10px 22px calc(18px + env(safe-area-inset-bottom)); }
+    .br-auth .br-auth-card::before { margin-bottom: 10px; }
+    .br-auth .br-auth-tabs { margin-bottom: 8px; }
+    .br-auth .br-auth-tabs a { min-height: 42px; font-size: 14px; }
+
+    /* Fields: shorter, quieter */
+    .br-auth .br-auth-form { gap: 10px; }
+    .br-auth .br-auth-form .br-input { min-height: 50px; padding: 20px 0 6px; }
+    .br-auth .br-field-label { top: 16px; font-size: 14.5px; }
+    .br-auth .br-auth-row { grid-template-columns: 1fr; gap: 10px; }
+
+    /* Show / Hide word becomes a small eye icon (JS still toggles aria-pressed) */
+    .br-auth .br-auth-eye {
+        top: 62%;
+        width: 36px; height: 36px; min-height: 36px; padding: 0;
+        font-size: 0; line-height: 0; color: transparent;
+    }
+    .br-auth .br-auth-eye::before {
+        content: "";
+        display: block;
+        width: 20px; height: 20px; margin: auto;
+        background-color: var(--br-text-muted);
+        -webkit-mask: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+                mask: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+    }
+    .br-auth .br-auth-eye[aria-pressed="true"]::before {
+        background-color: var(--au-a);
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22'/%3E%3C/svg%3E");
+                mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22'/%3E%3C/svg%3E");
+    }
+
+    /* Buttons: one big primary, compact Google, quiet guest link */
+    .br-auth .br-button-primary,
+    :root .br-auth .br-button-primary { min-height: 50px; font-size: 15px; margin-top: 4px; }
+    .br-auth .br-auth-divider { margin: 12px 0 10px; font-size: 12px; }
+    .br-auth .br-auth-google { min-height: 46px; font-size: 14px; gap: 10px; }
+    .br-auth .br-auth-google-icon { width: 18px; height: 18px; }
+    .br-auth .br-auth-alt { margin-top: 6px; }
+    .br-auth .br-auth-alt .br-auth-guest { min-height: 38px; font-size: 13.5px; }
+    .br-auth .br-auth-credit { margin-top: 4px; font-size: 11px; opacity: 0.7; }
+
+    /* ---- Guest picker: scrolls, compact 2x2 cards, small icons ---- */
+    .br-auth-popup-layer {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: calc(env(safe-area-inset-top) + 16px) 14px calc(env(safe-area-inset-bottom) + 16px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+    }
+    .br-auth-popup { margin: auto 0; }
+
+    .br-auth-popup--wide { padding: 22px 16px 14px; border-radius: 24px; gap: 4px; }
+    .br-auth-popup--wide h3 { font-size: 19px; }
+    .br-auth-popup--wide > p { font-size: 13px; margin-bottom: 10px; }
+
+    .br-guest-options { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .br-guest-option { padding: 14px 8px 12px; border-radius: 16px; gap: 2px; }
+    .br-guest-option::before { height: 2px; }
+    .br-guest-avatar { width: 44px; height: 44px; margin-bottom: 6px; }
+    .br-guest-option-name { font-size: 15px; }
+    .br-guest-option-range { font-size: 11.5px; }
+    .br-guest-option:hover { transform: none; box-shadow: none; }
+    .br-guest-option:hover .br-guest-avatar { transform: none; }
+    .br-auth-popup--wide .br-button[data-popup-cancel] { margin-top: 6px; min-height: 40px; }
+}
+
+@media (max-width: 640px) and (max-height: 600px) {
+    .br-auth .br-auth-aside { display: none; }
+}
