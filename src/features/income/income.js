@@ -25,6 +25,12 @@ import { mountIncomeSearch } from "./income-search.js";
 import { renderIncomeCompare, handleCompareEvent } from "./income-compare.js";
 import { renderIncomeExpand } from "./income-expand.js";
 import { renderIncomeJumpTo } from "./income-jumpto.js";
+import {
+    categoryIconHTML,
+    categoryPickerHTML,
+    initCategoryPicker,
+    loadCustomCategories
+} from "./expense-categories.js";
 let currentExpandPanel = "expense";
 let currentEntries = [];
 let currentSearch = "";
@@ -1628,6 +1634,10 @@ async function loadEntries(
                 .getIncomeStore();
 
 
+        /* custom expense categories (from the database) for icons + pickers */
+        await loadCustomCategories();
+
+
         currentEntries =
             await store.getEntries();
 
@@ -2682,6 +2692,11 @@ function renderTransaction(
             data-txn-index="${index}"
         >
 
+            ${categoryIconHTML(
+                transaction.category,
+                { size: "md" }
+            )}
+
             <div class="inc-txn-text">
 
                 <strong>
@@ -3600,42 +3615,8 @@ function addTransactionRow(
 
             ${fieldHTML(
                 "Category",
-                `<select
-                    data-field="category"
-                >
-
-                    <option value="">
-                        Select category
-                    </option>
-
-                    ${EXPENSE_CATEGORIES
-                        .map(
-                            (
-                                category
-                            ) => `
-
-                                <option
-                                    value="${escapeAttribute(
-                                        category
-                                    )}"
-
-                                    ${
-                                        category ===
-                                        existing?.category
-                                            ? "selected"
-                                            : ""
-                                    }
-                                >
-                                    ${escapeHTML(
-                                        category
-                                    )}
-                                </option>
-
-                            `
-                        )
-                        .join("")}
-
-                </select>`
+                categoryPickerHTML(),
+                "inc-field-category"
             )}
 
 
@@ -3766,6 +3747,11 @@ function addTransactionRow(
 
     container.appendChild(
         row
+    );
+
+    initCategoryPicker(
+        row,
+        existing?.category || ""
     );
 
 }

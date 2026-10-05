@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v82";
+const CACHE_VERSION = "v83";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -92,6 +92,8 @@ const SHELL = [
     "./src/features/income/income-expand.js",
     "./src/features/income/income-jumpto.js",
     "./src/features/income/income-search.js",
+    "./src/features/income/income-search-pdf.js",
+    "./src/features/income/expense-categories.js",
     "./src/features/income/income-service.js",
     "./src/features/income/income-shared.js",
     "./src/features/income/income-statement.js",

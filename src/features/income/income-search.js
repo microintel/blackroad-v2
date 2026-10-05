@@ -4,8 +4,8 @@ import { icon } from "../../components/icons.js";
  * Flat, transaction-level search: every income row and every
  * expense/investment row is an independent result.
  * Text (word-prefix) + source/category chips + type + date range
- * + sort + saved presets + summary + CSV export of the results.
- * (PDF export of results is deferred to the global export phase.)
+ * + sort + saved presets + summary + CSV export and an
+ * accounting-style PDF statement of the results.
  */
 import {
     entryIncomeAmount,
@@ -13,6 +13,10 @@ import {
     isInvestmentCategory
 } from "./income-service.js";
 import { esc, formatMoney } from "./income-shared.js";
+import { categoryIconHTML } from "./expense-categories.js";
+import { exportSearchPDF } from "./income-search-pdf.js";
+import { startReportProgress } from "../../components/report-progress.js";
+import { currentUser, isGuestSync } from "../../services/auth.js";
 
 const PRESETS_KEY = "br-search-presets"; // same key as the old app
 
@@ -208,6 +212,7 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
                 <button type="button" class="br-button" data-s-action="save-preset">Save filters</button>
                 <button type="button" class="br-button" data-s-action="clear">Clear</button>
                 <button type="button" class="br-button" data-s-action="csv" hidden>Download CSV</button>
+                <button type="button" class="br-button br-button-primary" data-s-action="pdf" hidden>Download PDF</button>
             </div>
             <div class="br-chip-row inc-wrap-row" data-s="presets" style="margin-top:8px;"></div>
         </div>
@@ -229,16 +234,19 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
 
     function renderResults() {
         const csvBtn = container.querySelector('[data-s-action="csv"]');
+        const pdfBtn = container.querySelector('[data-s-action="pdf"]');
         if (!hasFilters()) {
             current = [];
             $("summary").innerHTML = "";
             csvBtn.hidden = true;
+            pdfBtn.hidden = true;
             $("results").innerHTML = `<div class="br-card"><div class="br-empty-state">
                 <p class="br-muted">Type a search or choose a filter to see transactions.</p></div></div>`;
             return;
         }
         current = sortItems(items.filter(matches));
         csvBtn.hidden = current.length === 0;
+        pdfBtn.hidden = current.length === 0;
 
         if (!current.length) {
             $("summary").innerHTML = "";
@@ -254,9 +262,12 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
                 : it.kind === "investment-sale" ? "inc-c-sales"
                 : out ? "inc-c-expense" : "inc-c-income";
             return `<div class="br-list-item br-result-row" data-s-open="${idx}" tabindex="0">
-                <div>
-                    <strong>${esc(it.desc)}</strong>
-                    <div class="br-muted">${esc(it.category || (it.kind === "income" ? "Income" : it.kind === "investment-sale" ? "Investment sale" : it.kind === "investment" ? "Investment" : ""))}</div>
+                <div class="br-result-main">
+                    ${categoryIconHTML(it.category, { size: "md", kind: it.kind === "income" || it.kind === "investment-sale" ? "income" : "expense" })}
+                    <div>
+                        <strong>${esc(it.desc)}</strong>
+                        <div class="br-muted">${esc(it.category || (it.kind === "income" ? "Income" : it.kind === "investment-sale" ? "Investment sale" : it.kind === "investment" ? "Investment" : ""))}</div>
+                    </div>
                 </div>
                 <div style="text-align:right">
                     <strong class="${tone}">${out ? "-" : "+"}${formatMoney(it.amount)}</strong>
@@ -398,6 +409,34 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
             a.download = "blackroad-search-results.csv";
             a.click();
             setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            return;
+        }
+
+        if (action === "pdf") {
+            if (!current.length) return;
+            const btn = t.closest("[data-s-action]");
+            btn.disabled = true;
+            const progress = startReportProgress({
+                title: "Creating your statement of account",
+                steps: ["Collecting matching entries", "Building the ledger", "Totalling debits and credits", "Finalizing PDF"],
+                doneTitle: "PDF downloaded",
+                doneText: "Your statement of account has been saved."
+            });
+            (async () => {
+                try {
+                    let userName = "";
+                    try {
+                        userName = isGuestSync() ? "Guest User" : ((await currentUser()) || {}).name || "";
+                    } catch { /* export without a name */ }
+                    await exportSearchPDF(current, filters, { userName, beforeSave: () => progress.ready() });
+                    progress.complete();
+                } catch (error) {
+                    console.error(error);
+                    progress.fail("The PDF could not be created - check your connection and try again.");
+                } finally {
+                    btn.disabled = false;
+                }
+            })();
             return;
         }
 
