@@ -851,3 +851,37 @@
 @media (max-width: 640px) and (max-height: 600px) {
     .br-auth .br-auth-aside { display: none; }
 }
+
+
+/* =========================================================
+   Phone: the login / register page fits the screen exactly.
+   100vh is taller than the visible area on mobile browsers
+   (the address bar), which made the whole page swipe up and
+   down. The page is now locked to the real visible height and
+   only scrolls inside itself if the card is taller than the
+   screen.
+   ========================================================= */
+@media (max-width: 900px) {
+    html:has(.br-auth),
+    body:has(.br-auth) {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    body:has(.br-auth) #app {
+        min-height: 0;
+        height: 100%;
+    }
+
+    .br-auth {
+        min-height: 0;
+        height: 100vh;
+        height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+    }
+}

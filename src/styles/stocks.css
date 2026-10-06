@@ -296,3 +296,44 @@
 .stk-sym-info span { font-size: 13px; font-variant-numeric: tabular-nums; }
 .stk-sym-preview .br-button { flex: none; }
 .stk-sym-preview .br-button[hidden] { display: none; }
+
+
+/* =========================================================
+   PROFIT & LOSS OVER TIME (zoomable line graph)
+   ========================================================= */
+.stk-pnl-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.stk-pnl-zoom { min-width: 34px; padding: 0 10px; font-size: 16px; line-height: 1; }
+.stk-pnl-read { min-height: 64px; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.stk-pnl-read-main { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.stk-pnl-read-main strong { font-size: 22px; font-weight: 600; }
+.stk-pnl-read-sub { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--br-text-secondary); margin-top: 2px; }
+.stk-pnl-read-sub b { font-weight: 600; }
+.stk-pnl-read-orders { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--br-text-secondary); margin-top: 4px; }
+.stk-pnl-plot { width: 100%; min-width: 0; }
+.stk-pnl-svg { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; user-select: none; -webkit-user-select: none; }
+.stk-pnl-svg:active { cursor: grabbing; }
+.stk-pnl-line { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.stk-pnl-line.pos { stroke: var(--br-success); }
+.stk-pnl-line.neg { stroke: var(--br-danger); }
+.stk-pnl-area { stroke: none; fill-opacity: 0.12; }
+.stk-pnl-area.pos { fill: var(--br-success); }
+.stk-pnl-area.neg { fill: var(--br-danger); }
+.stk-pnl-zero { stroke: var(--br-text-secondary); stroke-width: 1; stroke-dasharray: 4 3; opacity: 0.6; }
+.stk-pnl-dot { fill: var(--br-surface); stroke-width: 1.75; }
+.stk-pnl-dot.pos, .stk-pnl-hover-dot.pos { stroke: var(--br-success); }
+.stk-pnl-dot.neg, .stk-pnl-hover-dot.neg { stroke: var(--br-danger); }
+.stk-pnl-dot.now { stroke-width: 2.5; }
+.stk-pnl-cross { stroke: var(--br-text-secondary); stroke-width: 1; stroke-dasharray: 3 3; }
+.stk-pnl-hover-dot { fill: var(--br-surface); stroke-width: 2.5; pointer-events: none; }
+.stk-pnl-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-size: 11px; color: var(--br-text-secondary); margin-top: 6px; }
+
+.stk-pnl-tip-bg { fill: var(--br-surface); stroke: var(--br-border); stroke-width: 1; pointer-events: none; }
+.stk-pnl-tip-text { fill: var(--br-text); font-size: 11px; font-weight: 600; pointer-events: none; }
+
+/* Minimal controls for the realized P&L graph */
+.stk-pnl-bar { gap: 8px 12px; }
+.stk-pnl-bar .br-chip-row { gap: 4px; }
+.stk-pnl-bar .br-chip { min-height: 28px; padding: 0 10px; font-size: 12px; }
+.stk-pnl-bar .stk-pnl-zoom { min-width: 28px; padding: 0 8px; font-size: 15px; }
+.stk-pnl-bar .stk-pnl-dir { font-variant-numeric: tabular-nums; }
+.stk-pnl-foot { justify-content: flex-start; }

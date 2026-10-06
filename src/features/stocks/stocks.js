@@ -31,6 +31,7 @@ import {
 } from "./stocks-service.js";
 
 import { printStocksReport } from "./stocks-print.js";
+import { createPnlChart } from "./stocks-pnl-chart.js";
 import { isGuestSync } from "../../services/auth.js";
 import { fetchLTP, fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS, stockLogoUrl } from "./stocks-live.js";
 
@@ -42,6 +43,7 @@ function stockLogoHTML(symbol, size) {
 }
 
 let store = null;
+let realizedChart = null;
 
 // In-memory mirror of the persisted state — reloaded on every entry
 // into the module, kept in sync with every write.
@@ -166,6 +168,16 @@ export async function Stocks() {
             <section class="br-card">
                 <div class="br-card-heading"><h3>How you're doing overall</h3></div>
                 <div data-an-overall></div>
+            </section>
+
+            <section class="br-card">
+                <div class="br-card-heading">
+                    <div>
+                        <h3>Realized P&amp;L per sale</h3>
+                        <p class="br-muted">Profit or loss from each sale, oldest to newest.</p>
+                    </div>
+                </div>
+                <div data-an-realized-chart></div>
             </section>
 
             <div class="br-grid br-grid-2">
@@ -389,6 +401,7 @@ export async function Stocks() {
     `;
 
     attachEvents(page);
+    realizedChart = createPnlChart(page.querySelector("[data-an-realized-chart]"), { kind: "realized" });
     await loadState(page);
 
     // Live prices: fetch once now, then keep fresh in the background.
@@ -859,6 +872,8 @@ function renderAnalytics(page) {
     const holdings = getActiveHoldings(transactions, prices);
     const totals = calculatePortfolioTotals(transactions, prices);
     const none = "No active holdings yet.";
+
+    realizedChart?.update(transactions, prices);
 
     // Overall performance
     page.querySelector("[data-an-overall]").innerHTML = `
