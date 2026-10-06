@@ -1,4 +1,5 @@
 import { sipPlan, lumpsumPlan, goalPlan, swpPlan, inr, inrShort } from "./calculators-service.js";
+import { pulseCalculating } from "../../components/task-loader.js";
 import { getMutualFundSummary, getStocksSummary, getDepositsSummary } from "../dashboard/dashboard-service.js";
 import { COLORS } from "../../components/chart-colors.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
@@ -474,6 +475,7 @@ function renderSwp(box, v, animate) {
 
 function renderResults(page, animate = false) {
     renderResultsNow(page, animate);
+    pulseCalculating();
 
     /* The summary (total + stat cards) stays beside the inputs; the chart,
        breakdown and note go in one full-width section underneath. */

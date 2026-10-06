@@ -11,6 +11,7 @@
 
 import { icon } from "../../../components/icons.js";
 import { startReportProgress } from "../../../components/report-progress.js";
+import { showTaskLoader } from "../../../components/task-loader.js";
 import { loadXlsx } from "./angel-libs.js";
 import { readAngelWorkbook, esc } from "./angel-parser.js";
 import { renderAngelReport, angelYearChips } from "./angel-render.js";
@@ -126,11 +127,17 @@ export function AngelPnl() {
         render();
 
         const errors = [];
+        const loader = showTaskLoader({
+            kind: "read",
+            title: files.length > 1 ? "Reading your P&L files" : "Reading your P&L file",
+            subtitle: "Loading the spreadsheet reader"
+        });
 
         try {
             const XLSX = await loadXlsx();
 
             for (const file of files) {
+                loader.setText(`Reading ${file.name}`);
                 try {
                     const buffer = await readBuffer(file);
                     state.years.push(readAngelWorkbook(XLSX, buffer, file.name, state.years.length + 1));
@@ -142,6 +149,7 @@ export function AngelPnl() {
             errors.push(err.message);
         }
 
+        await loader.close();
         state.busy = false;
         state.error = errors.join(" ");
         render();

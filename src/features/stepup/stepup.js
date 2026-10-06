@@ -1,5 +1,6 @@
 import { isUSD, usd } from "../../services/currency.js";
 import { icon } from "../../components/icons.js";
+import { runTask } from "../../components/task-loader.js";
 import { COLORS } from "../../components/chart-colors.js";
 import { dataService } from "../../data/data-service.js";
 
@@ -822,7 +823,10 @@ async function importFund(page, form) {
     if (!amt) return toast(page, "Set the monthly SIP amount in Settings first.");
 
     try {
-        const json = await readFileAsJson(file);
+        const json = await runTask(
+            { kind: "read", title: "Reading fund file", subtitle: "Checking NAV history" },
+            () => readFileAsJson(file)
+        );
         const fund = parseFundFile(json);
 
         if (!fund.schemeCode || !fund.navHistory.length) {
@@ -833,7 +837,7 @@ async function importFund(page, form) {
 
         if (!built.length) return toast(page, "No NAV data on/after that start date.");
 
-        const doImport = async () => {
+        const doImportRaw = async () => {
             await store.clearEntries(profile.id);
 
             for (const e of built) {
@@ -880,6 +884,11 @@ async function importFund(page, form) {
             render(page);
             toast(page, `Linked ${fund.schemeName || fund.schemeCode} — ${built.length} entries imported ✓`);
         };
+
+        const doImport = () => runTask(
+            { kind: "import", title: "Importing NAV entries", subtitle: `Saving ${built.length} entries` },
+            doImportRaw
+        );
 
         if (entries.length) {
             askConfirm(

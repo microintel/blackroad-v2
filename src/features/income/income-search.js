@@ -16,6 +16,7 @@ import { esc, formatMoney } from "./income-shared.js";
 import { categoryIconHTML } from "./expense-categories.js";
 import { exportSearchPDF } from "./income-search-pdf.js";
 import { startReportProgress } from "../../components/report-progress.js";
+import { runTask } from "../../components/task-loader.js";
 import { currentUser, isGuestSync } from "../../services/auth.js";
 
 const PRESETS_KEY = "br-search-presets"; // same key as the old app
@@ -403,12 +404,17 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
             return renderPresets();
         }
         if (action === "csv") {
-            const blob = new Blob([csv(current)], { type: "text/csv;charset=utf-8" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "blackroad-search-results.csv";
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            runTask(
+                { kind: "export", title: "Exporting results", subtitle: "Building your CSV file" },
+                async () => {
+                    const blob = new Blob([csv(current)], { type: "text/csv;charset=utf-8" });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = "blackroad-search-results.csv";
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+                }
+            );
             return;
         }
 

@@ -2,6 +2,7 @@ import { icon } from "../../components/icons.js";
 import { SERIES } from "../../components/chart-colors.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { navigate } from "../../app/router.js";
+import { runTask } from "../../components/task-loader.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -1603,23 +1604,28 @@ async function confirmClear(page) {
    Full backup / restore lives in Data Management.
 ========================================= */
 
-function exportCSV() {
+async function exportCSV() {
     if (transactions.length === 0) return;
 
-    const csv = transactionsToCSV(transactions);
-    const blob = new Blob([csv], {
-        type: "text/csv;charset=utf-8;"
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const stamp = new Date().toISOString().slice(0, 10);
+    await runTask(
+        { kind: "export", title: "Exporting transactions", subtitle: "Building your CSV file" },
+        async () => {
+            const csv = transactionsToCSV(transactions);
+            const blob = new Blob([csv], {
+                type: "text/csv;charset=utf-8;"
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            const stamp = new Date().toISOString().slice(0, 10);
 
-    a.href = url;
-    a.download = `stocks-transactions-${stamp}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+            a.href = url;
+            a.download = `stocks-transactions-${stamp}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+    );
 }
 
 /* =========================================

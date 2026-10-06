@@ -1,4 +1,5 @@
 import { hardNavigate } from "../../app/router.js";
+import { runTask } from "../../components/task-loader.js";
 import {
     getOverview,
     exportAll,
@@ -405,7 +406,10 @@ function bindEvents(page) {
         if (!file) return;
 
         try {
-            pending = await readBackupFile(file);
+            pending = await runTask(
+                { kind: "read", title: "Reading backup file", subtitle: "Checking what's inside" },
+                () => readBackupFile(file)
+            );
             openPreview(page, pending);
         } catch (error) {
             pending = null;

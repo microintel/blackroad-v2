@@ -1,0 +1,155 @@
+/* =========================================================
+   TASK LOADER
+   Flat (no gradients), follows the app's theme tokens.
+   A mini candlestick chart that rises and falls while a job
+   (download / export / import / read / calculate) is running.
+   ========================================================= */
+
+.br-tl {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, .45);
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+.br-tl.is-in  { opacity: 1; }
+.br-tl.is-out { opacity: 0; pointer-events: none; }
+
+.br-tl-card {
+    width: min(300px, 100%);
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 26px 24px 22px;
+    text-align: center;
+    color: var(--br-text, #fff);
+    background: var(--br-surface, #141414);
+    border: 1px solid var(--br-border, #2a2a2a);
+    border-radius: 18px;
+    transform: translateY(10px) scale(.98);
+    transition: transform .28s cubic-bezier(.2, .9, .3, 1.1);
+}
+.br-tl.is-in .br-tl-card { transform: none; }
+
+.br-tl-title { font-size: 16px; font-weight: 600; margin-top: 10px; }
+.br-tl-sub   { font-size: 13px; color: var(--br-text-muted, #9a9a9a); }
+
+/* ---------- candlestick chart ---------- */
+.br-tl-chart {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 12px;
+    height: 76px;
+    padding: 0 6px 6px;
+}
+.br-tl-c {
+    position: relative;
+    display: block;
+    width: 12px;
+    height: var(--b);
+    background: var(--br-accent, #f97316);
+    border: 1.5px solid var(--br-accent, #f97316);
+    border-radius: 2px;
+    transform-origin: 50% 100%;
+    animation: br-tl-rise 1.5s ease-in-out infinite;
+    animation-delay: var(--d);
+}
+.br-tl-c.is-down { background: transparent; }
+/* wick */
+.br-tl-c::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    width: 1.5px;
+    height: calc(100% + 16px);
+    margin-left: -.75px;
+    background: var(--br-accent, #f97316);
+}
+.br-tl-base {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 0;
+    border-top: 1.5px dashed var(--br-border-strong, #444);
+    opacity: .8;
+}
+
+@keyframes br-tl-rise {
+    0%, 100% { transform: scaleY(.55); opacity: .55; }
+    50%      { transform: scaleY(1.25); opacity: 1; }
+}
+
+/* ---------- thin sweeping bar ---------- */
+.br-tl-bar {
+    position: relative;
+    width: 100%;
+    height: 3px;
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--br-border, #2a2a2a);
+}
+.br-tl-bar i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 36%;
+    border-radius: 3px;
+    background: var(--br-accent, #f97316);
+    animation: br-tl-sweep 1.2s ease-in-out infinite;
+}
+@keyframes br-tl-sweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(280%); }
+}
+
+/* ---------- inline version ---------- */
+.br-tl-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--br-text-muted, #9a9a9a);
+}
+.br-tl-mini { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+.br-tl-mini i {
+    display: block;
+    width: 3px;
+    height: 100%;
+    border-radius: 1px;
+    background: var(--br-accent, #f97316);
+    transform-origin: 50% 100%;
+    animation: br-tl-rise 1s ease-in-out infinite;
+}
+.br-tl-mini i:nth-child(2) { animation-delay: .12s; }
+.br-tl-mini i:nth-child(3) { animation-delay: .24s; }
+.br-tl-mini i:nth-child(4) { animation-delay: .36s; }
+
+/* ---------- calculators: short sweep along the top while results update ---------- */
+.br-tl-topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    z-index: 9997;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+.br-tl-topbar.is-on { opacity: 1; }
+.br-tl-topbar i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 30%;
+    background: var(--br-accent, #f97316);
+}
+.br-tl-topbar.is-on i { animation: br-tl-sweep .5s ease-out 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .br-tl-c, .br-tl-mini i, .br-tl-bar i, .br-tl-topbar.is-on i { animation-duration: 3s; }
+    .br-tl, .br-tl-card { transition: none; }
+}
