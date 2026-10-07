@@ -1,6 +1,6 @@
 import {
     getTxnPnLMap, mtfSplit, calculateMonthlySummary, calculateAllTimeSummary,
-    fmtMoney, fmtSigned, pnlClass, fmtDate
+    fmtMoney, fmtSigned, pnlClass, fmtDate, cmpTxn
 } from "./stocks-service.js";
 import { startReportProgress } from "../../components/report-progress.js";
 import { stockLogoUrl } from "./stocks-live.js";
@@ -53,7 +53,7 @@ function buildReport(ym, transactions, prices) {
 
     const scoped = (isAll ? transactions : transactions.filter((t) => t.date && t.date.slice(0, 7) === ym))
         .slice()
-        .sort((a, b) => (a.date === b.date ? a.seq - b.seq : a.date < b.date ? -1 : 1));
+        .sort((a, b) => (cmpTxn(a, b)));
 
     const pnl = getTxnPnLMap(transactions);
 

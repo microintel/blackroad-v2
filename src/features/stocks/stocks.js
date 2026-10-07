@@ -28,7 +28,11 @@ import {
     fmtDate,
     getSymbolTransactions,
     getSymbolName,
-    mtfSplit
+    mtfSplit,
+    cmpTxn,
+    getTxnHoldMap,
+    fmtHold,
+    fmtTime
 } from "./stocks-service.js";
 
 import { printStocksReport } from "./stocks-print.js";
@@ -153,6 +157,7 @@ export async function Stocks() {
                                 <th>Price</th>
                                 <th>Amount</th>
                                 <th>Realized P&amp;L</th>
+                                <th>Held</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -256,11 +261,12 @@ export async function Stocks() {
                     <div class="inc-fields">
                         ${fieldHTML("Type", `<select name="type" data-txn-type><option value="BUY">Buy</option><option value="SELL">Sell</option></select>`)}
                         ${fieldHTML("Date", `<input name="date" type="date" required>`)}
+                        ${fieldHTML("Time", `<input name="time" type="time" step="1">`)}
                         ${fieldHTML("Symbol", `<input name="symbol" type="text" list="stk-symbols" placeholder="RELIANCE" autocomplete="off" autocapitalize="characters" required><datalist id="stk-symbols" data-symbol-list></datalist>`)}
                         ${fieldHTML("Stock name", `<input name="name" type="text" placeholder="Reliance Industries" autocomplete="off" required>`)}
                         ${fieldHTML("Quantity", `<input name="quantity" type="number" inputmode="decimal" step="0.000001" min="0" placeholder="0" required><span class="inc-hint" data-qty-hint></span>`)}
                         ${fieldHTML("Price per share", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="price" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></span>`)}
-                        ${fieldHTML("Notes (#tags supported)", `<input name="notes" type="text" autocomplete="off">`, "stk-span-2")}
+                        ${fieldHTML("Notes (#tags supported)", `<input name="notes" type="text" autocomplete="off">`)}
                     </div>
 
                     <div class="stk-total" data-txn-total></div>
@@ -737,12 +743,16 @@ function openTxnDetail(page, id) {
     page.querySelector("[data-txn-detail-grid]").innerHTML = [
         cell("Type", escapeHTML(t.type) + (t.isMTF ? ' <span class="br-badge br-badge-warning">MTF</span>' : "")),
         cell("Date", fmtDate(t.date)),
+        t.time ? cell("Time", escapeHTML(fmtTime(t.time))) : "",
         cell("Shares", t.quantity),
         cell("Price per share", fmtMoney(t.price)),
         cell("Total amount", fmtMoney(round2(t.quantity * t.price), true)),
         ...mtfDetailCells(t, cell),
         pnl !== undefined && pnl !== null
             ? cell("Realized P&L", fmtSigned(pnl, true), "br-pnl-" + pnlClass(pnl))
+            : "",
+        !isBuy && getTxnHoldMap(transactions)[t.id]
+            ? cell("Held for", fmtHold(getTxnHoldMap(transactions)[t.id]), pnl !== undefined && pnl !== null ? "br-pnl-" + pnlClass(pnl) : "")
             : "",
         t.notes
             ? `<div style="grid-column:1/-1;"><div class="k">Notes</div><div class="v" style="font-size:13px;font-weight:500;">${escapeHTML(t.notes)}</div></div>`
@@ -1038,17 +1048,18 @@ function getFilteredTransactions(page) {
         })
         .slice()
         .sort((a, b) =>
-            a.date === b.date ? b.seq - a.seq : a.date < b.date ? 1 : -1
+            cmpTxn(b, a)
         );
 }
 
 function renderTransactions(page) {
     const tbody = page.querySelector("[data-txn-table] tbody");
     const pnlMap = getTxnPnLMap(transactions);
+    const holdMap = getTxnHoldMap(transactions);
     const list = getFilteredTransactions(page);
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No matching transactions" : "No transactions yet"}</h4><p>${transactions.length ? "Try a different search or filter." : "Your buys and sells will be listed here."}</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No matching transactions" : "No transactions yet"}</h4><p>${transactions.length ? "Try a different search or filter." : "Your buys and sells will be listed here."}</p></div></td></tr>`;
         return;
     }
 
@@ -1058,7 +1069,7 @@ function renderTransactions(page) {
 
             return `
                 <tr data-action="view-txn" data-id="${t.id}" class="stk-row${t.id === flashTxnId ? " stk-flash" : ""}">
-                    <td>${escapeHTML(t.date)}</td>
+                    <td>${escapeHTML(t.date)}${t.time ? `<div class="br-muted stk-sub">${escapeHTML(fmtTime(t.time))}</div>` : ""}</td>
                     <td>
                         <span class="br-badge ${
                             t.type === "BUY"
@@ -1082,6 +1093,9 @@ function renderTransactions(page) {
                     <td class="${
                         pnl !== undefined ? "br-pnl-" + pnlClass(pnl) : ""
                     }">${pnl !== undefined ? fmtSigned(pnl, true) : "—"}</td>
+                    <td class="${
+                        pnl !== undefined ? "br-pnl-" + pnlClass(pnl) : ""
+                    }">${t.type === "SELL" && holdMap[t.id] ? fmtHold(holdMap[t.id]) : "—"}</td>
                     <td class="stk-row-actions">
                         <button type="button" class="inc-icon-button" data-action="edit-txn" data-id="${t.id}" aria-label="Edit transaction" title="Edit">${icon("pencil", { size: 16 })}</button>
                         <button type="button" class="inc-icon-button" data-action="duplicate-txn" data-id="${t.id}" aria-label="Duplicate transaction" title="Duplicate">${icon("copy", { size: 16 })}</button>
@@ -1265,9 +1279,8 @@ function openTxnModal(page, id, duplicate) {
         page.querySelector("[data-txn-modal-title]").textContent =
             duplicate ? "Duplicate transaction" : "Edit transaction";
         form.type.value = t.type;
-        form.date.value = duplicate
-            ? new Date().toISOString().slice(0, 10)
-            : t.date;
+        form.date.value = duplicate ? localDateStr() : t.date;
+        form.time.value = duplicate ? localTimeStr() : t.time || "";
         form.name.value = t.name;
         form.symbol.value = t.symbol;
         form.quantity.value = t.quantity;
@@ -1281,7 +1294,8 @@ function openTxnModal(page, id, duplicate) {
         page.querySelector("[data-txn-modal-title]").textContent =
             "Add transaction";
         form.type.value = "BUY";
-        form.date.value = new Date().toISOString().slice(0, 10);
+        form.date.value = localDateStr();
+        form.time.value = localTimeStr();
     }
 
     setMtfMode(page, "amount", true);
@@ -1302,6 +1316,20 @@ function closeTxnModal(page) {
 }
 
 /* ---------- field helpers ---------- */
+
+// Local (not UTC) date/time so a sell logged just after midnight is
+// never stamped with yesterday's date.
+function localDateStr() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function localTimeStr() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
 
 function fieldHTML(label, control, extraClass = "") {
     return `
@@ -1447,6 +1475,8 @@ async function saveTxn(page) {
 
     const type = form.type.value;
     const date = form.date.value;
+    let time = form.time.value;
+    if (time && time.length === 5) time += ":00";
     const name = form.name.value.trim();
     const symbol = form.symbol.value.trim().toUpperCase();
     const quantity = Number(form.quantity.value);
@@ -1511,6 +1541,7 @@ async function saveTxn(page) {
         isMTF: isBuy ? wantsMtf : !!(existing && existing.isMTF)
     };
     if (mtfOwn !== undefined) candidate.mtfOwn = mtfOwn;
+    if (time) candidate.time = time;
 
     const check = validateTransaction(candidate, id, transactions);
     if (!check.ok) {

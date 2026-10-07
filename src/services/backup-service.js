@@ -288,10 +288,17 @@ export async function readBackupFile(file) {
         throw new Error("No BlackRoad data was found in this file.");
     }
 
+    // "Data last updated" lives in the income meta store, so it is
+    // exported and restored with the rest; read it only for the preview.
+    const metaRec = (found.income?.meta || []).find(
+        (r) => r && r.key === "updateDate"
+    );
+
     return {
         payload,
         format: "Full BlackRoad backup",
         legacy: false,
+        dataUpdated: metaRec ? metaRec.value : "",
         modules,
         skipped,
         exportedBy: payload.exportedBy || null,

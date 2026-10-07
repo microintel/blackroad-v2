@@ -1,6 +1,7 @@
 import { confirmLogout } from "../../components/confirm-dialog.js";
 import { hardNavigate } from "../../app/router.js";
 import { AppearanceCard } from "./appearance.js";
+import { dataService } from "../../data/data-service.js";
 import { chooseGuestProfile } from "../auth/auth-screen.js";
 import {
     getSession,
@@ -30,7 +31,7 @@ export async function Account() {
         const user = await currentUser();
 
         if (user) {
-            renderProfile(page, user);
+            await renderProfile(page, user);
         } else {
             await logout();
             renderSignedOut(page);
@@ -152,7 +153,28 @@ function memberSince(iso) {
     }
 }
 
-function renderProfile(page, user) {
+/* Stored in the income database "meta" store under the old app's
+   "updateDate" key, so it travels with the global backup. */
+async function loadDataUpdated() {
+    try {
+        const store = await dataService.getIncomeStore();
+        const v = await store.getUpdateDate();
+        if (!v) return "";
+        return String(v).length === 10 ? v + "T00:00:00" : String(v);
+    } catch {
+        return "";
+    }
+}
+
+function nowLocalInput() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+async function renderProfile(page, user) {
+    const dataUpdated = await loadDataUpdated();
+
     page.innerHTML = `
         ${HEADING}
 
@@ -185,6 +207,19 @@ function renderProfile(page, user) {
                         <label><span>Member since</span><input type="text" class="br-input" value="${memberSince(user.createdAt)}" disabled></label>
                         <p class="br-field-help ac-error" data-error="profile" hidden></p>
                         <button type="submit" class="br-button br-button-primary">Save changes</button>
+                    </form>
+                </section>
+
+                <section class="br-card">
+                    <div class="br-card-heading"><h3>Data last updated</h3></div>
+                    <form class="ac-stack" data-form="dataUpdated">
+                        <label><span>Date &amp; time your BlackRoad data is up to date as of</span><input name="updated" type="datetime-local" step="1" class="br-input" value="${escapeAttr(dataUpdated)}"></label>
+                        <p class="br-muted">Saved with your data, so it is included in every backup and restore.</p>
+                        <p class="br-field-help ac-error" data-error="dataUpdated" hidden></p>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="submit" class="br-button br-button-primary">Save</button>
+                            <button type="button" class="br-button" data-action="updated-now">Set to now</button>
+                        </div>
                     </form>
                 </section>
 
@@ -232,6 +267,16 @@ function renderProfile(page, user) {
         await changePassword(data.current, data.next, data.confirm);
         form.reset();
         toast(page, "Password updated");
+    });
+
+    bindForm(page, "dataUpdated", async (data) => {
+        const store = await dataService.getIncomeStore();
+        await store.setUpdateDate(data.updated || "");
+        toast(page, data.updated ? "Data last updated saved" : "Data last updated cleared");
+    });
+
+    page.querySelector('[data-action="updated-now"]').addEventListener("click", () => {
+        page.querySelector('[name="updated"]').value = nowLocalInput();
     });
 
     page.querySelector("[data-premium]").addEventListener("change", async (event) => {

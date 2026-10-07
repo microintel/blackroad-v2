@@ -22,7 +22,8 @@ import {
     fmtDate,
     pnlClass,
     round2,
-    getTxnPnLMap
+    getTxnPnLMap,
+    cmpTxn
 } from "./stocks-service.js";
 
 const DAY = 86400000;
@@ -58,7 +59,7 @@ function buildSeries(transactions, prices, realizedOnly) {
     if (!transactions.length) return [];
 
     const sorted = transactions.slice().sort((a, b) =>
-        a.date === b.date ? a.seq - b.seq : a.date < b.date ? -1 : 1
+        cmpTxn(a, b)
     );
 
     const pos = {};
@@ -147,7 +148,7 @@ function buildSellSeries(transactions) {
     const pnl = getTxnPnLMap(transactions);
     const sells = transactions
         .filter((t) => t.type === "SELL" && Number.isFinite(pnl[t.id]))
-        .sort((a, b) => (a.date === b.date ? a.seq - b.seq : a.date < b.date ? -1 : 1));
+        .sort((a, b) => (cmpTxn(a, b)));
 
     const perDay = {};
     sells.forEach((t) => (perDay[t.date] = (perDay[t.date] || 0) + 1));

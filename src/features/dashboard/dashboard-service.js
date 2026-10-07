@@ -39,7 +39,11 @@ function symbolTransactions(symbol, transactions) {
         .filter((t) => t.symbol === symbol)
         .sort((a, b) =>
             a.date === b.date
-                ? a.seq - b.seq
+                ? (a.time || "") === (b.time || "")
+                    ? a.seq - b.seq
+                    : (a.time || "") < (b.time || "")
+                      ? -1
+                      : 1
                 : a.date < b.date
                   ? -1
                   : 1

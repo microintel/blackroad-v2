@@ -57,16 +57,23 @@ export function mtfSplit(t) {
     return { total, own, funded: round2(total - own), set: true };
 }
 
+/*
+ * Chronological comparator: date, then time of day (optional field —
+ * older transactions have none and sort first within their day), then
+ * entry order. Keeps old data ordering exactly as before.
+ */
+export function cmpTxn(a, b) {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    const ta = a.time || "";
+    const tb = b.time || "";
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    return (a.seq || 0) - (b.seq || 0);
+}
+
 export function getSymbolTransactions(symbol, transactions) {
     return transactions
         .filter((t) => t.symbol === symbol)
-        .sort((a, b) =>
-            a.date === b.date
-                ? a.seq - b.seq
-                : a.date < b.date
-                ? -1
-                : 1
-        );
+        .sort(cmpTxn);
 }
 
 /*
@@ -138,6 +145,116 @@ export function replaySymbol(symbol, transactions) {
         txnPnL,
         error: null
     };
+}
+
+/* =========================================
+   HOLDING DURATION (buy -> sell)
+========================================= */
+
+function txnMs(t, withTime) {
+    const hhmmss = withTime && t.time
+        ? (t.time.length === 5 ? t.time + ":00" : t.time)
+        : "00:00:00";
+    return new Date(`${t.date}T${hhmmss}`).getTime();
+}
+
+/*
+ * How long each SELL held the shares it sold. Shares are matched to
+ * buys first-in-first-out (display only — P&L itself still uses the
+ * average-cost method). A sell that spans several buys gets the
+ * quantity-weighted average. If either side has no time recorded
+ * (older data), both are compared by date only.
+ * Returns { [sellId]: { start, end } } as millisecond timestamps.
+ */
+export function getTxnHoldMap(transactions) {
+    const map = {};
+
+    getAllSymbols(transactions).forEach((sym) => {
+        const lots = [];
+
+        getSymbolTransactions(sym, transactions).forEach((t) => {
+            if (t.type === "BUY") {
+                lots.push({ t, left: t.quantity });
+                return;
+            }
+
+            let need = t.quantity;
+            let weighted = 0;
+            let matched = 0;
+            let endMs = txnMs(t, true);
+
+            while (need > 1e-9 && lots.length) {
+                const lot = lots[0];
+                const take = Math.min(lot.left, need);
+                const both = !!(lot.t.time && t.time);
+                const dur = txnMs(t, both) - txnMs(lot.t, both);
+
+                if (Number.isFinite(dur)) {
+                    weighted += Math.max(0, dur) * take;
+                    matched += take;
+                    if (!both) endMs = txnMs(t, false);
+                }
+
+                lot.left = round6(lot.left - take);
+                need = round6(need - take);
+                if (lot.left <= 1e-9) lots.shift();
+            }
+
+            if (matched > 0) {
+                const avg = weighted / matched;
+                map[t.id] = { start: endMs - avg, end: endMs };
+            }
+        });
+    });
+
+    return map;
+}
+
+/*
+ * Compact duration: the two largest non-zero units out of
+ * y (years), m (months), d, h, min, sec — e.g. "1y 2m", "10d 5min".
+ */
+export function fmtHold(h) {
+    if (!h || !Number.isFinite(h.start) || !Number.isFinite(h.end)) return "—";
+
+    const a = new Date(Math.min(h.start, h.end));
+    const b = new Date(Math.max(h.start, h.end));
+
+    let y = b.getFullYear() - a.getFullYear();
+    let m = b.getMonth() - a.getMonth();
+    let d = b.getDate() - a.getDate();
+    let hr = b.getHours() - a.getHours();
+    let mi = b.getMinutes() - a.getMinutes();
+    let sec = b.getSeconds() - a.getSeconds();
+
+    if (sec < 0) { sec += 60; mi--; }
+    if (mi < 0) { mi += 60; hr--; }
+    if (hr < 0) { hr += 24; d--; }
+    if (d < 0) {
+        d += new Date(b.getFullYear(), b.getMonth(), 0).getDate();
+        m--;
+    }
+    if (m < 0) { m += 12; y--; }
+
+    const parts = [[y, "y"], [m, "m"], [d, "d"], [hr, "h"], [mi, "min"], [sec, "sec"]]
+        .filter(([v]) => v > 0)
+        .slice(0, 2)
+        .map(([v, u]) => v + u);
+
+    return parts.length ? parts.join(" ") : "0sec";
+}
+
+export function fmtTime(t) {
+    if (!t) return "";
+    const [hh, mm, ss] = String(t).split(":").map(Number);
+    if (isNaN(hh) || isNaN(mm)) return t;
+    const d = new Date(2000, 0, 1, hh, mm, ss || 0);
+    return d.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
 }
 
 export function getTxnPnLMap(transactions) {
@@ -442,18 +559,13 @@ export function transactionsToCSV(transactions) {
         "MTF",
         "Notes",
         "My Amount",
-        "MTF Funded"
+        "MTF Funded",
+        "Time"
     ];
 
     const rows = transactions
         .slice()
-        .sort((a, b) =>
-            a.date === b.date
-                ? a.seq - b.seq
-                : a.date < b.date
-                ? -1
-                : 1
-        )
+        .sort(cmpTxn)
         .map((t) => [
             t.date,
             t.type,
@@ -465,7 +577,8 @@ export function transactionsToCSV(transactions) {
             t.isMTF ? "Yes" : "No",
             (t.notes || "").replace(/"/g, '""'),
             t.type === "BUY" ? mtfSplit(t).own : "",
-            t.type === "BUY" ? mtfSplit(t).funded : ""
+            t.type === "BUY" ? mtfSplit(t).funded : "",
+            t.time || ""
         ]);
 
     const csvLines = [header, ...rows].map((r) =>

@@ -470,7 +470,10 @@ function openPreview(page, parsed) {
     page.querySelector("[data-preview-meta]").textContent =
         `${parsed.format}. Exported ${when}` +
         (by ? ` by ${by.name || by.email}` : "") +
-        ".";
+        "." +
+        (parsed.dataUpdated
+            ? ` Data last updated: ${formatDataUpdated(parsed.dataUpdated)}.`
+            : "");
 
     // Warn when the file came from a different account.
     const warning = page.querySelector("[data-preview-warning]");
@@ -494,6 +497,11 @@ function openPreview(page, parsed) {
         .join("");
 
     page.querySelector("[data-modal]").hidden = false;
+}
+
+function formatDataUpdated(v) {
+    const d = new Date(String(v).length === 10 ? v + "T00:00" : v);
+    return isNaN(d) ? String(v) : d.toLocaleString("en-IN");
 }
 
 function readScope() {
