@@ -1,0 +1,176 @@
+/* =========================================================
+   Rover page (rover.html). Built on the BlackRoad header and
+   buttons; the chat itself is quiet and typographic: replies are
+   plain text, figures sit in a label / value list, and colour
+   follows the theme: black on light, white on dark.
+   ========================================================= */
+
+/* ---------- page frame ---------- */
+/* The page never scrolls; only the message list does. The shell is pinned to the visible area
+   (set from rover-app.js), so the box stays put when the phone keyboard opens or closes. */
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+.rv-shell {
+    position: fixed; left: 0; right: 0; top: var(--rv-top, 0px); height: var(--rv-h, 100dvh);
+    display: flex; flex-direction: column; background: var(--br-bg);
+}
+.rv-shell .br-header { flex: none; padding-top: env(safe-area-inset-top); }
+.rv-new { min-height: 36px; margin-left: var(--br-space-2); padding: 0 var(--br-space-3); font-size: var(--br-font-size-sm); }
+
+.rv-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rv-scroll {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding-bottom: 44px; /* room for the suggestions floating above the box */
+}
+.rv-col { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 var(--br-space-4); }
+
+a.br-icon-button { text-decoration: none; }
+.rv-new:focus-visible, .rv-send:focus-visible, .rv-chip:focus-visible,
+.rv-suggestion:focus-visible, .rv-action:focus-visible { outline: 2px solid var(--br-text); outline-offset: 2px; }
+
+/* ---------- empty state ---------- */
+.rv-empty { display: none; padding-top: clamp(32px, 12vh, 112px); }
+.rv-view.is-empty .rv-empty { display: block; }
+.rv-view.is-empty .rv-messages, .rv-view.is-empty .rv-chips { display: none; }
+.rv-title { display: flex; align-items: center; gap: 8px; }
+.rv-title-mark { flex: none; color: var(--br-gold); }
+.rv-hero-mark { display: block; margin-bottom: var(--br-space-5); color: var(--br-gold); }
+.rv-empty h2 { margin: 0; font-size: clamp(32px, 6vw, 44px); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.rv-empty > p { margin: var(--br-space-3) 0 var(--br-space-8); font-size: var(--br-font-size-lg); color: var(--br-text-muted); }
+.rv-suggest { list-style: none; margin: 0; padding: 0; transition: opacity var(--br-transition); }
+.rv-suggest li:not([hidden]) ~ li:not([hidden]) { border-top: 1px solid var(--br-border); }
+.rv-suggestion {
+    display: block; width: 100%; padding: 14px 0; text-align: left; font: inherit; font-size: var(--br-font-size-lg);
+    color: var(--br-text-secondary); background: none; border: 0; cursor: pointer;
+    transition: color var(--br-transition), padding var(--br-transition);
+}
+.rv-suggestion:hover { color: var(--br-text); padding-left: 6px; }
+
+/* one orchestrated entrance on the start screen */
+.is-intro .rv-hero-mark, .is-intro h2, .is-intro > p, .is-intro .rv-suggest li { animation: rv-rise 520ms cubic-bezier(.2, .8, .2, 1) both; }
+.is-intro > p { animation-delay: 80ms; }
+.is-intro .rv-suggest li:nth-child(1) { animation-delay: 160ms; } .is-intro .rv-suggest li:nth-child(2) { animation-delay: 220ms; }
+.is-intro .rv-suggest li:nth-child(3) { animation-delay: 280ms; } .is-intro .rv-suggest li:nth-child(4) { animation-delay: 340ms; }
+.is-intro .rv-suggest li:nth-child(5) { animation-delay: 400ms; } .is-intro .rv-suggest li:nth-child(6) { animation-delay: 460ms; }
+
+/* ---------- conversation ---------- */
+.rv-messages { display: flex; flex-direction: column; gap: var(--br-space-6); padding: var(--br-space-4) 0 var(--br-space-6); }
+.rv-msg.is-user { align-self: flex-end; max-width: 80%; }
+.rv-msg.is-user .rv-bubble {
+    padding: 9px 16px; border-radius: 20px; border-bottom-right-radius: 6px;
+    background: var(--br-surface-muted); font-size: var(--br-font-size-lg); line-height: 1.5; overflow-wrap: anywhere;
+}
+.rv-msg.is-user p { margin: 0; }
+.rv-msg.is-rover .rv-bubble { max-width: 560px; font-size: var(--br-font-size-lg); line-height: var(--br-line-relaxed); }
+.rv-bubble p { margin: 0 0 var(--br-space-2); }
+.rv-bubble p:last-child { margin-bottom: 0; }
+.rv-bubble strong { font-weight: 600; }
+
+/* New messages: yours slides up; Rover's reply rises in block by block. */
+.rv-msg.is-user.is-new { animation: rv-rise 280ms cubic-bezier(.2, .8, .2, 1) both; }
+.rv-msg.is-rover.is-new .rv-bubble > *,
+.rv-msg.is-rover.is-new .rv-rows > div { animation: rv-rise 420ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 80ms); }
+@keyframes rv-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* label / value rows */
+.rv-rows { margin: var(--br-space-3) 0; padding: 0; }
+.rv-rows > div {
+    display: flex; justify-content: space-between; align-items: baseline; gap: var(--br-space-4);
+    padding: 10px 0; border-top: 1px solid var(--br-border);
+}
+.rv-rows > div:last-child { border-bottom: 1px solid var(--br-border); }
+.rv-rows dt { flex: none; margin: 0; color: var(--br-text-muted); font-size: var(--br-font-size-md); }
+.rv-rows dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.rv-rows .is-wide dt { color: var(--br-text); }
+
+.rv-actions { display: flex; flex-wrap: wrap; gap: var(--br-space-4); margin-top: var(--br-space-3); }
+.rv-action {
+    font-size: var(--br-font-size-md); color: var(--br-text); text-decoration: none;
+    border-bottom: 1px solid var(--br-border-strong); transition: border-color var(--br-transition);
+}
+.rv-action:hover { border-bottom-color: var(--br-text); }
+
+/* ---------- loading: a rover driving along the ground ---------- */
+.rv-typing { animation: rv-fade 240ms ease both; }
+.rv-typing .rv-bubble { display: flex; align-items: center; gap: var(--br-space-4); padding: 4px 0; color: var(--br-text); }
+.rv-dots { flex: none; display: block; color: var(--br-gold); animation: rv-spin 1s steps(8) infinite; }
+.rv-status { font-size: var(--br-font-size-md); color: var(--br-text-muted); animation: rv-pulse 1.8s ease-in-out infinite; }
+@keyframes rv-spin { to { transform: rotate(360deg); } }
+@keyframes rv-bob { to { transform: translateY(-1.2px); } }
+@keyframes rv-roll { to { background-position: -14px 0; } }
+@keyframes rv-pulse { 50% { opacity: .5; } }
+@keyframes rv-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- suggestions row + message box ---------- */
+.rv-dock { flex: none; padding-bottom: calc(var(--br-space-4) + env(safe-area-inset-bottom)); }
+.rv-dock .rv-col { position: relative; }
+
+.rv-chips { position: absolute; left: var(--br-space-4); right: var(--br-space-4); bottom: 100%; pointer-events: none; }
+.rv-chip-menu {
+    pointer-events: auto; position: absolute; left: 0; right: 0; bottom: 10px; z-index: 30;
+    max-height: min(52vh, 340px); overflow-y: auto; overscroll-behavior: contain; padding: 6px 0;
+    background: var(--br-surface, var(--br-bg)); border: 1px solid var(--br-border-strong); border-radius: 20px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .4); transform-origin: 28px 100%;
+    animation: rv-pop 180ms cubic-bezier(.2, .8, .2, 1) both;
+}
+.rv-chip-menu[hidden] { display: none; }
+.rv-chip-title {
+    display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 18px 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--br-gold-text, var(--br-text-muted));
+}
+.rv-chip {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--br-space-3); width: 100%; min-height: 48px;
+    padding: 10px 18px; font: inherit; font-size: var(--br-font-size-md); text-align: left; cursor: pointer;
+    color: var(--br-text); background: none; border: 0; border-top: 1px solid var(--br-border);
+    transition: background var(--br-transition);
+}
+.rv-chip:first-of-type { border-top: 0; }
+.rv-chip[hidden] { display: none; }
+.rv-chip svg { flex: none; color: var(--br-text-muted); transition: color var(--br-transition), transform var(--br-transition); }
+.rv-chip:hover, .rv-chip:focus-visible { background: var(--br-surface-soft); outline: none; }
+.rv-chip:hover svg { color: var(--br-gold); transform: translate(2px, -2px); }
+@keyframes rv-pop { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* the sparkle button at the left of the message box */
+.rv-suggest-toggle {
+    flex: none; width: 36px; height: 36px; margin-left: -10px; display: grid; place-items: center; cursor: pointer;
+    color: var(--br-gold); background: var(--br-gold-surface); border: 0; border-radius: 50%;
+    animation: rv-hint 1.8s ease-out 2;
+    transition: background var(--br-transition), color var(--br-transition), transform var(--br-transition);
+}
+.rv-suggest-toggle[hidden], .rv-view.is-empty .rv-suggest-toggle { display: none; }
+.rv-suggest-toggle:hover { transform: scale(1.06); }
+.rv-suggest-toggle:active { transform: scale(.92); }
+.rv-suggest-toggle.is-open { background: var(--br-gold); color: var(--br-bg); }
+.rv-suggest-toggle:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; }
+@keyframes rv-hint { 0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, .5); } 100% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0); } }
+
+.rv-form {
+    display: flex; align-items: center; gap: var(--br-space-2); padding: 6px 6px 6px 20px;
+    background: var(--br-surface-soft); border: 1px solid var(--br-border-strong); border-radius: var(--br-radius-full);
+    transition: border-color var(--br-transition);
+}
+.rv-form:focus-within { border-color: var(--br-text-secondary); }
+.rv-input {
+    flex: 1; min-width: 0; height: 40px; padding: 0; font: inherit; font-size: 16px; /* 16px stops iOS zooming */
+    color: var(--br-text); background: none; border: 0; outline: none;
+}
+.rv-input::placeholder { color: var(--br-text-muted); }
+.rv-send {
+    flex: none; width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; border: 0; border-radius: 50%;
+    background: var(--br-text); color: var(--br-bg); transition: transform var(--br-transition), opacity var(--br-transition);
+}
+.rv-send:hover { opacity: .85; }
+.rv-send:active { transform: scale(.92); }
+
+/* ---------- phones ---------- */
+@media (max-width: 768px) {
+    .rv-shell { --br-header-height: 56px; --br-page-padding-x: var(--br-space-3); }
+    .rv-new span { display: none; }
+    .rv-new { width: 40px; padding: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rv-msg, .rv-msg *, .rv-typing, .rv-dots, .rv-status, .rv-chip-menu, .rv-suggest-toggle,
+    .rv-empty h2, .rv-empty > p, .rv-suggest li, .rv-hero-mark { animation: none !important; }
+    .rv-suggestion { transition: none; }
+}

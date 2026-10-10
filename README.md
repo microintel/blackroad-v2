@@ -131,3 +131,24 @@ Headless Chromium (Playwright) against the served app:
 - Legacy per-module files detected: Income, Stocks, Lending, Fixed Deposits, StepUp; unknown files rejected.
 
 Still open: StepUp PDF report, and manual checks with real old-app data on a phone.
+
+## Rover (chat assistant)
+
+Rover is a **separate page**, `rover.html`, not part of the BlackRoad screens. It answers questions about
+net worth, spending, stocks, mutual funds, deposits and loans from the data already on the device
+(offline, read-only), and uses the same sign-in, theme and currency as the app. Inside the app, a small
+button (bottom-right) opens it in a new tab. It follows the app's own layers:
+
+```text
+rover.html                           thin page, like index.html
+src/app/rover-app.js                 start-up (like app.js): preferences, sign-in, guest data, page
+src/components/layout/rover-header.js   header (same look as the app header)
+src/components/chat/                 chat-message, chat-composer, chat-suggestions, chat-format
+src/features/rover/
+├── rover-view.js     the page: assembles the components and runs the chat
+├── rover-engine.js   understands the question and writes the answer (add new intents here)
+├── rover-data.js     the only file that reads app data (reuses the Dashboard service)
+├── rover-history.js  per-account chat history in localStorage
+└── rover-link.js     the app's button that opens rover.html
+src/styles/rover.css (page)   src/styles/rover-link.css (app button)
+```

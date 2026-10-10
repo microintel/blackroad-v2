@@ -1,0 +1,33 @@
+/* The button inside BlackRoad that opens the separate Rover page. */
+.br-rover-link {
+    position: fixed; right: var(--br-space-5); bottom: var(--br-space-5); z-index: 260;
+    width: 58px; height: 58px; border-radius: var(--br-radius-full);
+    display: grid; place-items: center; text-decoration: none;
+    background: #000; color: var(--br-gold); border: 1px solid var(--br-border-strong);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+    transition: transform var(--br-transition), background var(--br-transition);
+}
+.br-rover-link:hover { opacity: .88; transform: translateY(-2px); }
+.br-rover-link:focus-visible { outline: 2px solid var(--br-text); outline-offset: 3px; }
+
+@media (max-width: 768px) {
+    .br-rover-link {
+        right: var(--br-space-4);
+        bottom: calc(var(--br-bottom-nav-height, 60px) + env(safe-area-inset-bottom) + var(--br-space-4));
+    }
+}
+
+/* Desktop: no floating button; Rover sits in the top bar as icon + name, next to theme and currency. */
+.br-rover-top {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-right: var(--br-space-1); padding: 0 14px 0 10px;
+    color: var(--br-text); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap;
+    background: var(--br-gold-surface); border-radius: var(--br-radius-full);
+    transition: background var(--br-transition-fast), color var(--br-transition-fast), transform var(--br-transition-fast);
+}
+.br-rover-top svg { color: var(--br-gold); flex: none; }
+.br-rover-top:hover { color: var(--br-gold-text); transform: translateY(-1px); }
+.br-rover-top:active { transform: scale(.97); }
+.br-rover-top:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; }
+
+@media (min-width: 769px) { .br-rover-link { display: none; } }
+@media (max-width: 768px) { .br-rover-top { display: none; } }

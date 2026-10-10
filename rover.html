@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Rover, the BlackRoad assistant">
+    <title>Rover</title>
+
+    <script>
+        /* Same saved theme as BlackRoad (key: br-theme), applied before first paint. */
+        (function () {
+            var d = document.documentElement, theme = "dark";
+            try {
+                var saved = localStorage.getItem("br-theme");
+                if (saved === "light" || saved === "dark") theme = saved;
+                else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) theme = "light";
+            } catch (e) { /* storage blocked: dark */ }
+            d.setAttribute("data-theme", theme);
+            d.setAttribute("data-style", "flat");
+            d.setAttribute("data-accent", "gold");
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute("content", theme === "light" ? "#EEECE7" : "#000000");
+        })();
+    </script>
+
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./assets/icons/android-icon-192x192.png">
+
+    <link rel="stylesheet" href="./src/styles/tokens.css">
+    <link rel="stylesheet" href="./src/styles/theme.css">
+    <link rel="stylesheet" href="./src/styles/global.css">
+    <link rel="stylesheet" href="./src/styles/layout.css">
+    <link rel="stylesheet" href="./src/styles/components.css">
+    <link rel="stylesheet" href="./src/styles/themes.css">
+    <link rel="stylesheet" href="./src/styles/motion.css">
+    <link rel="stylesheet" href="./src/styles/rover.css">
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script type="module" src="./src/app/rover-app.js"></script>
+</body>
+
+</html>

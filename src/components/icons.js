@@ -95,6 +95,13 @@ const ICONS = {
     "arrow-right": P("M5 12h14") + P("m12 5 7 7-7 7"),
     "arrow-up-right": P("M7 7h10v10") + P("M7 17 17 7"),
     "arrow-down-right": P("m7 7 10 10") + P("M17 7v10H7"),
+    /* Rover chat assistant */
+    bot:
+        P("M12 8V4H8") + `<rect width="16" height="12" x="4" y="8" rx="2"/>` + P("M2 14h2") + P("M20 14h2") + P("M15 13v2") + P("M9 13v2"),
+    sparkles:
+        P("M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z") +
+        P("M20 3v4") + P("M22 5h-4") + P("M4 17v2") + P("M5 18H3"),
+    send: P("M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z") + P("m21.854 2.147-10.94 10.939"),
     x: P("M18 6 6 18") + P("m6 6 12 12"),
     "circle-check": C(12, 12, 10) + P("m9 12 2 2 4-4"),
     "circle-alert": C(12, 12, 10) + P("M12 8v4") + P("M12 16h.01"),
@@ -183,4 +190,11 @@ export function iconSvg(name, opts = {}) {
         `fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">` +
         `${ICONS[name] || ""}</svg>`
     );
+}
+
+
+/* Rover symbol: a ring of 8 dots (also the loading animation). Filled, so it
+   has its own helper instead of the stroke-based icon(). */
+export function roverMark(size = 24, cls = "") {
+    return `<svg class="${cls}" viewBox="0 0 24 24" width="${size}" height="${size}" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12.00" cy="3.80" r="1.8"/><circle cx="17.80" cy="6.20" r="1.55"/><circle cx="20.20" cy="12.00" r="1.3"/><circle cx="17.80" cy="17.80" r="1.5"/><circle cx="12.00" cy="20.20" r="1.8"/><circle cx="6.20" cy="17.80" r="2.1"/><circle cx="3.80" cy="12.00" r="2.35"/><circle cx="6.20" cy="6.20" r="2.05"/></svg>`;
 }

@@ -256,6 +256,9 @@ async function renderApp() {
         root.innerHTML = "";
         ({ shell, content } = buildShell(route));
         root.appendChild(shell);
+
+        // Rover: a button that opens the separate rover.html page. A failure never affects the app.
+        import("../features/rover/rover-link.js").then((m) => m.mountRoverLink(shell)).catch(() => {});
     }
 
     // Start loading the page now; this runs alongside the fade-out above.

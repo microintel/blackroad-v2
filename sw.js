@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v102";
+const CACHE_VERSION = "v116";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -103,6 +103,19 @@ const SHELL = [
     "./src/features/income/income.js",
     "./src/features/lending/lending-service.js",
     "./src/features/lending/lending.js",
+    "./rover.html",
+    "./src/features/rover/rover-link.js",
+    "./src/features/rover/rover-view.js",
+    "./src/app/rover-app.js",
+    "./src/components/chat/chat-composer.js",
+    "./src/components/chat/chat-format.js",
+    "./src/components/chat/chat-message.js",
+    "./src/components/chat/chat-suggestions.js",
+    "./src/components/layout/rover-header.js",
+    "./src/features/rover/rover-data.js",
+    "./src/features/rover/rover-engine.js",
+    "./src/features/rover/rover-match.js",
+    "./src/features/rover/rover-history.js",
     "./src/features/networth/networth-service.js",
     "./src/features/networth/networth.js",
     "./src/features/notifications/notifications-service.js",
@@ -128,6 +141,8 @@ const SHELL = [
     "./src/styles/accounting.css",
     "./src/styles/auth.css",
     "./src/styles/avatar.css",
+    "./src/styles/rover-link.css",
+    "./src/styles/rover.css",
     "./src/styles/calculators.css",
     "./src/styles/angel-pnl.css",
     "./src/styles/brokers.css",

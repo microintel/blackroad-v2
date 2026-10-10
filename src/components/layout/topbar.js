@@ -1,4 +1,4 @@
-import { icon } from "../icons.js";
+import { icon, roverMark } from "../icons.js";
 import { getTheme } from "../../services/preferences.js";
 import { getCurrency } from "../../services/currency.js";
 
@@ -59,6 +59,18 @@ export function Topbar(title) {
                     <a href="./home.html">${icon("house", { size: 18 })}<span>Home</span></a>
                     <a href="./download.html">${icon("download", { size: 18 })}<span>Download BlackRoad</span></a>
                 </nav>
+
+
+                <a
+                    class="br-rover-top"
+                    href="./rover.html"
+                    target="_blank"
+                    rel="noopener"
+                    aria-label="Open Rover"
+                    title="Open Rover"
+                >
+                    ${roverMark(22)}<span>Rover</span>
+                </a>
 
 
                 <button
