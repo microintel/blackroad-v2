@@ -67,7 +67,7 @@ function buildTiles(data) {
 
     return [
         {
-            name: "Income & Expenses",
+            name: "Income Statement",
             path: "/income",
             value:
                 (incomeUp ? "+" : "-") +

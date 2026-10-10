@@ -16,7 +16,7 @@ const routes = {
     },
 
     "/income": {
-        title: "Income & Expenses",
+        title: "Income Statement",
         module: "income"
     },
 

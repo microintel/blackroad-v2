@@ -13,7 +13,7 @@ export const navigation = [
     {
         title: "Finance",
         items: [
-            { label: "Income & Expenses", path: "/income", icon: "wallet", color: "#22C55E" },
+            { label: "Income Statement", path: "/income", icon: "wallet", color: "#22C55E" },
             { label: "Stocks", path: "/stocks", icon: "chart-candlestick", color: "#EF4444" },
             { label: "Fixed Deposits", path: "/deposits", icon: "landmark", color: "#8B5CF6" },
             { label: "Lending", path: "/lending", icon: "arrow-left-right", color: "#06B6D4" },

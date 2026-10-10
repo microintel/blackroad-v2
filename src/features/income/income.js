@@ -21,7 +21,7 @@ import {
 } from "./income-statement.js";
 
 import { renderIncomeStatistics } from "./income-statistics.js";
-import { renderLedgerCharts } from "./income-charts.js";
+import { renderIncomeOverview, bindIncomeOverview } from "./income-charts.js";
 import { mountIncomeSearch } from "./income-search.js";
 import { renderIncomeCompare, handleCompareEvent } from "./income-compare.js";
 import { renderIncomeExpand } from "./income-expand.js";
@@ -38,7 +38,7 @@ let currentSearch = "";
 let dateFrom = "";
 let dateTo = "";
 let editingEntryId = null;
-let currentIncomeView = "ledger";
+let currentIncomeView = "overview";
 let isSaving = false;
 
 /* Ledger performance: only this many entries are drawn at once. */
@@ -62,6 +62,7 @@ const expandedEntries = new Set();
 
 
 const INCOME_TABS = [
+    ["overview", "Overview"],
     ["ledger", "Ledger"],
     ["statement", "Statement"],
     ["statistics", "Statistics"],
@@ -90,9 +91,9 @@ export async function Income() {
                 ([key, label]) => `
                     <button
                         type="button"
-                        class="br-income-tab${key === "ledger" ? " active" : ""}"
+                        class="br-income-tab${key === "overview" ? " active" : ""}"
                         data-income-tab="${key}"
-                        aria-pressed="${key === "ledger"}"
+                        aria-pressed="${key === "overview"}"
                     >${label}</button>`
             ).join("")}
         </div>
@@ -104,7 +105,13 @@ export async function Income() {
 
         <div
             class="inc-view"
+            data-income-view-container="overview"
+        ></div>
+
+        <div
+            class="inc-view"
             data-income-view-container="ledger"
+            hidden
         >
 
             <!-- SUMMARY -->
@@ -114,11 +121,6 @@ export async function Income() {
                 data-summary
                 aria-label="Income summary"
             ></section>
-
-
-            <!-- PIE CHARTS -->
-
-            <div data-ledger-charts></div>
 
 
             <!-- INVESTMENT SUMMARY -->
@@ -1364,7 +1366,10 @@ function renderViewInto(page, container, view) {
         return;
     }
 
-    if (view === "statement") {
+    if (view === "overview") {
+        container.innerHTML = renderIncomeOverview(currentEntries);
+        bindIncomeOverview(container);
+    } else if (view === "statement") {
         container.innerHTML = renderIncomeStatement(currentEntries);
     } else if (view === "statistics") {
         container.innerHTML = renderIncomeStatistics(currentEntries);
@@ -1707,11 +1712,6 @@ async function loadEntries(
         );
 
 
-        renderCharts(
-            page
-        );
-
-
         renderLedger(
             page
         );
@@ -1890,33 +1890,6 @@ function renderSummary(
         </div>
 
     `;
-
-}
-
-
-/* Pie charts under the summary (income / expenses / balance, then expenses and invested). */
-function renderCharts(
-    page
-) {
-
-    const container =
-        page.querySelector(
-            "[data-ledger-charts]"
-        );
-
-    if (!container) {
-        return;
-    }
-
-    try {
-        container.innerHTML =
-            renderLedgerCharts(
-                currentEntries
-            );
-    } catch (error) {
-        console.error(error);
-        container.innerHTML = "";
-    }
 
 }
 

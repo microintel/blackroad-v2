@@ -6,7 +6,7 @@ export const DATABASES = {
             entries: "entries",
             meta: "meta"
         },
-        label: "Income & Expenses"
+        label: "Income Statement"
     },
 
     stocks: {

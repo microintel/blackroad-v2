@@ -1670,28 +1670,40 @@
 .br-confirm-layer { z-index: 2600; }
 
 /* ---------- Ledger pie charts ---------- */
-.br-income .inc-pie-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--br-space-4, 16px); }
-.br-income .inc-pie-grid--one { grid-template-columns: minmax(0, 1fr); }
-.br-income .inc-pie-card { padding: var(--br-space-4, 16px); border: 1px solid var(--border, var(--br-border)); border-radius: var(--br-radius-lg, 16px); background: var(--surface, var(--br-surface)); min-width: 0; }
+.br-income .inc-pie-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--br-space-4, 16px); }
+@media (min-width: 1000px) {
+    /* Desktop: all three charts in one row */
+    .br-income .inc-pie-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+}
+.br-income .inc-pie-card { display: flex; flex-direction: column; padding: var(--br-space-4, 16px); border: 1px solid var(--border, var(--br-border)); border-radius: var(--br-radius-lg, 16px); background: var(--surface, var(--br-surface)); min-width: 0; }
 .br-income .inc-pie-card h4 { margin: 0; font-size: 15px; font-weight: 600; }
-.br-income .inc-pie-hint { margin: 2px 0 12px; font-size: 12.5px; color: var(--br-text-muted); }
-.br-income .inc-pie-body { display: flex; align-items: center; gap: 18px; }
-.br-income .inc-pie-svg { flex: 0 0 260px; width: 260px; height: 260px; }
-.br-income .inc-pie-svg .inc-pie-slice { cursor: pointer; transition: opacity .15s; }
-.br-income .inc-pie-svg .inc-pie-slice:hover { opacity: .85; }
-.br-income .inc-pie-legend { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; max-height: 260px; overflow-y: auto; }
-.br-income .inc-pie-legend li { display: flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; }
+.br-income .inc-pie-hint { margin: 2px 0 10px; font-size: 12.5px; color: var(--br-text-muted); }
+.br-income .inc-pie-body { display: flex; flex-direction: column; gap: 14px; }
+
+/* Chart first and large; the legend sits underneath */
+.br-income .inc-pie-svg { display: block; align-self: center; width: min(100%, 320px); height: auto; aspect-ratio: 1; overflow: visible; }
+.br-income .inc-pie-slice { cursor: pointer; transform-box: view-box; transform-origin: 50% 50%; transition: opacity .15s, transform .15s; -webkit-tap-highlight-color: transparent; }
+.br-income .inc-pie-card[data-focus] .inc-pie-slice:not(.is-focus) { opacity: .28; }
+.br-income .inc-pie-slice.is-focus { transform: scale(1.06); }
+.br-income .inc-pie-svg text { pointer-events: none; }
+
+/* Legend: never grows the page; long lists scroll inside the card */
+.br-income .inc-pie-legend { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.br-income .inc-pie-legend.is-collapsed .inc-pie-more { display: none; }
+.br-income .inc-pie-legend.is-expanded { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.br-income .inc-pie-legend li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 14px; min-width: 0; cursor: pointer; transition: background .12s, opacity .15s; }
+.br-income .inc-pie-legend li:hover,
+.br-income .inc-pie-legend li.is-focus { background: var(--hover-background, rgba(127,127,127,.12)); }
+.br-income .inc-pie-legend li:focus-visible { outline: 2px solid var(--accent, var(--br-gold)); outline-offset: -2px; }
+.br-income .inc-pie-card[data-focus] .inc-pie-legend li:not(.is-focus) { opacity: .5; }
 .br-income .inc-pie-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .br-income .inc-pie-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .br-income .inc-pie-val { flex: none; text-align: right; font-weight: 600; }
 .br-income .inc-pie-val small { display: block; font-weight: 400; font-size: 11px; color: var(--br-text-muted); }
+.br-income .inc-pie-toggle { align-self: flex-start; margin-top: 8px; padding: 7px 14px; border: 1px solid var(--border, var(--br-border)); border-radius: 999px; background: transparent; color: var(--br-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.br-income .inc-pie-toggle:hover { background: var(--hover-background, rgba(127,127,127,.12)); }
 .br-income .inc-pie-note { margin: 10px 0 0; font-size: 12px; color: var(--br-text-muted); }
 
-@media (max-width: 860px) {
-    .br-income .inc-pie-grid { grid-template-columns: minmax(0, 1fr); }
-}
-@media (max-width: 520px) {
-    .br-income .inc-pie-body { flex-direction: column; align-items: stretch; }
-    .br-income .inc-pie-svg { align-self: center; flex-basis: auto; width: min(100%, 300px); height: auto; aspect-ratio: 1; }
-    .br-income .inc-pie-legend { max-height: none; }
-}
+.br-income .inc-pie-body { flex: 1; }
+.br-income .inc-bar-card { align-items: center; }
+.br-income .inc-bar-svg { display: block; width: min(100%, 560px); height: auto; }
