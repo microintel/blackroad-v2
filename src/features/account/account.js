@@ -19,7 +19,7 @@ let toastTimer = null;
 
 export async function Account() {
     const page = document.createElement("section");
-    page.className = "br-page";
+    page.className = "br-page br-account";
 
     const session = await getSession();
 

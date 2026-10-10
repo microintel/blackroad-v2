@@ -10,6 +10,13 @@ function enterApp() {
     hardNavigate("/dashboard");
 }
 
+/* Phone only: the screen opens on a small landing (BR logo + Login, Register,
+   Google and Guest buttons). Once the person picks Login or Register we
+   remember it, so the next render goes straight to that form. Each form
+   shows only its own mode (no tab / link to the other one); Back returns
+   to the landing. */
+let enteredFromLanding = false;
+
 /* Each screen has its own slogan so Sign in and Register feel different. */
 const COPY = {
     login: {
@@ -119,6 +126,7 @@ export function AuthScreen(mode) {
     const copy = isLogin ? COPY.login : COPY.register;
     const el = document.createElement("div");
     el.className = `br-auth br-auth--${isLogin ? "login" : "register"}`;
+    el.dataset.step = enteredFromLanding ? "form" : "landing";
 
     el.innerHTML = `
         ${authBackground()}
@@ -135,6 +143,7 @@ export function AuthScreen(mode) {
             </ul>
         </aside>
         <div class="br-auth-card">
+            <button type="button" class="br-auth-back" data-l-back-form aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
             <div class="br-auth-brand">
                 <div class="br-brand-logo">BR</div>
                 <div>
@@ -175,10 +184,29 @@ export function AuthScreen(mode) {
 
             <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
         </div>
+
+        <div class="br-auth-landing">
+            <div class="br-auth-landing-group" data-group="main">
+                <button type="button" class="br-button br-button-primary" data-l-login>Login</button>
+                <button type="button" class="br-button br-auth-landing-alt" data-l-register>Register</button>
+                <button type="button" class="br-auth-google" data-l-google>${GOOGLE_ICON}<span>Continue with Google</span></button>
+                <button type="button" class="br-button br-auth-landing-alt" data-l-guest>Guest login</button>
+            </div>
+            <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
+        </div>
         </div>
     `;
 
-    startParticles(el);
+    // The animated chart is desktop / tablet only; phones stay pure black.
+    const phone = window.matchMedia("(max-width: 640px)");
+    let bgStarted = false;
+    const maybeStartBackground = () => {
+        if (bgStarted || phone.matches) return;
+        bgStarted = true;
+        startParticles(el);
+    };
+    maybeStartBackground();
+    if (phone.addEventListener) phone.addEventListener("change", maybeStartBackground);
 
     // Show / hide password (display only; the value is submitted as before).
     const eye = el.querySelector("[data-eye]");
@@ -225,15 +253,43 @@ export function AuthScreen(mode) {
         })
     );
 
-    el.querySelector("[data-google]").addEventListener("click", () => {
-        comingSoon(isLogin ? "Google sign-in" : "Google registration");
-    });
-
-    el.querySelector("[data-guest]").addEventListener("click", () => {
+    const onGoogle = () => comingSoon(isLogin ? "Google sign-in" : "Google registration");
+    const onGuest = () => {
         chooseGuestProfile(async (profile) => {
             await loginGuest(profile);
             enterApp();
         });
+    };
+
+    el.querySelector("[data-google]").addEventListener("click", onGoogle);
+    el.querySelector("[data-guest]").addEventListener("click", onGuest);
+
+    /* ---- Phone landing: Login / Register, Continue with Google, Guest login ---- */
+    const mainGroup = el.querySelector('[data-group="main"]');
+
+    const setStep = (step) => {
+        el.dataset.step = step;
+        mainGroup.hidden = step !== "landing";
+        if (step === "landing") el.querySelector("[data-l-login]")?.focus({ preventScroll: true });
+    };
+
+    // Keep the landing in sync with the initial step (e.g. re-render straight into the form).
+    mainGroup.hidden = el.dataset.step !== "landing";
+
+    el.querySelector("[data-l-google]").addEventListener("click", onGoogle);
+    el.querySelector("[data-l-guest]").addEventListener("click", onGuest);
+
+    const pickMode = (target) => {
+        enteredFromLanding = true;
+        if ((target === "login") === isLogin) setStep("form");
+        else navigate(target === "login" ? "/login" : "/register");
+    };
+    el.querySelector("[data-l-login]").addEventListener("click", () => pickMode("login"));
+    el.querySelector("[data-l-register]").addEventListener("click", () => pickMode("register"));
+
+    el.querySelector("[data-l-back-form]").addEventListener("click", () => {
+        enteredFromLanding = false;
+        setStep("landing");
     });
 
     return el;

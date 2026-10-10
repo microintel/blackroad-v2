@@ -767,7 +767,6 @@
 
     /* ---- Less text: tabs already say Sign in / Register ---- */
     .br-auth .br-auth-long,
-    .br-auth .br-auth-card > h2,
     .br-auth .br-auth-card > p,
     .br-auth .br-auth-aside h1,
     .br-auth .br-auth-alt > span,
@@ -781,8 +780,10 @@
     /* Sheet: tighter and calmer */
     .br-auth .br-auth-card { padding: 10px 22px calc(18px + env(safe-area-inset-bottom)); }
     .br-auth .br-auth-card::before { margin-bottom: 10px; }
-    .br-auth .br-auth-tabs { margin-bottom: 8px; }
-    .br-auth .br-auth-tabs a { min-height: 42px; font-size: 14px; }
+    /* Phone: the form shows only its own mode, so no Sign in / Register tabs;
+       the heading names the screen instead. */
+    .br-auth .br-auth-tabs { display: none !important; }
+    .br-auth .br-auth-card > h2 { margin: 4px 0 12px; font-size: 24px; }
 
     /* Fields: shorter, quieter */
     .br-auth .br-auth-form { gap: 10px; }
@@ -884,4 +885,137 @@
         overscroll-behavior: none;
         -webkit-overflow-scrolling: touch;
     }
+}
+
+
+/* =========================================================
+   PHONE ONLY (<= 640px): pure-black landing
+   BR logo + name, then three buttons only:
+   Login / Register, Continue with Google, Guest login.
+   "Login / Register" asks Login or Register, then opens the
+   existing form. The chart animation is removed on phones.
+   Desktop and tablet are untouched.
+   ========================================================= */
+
+.br-auth-landing { display: none; }
+.br-auth-back { display: none; }
+
+@media (max-width: 640px) {
+
+    /* No animated chart on phones: flat pure black */
+    .br-auth .br-auth-bg { display: none; }
+    :root .br-auth { background: #000000; }
+
+    /* ---- Landing + Login/Register choice ---- */
+    .br-auth:not([data-step="form"]) .br-auth-card { display: none; }
+
+    .br-auth:not([data-step="form"]) .br-auth-landing {
+        display: grid;
+        gap: 14px;
+        padding: 0 24px calc(env(safe-area-inset-bottom) + 22px);
+        animation: br-auth-rise 0.45s var(--au-ease) both;
+    }
+
+    .br-auth[data-step="form"] .br-auth-landing { display: none; }
+
+    .br-auth .br-auth-landing-group { display: grid; gap: 12px; }
+    .br-auth .br-auth-landing-group[hidden] { display: none; }
+
+    /* Brand centred in the free space above the buttons */
+    .br-auth:not([data-step="form"]) .br-auth-aside {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(env(safe-area-inset-top) + 24px) 24px 8px;
+    }
+
+    .br-auth:not([data-step="form"]) .br-auth-aside-brand {
+        flex-direction: column;
+        gap: 18px;
+        margin: 0;
+    }
+
+    :root .br-auth:not([data-step="form"]) .br-auth-aside-brand .br-brand-logo {
+        width: 84px;
+        height: 84px;
+        flex-basis: 84px;
+        border-radius: 24px;
+        font-size: 34px;
+    }
+
+    .br-auth:not([data-step="form"]) .br-auth-aside-brand .br-brand-name {
+        font-size: 34px;
+        text-align: center;
+    }
+
+    /* Big pill buttons */
+    .br-auth .br-auth-landing .br-button,
+    .br-auth .br-auth-landing .br-auth-google {
+        width: 100%;
+        min-height: 54px;
+        margin: 0;
+        border-radius: 999px;
+        font-size: 16px;
+        font-weight: 650;
+    }
+
+    .br-auth .br-auth-landing .br-auth-google { gap: 12px; }
+    .br-auth .br-auth-landing .br-auth-google-icon { width: 20px; height: 20px; }
+
+    .br-auth .br-auth-landing .br-auth-landing-alt {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #0F0F0F;
+        color: #FFFFFF;
+        border: 1px solid #2A2A2A;
+        cursor: pointer;
+    }
+
+    .br-auth .br-auth-landing .br-auth-landing-alt:hover,
+    .br-auth .br-auth-landing .br-auth-landing-alt:active { background: #1A1A1A; color: #FFFFFF; border-color: #3A3A3A; }
+
+    .br-auth .br-auth-landing .br-auth-landing-back {
+        min-height: 44px;
+        border: 0;
+        background: transparent;
+        color: var(--br-text-secondary);
+        font: inherit;
+        font-size: 14.5px;
+        cursor: pointer;
+    }
+
+    .br-auth .br-auth-landing .br-auth-landing-back:hover { color: #FFFFFF; }
+
+    .br-auth .br-auth-landing .br-auth-credit { margin-top: 6px; font-size: 11px; opacity: 0.7; }
+
+    .br-auth .br-auth-landing .br-button:focus-visible,
+    .br-auth .br-auth-landing .br-auth-google:focus-visible,
+    .br-auth .br-auth-landing .br-auth-landing-back:focus-visible { outline: 2px solid var(--au-a); outline-offset: 3px; }
+
+    /* ---- Form step: small Back link to return to the landing ---- */
+    .br-auth .br-auth-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        justify-self: start;
+        min-height: 36px;
+        margin: 0 0 2px -8px;
+        padding: 0 10px 0 6px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--br-text-secondary);
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .br-auth .br-auth-back:hover { color: #FFFFFF; }
+    .br-auth .br-auth-back:focus-visible { outline: 2px solid var(--au-a); outline-offset: 2px; }
+}
+
+/* Short landscape phones: keep the brand visible on the landing */
+@media (max-width: 640px) and (max-height: 600px) {
+    .br-auth:not([data-step="form"]) .br-auth-aside { display: flex; }
 }
