@@ -146,7 +146,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: inherit;
+    color: var(--nav-color, inherit);
 }
 
 .br-nav-label {

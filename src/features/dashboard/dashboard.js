@@ -2,6 +2,8 @@ import { navigate } from "../../app/router.js";
 import { currentUser, isGuestSync, getGuestProfile, GUEST_PROFILES } from "../../services/auth.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { icon, FEATURE_ICON } from "../../components/icons.js";
+import { avatarSVG } from "../../components/avatars.js";
+import { dataService } from "../../data/data-service.js";
 
 import {
     getDashboardData,
@@ -298,6 +300,27 @@ function firstName(user) {
     return name ? name.split(/\s+/)[0] : "";
 }
 
+/* "Data last updated" is the date set in Account (saved with the data). */
+async function loadDataUpdated() {
+    try {
+        const store = await dataService.getIncomeStore();
+        const raw = String((await store.getUpdateDate()) || "").trim();
+
+        if (!raw) return "";
+
+        const hasTime = raw.length > 10;
+        const date = new Date(raw.length === 10 ? raw + "T00:00:00" : raw);
+
+        if (isNaN(date)) return "";
+
+        return date.toLocaleString("en-IN", hasTime
+            ? { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }
+            : { day: "numeric", month: "short", year: "numeric" });
+    } catch {
+        return "";
+    }
+}
+
 function longDate() {
     return new Date().toLocaleDateString("en-IN", {
         weekday: "long",
@@ -387,9 +410,12 @@ export async function Dashboard() {
         user = await currentUser();
     } catch { /* guest or signed out: greet without a name */ }
 
+    /* Cartoon avatar instead of the name's first letter. */
     const initial = firstName(user)
-        ? escapeText(firstName(user).charAt(0).toUpperCase())
+        ? avatarSVG((user && (user.email || user.name)) || "")
         : "";
+
+    const updatedText = await loadDataUpdated();
 
     const hello = firstName(user)
         ? `${greeting()}, ${escapeText(firstName(user))}`
@@ -523,6 +549,8 @@ export async function Dashboard() {
 
             <div data-pnl-chart>${buildPnlChart(data.series)}</div>
         </div>` : ""}
+
+        ${updatedText ? `<p class="br-dash-updated" title="Change this in Account">Data updated: ${escapeText(updatedText)}</p>` : ""}
     `;
 
     /* Open a section */

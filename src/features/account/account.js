@@ -2,6 +2,7 @@ import { confirmLogout } from "../../components/confirm-dialog.js";
 import { hardNavigate } from "../../app/router.js";
 import { AppearanceCard } from "./appearance.js";
 import { dataService } from "../../data/data-service.js";
+import { avatarSVG } from "../../components/avatars.js";
 import { chooseGuestProfile } from "../auth/auth-screen.js";
 import {
     getSession,
@@ -182,7 +183,7 @@ async function renderProfile(page, user) {
             <div class="ac-side">
                 <section class="br-card">
                     <div class="ac-head">
-                        <div class="ac-avatar" data-avatar>${escapeHTML(initials(user.name))}</div>
+                        <div class="ac-avatar" data-avatar>${avatarSVG(user.email || user.name)}</div>
                         <div>
                             <h3 data-name>${escapeHTML(user.name || "BlackRoad User")}</h3>
                             <p class="br-muted">${escapeHTML(user.email)}</p>
@@ -258,7 +259,6 @@ async function renderProfile(page, user) {
         const updated = await updateProfile({ name: data.name });
 
         page.querySelector("[data-name]").textContent = updated.name;
-        page.querySelector("[data-avatar]").textContent = initials(updated.name);
 
         toast(page, "Profile updated");
     });

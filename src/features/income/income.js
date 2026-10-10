@@ -21,6 +21,7 @@ import {
 } from "./income-statement.js";
 
 import { renderIncomeStatistics } from "./income-statistics.js";
+import { renderLedgerCharts } from "./income-charts.js";
 import { mountIncomeSearch } from "./income-search.js";
 import { renderIncomeCompare, handleCompareEvent } from "./income-compare.js";
 import { renderIncomeExpand } from "./income-expand.js";
@@ -113,6 +114,11 @@ export async function Income() {
                 data-summary
                 aria-label="Income summary"
             ></section>
+
+
+            <!-- PIE CHARTS -->
+
+            <div data-ledger-charts></div>
 
 
             <!-- INVESTMENT SUMMARY -->
@@ -1701,6 +1707,11 @@ async function loadEntries(
         );
 
 
+        renderCharts(
+            page
+        );
+
+
         renderLedger(
             page
         );
@@ -1879,6 +1890,33 @@ function renderSummary(
         </div>
 
     `;
+
+}
+
+
+/* Pie charts under the summary (income / expenses / balance, then expenses and invested). */
+function renderCharts(
+    page
+) {
+
+    const container =
+        page.querySelector(
+            "[data-ledger-charts]"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    try {
+        container.innerHTML =
+            renderLedgerCharts(
+                currentEntries
+            );
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = "";
+    }
 
 }
 

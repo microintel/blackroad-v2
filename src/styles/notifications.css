@@ -78,3 +78,7 @@
 
 .dm-progress { margin-top: 20px; }
 .dm-progress progress { width: 100%; height: 10px; }
+
+/* Account avatar shows a cartoon image instead of initials */
+.ac-avatar { overflow: hidden; padding: 0; background: transparent; }
+.ac-avatar .br-avatar-img { display: block; width: 100%; height: 100%; }

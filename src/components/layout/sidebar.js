@@ -90,7 +90,7 @@ export function Sidebar() {
 
             link.innerHTML = `
 
-                <span class="br-nav-icon">
+                <span class="br-nav-icon"${item.color ? ` style="--nav-color:${item.color}"` : ""}>
                     ${icon(item.icon, { size: 20 })}
                 </span>
 
