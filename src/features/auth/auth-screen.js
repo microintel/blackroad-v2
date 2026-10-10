@@ -1,4 +1,5 @@
 import { login, register, loginGuest, GUEST_PROFILES } from "../../services/auth.js";
+import { randomPortraitSet, saveGuestAvatar } from "../../services/guest-avatar.js";
 import { navigate, hardNavigate } from "../../app/router.js";
 import { authBackground, startParticles } from "./auth-background.js";
 
@@ -82,16 +83,21 @@ const AVATARS = {
 export function chooseGuestProfile(onPick) {
     const previous = document.activeElement;
     const layer = document.createElement("div");
+
+    // Two men + two women, one photo per portfolio, new on every open.
+    const ids = Object.keys(GUEST_PROFILES);
+    const portraits = Object.fromEntries(
+        randomPortraitSet().map((url, i) => [ids[i], url])
+    );
     layer.className = "br-auth-popup-layer";
     layer.innerHTML = `
         <div class="br-auth-popup br-auth-popup--wide" role="dialog" aria-modal="true" aria-labelledby="br-guest-title" aria-describedby="br-guest-text">
-            <h3 id="br-guest-title">Explore with sample data</h3>
+            <h3 id="br-guest-title">Guest Login</h3>
             <p id="br-guest-text">Pick a portfolio to explore. Everything is fictional and read-only.</p>
             <div class="br-guest-options">
                 ${Object.entries(GUEST_PROFILES).map(([id, p]) => `
                     <button type="button" class="br-guest-option" data-profile="${id}" style="--tier:${TIER_COLOR[id] || '#6B7280'}">
-                        <span class="br-guest-avatar">${AVATARS[id] || ""}</span>
-                        <span class="br-guest-option-name">${p.label}</span>
+                        <span class="br-guest-avatar is-loading"><img class="br-guest-photo" src="${portraits[id]}" alt="" referrerpolicy="no-referrer" decoding="async" draggable="false"></span>
                         <span class="br-guest-option-range">${p.range}</span>
                     </button>`).join("")}
             </div>
@@ -110,9 +116,23 @@ export function chooseGuestProfile(onPick) {
 
     layer.addEventListener("click", (e) => { if (e.target === layer) close(); });
     layer.querySelector("[data-popup-cancel]").addEventListener("click", close);
+    // Skeleton shimmer until each photo has loaded; if one can't load
+    // (offline), show the plain tier icon instead.
+    layer.querySelectorAll(".br-guest-photo").forEach((img) => {
+        const box = img.closest(".br-guest-avatar");
+
+        img.addEventListener("load", () => box.classList.remove("is-loading"));
+        img.addEventListener("error", () => {
+            const id = img.closest("[data-profile]").dataset.profile;
+            box.classList.remove("is-loading");
+            box.innerHTML = AVATARS[id] || "";
+            delete portraits[id];
+        });
+    });
     layer.querySelectorAll("[data-profile]").forEach((btn) =>
         btn.addEventListener("click", () => {
             layer.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+            saveGuestAvatar(portraits[btn.dataset.profile] || "");
             onPick(btn.dataset.profile);
         })
     );

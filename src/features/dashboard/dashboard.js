@@ -2,7 +2,9 @@ import { navigate } from "../../app/router.js";
 import { currentUser, isGuestSync, getGuestProfile, GUEST_PROFILES } from "../../services/auth.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { icon, FEATURE_ICON } from "../../components/icons.js";
-import { avatarSVG } from "../../components/avatars.js";
+import { avatarMarkup, avatarImg } from "../../components/avatars.js";
+import { loadGuestAvatar } from "../../services/guest-avatar.js";
+import { loadAvatarUrl } from "../../services/avatar-service.js";
 import { dataService } from "../../data/data-service.js";
 
 import {
@@ -411,9 +413,14 @@ export async function Dashboard() {
     } catch { /* guest or signed out: greet without a name */ }
 
     /* Cartoon avatar instead of the name's first letter. */
+    const guestPhoto = !firstName(user) && isGuestSync() ? loadGuestAvatar() : "";
+
     const initial = firstName(user)
-        ? avatarSVG((user && (user.email || user.name)) || "")
-        : "";
+        ? avatarMarkup(
+            await loadAvatarUrl(),
+            (user && (user.email || user.name)) || ""
+        )
+        : (guestPhoto ? avatarImg(guestPhoto, "guest") : "");
 
     const updatedText = await loadDataUpdated();
 
@@ -446,7 +453,7 @@ export async function Dashboard() {
                 <p class="br-dash-sub">Here’s how your money looks today.</p>
                 ${tierBadge}
             </div>
-            ${initial ? `<button type="button" class="br-dash-avatar" data-path="/account" aria-label="Open account">${initial}</button>` : ""}
+            ${initial ? `<button type="button" class="br-dash-avatar${guestPhoto ? " br-dash-avatar--guest" : ""}" data-path="/account" aria-label="Open account">${initial}</button>` : ""}
         </div>
 
         ${hasAnyData(data) ? "" : buildOnboarding()}

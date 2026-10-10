@@ -2,7 +2,17 @@ import { confirmLogout } from "../../components/confirm-dialog.js";
 import { hardNavigate } from "../../app/router.js";
 import { AppearanceCard } from "./appearance.js";
 import { dataService } from "../../data/data-service.js";
-import { avatarSVG } from "../../components/avatars.js";
+import { avatarMarkup } from "../../components/avatars.js";
+import {
+    AVATAR_STYLES,
+    AVATAR_BACKGROUNDS,
+    buildAvatarUrl,
+    parseAvatarUrl,
+    defaultAvatarConfig,
+    loadAvatarUrl,
+    saveAvatarUrl,
+    clearAvatarUrl
+} from "../../services/avatar-service.js";
 import { chooseGuestProfile } from "../auth/auth-screen.js";
 import {
     getSession,
@@ -175,6 +185,8 @@ function nowLocalInput() {
 
 async function renderProfile(page, user) {
     const dataUpdated = await loadDataUpdated();
+    const savedAvatar = await loadAvatarUrl();
+    const avatarSeed = user.email || user.name;
 
     page.innerHTML = `
         ${HEADING}
@@ -183,13 +195,56 @@ async function renderProfile(page, user) {
             <div class="ac-side">
                 <section class="br-card">
                     <div class="ac-head">
-                        <div class="ac-avatar" data-avatar>${avatarSVG(user.email || user.name)}</div>
+                        <div class="ac-avatar" data-avatar>${avatarMarkup(savedAvatar, avatarSeed)}</div>
                         <div>
                             <h3 data-name>${escapeHTML(user.name || "BlackRoad User")}</h3>
                             <p class="br-muted">${escapeHTML(user.email)}</p>
                         </div>
                         <span class="br-badge br-badge-info" data-plan>${escapeHTML(user.plan)}</span>
                     </div>
+                </section>
+
+                <section class="br-card">
+                    <div class="br-card-heading"><h3>Avatar</h3></div>
+                    <form class="ac-stack" data-form="avatar">
+                        <div class="ac-av-preview" data-av-preview></div>
+
+                        <div>
+                            <span class="ac-av-label">Style</span>
+                            <div class="ac-av-styles" data-av-styles></div>
+                        </div>
+
+                        <div>
+                            <span class="ac-av-label">Looks in this style — tap one</span>
+                            <div class="ac-av-looks" data-av-looks></div>
+                            <button type="button" class="br-button ac-av-more" data-action="av-more">Show more looks</button>
+                        </div>
+
+                        <label>
+                            <span>Seed (any text — changes the look)</span>
+                            <div class="ac-av-seed">
+                                <input name="seed" type="text" class="br-input" maxlength="60" autocomplete="off" data-av-seed>
+                            </div>
+                        </label>
+
+                        <div>
+                            <span class="ac-av-label">Background</span>
+                            <div class="ac-av-swatches" data-av-swatches></div>
+                        </div>
+
+                        <label class="ac-switch-label">
+                            <input type="checkbox" data-av-flip>
+                            Flip horizontally
+                        </label>
+
+                        <p class="br-muted">Powered by DiceBear. Only the link is saved, and it is included in your backups.</p>
+                        <p class="br-field-help ac-error" data-error="avatar" hidden></p>
+
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="submit" class="br-button br-button-primary">Save avatar</button>
+                            <button type="button" class="br-button" data-action="av-reset">Use default</button>
+                        </div>
+                    </form>
                 </section>
 
                 <section class="br-card">
@@ -292,9 +347,175 @@ async function renderProfile(page, user) {
         }
     });
 
+    bindAvatarEditor(page, savedAvatar, avatarSeed);
+
     page.querySelector('[data-action="logout"]').addEventListener("click", async () => {
         if (await confirmLogout()) reloadApp();
     });
+}
+
+/* ---------------- avatar editor (DiceBear) ---------------- */
+
+function bindAvatarEditor(page, savedUrl, avatarSeed) {
+    const form = page.querySelector('[data-form="avatar"]');
+    const error = page.querySelector('[data-error="avatar"]');
+    const preview = page.querySelector("[data-av-preview]");
+    const stylesBox = page.querySelector("[data-av-styles]");
+    const looksBox = page.querySelector("[data-av-looks]");
+    const moreBtn = page.querySelector('[data-action="av-more"]');
+    const swatchBox = page.querySelector("[data-av-swatches]");
+    const seedInput = page.querySelector("[data-av-seed]");
+    const flipInput = page.querySelector("[data-av-flip]");
+    const headAvatar = page.querySelector("[data-avatar]");
+
+    // Start from the saved avatar, otherwise from the account's own seed.
+    const state = parseAvatarUrl(savedUrl) || defaultAvatarConfig(avatarSeed);
+
+    seedInput.value = state.seed;
+    flipInput.checked = state.flip;
+
+    let thumbTimer = null;
+
+    // Looks gallery: the same style with seeds 1, 2, 3 ... (24 more per tap).
+    const LOOKS_STEP = 24;
+    const LOOKS_MAX = 480;
+    let looksShown = LOOKS_STEP;
+
+    const current = () => buildAvatarUrl(state);
+
+    function drawPreview() {
+        preview.innerHTML = avatarMarkup(current(), state.seed);
+    }
+
+    function drawStyles() {
+        stylesBox.innerHTML = AVATAR_STYLES.map((st) => {
+            const url = buildAvatarUrl({ ...state, style: st.id });
+
+            return `<button type="button" class="ac-av-style${st.id === state.style ? " is-active" : ""}" data-style="${st.id}" title="${st.label}" aria-label="${st.label}" aria-pressed="${st.id === state.style}">${avatarMarkup(url, state.seed)}<small>${st.label}</small></button>`;
+        }).join("");
+
+        // 30 thumbnails: only fetch the ones scrolled into view.
+        stylesBox.querySelectorAll("img").forEach((img) => { img.loading = "lazy"; });
+    }
+
+    function drawLooks() {
+        let html = "";
+
+        for (let n = 1; n <= looksShown; n++) {
+            const seed = String(n);
+            const url = buildAvatarUrl({ ...state, seed });
+            const on = seed === state.seed;
+
+            html += `<button type="button" class="ac-av-look${on ? " is-active" : ""}" data-look="${seed}" aria-label="Look ${seed}" aria-pressed="${on}">${avatarMarkup(url, seed)}</button>`;
+        }
+
+        looksBox.innerHTML = html;
+        looksBox.querySelectorAll("img").forEach((img) => { img.loading = "lazy"; });
+        moreBtn.hidden = looksShown >= LOOKS_MAX;
+    }
+
+    function drawSwatches() {
+        swatchBox.innerHTML = AVATAR_BACKGROUNDS.map((hex) => {
+            const label = hex ? "#" + hex : "No background";
+            const bg = hex ? `style="background:#${hex}"` : "";
+
+            return `<button type="button" class="ac-av-swatch${hex ? "" : " is-none"}${hex === state.background ? " is-active" : ""}" data-bg="${hex}" ${bg} title="${label}" aria-label="${label}" aria-pressed="${hex === state.background}"></button>`;
+        }).join("");
+    }
+
+    function redraw() {
+        drawPreview();
+        drawStyles();
+        drawLooks();
+        drawSwatches();
+    }
+
+    function setHead(url) {
+        headAvatar.innerHTML = avatarMarkup(url, avatarSeed);
+    }
+
+    stylesBox.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-style]");
+
+        if (!btn) return;
+
+        state.style = btn.dataset.style;
+        redraw();
+    });
+
+    looksBox.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-look]");
+
+        if (!btn) return;
+
+        state.seed = btn.dataset.look;
+        seedInput.value = state.seed;
+        redraw();
+    });
+
+    moreBtn.addEventListener("click", () => {
+        looksShown = Math.min(looksShown + LOOKS_STEP, LOOKS_MAX);
+        drawLooks();
+    });
+
+    swatchBox.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-bg]");
+
+        if (!btn) return;
+
+        state.background = btn.dataset.bg;
+        redraw();
+    });
+
+    seedInput.addEventListener("input", () => {
+        state.seed = seedInput.value.trim() || "blackroad";
+        drawPreview();
+
+        // Style thumbnails each fetch an image: wait until typing pauses.
+        clearTimeout(thumbTimer);
+        thumbTimer = setTimeout(() => { drawStyles(); drawLooks(); }, 450);
+    });
+
+    flipInput.addEventListener("change", () => {
+        state.flip = flipInput.checked;
+        redraw();
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        error.hidden = true;
+
+        try {
+            const saved = await saveAvatarUrl(current());
+
+            setHead(saved);
+            toast(page, "Avatar saved");
+        } catch (err) {
+            error.textContent = err.message || "Could not save your avatar.";
+            error.hidden = false;
+        }
+    });
+
+    page.querySelector('[data-action="av-reset"]').addEventListener("click", async () => {
+        error.hidden = true;
+
+        try {
+            await clearAvatarUrl();
+
+            Object.assign(state, defaultAvatarConfig(avatarSeed));
+            seedInput.value = state.seed;
+            flipInput.checked = false;
+
+            redraw();
+            setHead("");
+            toast(page, "Back to the default avatar");
+        } catch (err) {
+            error.textContent = err.message || "Could not reset your avatar.";
+            error.hidden = false;
+        }
+    });
+
+    redraw();
 }
 
 /* ---------------- helpers ---------------- */

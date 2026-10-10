@@ -85,3 +85,49 @@ export function avatarSVG(seed, { size } = {}) {
         </g>
     </svg>`;
 }
+
+/* =========================================================
+   DICEBEAR AVATAR (image link)
+   avatarMarkup() shows the user's saved DiceBear URL when there is
+   one, otherwise the built-in avatar above. If the image cannot load
+   (offline, blocked) it swaps itself for the built-in avatar.
+   ========================================================= */
+
+const escapeAttr = (s) =>
+    String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+
+let fallbackBound = false;
+
+/* "error" does not bubble, so listen once in the capture phase. */
+function bindFallback() {
+    if (fallbackBound || typeof document === "undefined") return;
+
+    fallbackBound = true;
+
+    document.addEventListener("error", (event) => {
+        const img = event.target;
+
+        if (!img || img.tagName !== "IMG" || !img.classList.contains("br-avatar-img")) return;
+        if (img.dataset.fallbackSeed === undefined) return;
+
+        const holder = document.createElement("template");
+
+        holder.innerHTML = avatarSVG(img.dataset.fallbackSeed);
+
+        const svg = holder.content.firstElementChild;
+
+        if (svg) img.replaceWith(svg);
+    }, true);
+}
+
+export function avatarImg(url, fallbackSeed) {
+    bindFallback();
+
+    return `<img class="br-avatar-img" src="${escapeAttr(url)}" alt="" data-fallback-seed="${escapeAttr(fallbackSeed || "")}" referrerpolicy="no-referrer" decoding="async" draggable="false">`;
+}
+
+export function avatarMarkup(url, seed) {
+    return url ? avatarImg(url, seed) : avatarSVG(seed);
+}

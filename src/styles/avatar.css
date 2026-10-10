@@ -1,0 +1,154 @@
+/* Avatar editor (Account page) — DiceBear avatars */
+
+.ac-av-preview {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 1px solid var(--rf-line, var(--border-color, rgba(128, 128, 128, .3)));
+    background: var(--hover-background);
+}
+
+.ac-av-preview .br-avatar-img { display: block; width: 100%; height: 100%; }
+
+.ac-av-label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: var(--br-font-size-sm);
+    font-weight: 500;
+}
+
+.ac-av-styles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: 8px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.ac-av-style {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    background: var(--hover-background);
+    color: var(--text-primary);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ac-av-style .br-avatar-img { display: block; width: 52px; height: 52px; border-radius: 50%; }
+.ac-av-style small { font-size: 11px; line-height: 1.2; text-align: center; }
+.ac-av-style:hover { border-color: var(--rf-line, rgba(128, 128, 128, .5)); }
+.ac-av-style.is-active { border-color: var(--accent); }
+.ac-av-style:focus-visible,
+.ac-av-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.ac-av-seed { display: flex; gap: 8px; }
+.ac-av-seed .br-input { flex: 1 1 auto; min-width: 0; }
+.ac-av-seed .br-button { flex: none; }
+
+.ac-av-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.ac-av-swatch {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid var(--rf-line, rgba(128, 128, 128, .4));
+    border-radius: 50%;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* "no background": diagonal slash */
+.ac-av-swatch.is-none {
+    background: linear-gradient(135deg, transparent 45%, rgba(128, 128, 128, .7) 45% 55%, transparent 55%);
+}
+
+.ac-av-swatch.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+
+/* keep the flip switch on one row inside the stacked form */
+.ac-stack label.ac-switch-label { flex-direction: row; align-items: center; }
+
+/* Looks gallery: many variations of the chosen style */
+.ac-av-looks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.ac-av-look {
+    padding: 0;
+    aspect-ratio: 1;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--hover-background);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ac-av-look .br-avatar-img { display: block; width: 100%; height: 100%; }
+.ac-av-look:hover { border-color: var(--rf-line, rgba(128, 128, 128, .5)); }
+.ac-av-look.is-active { border-color: var(--accent); }
+.ac-av-look:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ac-av-more { margin-top: 8px; }
+
+/* photos (guest portraits, DiceBear <img>) fill their circle */
+img.br-avatar-img { object-fit: cover; }
+
+.br-guest-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--tier, #6B7280);
+    box-sizing: border-box;
+}
+
+/* ---- Guest picker: only the net-worth range, skeleton while photos load ---- */
+.br-guest-option-range { font-size: 14px; font-weight: 600; color: #E5E7EB; }
+
+.br-guest-avatar { border-radius: 50%; width: 128px; height: 128px; }
+
+.br-guest-avatar.is-loading {
+    background: linear-gradient(90deg, #1a1a1a 25%, #2c2c2c 37%, #1a1a1a 63%) 0 0 / 300% 100%;
+    animation: br-av-shimmer 1.2s ease-in-out infinite;
+}
+
+.br-guest-photo { transition: opacity .3s ease; }
+.br-guest-avatar.is-loading .br-guest-photo { opacity: 0; }
+
+@keyframes br-av-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+@media (max-width: 640px) {
+    .br-guest-avatar { width: 76px; height: 76px; }
+    .br-guest-option-range { font-size: 12.5px; }
+}
+
+/* ---- Dashboard guest portrait: a little bigger, shimmer behind it until loaded ---- */
+.br-dash-avatar.br-dash-avatar--guest,
+.br-dash-avatar.br-dash-avatar--guest:hover {
+    width: 96px;
+    height: 96px;
+    background: linear-gradient(90deg, var(--hover-background) 25%, color-mix(in srgb, var(--hover-background), var(--text-primary) 14%) 37%, var(--hover-background) 63%) 0 0 / 300% 100%;
+    animation: br-av-shimmer 1.2s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+    .br-dash-avatar.br-dash-avatar--guest { width: 80px; height: 80px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-guest-avatar.is-loading,
+    .br-dash-avatar.br-dash-avatar--guest { animation: none; }
+}

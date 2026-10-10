@@ -24,6 +24,7 @@ import { dataService } from "../data/data-service.js";
 import { DATABASES } from "../data/db-registry.js";
 import { getDatabaseName } from "../data/database.js";
 import { detectLegacy } from "./legacy-import.js";
+import { AVATAR_META_KEY } from "./avatar-service.js";
 
 const MODULES = Object.keys(DATABASES);
 const LAST_BACKUP_KEY = "br_lastBackup";
@@ -41,6 +42,34 @@ function idbRequest(request) {
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
+}
+
+/*
+ * The profile avatar link lives in the income "meta" store, so it is
+ * exported and restored with the backup. A backup that has no avatar
+ * (older files) must not wipe the current one: carry it over.
+ * Returns the stores to write (the original object when nothing changes).
+ */
+async function storesKeepingAvatar(db, entry) {
+    const stores = entry.stores;
+
+    if (entry.module !== "income" || !Array.isArray(stores.meta)) return stores;
+    if (stores.meta.some((r) => r && r.key === AVATAR_META_KEY)) return stores;
+    if (!db.objectStoreNames.contains("meta")) return stores;
+
+    try {
+        const current = await idbRequest(
+            db.transaction("meta", "readonly")
+                .objectStore("meta")
+                .get(AVATAR_META_KEY)
+        );
+
+        if (current && current.value) {
+            return { ...stores, meta: [...stores.meta, current] };
+        }
+    } catch { /* nothing to keep */ }
+
+    return stores;
 }
 
 /* ---------------- overview (record counts) ---------------- */
@@ -346,6 +375,8 @@ export async function restoreBackup(parsed, onProgress) {
 
         if (!names.length) continue;
 
+        const toWrite = await storesKeepingAvatar(db, entry);
+
         await new Promise((resolve, reject) => {
             const tx = db.transaction(names, "readwrite");
 
@@ -356,7 +387,7 @@ export async function restoreBackup(parsed, onProgress) {
 
                     store.clear();
 
-                    entry.stores[name].forEach((record) => {
+                    toWrite[name].forEach((record) => {
                         if (keyless) store.put(record.value, record.key);
                         else store.put(record);
                     });

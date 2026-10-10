@@ -149,6 +149,7 @@ export async function logout() {
         await deleteGuestDatabases();
         lsRemove("br_guest_profile");
         lsRemove("br_guest_seeded");
+        lsRemove("br_guest_avatar");
     }
 }
 
