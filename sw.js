@@ -10,13 +10,15 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v99";
+const CACHE_VERSION = "v102";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
     "./",
     "./index.html",
     "./manifest.json",
+    "./home.html",
+    "./download.html",
     "./sample.json",
     "./samples/bottom-50.json",
     "./samples/middle-40.json",
@@ -203,6 +205,30 @@ self.addEventListener("fetch", (event) => {
 
     // Never touch cross-origin traffic (live price / NAV APIs).
     if (url.origin !== self.location.origin) return;
+
+    // The download links file must always be fresh (never cached here).
+    if (url.pathname.endsWith("/blackroad-apps.json")) return;
+
+    // Public site pages (home / download): network first, offline -> their
+    // own cached copy. They must never overwrite the cached app shell.
+    if (req.mode === "navigate" && /\/(home|download)\.html$/.test(url.pathname)) {
+        event.respondWith(
+            fetch(req)
+                .then((res) => {
+                    if (res && res.ok) {
+                        const copy = res.clone();
+                        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+                    }
+                    return res;
+                })
+                .catch(() =>
+                    caches
+                        .match(req)
+                        .then((r) => r || caches.match("./index.html"))
+                )
+        );
+        return;
+    }
 
     // Page navigation: network first, offline -> cached shell.
     if (req.mode === "navigate") {

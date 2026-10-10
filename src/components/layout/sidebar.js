@@ -40,6 +40,10 @@ export function Sidebar() {
         ></nav>
 
         <div class="br-sidebar-credit">
+            <div class="br-site-links">
+                <a href="./home.html">${icon("house", { size: 18 })}<span>Home</span></a>
+                <a href="./download.html">${icon("download", { size: 18 })}<span>Download BlackRoad</span></a>
+            </div>
             Developed by <strong>Microintel</strong>
         </div>
 

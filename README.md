@@ -21,6 +21,14 @@ python -m http.server 8080      # then open http://localhost:8080/index.html
 Older path-style links (`/income`) and `?go=/route` links are converted to the hash form on load.
 Sign-in, sign-out, restore and account changes do a full reload of `index.html#/route`.
 
+## Public site pages
+
+`home.html` (landing page) and `download.html` (installers + "Install Web") sit next to `index.html`
+and link to each other and to the app (`index.html#/dashboard`, `#/login`, `#/register`).
+The app's sidebar and sign-in screen link back to both. Installer links are read from
+`blackroad-apps.json` (edit that file to update downloads); the remote copy is only a fallback.
+Theme is shared across all pages through the `br-theme` key.
+
 ## Project structure
 
 ```text

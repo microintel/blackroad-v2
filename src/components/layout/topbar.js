@@ -55,6 +55,12 @@ export function Topbar(title) {
 
             <div class="br-header-actions">
 
+                <nav class="br-header-links" aria-label="Site">
+                    <a href="./home.html">${icon("house", { size: 18 })}<span>Home</span></a>
+                    <a href="./download.html">${icon("download", { size: 18 })}<span>Download BlackRoad</span></a>
+                </nav>
+
+
                 <button
                     class="br-icon-button"
                     type="button"

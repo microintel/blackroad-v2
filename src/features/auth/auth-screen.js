@@ -150,6 +150,7 @@ export function AuthScreen(mode) {
 
     el.innerHTML = `
         ${authBackground()}
+        <nav class="br-auth-topnav" aria-label="Site"><a href="./home.html">Home</a><a href="./download.html">Download BlackRoad</a></nav>
         <div class="br-auth-shell">
         <aside class="br-auth-aside" aria-hidden="false">
             <div class="br-auth-aside-brand">

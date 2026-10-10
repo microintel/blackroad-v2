@@ -40,3 +40,81 @@
         z-index: 0;
     }
 }
+
+
+/* Links out to the public site pages (home.html, download.html). */
+
+/* Sign-in / register: small links, top right, full brightness (screen is always black). */
+.br-auth-topnav {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    right: 16px;
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+}
+
+.br-auth-topnav a {
+    padding: 6px 12px;
+    border: 1px solid #3A3A3A;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color var(--br-transition-fast), color var(--br-transition-fast);
+}
+
+.br-auth-topnav a:hover,
+.br-auth-topnav a:focus-visible {
+    color: var(--br-gold-text);
+    border-color: var(--br-gold-text);
+}
+
+/* Logged in, desktop: in the top bar, a little larger. */
+.br-header-links {
+    display: flex;
+    align-items: center;
+    gap: var(--br-space-1);
+    margin-right: var(--br-space-2);
+}
+
+.br-header-links a,
+.br-site-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 var(--br-space-3);
+    border-radius: var(--br-radius-md);
+    color: var(--br-text);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--br-transition-fast), color var(--br-transition-fast);
+}
+
+.br-header-links a:hover,
+.br-site-links a:hover {
+    background: var(--br-surface-soft);
+    color: var(--br-gold-text);
+}
+
+/* Logged in, mobile: the same links sit in the slide-out menu instead. */
+.br-site-links {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    margin-bottom: var(--br-space-3);
+    text-align: left;
+}
+
+@media (max-width: 768px) {
+    .br-header-links { display: none; }
+    .br-site-links { display: flex; }
+}
