@@ -5,7 +5,7 @@ import { icon } from "../../components/icons.js";
    The logo is the broker's own icon, loaded from its domain. To use a
    local image instead, add  logo: "./assets/images/brokers/zerodha.png"
    to a broker below. If an image cannot load, the first letter is shown. */
-const BROKERS = [
+export const BROKERS = [
     { name: "Zerodha", domain: "zerodha.com", note: "Console: P&L, holdings and tradebook reports", url: "https://console.zerodha.com", cta: "Open Console" },
     { name: "Groww", domain: "groww.in", note: "Stocks and mutual fund statements", url: "https://groww.in", cta: "Open Groww" },
     { name: "Angel One", domain: "angelone.in", note: "Trading and portfolio reports", url: "https://www.angelone.in", cta: "Open Angel One" },
@@ -15,11 +15,11 @@ const BROKERS = [
     { name: "Kotak Securities", domain: "kotaksecurities.com", note: "Reports and ledger statements", url: "https://www.kotaksecurities.com", cta: "Open Kotak Securities" }
 ];
 
-const logoSrc = (b) =>
+export const logoSrc = (b) =>
     b.logo || "https://www.google.com/s2/favicons?sz=128&domain=" + encodeURIComponent(b.domain);
 
 /* Reports listed for every broker. Each one shows "working on it" for now. */
-const REPORTS = [
+export const REPORTS = [
     { id: "pnl", label: "Profit & Loss", note: "Realised and unrealised gains", icon: "trending-up" },
     { id: "trades", label: "Trades & Charges", note: "Every trade with brokerage and taxes", icon: "receipt" },
     { id: "mf", label: "Mutual Funds", note: "SIP and fund order statements", icon: "chart-pie" },
@@ -28,7 +28,7 @@ const REPORTS = [
 ];
 
 /* Reports that have a working reader. Everything else shows "Working on it". */
-const hasReader = (b, reportId) => b.name === "Angel One" && reportId === "pnl";
+export const hasReader = (b, reportId) => b.name === "Angel One" && reportId === "pnl";
 
 const esc = (v) =>
     String(v ?? "")

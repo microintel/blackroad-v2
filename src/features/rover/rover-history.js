@@ -21,7 +21,7 @@ export function loadHistory() {
 
 export function saveHistory(messages) {
     try {
-        const trimmed = messages.slice(-MAX_MESSAGES).map(({ role, text, actions }) => ({ role, text, actions }));
+        const trimmed = messages.slice(-MAX_MESSAGES).map(({ role, text, actions, blocks, choices, upload }) => ({ role, text, actions, blocks, choices, upload }));
         localStorage.setItem(key(), JSON.stringify(trimmed));
     } catch {
         /* storage unavailable: the chat simply won't be remembered */

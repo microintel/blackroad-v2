@@ -17,7 +17,8 @@
     }
 }
 
-/* Desktop: no floating button; Rover sits in the top bar as icon + name, next to theme and currency. */
+/* Desktop: Rover is in the top bar as icon + name (next to theme and currency), and the same floating
+   button as on phones sits at the bottom right of every page. */
 .br-rover-top {
     display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-right: var(--br-space-1); padding: 0 14px 0 10px;
     color: var(--br-text); font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap;
@@ -29,5 +30,8 @@
 .br-rover-top:active { transform: scale(.97); }
 .br-rover-top:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; }
 
-@media (min-width: 769px) { .br-rover-link { display: none; } }
+/* Desktop: keep the "back to top" button clear of the Rover button. */
+@media (min-width: 769px) {
+    .br-ux-top { right: calc(var(--br-space-5) + 8px); bottom: calc(var(--br-space-5) + 58px + 12px); }
+}
 @media (max-width: 768px) { .br-rover-top { display: none; } }

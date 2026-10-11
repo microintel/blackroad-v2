@@ -4,6 +4,7 @@ import { getSession, currentUser, logout } from "../services/auth.js";
 import { seedGuestData } from "../services/guest-seed.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
 import { initCurrency, toggleCurrency, getCurrency } from "../services/currency.js";
+import { initChartTooltips } from "../components/chart-tooltip.js";
 import { themeToggleContent, currencyToggleContent } from "../components/layout/topbar.js";
 
 /*
@@ -15,6 +16,7 @@ const base = new URL("../../", import.meta.url);
 const hrefFor = (path) => new URL("index.html", base).href + "#" + path;
 
 initPreferences();
+initChartTooltips();
 
 /* Keep the header toggles' icons in step with the theme / currency. */
 window.addEventListener("br:theme-change", (event) => {

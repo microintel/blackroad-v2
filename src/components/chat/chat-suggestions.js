@@ -15,7 +15,7 @@ export function SuggestionList(items) {
  * Same width as the box, big tap targets, closes on pick / outside tap / Esc.
  * Returns the card (`el`, has the .rv-chip buttons) plus `toggleButton` for the composer.
  */
-export function SuggestionRow(items) {
+export function SuggestionRow(items, { onOpenChange = () => {} } = {}) {
     const row = document.createElement("div");
     row.className = "rv-chips";
     row.innerHTML = `
@@ -30,14 +30,23 @@ export function SuggestionRow(items) {
     toggle.setAttribute("aria-label", "Show suggestions");
     toggle.setAttribute("aria-haspopup", "true");
     toggle.setAttribute("aria-expanded", "false");
-    toggle.innerHTML = roverMark(22);
+    toggle.innerHTML = roverMark(26);
 
     const menu = row.querySelector(".rv-chip-menu");
+    const titleEl = row.querySelector(".rv-chip-title span");
+
+    /* Swap the list (e.g. the broker / report choices while files are attached). */
+    row.setItems = (list, title = "Suggested for you") => {
+        titleEl.textContent = title;
+        menu.querySelectorAll(".rv-chip").forEach((b) => b.remove());
+        menu.insertAdjacentHTML("beforeend", list.map((q) => `<button type="button" class="rv-chip" role="menuitem"><span>${esc(q)}</span>${icon("arrow-up-right", { size: 16 })}</button>`).join(""));
+    };
     const setOpen = (open) => {
         if (open && !menu.querySelector(".rv-chip:not([hidden])")) open = false;
         menu.hidden = !open;
         toggle.classList.toggle("is-open", open);
         toggle.setAttribute("aria-expanded", String(open));
+        onOpenChange(open);
     };
 
     toggle.addEventListener("click", () => setOpen(menu.hidden));

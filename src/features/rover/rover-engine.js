@@ -1,4 +1,6 @@
 import { formatINR } from "../dashboard/dashboard-service.js";
+import { REPORTS } from "./rover-reports.js";
+import { EXTRA_INTENTS, EXTRA_SUGGESTIONS, visualsFor, compareReply, isCompare, pickView } from "./rover-queries.js";
 
 /*
  * Rover engine (pure logic, no DOM, no storage).
@@ -40,6 +42,28 @@ const PAGES = [
     [["calculator"], GO.calculators]
 ];
 
+/* ---------- report downloads ---------- */
+
+/* "download / export / csv / pdf" asks for a file. The words after it pick which report (none = show all). */
+const EXPORT_WORDS = /\b(export|download|downloads|csv|pdf|excel|xlsx|spreadsheet)\b/;
+
+function reportRequest(text) {
+    if (!EXPORT_WORDS.test(text)) return null;
+
+    const hit = REPORTS.filter((r) => r.topics.some((t) => text.includes(` ${t}`)));
+    const wantsPdf = /\bpdf\b/.test(text);
+    const wantsCsv = /\b(csv|excel|xlsx|spreadsheet)\b/.test(text);
+    let list = hit.length ? hit : REPORTS;
+
+    let note = "";
+
+    if (wantsPdf && list.some((r) => r.id.endsWith("-pdf"))) list = list.filter((r) => r.id.endsWith("-pdf"));
+    else if (wantsPdf) note = "Only the account statement comes as a PDF; the rest are CSV (opens in Excel). ";
+    else if (wantsCsv) list = list.filter((r) => r.id.endsWith("-csv"));
+
+    return { list, all: !hit.length, note };
+}
+
 const empty = (what, action) => ({
     text: `I can't see any ${what} yet. Add some and I'll be able to tell you more.`,
     actions: action ? [action] : []
@@ -69,6 +93,9 @@ const INTENTS = [
                 "• **Stocks**, **mutual funds** and **fixed deposits**\n" +
                 "• **Loans**, EMI and money owed\n" +
                 "• **Allocation** of your assets\n" +
+                "• **Download reports**: income, account statement, stocks, deposits, loans\n" +
+                "• **Charts, tables, gauges** and **comparisons**: try \"spending by category\", \"stocks as a table\", \"savings rate\" or \"compare stocks vs mutual funds\"\n" +
+                "• **Trends**, a **money health score** and a simple **forecast**\n" +
                 "Say \"open stocks\" and I'll take you there."
         })
     },
@@ -234,6 +261,9 @@ const INTENTS = [
     }
 ];
 
+/* More questions (charts, gauges, trends ...) live in rover-queries.js. They count double when they match, so a specific question beats a broad one. */
+INTENTS.push(...EXTRA_INTENTS.map((i) => ({ ...i, extra: true })));
+
 /* -------- matching -------- */
 
 const normalize = (s) => ` ${String(s).toLowerCase().replace(/[^a-z0-9&\s]/g, " ").replace(/\s+/g, " ").trim()} `;
@@ -248,7 +278,9 @@ function pickIntent(text) {
     let bestScore = 0;
 
     INTENTS.forEach((intent) => {
-        const score = intent.keys.reduce((s, k) => (hits(text, k) ? s + k.split(" ").length + 1 : s), 0);
+        const base = intent.keys.reduce((s, k) => (hits(text, k) ? s + k.split(" ").length + 1 : s), 0);
+        // The newer, more specific questions (trend, gauge, forecast ...) count double, so they beat the broad ones.
+        const score = intent.extra ? base * 2 : base;
         if (score > bestScore) {
             best = intent;
             bestScore = score;
@@ -259,7 +291,10 @@ function pickIntent(text) {
 }
 
 function navigationTarget(raw, text) {
-    if (!/\b(open|go to|goto|take me|show me|navigate|visit)\b/.test(raw.toLowerCase())) return null;
+    const lower = raw.toLowerCase();
+    if (!/\b(open|go to|goto|take me|show me|navigate|visit)\b/.test(lower)) return null;
+    // "show me my stocks as a chart / table / gauge" wants a visual here, not the page.
+    if (!/\b(open|go to|goto|take me|navigate|visit)\b/.test(lower) && (pickView(lower) || isCompare(lower))) return null;
     const hit = PAGES.find(([words]) => words.some((w) => text.includes(` ${w}`)));
     return hit ? hit[1] : null;
 }
@@ -270,6 +305,7 @@ export const SUGGESTIONS = [
     "Show my summary",
     "How are my stocks doing?",
     "Spending this month",
+    "Read my brokerage report",
     "Any loans or EMI?",
     "How are my mutual funds doing?",
     "When does my next FD mature?",
@@ -277,7 +313,9 @@ export const SUGGESTIONS = [
     "What's my cash balance?",
     "Who owes me money?",
     "What are my liabilities?",
-    "What can you do?"
+    "Download my reports",
+    "What can you do?",
+    ...EXTRA_SUGGESTIONS
 ];
 
 export function respond(input, snapshot) {
@@ -286,6 +324,27 @@ export function respond(input, snapshot) {
 
     const target = navigationTarget(raw, text);
     if (target) return { text: `Sure, taking you there.`, actions: [target], go: target.path };
+
+    const wanted = reportRequest(text);
+    if (wanted) {
+        return {
+            text: wanted.all
+                ? "Here are the reports I can download for you. Tap one to save it:"
+                : `${wanted.note}Your report is ready. Tap to download:`,
+            actions: wanted.list.map((r) => ({ label: r.label, download: r.id }))
+        };
+    }
+
+    const view = pickView(raw);
+
+    if (isCompare(text)) {
+        const out = compareReply(text, snapshot || {});
+        if (out.blocks && view) {
+            const only = out.blocks.filter((b) => b.kind === view);
+            if (only.length) out.blocks = only;
+        }
+        return out;
+    }
 
     const intent = pickIntent(text);
 
@@ -298,11 +357,21 @@ export function respond(input, snapshot) {
     }
 
     // Greetings and help don't need data.
-    return intent.reply(snapshot || {});
+    const out = intent.reply(snapshot || {});
+
+    // Attach the charts / tables / gauges that go with this answer (none when there is no data).
+    if (!out.blocks) {
+        const blocks = visualsFor(intent.name, snapshot || {}, view);
+        if (blocks.length) out.blocks = blocks;
+    }
+
+    return out;
 }
 
 /* Intents that need no data, so Rover can answer instantly. */
 export const needsData = (input) => {
+    if (reportRequest(normalize(input))) return false;
+    if (isCompare(normalize(input)) && !navigationTarget(String(input), normalize(input))) return true;
     const intent = pickIntent(normalize(input));
     return !!intent && !["greeting", "thanks", "help"].includes(intent.name);
 };

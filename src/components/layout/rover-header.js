@@ -14,7 +14,7 @@ export function RoverHeader({ backHref }) {
     header.innerHTML = `
         <div class="br-header-left">
             <a class="br-icon-button" href="${backHref}" aria-label="Back to BlackRoad" title="Back to BlackRoad">${icon("arrow-left", { size: 20 })}</a>
-            <h1 class="br-page-title rv-title">${roverMark(26, "rv-title-mark")}<span>Rover</span></h1>
+            <h1 class="br-page-title rv-title">${roverMark(34, "rv-title-mark")}<span>Rover</span></h1>
         </div>
 
         <div class="br-header-actions">

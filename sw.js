@@ -10,7 +10,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v116";
+const CACHE_VERSION = "v124";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -106,6 +106,7 @@ const SHELL = [
     "./rover.html",
     "./src/features/rover/rover-link.js",
     "./src/features/rover/rover-view.js",
+    "./src/features/rover/rover-brokers.js",
     "./src/app/rover-app.js",
     "./src/components/chat/chat-composer.js",
     "./src/components/chat/chat-format.js",
@@ -116,6 +117,10 @@ const SHELL = [
     "./src/features/rover/rover-engine.js",
     "./src/features/rover/rover-match.js",
     "./src/features/rover/rover-history.js",
+    "./src/features/rover/rover-reports.js",
+    "./src/features/rover/rover-queries.js",
+    "./src/features/rover/rover-progress.js",
+    "./src/features/rover/rover-visuals.js",
     "./src/features/networth/networth-service.js",
     "./src/features/networth/networth.js",
     "./src/features/notifications/notifications-service.js",

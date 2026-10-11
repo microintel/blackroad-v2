@@ -1,4 +1,4 @@
-import { ChatMessage, TypingIndicator } from "../../components/chat/chat-message.js";
+import { ChatMessage, PendingMessage, fillMessage } from "../../components/chat/chat-message.js";
 import { SuggestionList, SuggestionRow } from "../../components/chat/chat-suggestions.js";
 import { ChatComposer } from "../../components/chat/chat-composer.js";
 import { roverMark } from "../../components/icons.js";
@@ -6,6 +6,9 @@ import { greeting } from "../../components/chat/chat-format.js";
 import { respond, needsData, SUGGESTIONS } from "./rover-engine.js";
 import { getSnapshot } from "./rover-data.js";
 import { rankSuggestions, tokenize } from "./rover-match.js";
+import { runReport } from "./rover-reports.js";
+import { progressIn } from "./rover-progress.js";
+import { flowFromText, flowLabel, flowReply, readFiles, downloadBrokerPdf, session as brokerSession, resetSession, resolveRequest, pickText, PICKS, ACCEPT } from "./rover-brokers.js";
 import { loadHistory, saveHistory, clearHistory } from "./rover-history.js";
 
 /*
@@ -19,7 +22,7 @@ import { loadHistory, saveHistory, clearHistory } from "./rover-history.js";
  */
 
 /* How long Rover "thinks" before answering, so the loading animation is seen (ms). */
-const THINK_MS = 1400;
+const THINK_MS = 2300;
 
 const START_COUNT = 6;
 
@@ -33,11 +36,12 @@ export function RoverView({ hrefFor }) {
         <div class="rv-scroll">
             <div class="rv-col">
                 <section class="rv-empty">
-                    ${roverMark(52, "rv-hero-mark")}
+                    ${roverMark(72, "rv-hero-mark")}
                     <h2>${greeting()}.</h2>
                     <p>What would you like to know about your money?</p>
                 </section>
                 <div class="rv-messages" role="log" aria-live="polite"></div>
+                <div class="rv-spacer" aria-hidden="true"></div>
             </div>
         </div>
         <div class="rv-dock"><div class="rv-col"></div></div>
@@ -45,6 +49,7 @@ export function RoverView({ hrefFor }) {
 
     const scrollBox = el.querySelector(".rv-scroll");
     const list = el.querySelector(".rv-messages");
+    const spacer = el.querySelector(".rv-spacer");
     const dock = el.querySelector(".rv-dock .rv-col");
 
     const suggestions = SuggestionList(SUGGESTIONS);
@@ -55,8 +60,14 @@ export function RoverView({ hrefFor }) {
     intro.classList.add("is-intro");
     setTimeout(() => intro.classList.remove("is-intro"), 1200);
 
-    const chips = SuggestionRow(SUGGESTIONS);
-    const composer = ChatComposer(send, (text) => { draft = text; applyFilter(); });
+    // The menu replaces the start-screen list while it is open (typing, or the sparkle button).
+    const chips = SuggestionRow(SUGGESTIONS, {
+        onOpenChange: (open) => el.classList.toggle("is-typing", open && messages.length === 0)
+    });
+    const composer = ChatComposer(send, (text) => { draft = text; applyFilter(); }, { attach: true, accept: ACCEPT, onFiles: () => applyFilter() });
+    // Adding more years from a summary: its own hidden picker.
+    const morePicker = Object.assign(document.createElement("input"), { type: "file", multiple: true, hidden: true, accept: ACCEPT });
+    el.appendChild(morePicker);
     dock.append(chips, composer.el);
     composer.el.prepend(chips.toggleButton);
     chips.addEventListener("click", (e) => { const b = e.target.closest(".rv-chip"); if (b) { chips.setOpen(false); send(b.querySelector("span").textContent); } });
@@ -64,6 +75,8 @@ export function RoverView({ hrefFor }) {
     let messages = loadHistory();
     let draft = "";
     let busy = false;
+    let showingPicks = false;
+    let epoch = 0; // bumps on "New chat" so a late answer never lands in the new conversation
 
     function pick(e) {
         const b = e.target.closest(".rv-suggestion, .rv-chip");
@@ -71,6 +84,29 @@ export function RoverView({ hrefFor }) {
     }
 
     const scroll = () => { scrollBox.scrollTop = scrollBox.scrollHeight; };
+
+    /*
+     * After you send, your message sits at the TOP of the view and the answer fills in below it
+     * (nothing jumps to the bottom). A spacer under the list gives short answers room to do that;
+     * it shrinks as the answer grows.
+     */
+    const TOP_GAP = 12;
+    let pinned = null;
+    const fit = () => {
+        if (!pinned || !pinned.isConnected) return;
+        const pad = parseFloat(getComputedStyle(scrollBox).paddingBottom) || 0;
+        const below = spacer.offsetTop - pinned.offsetTop;
+        const h = Math.max(0, Math.round(scrollBox.clientHeight - TOP_GAP - below - pad));
+        if (Math.abs(h - (parseFloat(spacer.style.height) || 0)) > 0.5) spacer.style.height = h + "px";
+    };
+    const pinToTop = (node) => {
+        pinned = node;
+        fit();
+        scrollBox.scrollTop = Math.max(0, node.offsetTop - TOP_GAP);
+    };
+    const unpin = () => { pinned = null; spacer.style.height = "0px"; };
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(list);
+    window.addEventListener("resize", fit);
     const sync = () => el.classList.toggle("is-empty", messages.length === 0);
 
     /*
@@ -79,29 +115,41 @@ export function RoverView({ hrefFor }) {
      * the ones you've already asked. Items are hidden, never rebuilt, so nothing jumps.
      */
     function applyFilter() {
+        // With files attached the list is the brokers' reports ("Angel One · Profit & Loss"...).
+        const forFiles = composer.files().length > 0;
+        if (forFiles !== showingPicks) {
+            showingPicks = forFiles;
+            chips.setItems(forFiles ? PICKS : SUGGESTIONS, forFiles ? "Which report is this?" : "Suggested for you");
+        }
         const asked = new Set(messages.filter((m) => m.role === "user").map((m) => m.text.toLowerCase()));
         const typed = tokenize(draft).length > 0;
-        const fresh = SUGGESTIONS.filter((q) => !asked.has(q.toLowerCase()));
+        const source = forFiles ? PICKS : SUGGESTIONS;
+        const fresh = forFiles ? PICKS : source.filter((q) => !asked.has(q.toLowerCase()));
         const ranked = typed ? rankSuggestions(draft, fresh) : [];
         const matched = ranked.length > 0;
         // Typed something that matches nothing: show everything rather than an empty menu.
         const shown = typed && matched ? ranked.map((r) => r.item) : fresh;
         const rank = new Map(shown.map((q, i) => [q, i]));
 
+        // Typing: only the best few, so the list stays short above the keyboard.
+        const cap = typed && matched ? (hasMouse() ? 8 : 5) : forFiles ? 6 : Infinity;
         chips.querySelectorAll(".rv-chip").forEach((chip) => {
             const q = chip.querySelector("span").textContent;
-            chip.hidden = !rank.has(q);
+            chip.hidden = !rank.has(q) || rank.get(q) >= cap;
             chip.style.order = String(typed && matched ? rank.get(q) : 0);
         });
         chips.sync();
         // While typing, the best matches drop down on their own; clearing the box closes them.
-        chips.setOpen(typed && matched && messages.length > 0);
+        // On phones this works on the start screen too (the keyboard covers the list there).
+        // Works the same on the very first (empty) screen, on desktop and phones.
+        chips.setOpen(typed || forFiles);
 
-        const inList = new Set(typed && matched ? shown.slice(0, START_COUNT) : SUGGESTIONS.slice(0, START_COUNT));
+        const inList = new Set(!forFiles && typed && matched ? shown.slice(0, START_COUNT) : SUGGESTIONS.slice(0, START_COUNT));
         suggestions.querySelectorAll("li").forEach((li) => { li.hidden = !inList.has(li.textContent); });
     }
 
     function render() {
+        unpin();
         list.replaceChildren(...messages.map((m) => ChatMessage(m, hrefFor)));
         applyFilter();
         sync();
@@ -111,42 +159,97 @@ export function RoverView({ hrefFor }) {
     function add(m) {
         messages.push(m);
         saveHistory(messages);
-        list.appendChild(ChatMessage(m, hrefFor, { animate: true }));
+        const node = ChatMessage(m, hrefFor, { animate: true });
+        list.appendChild(node);
         if (m.role === "user") applyFilter();
         sync();
-        scroll();
+        return node;
     }
 
-    function typing(on) {
-        list.querySelector(".rv-typing")?.remove();
-        if (on) { list.appendChild(TypingIndicator()); scroll(); }
-    }
+    /* Keep a new card (like report progress) in view without yanking the page to the bottom. */
+    const reveal = (node) => node.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
     async function send(text) {
         const q = String(text || "").trim();
-        if (!q || busy) return;
+        if (busy) return;
+
+        // Files are attached: the text says which broker / report they are.
+        const files = composer.files();
+        if (files.length) {
+            const pick = resolveRequest(q);
+            if (!pick) {
+                composer.nudge("Type the broker first, like Angel One, then pick the report.");
+                applyFilter();
+                composer.focus();
+                return;
+            }
+            composer.clearFiles();
+            const names = files.map((f) => f.name).join(", ");
+            return converse(`${pickText(pick)} · ${names.length > 80 ? files.length + " files" : names}`, () => readFiles(files, pick), {
+                status: ["Opening your file", "Reading the Equity P&L", "Checking the totals", "Writing the summary"]
+            });
+        }
+        if (!q) return;
+
+        // "upload my brokerage report", "Angel One P&L file"... start the guided flow.
+        const flow = flowFromText(q);
+        if (flow) return converse(q, () => flowReply());
+        return converse(q);
+    }
+
+    /* A button inside a Rover message (broker, report, add another year...). */
+    const runFlow = (id) => { if (!busy) converse(flowLabel(id), () => flowReply(), { keepDraft: true }); };
+
+    /* "Add another year" under a summary: those files join the report you're reading. */
+    function uploadFiles(files) {
+        const list_ = [...files];
+        if (!list_.length || busy) return;
+        const names = list_.map((f) => f.name).join(", ");
+        converse(`Uploaded ${names.length > 90 ? list_.length + " files" : names}`, () => readFiles(list_), {
+            keepDraft: true,
+            status: ["Opening your file", "Reading the Equity P&L", "Checking the totals", "Writing the summary"]
+        });
+    }
+
+    /* One question/answer turn. `make` produces the reply (default: the normal Rover engine). */
+    async function converse(q, make, { keepDraft = false, status } = {}) {
 
         const keepFocus = composer.hasFocus() || hasMouse();
 
         busy = true;
-        composer.clear();
-        add({ role: "user", text: q });
-        typing(true);
+        const mine = epoch;
+        if (!keepDraft) composer.clear();
+        const mineNode = add({ role: "user", text: q });
+
+        // Rover's answer is one bubble: it shows the generating animation, then becomes the reply.
+        const pending = status ? PendingMessage(status) : PendingMessage();
+        list.appendChild(pending);
+        pinToTop(mineNode);
 
         let reply;
         try {
-            const [snapshot] = await Promise.all([
-                needsData(q) ? getSnapshot() : Promise.resolve({}),
-                new Promise((r) => setTimeout(r, THINK_MS))
-            ]);
-            reply = respond(q, snapshot);
+            if (make) {
+                [reply] = await Promise.all([make(), new Promise((r) => setTimeout(r, THINK_MS))]);
+            } else {
+                const [snapshot] = await Promise.all([
+                    needsData(q) ? getSnapshot() : Promise.resolve({}),
+                    new Promise((r) => setTimeout(r, THINK_MS))
+                ]);
+                reply = respond(q, snapshot);
+            }
         } catch (error) {
             console.error("Rover:", error);
             reply = { text: "I couldn't read your data just now. Try again in a moment." };
         }
 
-        typing(false);
-        add({ role: "rover", text: reply.text, actions: reply.actions });
+        if (mine !== epoch) { busy = false; return; }
+
+        const answer = { role: "rover", text: reply.text, actions: reply.actions, blocks: reply.blocks, choices: reply.choices, upload: reply.upload };
+        messages.push(answer);
+        saveHistory(messages);
+        fillMessage(pending, answer, hrefFor);
+        sync();
+        fit();
         busy = false;
 
         // "open stocks" and similar: go straight to that BlackRoad page.
@@ -157,13 +260,95 @@ export function RoverView({ hrefFor }) {
 
     suggestions.addEventListener("click", pick);
 
+    /* Broker / report / "add another year" buttons. Once one is used, the others in that message fade. */
+    list.addEventListener("click", (e) => {
+        const b = e.target.closest(".rv-choice");
+        if (b && b.dataset.flow === "more") { if (!busy) morePicker.click(); return; }
+        if (b && b.dataset.flow === "new") { if (!busy) { resetSession(); composer.openPicker(); } return; }
+        if (b && !busy) {
+            b.closest(".rv-choices").classList.add("is-used");
+            b.classList.add("is-picked");
+            runFlow(b.dataset.flow);
+            return;
+        }
+        // The upload card in a message puts the files into the message box.
+        const pick_ = e.target.closest(".rv-pick");
+        if (pick_) composer.openPicker();
+    });
+    morePicker.addEventListener("change", () => { uploadFiles(morePicker.files); morePicker.value = ""; });
+    // Drop Excel file(s) anywhere on the page: they go into the message box.
+    const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+    ["dragover", "dragenter"].forEach((t) => el.addEventListener(t, (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        el.classList.add("is-dragging");
+    }));
+    ["dragleave", "drop"].forEach((t) => el.addEventListener(t, (e) => {
+        if (t === "dragleave" && el.contains(e.relatedTarget)) return;
+        el.classList.remove("is-dragging");
+        if (t === "drop" && hasFiles(e)) { e.preventDefault(); composer.addFiles(e.dataTransfer.files); composer.focus(); }
+    }));
+    // With files attached, tapping the box brings the report suggestions back.
+    composer.input.addEventListener("focus", () => { if (composer.files().length) applyFilter(); });
+    // A broker logo that can't load (offline) falls back to its first letter.
+    list.addEventListener("error", (e) => {
+        const img = e.target;
+        if (!(img instanceof HTMLImageElement) || !img.classList.contains("rv-choice-img")) return;
+        img.parentElement.textContent = img.parentElement.dataset.letter || "";
+    }, true);
+
+    /* Download buttons inside Rover's replies. */
+    list.addEventListener("click", async (e) => {
+        const b = e.target.closest(".rv-download");
+        if (!b || b.disabled) return;
+
+        const label = b.textContent;
+        b.disabled = true;
+        b.textContent = "Preparing…";
+        try {
+            // Progress shows as a Rover message in the chat itself (not a popup).
+            const host = progressIn((card) => { list.appendChild(card); reveal(card); });
+            let result;
+            if (b.dataset.download === "broker-pdf") {
+                // The brokerage PDF: same pages as the Brokerage Report Reader's own download.
+                if (!brokerSession.years.length) result = "again";
+                else {
+                    const progress = host({
+                        title: "Creating your P&L report",
+                        steps: ["Reading your P&L data", "Verifying totals & charges", "Designing report pages", "Finalizing PDF"],
+                        doneTitle: "PDF downloaded",
+                        doneText: "Your Equity P&L report has been saved."
+                    });
+                    try {
+                        result = await downloadBrokerPdf(progress);
+                        progress.complete();
+                    } catch (error) {
+                        progress.fail(error.message || String(error));
+                        throw error;
+                    }
+                }
+            } else {
+                result = await runReport(b.dataset.download, { progress: host });
+            }
+            if (result === "again") { b.textContent = "Upload the file again to download"; setTimeout(() => { b.textContent = label; b.disabled = false; }, 2600); return; }
+            b.textContent = result === "empty" ? "Nothing to export yet" : "Downloaded ✓";
+        } catch (error) {
+            console.error("Rover report:", error);
+            b.textContent = "Couldn't create it. Try again";
+        }
+        setTimeout(() => { b.textContent = label; b.disabled = false; }, 2600);
+    });
+
     render();
     if (hasMouse()) composer.focus();
 
     return {
         el,
         newChat() {
+            epoch += 1;
+            busy = false;
             messages = [];
+            resetSession();
             clearHistory();
             render();
             if (hasMouse()) composer.focus();
