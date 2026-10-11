@@ -13,6 +13,7 @@ export function RoverHeader({ backHref }) {
     header.className = "br-header";
     header.innerHTML = `
         <div class="br-header-left">
+            <button type="button" class="br-icon-button rv-menu" data-action="toggle-queries" aria-label="Open suggested questions" aria-expanded="false" title="Suggested questions">${icon("menu", { size: 20 })}</button>
             <a class="br-icon-button" href="${backHref}" aria-label="Back to BlackRoad" title="Back to BlackRoad">${icon("arrow-left", { size: 20 })}</a>
             <h1 class="br-page-title rv-title">${roverMark(34, "rv-title-mark")}<span>Rover</span></h1>
         </div>

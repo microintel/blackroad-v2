@@ -21,7 +21,7 @@ const GO = (label, path) => ({ label, path });
 const PAGE = {
     income: GO("Open Income Statement", "/income"),
     dashboard: GO("Open Dashboard", "/dashboard"),
-    intelligence: GO("Open Financial Intelligence", "/intelligence"),
+    intelligence: GO("Open Dashboard", "/dashboard"),
     stocks: GO("Open Stocks", "/stocks"),
     networth: GO("Open Net Worth", "/networth"),
     lending: GO("Open Lending", "/lending")

@@ -102,6 +102,8 @@ async function start() {
         toggleCurrency();
     });
 
+    header.querySelector('[data-action="toggle-queries"]').addEventListener("click", () => window.dispatchEvent(new Event("rv:toggle-queries")));
+
     header.querySelector('[data-action="new-chat"]').addEventListener("click", view.newChat);
 
     pinToViewport();

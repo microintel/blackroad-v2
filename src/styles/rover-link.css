@@ -35,3 +35,17 @@
     .br-ux-top { right: calc(var(--br-space-5) + 8px); bottom: calc(var(--br-space-5) + 58px + 12px); }
 }
 @media (max-width: 768px) { .br-rover-top { display: none; } }
+
+/* Ctrl+R: the opening animation before the Rover page loads. */
+.br-rover-launch {
+    position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; pointer-events: all;
+    background: #000; color: var(--br-gold, #D4AF37);
+    animation: br-rover-reveal 650ms cubic-bezier(.2, .8, .2, 1) both;
+}
+.br-rover-launch-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; animation: br-rover-pop 650ms cubic-bezier(.2, .8, .2, 1) both; }
+.br-rover-launch-inner span { font-size: 22px; font-weight: 600; letter-spacing: .02em; color: #fff; }
+.br-rover-launch-mark { animation: br-rover-spin 900ms cubic-bezier(.3, .7, .2, 1) both; }
+@keyframes br-rover-reveal { from { clip-path: circle(0% at 92% 6%); } to { clip-path: circle(150% at 92% 6%); } }
+@keyframes br-rover-pop { 0% { opacity: 0; transform: scale(.7); } 60% { opacity: 1; } 100% { opacity: 1; transform: scale(1); } }
+@keyframes br-rover-spin { from { transform: rotate(-90deg); } to { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .br-rover-launch, .br-rover-launch-inner, .br-rover-launch-mark { animation: none; } }

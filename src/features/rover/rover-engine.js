@@ -25,7 +25,7 @@ const GO = {
     deposits: { label: "Open Fixed Deposits", path: "/deposits" },
     lending: { label: "Open Lending", path: "/lending" },
     mutualfund: { label: "Open Mutual Fund", path: "/mutualfund" },
-    intelligence: { label: "Open Financial Intelligence", path: "/intelligence" },
+    intelligence: { label: "Open Dashboard", path: "/dashboard" },
     calculators: { label: "Open Calculators", path: "/calculators" }
 };
 

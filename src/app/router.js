@@ -46,11 +46,6 @@ const routes = {
         module: "stepup"
     },
 
-    "/intelligence": {
-        title: "Financial Intelligence",
-        module: "intelligence"
-    },
-
     "/calculators": {
         title: "Calculators",
         module: "calculators"
@@ -126,6 +121,10 @@ export function routeFor(path) {
 }
 
 export function getRoute() {
+
+    /* The Financial Intelligence tab was removed (its questions now live in Rover).
+       Old bookmarks go to the dashboard. */
+    if (currentPath() === "/intelligence") replaceRoute("/dashboard");
 
     return routes[currentPath()] || {
 

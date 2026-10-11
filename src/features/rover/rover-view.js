@@ -45,7 +45,13 @@ export function RoverView({ hrefFor }) {
             </div>
         </div>
         <div class="rv-dock"><div class="rv-col"></div></div>
+        <div class="rv-queries-backdrop" aria-hidden="true"></div>
+        <aside class="rv-queries" aria-label="Suggested questions">
+            <p class="rv-queries-title">${roverMark(14)}<span>Ask Rover</span></p>
+            <div class="rv-queries-list">${SUGGESTIONS.map((q) => `<button type="button" class="rv-query"><span></span></button>`).join("")}</div>
+        </aside>
     `;
+    el.querySelectorAll(".rv-query span").forEach((s, i) => { s.textContent = SUGGESTIONS[i]; });
 
     const scrollBox = el.querySelector(".rv-scroll");
     const list = el.querySelector(".rv-messages");
@@ -68,7 +74,26 @@ export function RoverView({ hrefFor }) {
     // Adding more years from a summary: its own hidden picker.
     const morePicker = Object.assign(document.createElement("input"), { type: "file", multiple: true, hidden: true, accept: ACCEPT });
     el.appendChild(morePicker);
-    dock.append(chips, composer.el);
+    const note = document.createElement("div");
+    note.className = "rv-note";
+    note.innerHTML = `<p>Rover is a financial intelligence bot and can make mistakes, so double-check it.</p><p class="rv-credit">Developed by <strong>Microintel</strong></p>`;
+    dock.append(chips, composer.el, note);
+
+    /* Side panel with every ready-made question (a drawer on phones, opened by the header menu button). */
+    const queriesBox = el.querySelector(".rv-queries");
+    const setQueries = (open) => {
+        el.classList.toggle("is-queries-open", open);
+        document.querySelector('[data-action="toggle-queries"]')?.setAttribute("aria-expanded", String(open));
+    };
+    window.addEventListener("rv:toggle-queries", () => setQueries(!el.classList.contains("is-queries-open")));
+    el.querySelector(".rv-queries-backdrop").addEventListener("click", () => setQueries(false));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setQueries(false); });
+    queriesBox.addEventListener("click", (e) => {
+        const b = e.target.closest(".rv-query");
+        if (!b) return;
+        setQueries(false);
+        send(b.textContent);
+    });
     composer.el.prepend(chips.toggleButton);
     chips.addEventListener("click", (e) => { const b = e.target.closest(".rv-chip"); if (b) { chips.setOpen(false); send(b.querySelector("span").textContent); } });
 

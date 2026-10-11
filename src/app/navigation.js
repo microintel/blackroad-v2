@@ -24,7 +24,6 @@ export const navigation = [
     {
         title: "Tools",
         items: [
-            { label: "Financial Intelligence", path: "/intelligence", icon: "brain", color: "#EC4899" },
             { label: "Calculators", path: "/calculators", icon: "calculator", color: "#14B8A6" },
             { label: "Accounting", path: "/accounting", icon: "receipt", color: "#EAB308" },
             { label: "Brokerage Report Readers", path: "/brokers", icon: "file-chart-column", color: "#6366F1" },
