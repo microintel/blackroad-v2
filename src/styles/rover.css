@@ -617,3 +617,45 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 .rv-stk .rv-logo-mf { width: 60px; height: 60px; border-radius: 16px; font-size: 18px; }
 .rv-stk.is-hero .rv-logo-mf, .rv-logo-mf.rv-logo-lg { width: 84px; height: 84px; border-radius: 22px; font-size: 24px; }
 .rv-mini .rv-logo-mf { width: 28px; height: 28px; border-radius: 8px; font-size: 10px; }
+
+
+/* =========================================================
+   Phones only (<= 768px). Larger screens are unchanged.
+   Header: menu button | Rover mark in the middle | New chat + Home.
+   Theme and currency are not here: they follow the dashboard's choice.
+   ========================================================= */
+.rv-home { display: none; }
+.rv-hello-name { display: none; }
+
+@media (max-width: 768px) {
+    .rv-shell .br-header-actions [data-action="toggle-theme"],
+    .rv-shell .br-header-actions [data-action="toggle-currency"],
+    .rv-shell .rv-back { display: none !important; }
+
+    .rv-shell .rv-home { display: grid; }
+
+    /* The mark sits in the middle of the top bar; the name appears only while the menu is open. */
+    .rv-shell .rv-title { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; gap: 8px; }
+    .rv-shell .rv-title span { display: none; }
+    .rv-shell.is-menu-open .rv-title span { display: inline; }
+
+    /* The greeting says who it is for. */
+    .rv-hello-name { display: inline; }
+
+    /* No "financial intelligence bot" line or credit under the box. */
+    .rv-note { display: none; }
+}
+
+
+/* =========================================================
+   Message box: a curved box (like Apple / ChatGPT / Claude). It grows in height as you type
+   more lines (up to about seven, then it scrolls); the buttons stay at the bottom corners.
+   ========================================================= */
+.rv-form { align-items: flex-end; border-radius: 24px; padding: 4px 4px 4px 18px; }
+.rv-form.has-files { border-radius: 24px; }
+.rv-input {
+    height: 36px; max-height: 168px; padding: 6px 0; box-sizing: border-box; resize: none; overflow-y: auto;
+    line-height: 24px; font-family: inherit; display: block; align-self: center;
+}
+.rv-attach, .rv-send { width: 36px; height: 36px; }
+.rv-msg.is-user p { white-space: pre-wrap; overflow-wrap: anywhere; }

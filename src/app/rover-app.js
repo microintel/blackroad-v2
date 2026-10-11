@@ -70,10 +70,14 @@ async function start() {
 
     // Not signed in -> BlackRoad sign-in page.
     let session = await getSession();
+    let user = null;
 
-    if (session && !session.guest && !(await currentUser())) {
-        await logout();
-        session = null;
+    if (session && !session.guest) {
+        user = await currentUser();
+        if (!user) {
+            await logout();
+            session = null;
+        }
     }
 
     if (!session) {
@@ -90,7 +94,7 @@ async function start() {
     shell.className = "rv-shell";
 
     const header = RoverHeader({ backHref: hrefFor("/dashboard") });
-    const view = RoverView({ hrefFor });
+    const view = RoverView({ hrefFor, name: String((user && user.name) || "").trim().split(/\s+/)[0] });
 
     header.querySelector('[data-action="toggle-theme"]').addEventListener("click", (e) => {
         const r = e.currentTarget.getBoundingClientRect();

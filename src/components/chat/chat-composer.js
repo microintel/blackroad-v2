@@ -23,7 +23,7 @@ export function ChatComposer(onSend, onTyping = () => {}, { attach = false, acce
             <div class="rv-file-list"></div>
             <p class="rv-files-hint">Now type the broker, like <b>Angel One</b>, and pick the report.</p>
         </div>
-        <input class="rv-input" type="text" maxlength="300" placeholder="Ask Rover" aria-label="Message Rover">
+        <textarea class="rv-input" rows="1" maxlength="300" placeholder="Ask Rover" aria-label="Message Rover" enterkeyhint="enter" autocapitalize="sentences"></textarea>
         ${attach ? `<button type="button" class="rv-attach" aria-label="Upload a brokerage report" title="Upload a brokerage report">${icon("upload", { size: 20 })}</button>
         <input type="file" class="rv-attach-input" hidden multiple accept="${esc(accept)}">` : ""}
         <button type="submit" class="rv-send" aria-label="Send">${icon("send", { size: 18 })}</button>
@@ -36,6 +36,18 @@ export function ChatComposer(onSend, onTyping = () => {}, { attach = false, acce
     const hint = form.querySelector(".rv-files-hint");
     const idle = input.placeholder;
     let files = [];
+
+    /* The box grows in height with what you type (never in width), up to a limit, then scrolls. */
+    const MAX_H = 168;
+    const grow = () => {
+        if (!input.isConnected) return;
+        input.style.height = "auto";
+        input.style.height = Math.min(input.scrollHeight, MAX_H) + "px";
+    };
+    window.addEventListener("resize", grow);
+
+    /* Enter sends on a computer (Shift+Enter = new line). On a phone Enter always starts a new line; the Send button sends. */
+    const hasMouse = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
     function paint() {
         tray.hidden = files.length === 0;
@@ -79,7 +91,7 @@ export function ChatComposer(onSend, onTyping = () => {}, { attach = false, acce
         paint();
     });
 
-    input.addEventListener("input", () => { recall = -1; onTyping(input.value); });
+    input.addEventListener("input", () => { recall = -1; grow(); onTyping(input.value); });
 
     /* Terminal-style command recall. `recall` is the position in the list (-1 = not browsing). */
     let recall = -1;
@@ -87,13 +99,24 @@ export function ChatComposer(onSend, onTyping = () => {}, { attach = false, acce
 
     function show(text) {
         input.value = text;
+        grow();
         onTyping(text);
         // Caret at the end, after the browser has finished handling the key.
         requestAnimationFrame(() => { try { input.setSelectionRange(text.length, text.length); } catch { /* ignore */ } });
     }
 
     input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+            if (hasMouse()) {
+                e.preventDefault();
+                if (form.requestSubmit) form.requestSubmit();
+                else form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+            }
+            return;
+        }
         if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.isComposing) return;
+        // With several lines typed, the arrows move the cursor as usual; recall only works on a single line.
+        if (recall === -1 && (input.value.includes("\n") || input.scrollHeight > 44)) return;
         const list = history();
         if (!list.length) return;
         e.preventDefault();
@@ -112,7 +135,7 @@ export function ChatComposer(onSend, onTyping = () => {}, { attach = false, acce
     return {
         el: form,
         input,
-        clear: () => { input.value = ""; onTyping(""); },
+        clear: () => { input.value = ""; grow(); onTyping(""); },
         focus: () => input.focus({ preventScroll: true }),
         hasFocus: () => document.activeElement === input,
         files: () => files.slice(),

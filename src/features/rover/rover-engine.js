@@ -2,6 +2,7 @@ import { formatINR } from "../dashboard/dashboard-service.js";
 import { REPORTS } from "./rover-reports.js";
 import { EXTRA_INTENTS, EXTRA_SUGGESTIONS, visualsFor, compareReply, isCompare, pickView, pickChartType } from "./rover-queries.js";
 import { listReply, isListRequest, LIST_SUGGESTIONS } from "./rover-lists.js";
+import { commandReply, commandKind, COMMAND_SUGGESTIONS } from "./rover-commands.js";
 import { MORE_INTENTS, MORE_SUGGESTIONS, NO_DATA_INTENTS, moreVisualsFor, lookupReply, fundReply } from "./rover-more.js";
 
 /*
@@ -49,10 +50,17 @@ const PAGES = [
 /* "download / export / csv / pdf" asks for a file. The words after it pick which report (none = show all). */
 const EXPORT_WORDS = /\b(export|download|downloads|csv|pdf|excel|xlsx|spreadsheet)\b/;
 
+/* "show all reports", "list of reports", "which reports can I get": the whole download list (not the broker report reader). */
+const REPORT_LIST_ASK = /\b(all|every|list|available|possible|which|what|show)\b.*\breports?\b|\breports? (list|available|options)\b/;
+const NOT_REPORT_LIST = /\b(brokerage|broker|angel|upload|read|p&l|profit and loss|income statement|summary)\b/;
+
 function reportRequest(text) {
+    if (!EXPORT_WORDS.test(text) && REPORT_LIST_ASK.test(text) && !NOT_REPORT_LIST.test(text)) return { list: REPORTS, all: true, note: "" };
     if (!EXPORT_WORDS.test(text)) return null;
 
-    const hit = REPORTS.filter((r) => r.topics.some((t) => text.includes(` ${t}`)));
+    let hit = REPORTS.filter((r) => r.topics.some((t) => text.includes(` ${t}`)));
+    // "accounting" starts with "account": it means the Accounting reports, not the account statement.
+    if (/\baccounting\b/.test(text) && !/\b(statement|ledger|passbook)\b/.test(text)) hit = hit.filter((r) => r.id.startsWith("accounting"));
     const wantsPdf = /\bpdf\b/.test(text);
     const wantsCsv = /\b(csv|excel|xlsx|spreadsheet)\b/.test(text);
     let list = hit.length ? hit : REPORTS;
@@ -96,14 +104,18 @@ const INTENTS = [
                 "• **Loans**, EMI and money owed\n" +
                 "• **Allocation** of your assets\n" +
                 "• **Lists** of anything: try \"list all my stocks\", \"list all mutual funds\", \"all expenses this month\", \"list my FDs\", \"list all loans\" or \"list my investments\"\n" +
-                "• **Download reports**: income, account statement, stocks, deposits, loans\n" +
+                "• **Download reports**: income, account statement, stocks, deposits, loans, net worth, accounting. Say \"show all reports\" for the full list\n" +
+                "• **Accounting**: try \"accounting summary\" or \"highest accounting asset\"\n" +
                 "• **Many chart types**: treemap, radar, waterfall, bubble, lollipop, stacked bar, rings, area, donut and more. Add the type to your question, like \"spending by category as a treemap\" or \"show all chart types for my stocks\"\n" +
                 "• **Charts, tables, gauges** and **comparisons**: try \"spending by category\", \"stocks as a table\", \"savings rate\" or \"compare stocks vs mutual funds\"\n" +
                 "• **Trends**, a **money health score** and a simple **forecast**\n" +
                 "• **Income statement**, last month, averages and latest expenses 🧾\n" +
                 "• **Reminders**: what's due, overdue payments, next EMI, FD maturities 🔔\n" +
                 "• **A single stock**: try \"How is Reliance doing?\" 📈\n" +
+                "• **Highest and lowest**: who owes you the most, your lowest lending, biggest loan, FD, stock or expense\n" +
+                "• **Account details** and the **last data entry date**\n" +
                 "• **About BlackRoad**: how to add things, backup, calculators and more\n" +
+                "Say \"list commands\" to see everything I understand.\n" +
                 "Say \"open stocks\" and I'll take you there."
         })
     },
@@ -327,7 +339,8 @@ export const TOP_SUGGESTIONS = [
     "What's due soon?",
     "Spending this month",
     "Read my brokerage report",
-    "Download my reports"
+    "Download my reports",
+    "List all commands"
 ];
 
 export const SUGGESTIONS = [...new Set([
@@ -342,7 +355,8 @@ export const SUGGESTIONS = [...new Set([
     "What can you do?",
     ...LIST_SUGGESTIONS,
     ...EXTRA_SUGGESTIONS,
-    ...MORE_SUGGESTIONS
+    ...MORE_SUGGESTIONS,
+    ...COMMAND_SUGGESTIONS
 ])];
 
 export function respond(input, snapshot) {
@@ -352,6 +366,10 @@ export function respond(input, snapshot) {
     // A pasted / typed fund name: that fund's summary; two or more: a comparison.
     const fund = fundReply(raw, text, snapshot || {});
     if (fund) return fund;
+
+    // Highest / lowest, account details, last entry date, "list commands" (rover-commands.js).
+    const command = commandReply(raw, text, snapshot || {});
+    if (command) return command;
 
     // "list all my stocks", "all expenses list", "list my FDs" ...: a full list, answered before anything else
     // (so "show me all my stocks" lists them instead of just opening the page).
@@ -367,7 +385,7 @@ export function respond(input, snapshot) {
     if (wanted) {
         return {
             text: wanted.all
-                ? "Here are the reports I can download for you. Tap one to save it:"
+                ? `📥 You can download **${REPORTS.length}** reports. Tap one to save it:\n` + REPORTS.map((r) => `• ${r.label}${r.about ? ` - ${r.about}` : ""}`).join("\n")
                 : `${wanted.note}Your report is ready. Tap to download:`,
             actions: wanted.list.map((r) => ({ label: r.label, download: r.id }))
         };
@@ -417,6 +435,8 @@ export function respond(input, snapshot) {
 /* Intents that need no data, so Rover can answer instantly. */
 export const needsData = (input) => {
     if (reportRequest(normalize(input))) return false;
+    const kind = commandKind(String(input), normalize(input));
+    if (kind) return kind !== "list";
     if (isListRequest(normalize(input))) return true;
     if (isCompare(normalize(input)) && !navigationTarget(String(input), normalize(input))) return true;
     const intent = pickIntent(normalize(input));

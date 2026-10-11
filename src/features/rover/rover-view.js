@@ -2,7 +2,7 @@ import { ChatMessage, PendingMessage, fillMessage } from "../../components/chat/
 import { SuggestionList, SuggestionRow } from "../../components/chat/chat-suggestions.js";
 import { ChatComposer } from "../../components/chat/chat-composer.js";
 import { roverMark } from "../../components/icons.js";
-import { greeting } from "../../components/chat/chat-format.js";
+import { greeting, esc } from "../../components/chat/chat-format.js";
 import { respond, needsData, SUGGESTIONS, TOP_SUGGESTIONS } from "./rover-engine.js";
 import { getSnapshot } from "./rover-data.js";
 import { rankSuggestions, tokenize } from "./rover-match.js";
@@ -29,7 +29,7 @@ const START_COUNT = 6;
 /* On phones, don't pop the keyboard open on its own; on desktop keep the cursor in the box. */
 const hasMouse = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-export function RoverView({ hrefFor }) {
+export function RoverView({ hrefFor, name = "" }) {
     const el = document.createElement("main");
     el.className = "rv-view is-empty";
     el.innerHTML = `
@@ -37,7 +37,7 @@ export function RoverView({ hrefFor }) {
             <div class="rv-col">
                 <section class="rv-empty">
                     ${roverMark(72, "rv-hero-mark")}
-                    <h2>${greeting()}.</h2>
+                    <h2>${greeting()}${name ? `<span class="rv-hello-name">, ${esc(name)}</span>` : ""}.</h2>
                     <p>What would you like to know about your money?</p>
                 </section>
                 <div class="rv-messages" role="log" aria-live="polite"></div>
@@ -87,6 +87,7 @@ export function RoverView({ hrefFor }) {
     const queriesBox = el.querySelector(".rv-queries");
     const setQueries = (open) => {
         el.classList.toggle("is-queries-open", open);
+        document.querySelector(".rv-shell")?.classList.toggle("is-menu-open", open);
         document.querySelector('[data-action="toggle-queries"]')?.setAttribute("aria-expanded", String(open));
     };
     window.addEventListener("rv:toggle-queries", () => setQueries(!el.classList.contains("is-queries-open")));
@@ -98,7 +99,6 @@ export function RoverView({ hrefFor }) {
         setQueries(false);
         send(b.textContent);
     });
-    composer.el.prepend(chips.toggleButton);
     chips.addEventListener("click", (e) => { const b = e.target.closest(".rv-chip"); if (b) { chips.setOpen(false); send(b.querySelector("span").textContent); } });
 
     let messages = loadHistory();
@@ -285,7 +285,9 @@ export function RoverView({ hrefFor }) {
         saveHistory(messages);
         fillMessage(pending, answer, hrefFor);
         sync();
-        fit();
+        // The answer always opens at its first line, at the top of the view.
+        pinToTop(pending);
+        requestAnimationFrame(() => { if (pinned === pending) pinToTop(pending); });
         busy = false;
 
         // "open stocks" and similar: go straight to that BlackRoad page.

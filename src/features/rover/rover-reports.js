@@ -12,6 +12,8 @@ import {
 } from "../lending/lending-service.js";
 import { startReportProgress } from "../../components/report-progress.js";
 import { currentUser, isGuestSync } from "../../services/auth.js";
+import { EMPTY_MANUAL, loadManual, loadLive, calculate, exportPDF as exportAccountingPDF } from "../accounting/accounting-service.js";
+import { loadBankIndex, findSlug } from "../../services/bank-logos.js";
 
 /*
  * Rover reports: files Rover can hand you (CSV, and the PDF account statement).
@@ -264,19 +266,86 @@ const netWorthCSV = async () => {
     return { name: "net-worth-summary", rows: [["Item", "Amount"], ...rows] };
 };
 
+/* ---------------- accounting ---------------- */
+
+/* The Accounting page's saved balances plus the live Mutual Fund and Lending figures (same as that page). */
+async function accountingSource() {
+    const [saved, live] = await Promise.all([loadManual().catch(() => null), loadLive()]);
+    const manual = saved || EMPTY_MANUAL;
+    const result = calculate(manual, live);
+    return { saved, manual, result, empty: !saved && !result.assets && !result.liabilities };
+}
+
+const accountingCSV = async () => {
+    const { manual, result, empty } = await accountingSource();
+    if (empty) return null;
+
+    const banks = (manual.banks || [])
+        .map((amount, i) => [`Bank: ${(manual.bankNames || [])[i] || "Bank " + (i + 1)}`, round2(amount)])
+        .filter(([, amount]) => amount);
+
+    return {
+        name: "accounting-summary",
+        rows: [
+            ["Item", "Amount"],
+            ...result.rows.map((r) => [r.label, round2(r.value)]),
+            ...banks,
+            ["Total assets", round2(result.assets)],
+            ["Total liabilities", round2(result.liabilities)],
+            ["Net worth", round2(result.net)]
+        ]
+    };
+};
+
+/* The same PDF as Accounting -> Export PDF. */
+async function accountingPDF(ctx = {}) {
+    const { manual, result, empty } = await accountingSource();
+    if (empty) return null;
+
+    const progress = (ctx.progress || startReportProgress)({
+        title: "Creating your accounting report",
+        steps: ["Collecting your balances", "Calculating net worth", "Laying out the report", "Finalizing PDF"],
+        doneTitle: "PDF downloaded",
+        doneText: "Your accounting report has been saved."
+    });
+
+    try {
+        let index = {};
+        try { index = await loadBankIndex(); } catch { /* logos are optional */ }
+
+        await exportAccountingPDF(result, {
+            beforeSave: () => progress.ready(),
+            userName: await userName(),
+            banks: (manual.banks || []).map((amount, i) => {
+                const name = (manual.bankNames || [])[i] || "";
+                return { amount, name, slug: findSlug(name, index) };
+            })
+        });
+        progress.complete();
+    } catch (error) {
+        console.error(error);
+        progress.fail("The PDF could not be created - check your connection and try again.");
+        throw error;
+    }
+
+    return { done: true };
+}
+
 /* ---------------- catalogue ---------------- */
 
 /* topics: the words that point at this report (matched by Rover's engine). */
 export const REPORTS = [
-    { id: "statement-pdf", label: "Account statement (PDF)", topics: ["statement", "account", "ledger", "passbook"], run: statementPDF },
-    { id: "statement-csv", label: "Account statement (CSV)", topics: ["statement", "account", "ledger", "passbook"], build: statementCSV },
-    { id: "income-csv", label: "Income & expenses (CSV)", topics: ["income", "expense", "spending", "cash"], build: incomeCSV },
-    { id: "stocks-txn-csv", label: "Stock transactions (CSV)", topics: ["stock", "share", "equity", "trade", "holding", "pnl"], build: stocksTransactionsCSV },
-    { id: "stocks-holdings-csv", label: "Stock holdings (CSV)", topics: ["stock", "share", "equity", "trade", "holding", "pnl"], build: stocksHoldingsCSV },
-    { id: "deposits-csv", label: "Fixed deposits (CSV)", topics: ["fd", "deposit"], build: depositsCSV },
-    { id: "lending-csv", label: "Lending, people (CSV)", topics: ["lend", "lent", "loan", "owe", "borrow"], build: lendingCSV },
-    { id: "loans-csv", label: "Loans & EMI (CSV)", topics: ["loan", "emi", "lend", "borrow"], build: loansCSV },
-    { id: "networth-csv", label: "Net worth summary (CSV)", topics: ["net worth", "networth", "summary", "overview", "wealth"], build: netWorthCSV }
+    { id: "statement-pdf", label: "Account statement (PDF)", about: "Every income and expense entry as a ledger", topics: ["statement", "account", "ledger", "passbook"], run: statementPDF },
+    { id: "statement-csv", label: "Account statement (CSV)", about: "The same ledger, opens in Excel", topics: ["statement", "account", "ledger", "passbook"], build: statementCSV },
+    { id: "income-csv", label: "Income & expenses (CSV)", about: "Income and spending, month by month", topics: ["income", "expense", "spending", "cash"], build: incomeCSV },
+    { id: "stocks-txn-csv", label: "Stock transactions (CSV)", about: "Every buy and sell you have entered", topics: ["stock", "share", "equity", "trade", "holding", "pnl"], build: stocksTransactionsCSV },
+    { id: "stocks-holdings-csv", label: "Stock holdings (CSV)", about: "What you hold now, with profit or loss", topics: ["stock", "share", "equity", "trade", "holding", "pnl"], build: stocksHoldingsCSV },
+    { id: "deposits-csv", label: "Fixed deposits (CSV)", about: "Each deposit, rate and maturity date", topics: ["fd", "deposit"], build: depositsCSV },
+    { id: "lending-csv", label: "Lending, people (CSV)", about: "Who owes you and who you owe", topics: ["lend", "lent", "loan", "owe", "borrow"], build: lendingCSV },
+    { id: "loans-csv", label: "Loans & EMI (CSV)", about: "Each loan, EMI and what is left to pay", topics: ["loan", "emi", "lend", "borrow"], build: loansCSV },
+    { id: "networth-csv", label: "Net worth summary (CSV)", about: "Net worth, assets and liabilities in one file", topics: ["net worth", "networth", "summary", "overview", "wealth"], build: netWorthCSV },
+    { id: "accounting-pdf", label: "Accounting report (PDF)", about: "Your Accounting page as a printable statement", topics: ["accounting", "balance sheet"], run: accountingPDF },
+    { id: "accounting-csv", label: "Accounting summary (CSV)", about: "Your Accounting balances, opens in Excel", topics: ["accounting", "balance sheet"], build: accountingCSV }
 ];
 
 const REPORT_BY_ID = new Map(REPORTS.map((r) => [r.id, r]));

@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v140";
+const CACHE_VERSION = "v146";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -125,6 +125,7 @@ const SHELL = [
     "./src/features/rover/rover-reports.js",
     "./src/features/rover/rover-queries.js",
     "./src/features/rover/rover-more.js",
+    "./src/features/rover/rover-commands.js",
     "./src/features/rover/rover-progress.js",
     "./src/features/rover/rover-visuals.js",
     "./src/features/networth/networth-service.js",

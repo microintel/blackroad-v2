@@ -4,6 +4,8 @@ import { entryIncomeAmount, entryInvestmentSaleDisplayAmount, isInvestmentCatego
 import { getSymbolName } from "../stocks/stocks-service.js";
 import { loadDues } from "../notifications/notifications-service.js";
 import { computeMetrics } from "../deposits/deposits-service.js";
+import { getSession, currentUser } from "../../services/auth.js";
+import { EMPTY_MANUAL, loadManual, loadLive, calculate } from "../accounting/accounting-service.js";
 import { summarizePeople, outstanding as loanOutstanding, nextDue as loanNextDue, loanStatus } from "../lending/lending-service.js";
 
 /*
@@ -52,7 +54,7 @@ async function loadHoldings() {
  */
 async function loadExtras() {
     try {
-        const { entries, deposits, lending } = await loadReportSources();
+        const { entries, stocks, deposits, lending } = await loadReportSources();
         const incomeList = [];
         const byMonth = {};
         const cats = {};
@@ -119,7 +121,16 @@ async function loadExtras() {
         let ledger = null;
         try { ledger = calculateLedgerSummary(entries); } catch (error) { console.error("Rover: ledger summary unavailable:", error); }
 
+        // Newest date on each kind of record (for "when did I last add data?").
+        const newest = (dates) => dates.map((x) => String(x || "").slice(0, 10)).filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x)).sort().pop() || "";
+        const lastEntries = {
+            income: newest(entries.flatMap((e) => [e.date, ...(e.transactions || []).map((t) => t.date)])),
+            stock: newest((stocks.transactions || []).map((t) => t.date)),
+            lending: newest([...(lending.entries || []).map((e) => e.date), ...(lending.loans || []).map((l) => l.date)])
+        };
+
         return {
+            lastEntries,
             ledger,
             spanTotals: span,
             recentExpenses: [...expenses].sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.amount - a.amount).slice(0, 6),
@@ -145,9 +156,52 @@ async function loadExtras() {
 
 /* One consistent picture of the user's money, taken at question time. */
 export async function getSnapshot() {
-    const [data, holdings, extras, dues] = await Promise.all([getDashboardData(), loadHoldings(), loadExtras(), loadReminders()]);
+    const [data, holdings, extras, dues, account, dataUpdated, accounting] = await Promise.all([getDashboardData(), loadHoldings(), loadExtras(), loadReminders(), loadAccount(), loadDataUpdated(), loadAccounting()]);
 
-    return { ...data, holdings, ...extras, dues };
+    return { ...data, holdings, ...extras, dues, account, dataUpdated, accounting };
+}
+
+/* The Accounting page's figures (saved balances + live Mutual Funds and Lending), read-only. */
+async function loadAccounting() {
+    try {
+        const [saved, live] = await Promise.all([loadManual().catch(() => null), loadLive()]);
+        const result = calculate(saved || EMPTY_MANUAL, live);
+        return {
+            saved: !!saved,
+            updatedAt: (saved && saved.updatedAt) || "",
+            rows: result.rows.map((r) => ({ label: r.label, value: r.value })),
+            assets: result.assets,
+            liabilities: result.liabilities,
+            net: result.net
+        };
+    } catch (error) {
+        console.error("Rover: accounting unavailable:", error);
+        return null;
+    }
+}
+
+/* Who is signed in (name, email, plan, member since). A guest has no personal account. */
+async function loadAccount() {
+    try {
+        const session = await getSession();
+        if (!session) return null;
+        if (session.guest) return { guest: true };
+        const user = await currentUser();
+        return user ? { name: user.name || "", email: user.email || "", plan: user.plan || "Free", createdAt: user.createdAt || "" } : null;
+    } catch (error) {
+        console.error("Rover: account unavailable:", error);
+        return null;
+    }
+}
+
+/* The "Data last updated" date set in Account (same value the Dashboard shows). */
+async function loadDataUpdated() {
+    try {
+        const store = await dataService.getIncomeStore();
+        return String((await store.getUpdateDate()) || "").trim();
+    } catch (error) {
+        return "";
+    }
 }
 
 /* Upcoming EMIs, money due back, and FD maturities (the same list the Notifications page shows). */
