@@ -1,6 +1,8 @@
 import { formatINR } from "../dashboard/dashboard-service.js";
 import { REPORTS } from "./rover-reports.js";
-import { EXTRA_INTENTS, EXTRA_SUGGESTIONS, visualsFor, compareReply, isCompare, pickView } from "./rover-queries.js";
+import { EXTRA_INTENTS, EXTRA_SUGGESTIONS, visualsFor, compareReply, isCompare, pickView, pickChartType } from "./rover-queries.js";
+import { listReply, isListRequest, LIST_SUGGESTIONS } from "./rover-lists.js";
+import { MORE_INTENTS, MORE_SUGGESTIONS, NO_DATA_INTENTS, moreVisualsFor, lookupReply } from "./rover-more.js";
 
 /*
  * Rover engine (pure logic, no DOM, no storage).
@@ -93,9 +95,15 @@ const INTENTS = [
                 "• **Stocks**, **mutual funds** and **fixed deposits**\n" +
                 "• **Loans**, EMI and money owed\n" +
                 "• **Allocation** of your assets\n" +
+                "• **Lists** of anything: try \"list all my stocks\", \"list all mutual funds\", \"all expenses this month\", \"list my FDs\", \"list all loans\" or \"list my investments\"\n" +
                 "• **Download reports**: income, account statement, stocks, deposits, loans\n" +
+                "• **Many chart types**: treemap, radar, waterfall, bubble, lollipop, stacked bar, rings, area, donut and more. Add the type to your question, like \"spending by category as a treemap\" or \"show all chart types for my stocks\"\n" +
                 "• **Charts, tables, gauges** and **comparisons**: try \"spending by category\", \"stocks as a table\", \"savings rate\" or \"compare stocks vs mutual funds\"\n" +
                 "• **Trends**, a **money health score** and a simple **forecast**\n" +
+                "• **Income statement**, last month, averages and latest expenses 🧾\n" +
+                "• **Reminders**: what's due, overdue payments, next EMI, FD maturities 🔔\n" +
+                "• **A single stock**: try \"How is Reliance doing?\" 📈\n" +
+                "• **About BlackRoad**: how to add things, backup, calculators and more\n" +
                 "Say \"open stocks\" and I'll take you there."
         })
     },
@@ -264,6 +272,9 @@ const INTENTS = [
 /* More questions (charts, gauges, trends ...) live in rover-queries.js. They count double when they match, so a specific question beats a broad one. */
 INTENTS.push(...EXTRA_INTENTS.map((i) => ({ ...i, extra: true })));
 
+/* Income statement, reminders, single stocks and BlackRoad how-to's live in rover-more.js. */
+INTENTS.push(...MORE_INTENTS.map((i) => ({ ...i, extra: true })));
+
 /* -------- matching -------- */
 
 const normalize = (s) => ` ${String(s).toLowerCase().replace(/[^a-z0-9&\s]/g, " ").replace(/\s+/g, " ").trim()} `;
@@ -294,18 +305,33 @@ function navigationTarget(raw, text) {
     const lower = raw.toLowerCase();
     if (!/\b(open|go to|goto|take me|show me|navigate|visit)\b/.test(lower)) return null;
     // "show me my stocks as a chart / table / gauge" wants a visual here, not the page.
-    if (!/\b(open|go to|goto|take me|navigate|visit)\b/.test(lower) && (pickView(lower) || isCompare(lower))) return null;
+    const type = pickChartType(lower);
+    const wantsChartType = type && (["treemap", "radar", "waterfall", "bubble", "lollipop", "rings", "stacked", "stackcols", "donut", "all"].includes(type) || /\b(chart|graph|plot|visual|as a|as an)\b/.test(lower));
+    if (!/\b(open|go to|goto|take me|navigate|visit)\b/.test(lower) && (pickView(lower) || isCompare(lower) || wantsChartType)) return null;
     const hit = PAGES.find(([words]) => words.some((w) => text.includes(` ${w}`)));
     return hit ? hit[1] : null;
 }
 
-/* Suggested questions. The first six show on the start screen; each one is answered by an intent above. */
-export const SUGGESTIONS = [
+/*
+ * Suggested questions.
+ *
+ *   TOP_SUGGESTIONS  the few most useful ones: shown in the "Ask Rover" panel and first in every list
+ *   SUGGESTIONS      everything Rover can answer: only used to match what you type (the lists you
+ *                    see while idle show just the first few, so nothing feels crowded)
+ */
+export const TOP_SUGGESTIONS = [
     "What's my net worth?",
     "Show my summary",
     "How are my stocks doing?",
+    "Income statement summary",
+    "What's due soon?",
     "Spending this month",
     "Read my brokerage report",
+    "Download my reports"
+];
+
+export const SUGGESTIONS = [...new Set([
+    ...TOP_SUGGESTIONS,
     "Any loans or EMI?",
     "How are my mutual funds doing?",
     "When does my next FD mature?",
@@ -313,14 +339,22 @@ export const SUGGESTIONS = [
     "What's my cash balance?",
     "Who owes me money?",
     "What are my liabilities?",
-    "Download my reports",
     "What can you do?",
-    ...EXTRA_SUGGESTIONS
-];
+    ...LIST_SUGGESTIONS,
+    ...EXTRA_SUGGESTIONS,
+    ...MORE_SUGGESTIONS
+])];
 
 export function respond(input, snapshot) {
     const raw = String(input || "").trim();
     const text = normalize(raw);
+
+    // "list all my stocks", "all expenses list", "list my FDs" ...: a full list, answered before anything else
+    // (so "show me all my stocks" lists them instead of just opening the page).
+    if (isListRequest(text)) {
+        const listed = listReply(raw, text, snapshot || {}, pickView(raw));
+        if (listed) return listed;
+    }
 
     const target = navigationTarget(raw, text);
     if (target) return { text: `Sure, taking you there.`, actions: [target], go: target.path };
@@ -336,6 +370,7 @@ export function respond(input, snapshot) {
     }
 
     const view = pickView(raw);
+    const chartType = pickChartType(raw);
 
     if (isCompare(text)) {
         const out = compareReply(text, snapshot || {});
@@ -348,20 +383,27 @@ export function respond(input, snapshot) {
 
     const intent = pickIntent(text);
 
+    // "How is Reliance doing?", "How much did I spend on food?": answered from the matching stock / category.
+    const quiet = intent && (NO_DATA_INTENTS.includes(intent.name) || ["greeting", "thanks", "help"].includes(intent.name));
+    if (!quiet) {
+        const looked = lookupReply(raw, text, snapshot || {});
+        if (looked) return looked;
+    }
+
     if (!intent) {
         return {
             text:
                 "I didn't quite get that. I can help with your **net worth**, **cash**, **spending**, **stocks**, " +
-                "**mutual funds**, **deposits** and **loans**. Try asking, for example, 'What is my net worth?'"
+                "**mutual funds**, **deposits**, **loans**, your **income statement** and **what's due**. Try asking, for example, 'What is my net worth?'"
         };
     }
 
     // Greetings and help don't need data.
-    const out = intent.reply(snapshot || {});
+    const out = intent.reply(snapshot || {}, text);
 
     // Attach the charts / tables / gauges that go with this answer (none when there is no data).
     if (!out.blocks) {
-        const blocks = visualsFor(intent.name, snapshot || {}, view);
+        const blocks = moreVisualsFor(intent.name, snapshot || {}, view, chartType) ?? visualsFor(intent.name, snapshot || {}, view, chartType);
         if (blocks.length) out.blocks = blocks;
     }
 
@@ -371,7 +413,9 @@ export function respond(input, snapshot) {
 /* Intents that need no data, so Rover can answer instantly. */
 export const needsData = (input) => {
     if (reportRequest(normalize(input))) return false;
+    if (isListRequest(normalize(input))) return true;
     if (isCompare(normalize(input)) && !navigationTarget(String(input), normalize(input))) return true;
     const intent = pickIntent(normalize(input));
-    return !!intent && !["greeting", "thanks", "help"].includes(intent.name);
+    // No match: still read the data, so a stock or category name in the question can be found.
+    return !intent || ![ "greeting", "thanks", "help", ...NO_DATA_INTENTS ].includes(intent.name);
 };

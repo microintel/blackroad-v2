@@ -155,13 +155,13 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 .rv-cell { min-width: 0; }
 /* phones / narrow screens: the group wrappers vanish and every chart is its own row */
 .rv-vgroup, .rv-vcol { display: contents; }
-.rv-block:not(.rv-kpis) { padding: 14px; border: 1px solid var(--br-border); border-radius: 16px; background: var(--br-surface-soft); }
+.rv-block:not(.rv-kpis) { padding: 6px 0; border: 0; border-radius: 0; background: none; }
 .rv-block-title { margin: 0 0 12px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--br-text-muted); }
 .rv-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--br-text-muted); }
 .is-up, .is-success { color: var(--br-success); } .is-down, .is-danger { color: var(--br-danger); }
 
 .rv-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
-.rv-kpi { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--br-border); border-radius: 14px; background: var(--br-surface-soft); min-width: 0; }
+.rv-kpi { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; border: 0; border-radius: 0; background: none; min-width: 0; }
 .rv-kpi span { font-size: 12px; color: var(--br-text-muted); }
 .rv-kpi strong { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
@@ -212,8 +212,8 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 /* table */
 .rv-table-wrap { overflow-x: auto; margin: 0 -6px; padding: 0 6px; }
 .rv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.rv-table th { padding: 6px 8px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--br-text-muted); border-bottom: 1px solid var(--br-border-strong); white-space: nowrap; }
-.rv-table td { padding: 9px 8px; border-top: 1px solid var(--br-border); }
+.rv-table th { padding: 6px 8px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--br-text-muted); border-bottom: 0; white-space: nowrap; }
+.rv-table td { padding: 9px 8px; border-top: 0; }
 .rv-table tbody tr:first-child td { border-top: 0; }
 .rv-table .is-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -229,7 +229,7 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 .rv-gauge-block .rv-note { text-align: center; }
 
 /* ---------- report progress, inside the chat ---------- */
-.rv-prog-card { padding: 14px; border: 1px solid var(--br-border); border-radius: 16px; background: var(--br-surface-soft); }
+.rv-prog-card { padding: 6px 0; border: 0; border-radius: 0; background: none; }
 .rv-prog-head { display: flex; align-items: center; gap: 12px; }
 .rv-prog-icon { flex: none; width: 28px; height: 28px; display: grid; place-items: center; color: var(--br-gold); }
 .rv-prog-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -362,6 +362,7 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .rv-strip-seg, .rv-lolli-stem, .rv-lolli circle, .rv-radar-poly, .rv-tm > div, .rv-bubble circle, .rv-rings-arc { animation: none !important; }
     .rv-msg, .rv-msg *, .rv-skel i, .rv-typing, .rv-dots, .rv-status, .rv-chip-menu, .rv-suggest-toggle, .rv-upload, .rv-file-chip, .rv-files-hint,
     .rv-empty h2, .rv-empty > p, .rv-suggest li, .rv-hero-mark { animation: none !important; }
     .rv-suggestion { transition: none; }
@@ -469,3 +470,120 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
     .rv-shell { animation: none; }
     .rv-queries, .rv-queries-backdrop { transition: none; }
 }
+
+/* =========================================================
+   Rover: stock cards, statement rows, reminders
+   ========================================================= */
+
+/* Ask Rover panel: a short hint under the few top questions */
+.rv-queries-list { flex: 0 1 auto; }
+.rv-queries-hint { flex: none; margin: 0; padding: 10px 20px 18px; font-size: 12.5px; line-height: 1.45; color: var(--br-text-muted); }
+
+/* ----- stock cards (same logo look as the Stocks page) ----- */
+.rv-stks { display: flex; flex-direction: column; gap: 8px; }
+.rv-stk { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 0; border: 0; border-radius: 0; background: none; min-width: 0; }
+.rv-stk-main, .rv-stk-nums { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rv-stk-main b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-stk-main span { font-size: 12px; color: var(--br-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-stk-nums { align-items: flex-end; text-align: right; }
+.rv-stk-nums b { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rv-stk-nums span { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rv-stk.is-hero { padding: 10px 0; gap: 14px; }
+.rv-stk.is-hero .rv-stk-main b { font-size: 16px; white-space: normal; }
+
+.rv-logo {
+    position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 11px; overflow: hidden; font-size: 12px; font-weight: 700;
+    color: var(--br-text-secondary); background: var(--br-surface-muted);
+}
+.rv-logo::before { content: attr(data-initials); position: absolute; letter-spacing: .02em; }
+.rv-logo img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; background: transparent; padding: 0; }
+.rv-logo-lg { width: 56px; height: 56px; border-radius: 16px; font-size: 17px; }
+
+@media (max-width: 420px) {
+    .rv-stk { grid-template-columns: auto minmax(0, 1fr); }
+    .rv-stk-nums { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: baseline; text-align: left; padding-top: 4px; border-top: 0; }
+}
+
+/* ----- statement rows (emoji + label + amount) ----- */
+.rv-stmt-sec + .rv-stmt-sec { margin-top: 16px; }
+.rv-stmt-sec h5 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--br-text-secondary); }
+.rv-stmt { margin: 0; padding: 0; list-style: none; }
+.rv-stmt-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 0; font-size: 14px; }
+.rv-stmt-row:first-child { border-top: 0; }
+.rv-stmt-row.is-total { font-weight: 600; }
+.rv-stmt-row b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rv-stmt-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 0; background: none; font-size: 16px; line-height: 1; }
+.rv-stmt-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rv-stmt-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-stmt-text em { font-style: normal; font-size: 12px; color: var(--br-text-muted); }
+.rv-stmt-bar { height: 5px; }
+
+/* ----- reminders (due dates) ----- */
+.rv-rems { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.rv-rem { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 0; border: 0; border-radius: 0; background: none; }
+.rv-rem-ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 0; background: none; font-size: 18px; line-height: 1; }
+.rv-rem-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rv-rem-text b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-rem-text span { font-size: 12px; color: var(--br-text-muted); }
+.rv-rem strong { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rv-rem.is-overdue strong { color: var(--br-danger); }
+
+/* ---------- more chart types ---------- */
+/* stacked strip */
+.rv-strip { display: flex; gap: 3px; height: 26px; }
+.rv-strip-seg { min-width: 3px; border-radius: 6px; transform-origin: left; }
+.rv-legend-wide { margin-top: 12px; min-width: 0; }
+.rv-strip-seg[data-tip], .rv-tm[data-tip] { cursor: default; }
+.rv-strip-seg.is-tip-active, .rv-tm.is-tip-active > div { filter: brightness(1.15); }
+
+/* lollipop */
+.rv-lolli-label { font-size: 10.5px; fill: var(--br-text-secondary); }
+.rv-lolli-val { font-size: 10.5px; font-weight: 600; fill: var(--br-text); font-variant-numeric: tabular-nums; }
+.rv-lolli-val.is-up { fill: var(--br-success); }
+.rv-lolli-val.is-down { fill: var(--br-danger); }
+.rv-lolli-stem { stroke-width: 2.4; stroke-linecap: round; }
+.rv-lolli circle { transform-box: fill-box; transform-origin: center; transition: transform var(--br-transition-fast, 150ms); }
+.rv-lolli.is-tip-active circle { transform: scale(1.25); }
+
+/* radar */
+.rv-radar-ring { fill: none; stroke: var(--br-border); stroke-width: 1; }
+.rv-radar-axis { stroke: var(--br-border); stroke-width: 1; }
+.rv-radar-poly { fill: var(--br-gold); fill-opacity: .22; stroke: var(--br-gold); stroke-width: 2; stroke-linejoin: round; transform-box: view-box; }
+.rv-radar-dot { fill: var(--br-gold); }
+.rv-radar-label { font-size: 9.5px; }
+
+/* waterfall */
+.rv-wf-val { font-weight: 600; fill: var(--br-text-secondary); }
+
+/* treemap */
+.rv-treemap { position: relative; width: 100%; aspect-ratio: 16 / 9; }
+.rv-tm { position: absolute; padding: 1.5px; box-sizing: border-box; }
+.rv-tm > div { width: 100%; height: 100%; border-radius: 8px; padding: 7px 8px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; gap: 1px; color: #0b0b0b; }
+.rv-tm b { font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-tm span { font-size: 11px; font-weight: 500; opacity: .8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* bubble */
+.rv-bubble circle { fill-opacity: .72; transform-box: fill-box; transform-origin: center; transition: transform var(--br-transition-fast, 150ms), fill-opacity var(--br-transition-fast, 150ms); }
+.rv-bubble.is-tip-active circle { fill-opacity: 1; transform: scale(1.12); }
+.rv-bubble-text { font-size: 7.5px; font-weight: 700; fill: #0b0b0b; pointer-events: none; }
+.rv-bubble-zero { stroke: var(--br-text-muted); stroke-width: 1; opacity: .5; }
+
+/* rings */
+.rv-rings-track { fill: none; stroke: var(--br-border); stroke-width: 2.6; }
+.rv-rings-arc { fill: none; stroke-width: 2.6; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 21px 21px; }
+.rv-legend-rings li { grid-template-columns: 10px minmax(0, 1fr) auto; }
+
+/* they draw themselves in too (new replies only) */
+.is-new .rv-strip-seg { animation: rv-grow 800ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--d, 0ms) + var(--n, 0) * 80ms); }
+.is-new .rv-lolli-stem { animation: rv-grow-line 700ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--d, 0ms) + var(--n, 0) * 70ms); }
+.is-new .rv-lolli circle { animation: rv-pop 500ms cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: calc(var(--d, 0ms) + 250ms + var(--n, 0) * 70ms); }
+.is-new .rv-radar-poly { animation: rv-bloom 900ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: var(--d, 0ms); }
+.is-new .rv-tm > div { animation: rv-pop 520ms cubic-bezier(.2, .9, .3, 1) both; animation-delay: calc(var(--d, 0ms) + var(--n, 0) * 60ms); }
+.is-new .rv-bubble circle { animation: rv-pop 560ms cubic-bezier(.3, 1.4, .5, 1) both; animation-delay: calc(var(--d, 0ms) + var(--n, 0) * 70ms); }
+.is-new .rv-rings-arc { animation: rv-ring 1000ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--d, 0ms) + var(--n, 0) * 110ms); }
+@keyframes rv-grow-line { from { transform: scaleX(0); } }
+@keyframes rv-pop { from { opacity: 0; transform: scale(.4); } }
+@keyframes rv-bloom { from { opacity: 0; transform: scale(.2); } }
+@keyframes rv-ring { from { stroke-dasharray: 0 var(--len); } }
+.rv-lolli-stem { transform-box: fill-box; transform-origin: left center; }

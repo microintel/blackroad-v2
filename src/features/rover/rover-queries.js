@@ -85,6 +85,12 @@ const components = (d) => [
     { label: "Lending Receivables", value: d.lending?.peopleReceivable || 0 }
 ].filter((i) => i.value > 0);
 
+/* Radar charts want 0 to 100: each item as a share of the biggest one. */
+const radarShares = (list) => {
+    const max = Math.max(...list.map((i) => i.value), 0) || 1;
+    return list.map((i) => ({ label: i.label, value: (i.value / max) * 100, display: money(i.value), note: "Amount" }));
+};
+
 /* ---------- gauges ---------- */
 
 const gaugeSave = (m) => m.saveRate === null ? null : ({
@@ -144,26 +150,41 @@ function health(d) {
 
 const holdingsBars = (d) => d.holdings.map((h) => ({ label: h.symbol, value: h.pnl }));
 
+/* Stock cards with the company logo, like the Stocks page. */
+const stockCards = (list, title) => ({
+    kind: "stocklist", title,
+    items: list.map((h) => ({ symbol: h.symbol, name: h.name || h.symbol, qty: h.quantity, avg: h.avg ?? (h.quantity ? h.invested / h.quantity : 0), ltp: h.ltp ?? (h.quantity ? h.value / h.quantity : 0), value: h.value, pnl: h.pnl, pnlPct: h.pnlPct }))
+});
+
 const VISUALS = {
     summary: (d) => [
         { kind: "kpi", items: [{ label: "Net worth", value: d.netWorth }, { label: "Assets", value: d.totalAssets }, { label: "Liabilities", value: d.totalLiabilities, tone: d.totalLiabilities > 0 ? "danger" : "" }] },
-        d.chartItems?.length ? { kind: "chart", type: "donut", title: "Where your invested assets sit", centerLabel: "Invested", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) } : null
+        d.chartItems?.length ? { kind: "chart", type: "treemap", title: "Where your invested assets sit", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) } : null,
+        d.chartItems?.length ? { kind: "chart", alt: true, type: "donut", title: "Where your invested assets sit", centerLabel: "Invested", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) } : null,
+        d.chartItems?.length ? { kind: "chart", alt: true, type: "stacked", title: "Share of invested assets", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) } : null
     ],
 
     networth: (d) => (d.totalAssets || d.totalLiabilities) ? [
         { kind: "compare", title: "Assets vs liabilities", aLabel: "Assets", bLabel: "Liabilities", rows: [{ label: "Total", a: d.totalAssets, b: d.totalLiabilities, better: false }], note: `Net worth ${money(d.netWorth)}` },
-        components(d).length ? { kind: "chart", type: "donut", title: "What your net worth is made of", centerLabel: "Assets", items: components(d) } : null,
+        components(d).length ? { kind: "chart", type: "stacked", title: "What your net worth is made of", items: components(d) } : null,
+        components(d).length ? { kind: "chart", alt: true, type: "donut", title: "What your net worth is made of", centerLabel: "Assets", items: components(d) } : null,
+        components(d).length > 1 ? { kind: "chart", alt: true, type: "treemap", title: "What your net worth is made of", items: components(d) } : null,
+        components(d).length > 2 ? { kind: "chart", alt: true, type: "radar", title: "Mix of your assets (share of the biggest)", items: radarShares(components(d)) } : null,
         gaugeDebt(d, metrics(d))
     ] : [],
 
     assets: (d) => d.chartItems?.length ? [
         { kind: "chart", type: "donut", title: "Allocation", centerLabel: "Invested", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) },
+        { kind: "chart", alt: true, type: "treemap", title: "Allocation", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) },
+        { kind: "chart", alt: true, type: "stacked", title: "Allocation", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) },
+        { kind: "chart", alt: true, type: "lollipop", title: "Value of each asset", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) },
         { kind: "table", title: "Breakdown", columns: [{ label: "Asset", fmt: "text" }, { label: "Value", fmt: "money" }, { label: "Share", fmt: "pct" }], rows: d.chartItems.map((i) => [i.label, i.amount, i.pct]) },
         gaugeSpread(metrics(d))
     ] : [],
 
     liabilities: (d) => d.totalLiabilities > 0 ? [
-        { kind: "chart", type: "donut", title: "What you owe", centerLabel: "Owed", items: [{ label: "Loans outstanding", value: d.lending.loansOutstanding }, { label: "Owed to people", value: d.lending.peoplePayable }] },
+        { kind: "chart", type: "stacked", title: "What you owe", items: [{ label: "Loans outstanding", value: d.lending.loansOutstanding }, { label: "Owed to people", value: d.lending.peoplePayable }] },
+        { kind: "chart", alt: true, type: "donut", title: "What you owe", centerLabel: "Owed", items: [{ label: "Loans outstanding", value: d.lending.loansOutstanding }, { label: "Owed to people", value: d.lending.peoplePayable }] },
         gaugeDebt(d, metrics(d))
     ] : [],
 
@@ -173,7 +194,8 @@ const VISUALS = {
     ] : [],
 
     lending: (d) => d.people?.length ? [
-        { kind: "chart", type: "bar", signed: true, title: "Balance with each person (+ they owe you)", items: d.people.map((p) => ({ label: p.name, value: p.balance })) },
+        { kind: "chart", type: "lollipop", signed: true, title: "Balance with each person (+ they owe you)", items: d.people.map((p) => ({ label: p.name, value: p.balance })) },
+        { kind: "chart", alt: true, type: "bar", signed: true, title: "Balance with each person (+ they owe you)", items: d.people.map((p) => ({ label: p.name, value: p.balance })) },
         { kind: "table", title: "People", columns: [{ label: "Person", fmt: "text" }, { label: "Balance", fmt: "signed" }, { label: "Status", fmt: "text" }], rows: d.people.map((p) => [p.name, p.balance, p.balance > 0 ? "Owes you" : "You owe"]) }
     ] : [],
 
@@ -188,14 +210,20 @@ const VISUALS = {
         return d.income?.hasData ? [
             gaugeSave(m),
             { kind: "compare", title: "This month: income vs expenses", aLabel: "Income", bLabel: "Expenses", rows: [{ label: "This month", a: m.month.income, b: m.month.expense, better: false }] },
+            { kind: "chart", type: "waterfall", title: "Where this month's income went", items: [{ label: "Income", value: m.month.income, total: true }, { label: "Expenses", value: -m.month.expense }, { label: "Invested", value: -m.month.investment }, { label: "Left", value: m.month.income - m.month.expense - m.month.investment, total: true }] },
             trend.length > 1 ? { kind: "chart", type: "columns", title: "Last 6 months", labels: m.months.map((x) => x.label), series: [{ name: "Income", values: m.months.map((x) => x.income), color: "success" }, { name: "Expenses", values: m.months.map((x) => x.expense), color: "danger" }] } : null
         ] : [];
     },
 
     stocks: (d) => d.holdings?.length ? [
-        { kind: "chart", type: "bar", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
+        stockCards(d.holdings, "Your stocks"),
+        { kind: "chart", type: "lollipop", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
+        { kind: "chart", alt: true, type: "bar", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
+        d.holdings.length > 1 ? { kind: "chart", type: "bubble", title: "Money put in vs return (size = current value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: d.holdings.slice(0, 12).map((h) => ({ label: h.symbol, x: h.invested, y: h.pnlPct, r: h.value })) } : null,
         { kind: "table", title: "Your holdings", columns: [{ label: "Stock", fmt: "text" }, { label: "Value", fmt: "money" }, { label: "P&L", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: d.holdings.map((h) => [h.symbol, h.value, h.pnl, h.pnlPct]) },
-        { kind: "chart", type: "donut", title: "Share of stock value", centerLabel: "Stocks", items: d.holdings.slice(0, 6).map((h) => ({ label: h.symbol, value: h.value })) }
+        { kind: "chart", type: "donut", alt: true, title: "Share of stock value", centerLabel: "Stocks", items: d.holdings.slice(0, 6).map((h) => ({ label: h.symbol, value: h.value })) },
+        d.holdings.length > 1 ? { kind: "chart", type: "treemap", title: "Share of stock value", items: d.holdings.slice(0, 12).map((h) => ({ label: h.symbol, value: h.value })) } : null,
+        d.holdings.length > 1 ? { kind: "chart", alt: true, type: "stacked", title: "Share of stock value", items: d.holdings.slice(0, 8).map((h) => ({ label: h.symbol, value: h.value })) } : null
     ] : [],
 
     mutualfunds: (d) => {
@@ -204,6 +232,8 @@ const VISUALS = {
         const series = (d.series || []).filter((s) => s.date);
         return [
             { kind: "chart", type: "columns", title: "Invested vs current value", labels: mf.sips.map((s) => s.name.length > 10 ? s.name.slice(0, 9) + "…" : s.name), series: [{ name: "Invested", values: mf.sips.map((s) => s.invested), color: "info" }, { name: "Value", values: mf.sips.map((s) => s.currentValue), color: "gold" }] },
+            mf.sips.length > 1 ? { kind: "chart", alt: true, type: "lollipop", signed: true, title: "Gain by SIP", items: mf.sips.map((s) => ({ label: s.name, value: s.pnl })) } : null,
+            mf.sips.length > 1 ? { kind: "chart", alt: true, type: "bubble", title: "Money put in vs return (size = value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: mf.sips.map((s) => ({ label: s.name, x: s.invested, y: s.pnlPct, r: s.currentValue })) } : null,
             { kind: "table", title: "Your SIPs", columns: [{ label: "SIP", fmt: "text" }, { label: "Invested", fmt: "money" }, { label: "Value", fmt: "money" }, { label: "Gain", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: mf.sips.map((s) => [s.name, s.invested, s.currentValue, s.pnl, s.pnlPct]) },
             series.length > 1 ? { kind: "chart", type: "line", title: "Mutual fund profit over time", labels: series.map((s) => s.date.slice(2, 7)), series: [{ name: "Profit / loss", values: series.map((s) => s.pnl), color: "gold" }] } : null
         ];
@@ -211,7 +241,9 @@ const VISUALS = {
 
     deposits: (d) => d.fds?.length ? [
         { kind: "table", title: "Your fixed deposits", columns: [{ label: "Bank", fmt: "text" }, { label: "Value", fmt: "money" }, { label: "Rate", fmt: "pct" }, { label: "Matures", fmt: "text" }, { label: "Days", fmt: "num" }], rows: d.fds.map((f) => [f.name, f.value, f.rate, f.maturityDate || "–", f.days ?? "–"]) },
-        { kind: "chart", type: "bar", title: "Value by deposit", items: d.fds.map((f) => ({ label: f.name, value: f.value })) }
+        { kind: "chart", type: "bar", title: "Value by deposit", items: d.fds.map((f) => ({ label: f.name, value: f.value })) },
+        d.fds.length > 1 ? { kind: "chart", alt: true, type: "treemap", title: "Value by deposit", items: d.fds.map((f) => ({ label: f.name, value: f.value })) } : null,
+        d.fds.length > 1 ? { kind: "chart", alt: true, type: "lollipop", title: "Interest rate by deposit", fmt: "pct", items: d.fds.map((f) => ({ label: f.name, value: f.rate })) } : null
     ] : [],
 
     /* ----- new questions ----- */
@@ -220,6 +252,8 @@ const VISUALS = {
         const m = metrics(d);
         return m.months.some((x) => x.income || x.expense) ? [
             { kind: "chart", type: "columns", title: "Income, expenses and investing", labels: m.months.map((x) => x.label), series: [{ name: "Income", values: m.months.map((x) => x.income), color: "success" }, { name: "Expenses", values: m.months.map((x) => x.expense), color: "danger" }, { name: "Invested", values: m.months.map((x) => x.investment), color: "info" }] },
+            { kind: "chart", alt: true, type: "stackcols", title: "Income, expenses and investing", labels: m.months.map((x) => x.label), series: [{ name: "Expenses", values: m.months.map((x) => x.expense), color: "danger" }, { name: "Invested", values: m.months.map((x) => x.investment), color: "info" }] },
+            { kind: "chart", type: "line", area: true, title: "Income vs expenses over time", labels: m.months.map((x) => x.label), series: [{ name: "Income", values: m.months.map((x) => x.income), color: "success" }, { name: "Expenses", values: m.months.map((x) => x.expense), color: "danger" }] },
             { kind: "chart", type: "line", title: "Left over each month (income - expenses)", labels: m.months.map((x) => x.label), series: [{ name: "Saved", values: m.months.map((x) => x.income - x.expense), color: "gold" }] },
             { kind: "table", title: "Month by month", columns: [{ label: "Month", fmt: "text" }, { label: "Income", fmt: "money" }, { label: "Expenses", fmt: "money" }, { label: "Saved", fmt: "signed" }], rows: m.months.map((x) => [x.label, x.income, x.expense, x.income - x.expense]) }
         ] : [];
@@ -230,18 +264,26 @@ const VISUALS = {
         const title = d.categoriesMonth?.length ? "Spending by category this month" : "Spending by category";
         const total = list.reduce((s, c) => s + c.amount, 0);
         return list.length ? [
-            { kind: "chart", type: "donut", title, centerLabel: "Spent", items: list.slice(0, 6).map((c) => ({ label: c.label, value: c.amount })).concat(list.length > 6 ? [{ label: "Other", value: list.slice(6).reduce((s, c) => s + c.amount, 0) }] : []) },
+            { kind: "chart", type: "treemap", title, items: list.slice(0, 8).map((c) => ({ label: c.label, value: c.amount })).concat(list.length > 8 ? [{ label: "Other", value: list.slice(8).reduce((s, c) => s + c.amount, 0) }] : []) },
+            { kind: "chart", alt: true, type: "donut", title, centerLabel: "Spent", items: list.slice(0, 6).map((c) => ({ label: c.label, value: c.amount })).concat(list.length > 6 ? [{ label: "Other", value: list.slice(6).reduce((s, c) => s + c.amount, 0) }] : []) },
+            { kind: "chart", alt: true, type: "stacked", title, items: list.slice(0, 8).map((c) => ({ label: c.label, value: c.amount })) },
+            { kind: "chart", alt: true, type: "lollipop", title, items: list.slice(0, 8).map((c) => ({ label: c.label, value: c.amount })) },
+            { kind: "chart", alt: true, type: "bar", title, items: list.slice(0, 8).map((c) => ({ label: c.label, value: c.amount })) },
+            list.length > 2 ? { kind: "chart", alt: true, type: "radar", title: `${title} (share of the biggest)`, items: radarShares(list.slice(0, 8).map((c) => ({ label: c.label, value: c.amount }))) } : null,
             { kind: "table", title: "Categories", columns: [{ label: "Category", fmt: "text" }, { label: "Spent", fmt: "money" }, { label: "Share", fmt: "pct" }], rows: list.slice(0, 8).map((c) => [c.label, c.amount, (c.amount / total) * 100]) }
         ] : [];
     },
 
     topexpenses: (d) => d.topExpenses?.length ? [
-        { kind: "chart", type: "bar", title: "Largest single expenses", items: d.topExpenses.map((e) => ({ label: e.desc, value: e.amount })) },
+        { kind: "chart", type: "lollipop", title: "Largest single expenses", items: d.topExpenses.map((e) => ({ label: e.desc, value: e.amount })) },
+        { kind: "chart", alt: true, type: "bar", title: "Largest single expenses", items: d.topExpenses.map((e) => ({ label: e.desc, value: e.amount })) },
         { kind: "table", title: "Details", columns: [{ label: "Expense", fmt: "text" }, { label: "Amount", fmt: "money" }, { label: "Date", fmt: "text" }, { label: "Category", fmt: "text" }], rows: d.topExpenses.map((e) => [e.desc, e.amount, e.date, e.category]) }
     ] : [],
 
     sources: (d) => d.incomeSources?.length ? [
-        { kind: "chart", type: "donut", title: "Where your income comes from", centerLabel: "Income", items: d.incomeSources.slice(0, 6).map((s) => ({ label: s.label, value: s.amount })) },
+        { kind: "chart", type: "stacked", title: "Where your income comes from", items: d.incomeSources.slice(0, 6).map((s) => ({ label: s.label, value: s.amount })) },
+        { kind: "chart", alt: true, type: "donut", title: "Where your income comes from", centerLabel: "Income", items: d.incomeSources.slice(0, 6).map((s) => ({ label: s.label, value: s.amount })) },
+        d.incomeSources.length > 1 ? { kind: "chart", alt: true, type: "treemap", title: "Where your income comes from", items: d.incomeSources.slice(0, 8).map((s) => ({ label: s.label, value: s.amount })) } : null,
         { kind: "table", title: "Income sources", columns: [{ label: "Source", fmt: "text" }, { label: "Total", fmt: "money" }], rows: d.incomeSources.slice(0, 8).map((s) => [s.label, s.amount]) }
     ] : [],
 
@@ -262,6 +304,8 @@ const VISUALS = {
         const h = health(d);
         return !h ? [] : [
             { kind: "gauge", title: "Money health score", value: h.score, min: 0, max: 100, fmt: "num", display: `${h.score}`, zones: [{ to: 40, tone: "danger", label: "Needs work" }, { to: 70, tone: "warning", label: "Fair" }, { to: 100, tone: "success", label: "Strong" }] },
+            h.parts.length > 2 ? { kind: "chart", type: "radar", title: "Your money health at a glance", items: h.parts.map((p) => ({ label: p.name, value: p.score, display: p.reading, note: "Reading" })) } : null,
+            { kind: "chart", alt: true, type: "rings", title: "Your money health, ring by ring", items: h.parts.slice(0, 5).map((p) => ({ label: p.name, value: p.score, display: `${Math.round(p.score)}`, tone: p.score >= 70 ? "success" : p.score >= 40 ? "warning" : "danger", note: p.reading })) },
             { kind: "table", title: "What makes up the score", columns: [{ label: "Factor", fmt: "text" }, { label: "Reading", fmt: "text" }, { label: "Score", fmt: "num" }], rows: h.parts.map((p) => [p.name, p.reading, Math.round(p.score)]) }
         ];
     },
@@ -271,10 +315,12 @@ const VISUALS = {
         return [gaugeDebt(d, m), gaugeEmi(d, m), d.totalAssets || d.totalLiabilities ? { kind: "compare", title: "Assets vs liabilities", aLabel: "Assets", bLabel: "Liabilities", rows: [{ label: "Total", a: d.totalAssets, b: d.totalLiabilities, better: false }] } : null];
     },
 
-    spread: (d) => d.chartItems?.length ? [gaugeSpread(metrics(d)), { kind: "chart", type: "donut", title: "Allocation", centerLabel: "Invested", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) }] : [],
+    spread: (d) => d.chartItems?.length ? [gaugeSpread(metrics(d)), { kind: "chart", type: "donut", title: "Allocation", centerLabel: "Invested", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) }, { kind: "chart", alt: true, type: "treemap", title: "Allocation", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) }, { kind: "chart", alt: true, type: "stacked", title: "Allocation", items: d.chartItems.map((i) => ({ label: i.label, value: i.amount })) }] : [],
 
     topstocks: (d) => d.holdings?.length ? [
-        { kind: "chart", type: "bar", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
+        stockCards([...d.holdings].sort((a, b) => b.pnl - a.pnl), "Your stocks, best first"),
+        { kind: "chart", type: "lollipop", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
+        { kind: "chart", alt: true, type: "bar", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
         { kind: "table", title: "Ranked by profit", columns: [{ label: "Stock", fmt: "text" }, { label: "P&L", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => [h.symbol, h.pnl, h.pnlPct]) }
     ] : [],
 
@@ -283,7 +329,7 @@ const VISUALS = {
     forecast: (d) => {
         const f = forecast(d);
         return !f ? [] : [
-            { kind: "chart", type: "line", title: "Net worth, next 12 months (estimate)", labels: f.labels, series: [{ name: "Net worth", values: f.values, color: "gold" }] },
+            { kind: "chart", type: "line", area: true, title: "Net worth, next 12 months (estimate)", labels: f.labels, series: [{ name: "Net worth", values: f.values, color: "gold" }] },
             { kind: "kpi", items: [{ label: "Saved / month", value: f.perMonth, tone: "auto" }, { label: "In 12 months", value: f.values[f.values.length - 1] }] }
         ];
     }
@@ -308,7 +354,10 @@ function investmentVisuals(d) {
 
     return [
         { kind: "chart", type: "columns", title: "Invested vs current value", labels: rows.map((r) => r.name), series: [{ name: "Invested", values: rows.map((r) => r.invested), color: "info" }, { name: "Value", values: rows.map((r) => r.value), color: "gold" }] },
-        { kind: "chart", type: "bar", signed: true, title: "Gain / loss", items: rows.map((r) => ({ label: r.name, value: r.gain })) },
+        { kind: "chart", type: "lollipop", signed: true, title: "Gain / loss", items: rows.map((r) => ({ label: r.name, value: r.gain })) },
+        { kind: "chart", alt: true, type: "bar", signed: true, title: "Gain / loss", items: rows.map((r) => ({ label: r.name, value: r.gain })) },
+        rows.length > 1 ? { kind: "chart", alt: true, type: "bubble", title: "Money put in vs return (size = value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: rows.map((r) => ({ label: r.name, x: r.invested, y: r.ret, r: r.value })) } : null,
+        rows.length > 1 ? { kind: "chart", alt: true, type: "stacked", title: "Share of your investments", items: rows.map((r) => ({ label: r.name, value: r.value })) } : null,
         { kind: "table", title: "Investments side by side", columns: [{ label: "Type", fmt: "text" }, { label: "Invested", fmt: "money" }, { label: "Value", fmt: "money" }, { label: "Gain", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: rows.map((r) => [r.name, r.invested, r.value, r.gain, r.ret]) }
     ];
 }
@@ -426,7 +475,7 @@ export function compareReply(text, d) {
     return {
         text: `Here are your investments side by side:\n${inv.map((r) => `• ${r.name}: ${money(r.value)} (${pct(r.ret)})`).join("\n")}\nBest return so far: **${best.name}** (${pct(best.ret)}).`,
         actions: [PAGE.dashboard],
-        blocks: investmentVisuals(d)
+        blocks: selectBlocks(investmentVisuals(d))
     };
 }
 
@@ -441,19 +490,65 @@ export function pickView(text) {
     return null;
 }
 
-export function visualsFor(name, d, view = null) {
+/*
+ * "as a treemap", "radar chart", "show it as a waterfall" ... -> which chart type was asked for.
+ * "all charts" / "different charts" -> "all" (every chart Rover has for that answer).
+ */
+const CHART_TYPES = [
+    ["all", /\b(all|every|different|various|other|more|more kinds of|many)\s+(types? of |kinds? of |sorts? of )?(charts?|graphs?|visuals?)\b|\b(charts?|graphs?) (types|kinds|options)\b/],
+    ["treemap", /\b(tree ?map|treemaps?|tiles?|blocks?)\b/],
+    ["radar", /\b(radar|spider|web chart|polar)\b/],
+    ["waterfall", /\b(waterfall|bridge chart|step chart)\b/],
+    ["bubble", /\b(bubbles?|scatter|dot plot)\b/],
+    ["lollipop", /\b(lollipop|lollipops|dots?)\b/],
+    ["rings", /\b(rings?|concentric|activity rings?)\b/],
+    ["stackcols", /\b(stacked (columns?|bars?)|stacked column chart)\b/],
+    ["stacked", /\b(stacked|share bar|strip|100 ?%)\b/],
+    ["area", /\b(area|filled line)\b/],
+    ["line", /\b(line|lines|trend line|curve)\b/],
+    ["columns", /\b(columns?|vertical bars?)\b/],
+    ["bar", /\b(bars?|horizontal bars?)\b/],
+    ["donut", /\b(donut|doughnut|pie|ring chart)\b/]
+];
+
+export function pickChartType(text) {
+    const t = String(text || "").toLowerCase();
+    const hit = CHART_TYPES.find(([, re]) => re.test(t));
+    return hit ? hit[0] : null;
+}
+
+const typeMatches = (b, type) => b.kind === "chart" && (type === "area" ? b.type === "line" && b.area : type === "line" ? b.type === "line" : b.type === type);
+
+/* Applies the asked-for view / chart type to a list of blocks. Blocks flagged `alt` show only when asked for. */
+export function selectBlocks(blocks, view = null, type = null) {
+    if (type === "all") return blocks.filter((b) => b.kind === "chart" || b.kind === "kpi");
+
+    if (type) {
+        // "stacked bar" on something with no stacked columns gets the stacked strip instead (and the other way round).
+        const tries = type === "stackcols" ? ["stackcols", "stacked"] : type === "stacked" ? ["stacked", "stackcols"] : [type];
+        for (const t of tries) {
+            const chosen = blocks.filter((b) => typeMatches(b, t));
+            if (chosen.length) return chosen;
+        }
+    }
+
+    const main = blocks.filter((b) => !b.alt);
+    if (view) {
+        const only = main.filter((b) => b.kind === view);
+        if (only.length) return only;
+    }
+
+    return main;
+}
+
+export function visualsFor(name, d, view = null, type = null) {
     const make = VISUALS[name];
     if (!make) return [];
 
     let blocks = [];
     try { blocks = make(d).filter(Boolean); } catch (error) { console.error("Rover visuals:", error); }
 
-    if (view) {
-        const only = blocks.filter((b) => b.kind === view);
-        if (only.length) return only;
-    }
-
-    return blocks;
+    return selectBlocks(blocks, view, type);
 }
 
 /* ---------- extra intents (same shape as the ones in rover-engine.js) ---------- */
@@ -626,5 +721,14 @@ export const EXTRA_SUGGESTIONS = [
     "Show my debt to asset ratio",
     "Forecast my net worth",
     "Compare my investments",
-    "Show my stocks as a chart"
+    "Show my stocks as a chart",
+    "Spending by category as a treemap",
+    "Show my stocks as a bubble chart",
+    "Show my money health as a radar chart",
+    "Waterfall of my month",
+    "Show my net worth as a stacked bar",
+    "Show my money health as rings",
+    "Show all chart types for my stocks",
+    "Show my income sources as a treemap",
+    "Show my investments as a bubble chart"
 ];

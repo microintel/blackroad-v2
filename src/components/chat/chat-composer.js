@@ -4,6 +4,9 @@ import { esc } from "./chat-format.js";
 /*
  * The message box. onSend(text) on submit; onTyping(text) on every change.
  *
+ * Up / Down arrows walk through earlier commands, like a terminal: Up goes back one command at a time
+ * (history() returns them oldest first), Down comes forward again and ends on what you were typing.
+ *
  * With `attach: true` it also takes files: the upload button (or a drop) puts them inside the box as
  * small chips, so you can type next to them. `onFiles(files)` is called whenever the chips change.
  */
@@ -11,7 +14,7 @@ import { esc } from "./chat-format.js";
 const MAX_FILES = 8;
 const EXCEL = /\.(xlsx|xls)$/i;
 
-export function ChatComposer(onSend, onTyping = () => {}, { attach = false, accept = "", onFiles = () => {} } = {}) {
+export function ChatComposer(onSend, onTyping = () => {}, { attach = false, accept = "", onFiles = () => {}, history = () => [] } = {}) {
     const form = document.createElement("form");
     form.className = "rv-form";
     form.autocomplete = "off";
@@ -76,7 +79,35 @@ export function ChatComposer(onSend, onTyping = () => {}, { attach = false, acce
         paint();
     });
 
-    input.addEventListener("input", () => onTyping(input.value));
+    input.addEventListener("input", () => { recall = -1; onTyping(input.value); });
+
+    /* Terminal-style command recall. `recall` is the position in the list (-1 = not browsing). */
+    let recall = -1;
+    let draft = "";
+
+    function show(text) {
+        input.value = text;
+        onTyping(text);
+        // Caret at the end, after the browser has finished handling the key.
+        requestAnimationFrame(() => { try { input.setSelectionRange(text.length, text.length); } catch { /* ignore */ } });
+    }
+
+    input.addEventListener("keydown", (e) => {
+        if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.isComposing) return;
+        const list = history();
+        if (!list.length) return;
+        e.preventDefault();
+
+        if (e.key === "ArrowUp") {
+            if (recall === -1) { draft = input.value; recall = list.length; }
+            if (recall > 0) show(list[--recall]);
+        } else if (recall !== -1) {
+            if (recall < list.length - 1) show(list[++recall]);
+            else { recall = -1; show(draft); }
+        }
+    });
+
+    form.addEventListener("submit", () => { recall = -1; draft = ""; });
 
     return {
         el: form,

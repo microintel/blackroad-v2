@@ -1,7 +1,7 @@
 import { roverMark } from "../../components/icons.js";
 
 /*
- * Ctrl+R (Cmd+R on Mac) inside BlackRoad opens Rover with a short opening animation,
+ * Ctrl+R (Cmd+R on Mac) inside BlackRoad opens Rover with a short opening animation (~1.4s),
  * instead of reloading the page. Ctrl+Shift+R (hard reload) is left alone.
  */
 let started = false;
@@ -16,11 +16,11 @@ function openRover() {
     const layer = document.createElement("div");
     layer.className = "br-rover-launch";
     layer.setAttribute("aria-hidden", "true");
-    layer.innerHTML = `<div class="br-rover-launch-inner">${roverMark(76, "br-rover-launch-mark")}<span>Rover</span></div>`;
+    layer.innerHTML = `<div class="br-rover-launch-inner">${roverMark(104, "br-rover-launch-mark")}<span>Rover</span></div>`;
     document.body.appendChild(layer);
 
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setTimeout(() => { window.location.href = ROVER_URL(); }, reduce ? 50 : 700);
+    setTimeout(() => { window.location.href = ROVER_URL(); }, reduce ? 50 : 1450);
 }
 
 export function initRoverShortcut() {

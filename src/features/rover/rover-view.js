@@ -3,13 +3,13 @@ import { SuggestionList, SuggestionRow } from "../../components/chat/chat-sugges
 import { ChatComposer } from "../../components/chat/chat-composer.js";
 import { roverMark } from "../../components/icons.js";
 import { greeting } from "../../components/chat/chat-format.js";
-import { respond, needsData, SUGGESTIONS } from "./rover-engine.js";
+import { respond, needsData, SUGGESTIONS, TOP_SUGGESTIONS } from "./rover-engine.js";
 import { getSnapshot } from "./rover-data.js";
 import { rankSuggestions, tokenize } from "./rover-match.js";
 import { runReport } from "./rover-reports.js";
 import { progressIn } from "./rover-progress.js";
 import { flowFromText, flowLabel, flowReply, readFiles, downloadBrokerPdf, session as brokerSession, resetSession, resolveRequest, pickText, PICKS, ACCEPT } from "./rover-brokers.js";
-import { loadHistory, saveHistory, clearHistory } from "./rover-history.js";
+import { loadHistory, saveHistory, clearHistory, loadCommands, saveCommand } from "./rover-history.js";
 
 /*
  * The Rover page view (like the feature pages in the app: it assembles
@@ -48,10 +48,11 @@ export function RoverView({ hrefFor }) {
         <div class="rv-queries-backdrop" aria-hidden="true"></div>
         <aside class="rv-queries" aria-label="Suggested questions">
             <p class="rv-queries-title">${roverMark(14)}<span>Ask Rover</span></p>
-            <div class="rv-queries-list">${SUGGESTIONS.map((q) => `<button type="button" class="rv-query"><span></span></button>`).join("")}</div>
+            <div class="rv-queries-list">${TOP_SUGGESTIONS.map((q) => `<button type="button" class="rv-query"><span></span></button>`).join("")}</div>
+            <p class="rv-queries-hint">Or just type. I understand many more questions, like reminders, a single stock or your income statement.</p>
         </aside>
     `;
-    el.querySelectorAll(".rv-query span").forEach((s, i) => { s.textContent = SUGGESTIONS[i]; });
+    el.querySelectorAll(".rv-query span").forEach((s, i) => { s.textContent = TOP_SUGGESTIONS[i]; });
 
     const scrollBox = el.querySelector(".rv-scroll");
     const list = el.querySelector(".rv-messages");
@@ -70,7 +71,10 @@ export function RoverView({ hrefFor }) {
     const chips = SuggestionRow(SUGGESTIONS, {
         onOpenChange: (open) => el.classList.toggle("is-typing", open && messages.length === 0)
     });
-    const composer = ChatComposer(send, (text) => { draft = text; applyFilter(); }, { attach: true, accept: ACCEPT, onFiles: () => applyFilter() });
+    // Earlier commands for the Up / Down arrows (oldest first).
+    let commands = loadCommands();
+
+    const composer = ChatComposer(send, (text) => { draft = text; applyFilter(); }, { attach: true, accept: ACCEPT, onFiles: () => applyFilter(), history: () => commands });
     // Adding more years from a summary: its own hidden picker.
     const morePicker = Object.assign(document.createElement("input"), { type: "file", multiple: true, hidden: true, accept: ACCEPT });
     el.appendChild(morePicker);
@@ -157,7 +161,8 @@ export function RoverView({ hrefFor }) {
         const rank = new Map(shown.map((q, i) => [q, i]));
 
         // Typing: only the best few, so the list stays short above the keyboard.
-        const cap = typed && matched ? (hasMouse() ? 8 : 5) : forFiles ? 6 : Infinity;
+        // Nothing typed: just the first few (the most useful ones), never the whole list.
+        const cap = typed && matched ? (hasMouse() ? 8 : 5) : START_COUNT;
         chips.querySelectorAll(".rv-chip").forEach((chip) => {
             const q = chip.querySelector("span").textContent;
             chip.hidden = !rank.has(q) || rank.get(q) >= cap;
@@ -197,6 +202,12 @@ export function RoverView({ hrefFor }) {
     async function send(text) {
         const q = String(text || "").trim();
         if (busy) return;
+
+        // Remember typed commands for the Up / Down arrows (not file uploads).
+        if (q && !composer.files().length) {
+            saveCommand(q);
+            if (commands[commands.length - 1] !== q) commands.push(q);
+        }
 
         // Files are attached: the text says which broker / report they are.
         const files = composer.files();
@@ -318,6 +329,8 @@ export function RoverView({ hrefFor }) {
     // A broker logo that can't load (offline) falls back to its first letter.
     list.addEventListener("error", (e) => {
         const img = e.target;
+        // A stock logo that can't load: drop the picture, the symbol's initials stay (same as the Stocks page).
+        if (img instanceof HTMLImageElement && img.matches("img[data-stk-logo]")) { img.remove(); return; }
         if (!(img instanceof HTMLImageElement) || !img.classList.contains("rv-choice-img")) return;
         img.parentElement.textContent = img.parentElement.dataset.letter || "";
     }, true);

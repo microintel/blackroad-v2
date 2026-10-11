@@ -35,3 +35,32 @@ export function clearHistory() {
         /* ignore */
     }
 }
+
+/*
+ * Commands you typed, newest last, for the Up / Down arrows in the message box (like a terminal).
+ * Kept separately from the chat so they survive "New chat".
+ */
+const MAX_COMMANDS = 100;
+const cmdKey = () => `br-rover-cmds-${scopeSuffix()}`;
+
+export function loadCommands() {
+    try {
+        const list = JSON.parse(localStorage.getItem(cmdKey()) || "[]");
+        return Array.isArray(list) ? list.filter((c) => typeof c === "string" && c.trim()) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function saveCommand(text) {
+    const q = String(text || "").trim();
+    if (!q) return;
+    try {
+        const list = loadCommands();
+        if (list[list.length - 1] === q) return;
+        list.push(q);
+        localStorage.setItem(cmdKey(), JSON.stringify(list.slice(-MAX_COMMANDS)));
+    } catch {
+        /* storage unavailable: the arrows just remember less */
+    }
+}

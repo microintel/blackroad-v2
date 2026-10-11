@@ -147,6 +147,7 @@ src/components/chat/                 chat-message, chat-composer, chat-suggestio
 src/features/rover/
 ├── rover-view.js     the page: assembles the components and runs the chat
 ├── rover-engine.js   understands the question and writes the answer (add new intents here)
+├── rover-more.js     more questions: income statement, reminders / dues, single stocks, how-to, backup, calculators
 ├── rover-data.js     the only file that reads app data (reuses the Dashboard service)
 ├── rover-history.js  per-account chat history in localStorage
 └── rover-link.js     the app's button that opens rover.html
