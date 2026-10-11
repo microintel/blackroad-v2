@@ -678,7 +678,7 @@ const MORE_VISUALS = {
 
     sipbest: (d) => {
         const sips = [...(d.mutualFunds?.sips || [])].sort((a, b) => b.pnlPct - a.pnlPct);
-        return sips.length ? [{ kind: "table", title: "SIPs by return", columns: [{ label: "SIP", fmt: "text" }, { label: "Value", fmt: "money" }, { label: "Gain", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: sips.map((s) => [s.name, s.currentValue, s.pnl, s.pnlPct]) }] : [];
+        return sips.length ? [{ kind: "table", title: "SIPs by return", columns: [{ label: "SIP", fmt: "text", logo: "mf" }, { label: "Value", fmt: "money" }, { label: "Gain", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: sips.map((s) => [s.name, s.currentValue, s.pnl, s.pnlPct]) }] : [];
     },
 
     tips: (d) => {
@@ -767,6 +767,129 @@ function categoryReply(text, d) {
             kind: "statement", title: "Spending on this", sections: [{ title: "", rows: top.map((c) => ({ icon: catIcon(c.label), label: c.label, value: c.amount, sub: `${money(month.get(c.label) || 0)} this month`, bar: (c.amount / all) * 100 })) }]
         }]
     };
+}
+
+
+/* ---------- a pasted / typed mutual fund name ----------
+   Paste one of your fund names and Rover shows that fund's summary; paste two (or more) and it
+   compares them. Matching is by the words of the fund name, so a full scheme name like
+   "HDFC Flexi Cap Fund - Direct Plan - Growth" or just "hdfc flexi cap" both find the same SIP. */
+
+const FUND_SKIP = new Set(["fund", "funds", "mutual", "plan", "option", "scheme", "the", "of", "and", "a", "an", "my", "sip", "sips", "mf", "vs", "versus", "compare", "comparison", "with", "between", "summary", "show", "me", "tell", "about", "how", "is", "doing", "performance", "details", "detail", "info", "what", "whats"]);
+const NOT_A_FUND_QUESTION = /\b(spend|spent|spending|expense|expenses|salary|income|emi|loan|loans|stock|stocks|fd|fds|deposit|deposits|owe|owes)\b/;
+
+const fundWords = (s) => [...new Set(String(s || "").toLowerCase().replace(/&/g, " and ").split(/[^a-z0-9]+/).filter((w) => w && !FUND_SKIP.has(w)))];
+
+/* The SIPs that one piece of typed text points at (best first). */
+function matchFunds(piece, text, sips) {
+    const typed = fundWords(piece);
+    if (!typed.length) return [];
+    const typedSet = new Set(typed);
+    const reverseOk = typed.length >= 2 && !NOT_A_FUND_QUESTION.test(text);
+
+    const hits = [];
+
+    sips.forEach((s) => {
+        const words = fundWords(s.name);
+        if (!words.length) return;
+        const matched = words.filter((w) => typedSet.has(w)).length;
+        const forward = matched / words.length >= 0.8 && (matched >= 2 || words.length === 1);
+        const reverse = reverseOk && typed.every((w) => words.includes(w));
+        if (forward || reverse) hits.push({ s, words, score: matched / words.length + matched * 0.01 });
+    });
+
+    // "X Fund" and "X Fund Direct Growth": if one name is just part of another that also matched, keep the longer one.
+    return hits
+        .filter((h) => !hits.some((o) => o !== h && o.words.length > h.words.length && h.words.every((w) => o.words.includes(w))))
+        .sort((x, y) => y.score - x.score)
+        .map((h) => h.s);
+}
+
+function findFunds(raw, text, d) {
+    const sips = d.mutualFunds?.sips || [];
+    if (!sips.length) return [];
+
+    // Several names pasted together (one per line, or split by "vs", a comma, ";" or "|"): each name finds its own fund,
+    // so the words of one name can never pull in a different fund.
+    const pieces = String(raw).split(/\n|\t|;|\||,|\bvs\.?\b|\bversus\b/i).map((x) => x.trim()).filter(Boolean);
+    const out = [];
+
+    if (pieces.length > 1) {
+        pieces.forEach((piece) => {
+            const best = matchFunds(piece, text, sips)[0];
+            if (best && !out.includes(best)) out.push(best);
+        });
+        if (out.length) return out.slice(0, 6);
+    }
+
+    return matchFunds(raw, text, sips).slice(0, 6);
+}
+
+const shortFund = (name) => String(name).split(/\s+-\s+/)[0].trim() || String(name);
+
+const sinceText = (s) => {
+    const dt = new Date(`${s.since}T00:00:00`);
+    return s.since && !Number.isNaN(dt.getTime()) ? `Since ${dt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })}` : "";
+};
+
+const fundItem = (s) => ({ name: s.name, invested: s.invested, value: s.currentValue, pnl: s.pnl, pnlPct: s.pnlPct, sub: [`Invested ${money(s.invested)}`, sinceText(s)].filter(Boolean).join(" · ") });
+
+export function fundReply(raw, text, d) {
+    try {
+        const found = findFunds(raw, text, d || {});
+        if (!found.length) return null;
+
+        const all = d.mutualFunds.sips;
+        const total = d.mutualFunds.currentValue || 0;
+
+        if (found.length === 1) {
+            const s = found[0];
+            const up = s.pnl >= 0;
+            const rank = [...all].sort((a, b) => b.pnlPct - a.pnlPct).findIndex((x) => x.id === s.id) + 1;
+            return {
+                text:
+                    `${up ? "🟢" : "🔴"} **${s.name}** is ${up ? "up" : "down"} **${signed(s.pnl)}** (${pct(s.pnlPct)}).\n` +
+                    `• 💼 Invested: ${money(s.invested)}\n` +
+                    `• 💰 Current value: ${money(s.currentValue)}` +
+                    (total > 0 ? `\n• 🥧 Share of your mutual funds: ${((s.currentValue / total) * 100).toFixed(1)}%` : "") +
+                    (all.length > 1 ? `\n• 🏅 Return rank: ${rank} of ${all.length}` : "") +
+                    (sinceText(s) ? `\n• 📅 ${sinceText(s)}` : ""),
+                actions: [PAGE.mutualfund],
+                blocks: [
+                    { kind: "fundlist", title: "", hero: true, items: [fundItem(s)] },
+                    { kind: "kpi", items: [{ label: "Value", value: s.currentValue }, { label: "Invested", value: s.invested }, { label: "Gain", value: s.pnl, tone: "auto" }] }
+                ]
+            };
+        }
+
+        const [a, b] = found;
+        const sameShort = shortFund(a.name) === shortFund(b.name);
+        const aName = sameShort ? a.name : shortFund(a.name);
+        const bName = sameShort ? b.name : shortFund(b.name);
+        const lead = a.pnlPct === b.pnlPct ? "They're level on returns." : `**${a.pnlPct > b.pnlPct ? aName : bName}** is ahead on returns (${pct(Math.max(a.pnlPct, b.pnlPct))} vs ${pct(Math.min(a.pnlPct, b.pnlPct))}).`;
+        const bigger = a.currentValue === b.currentValue ? "" : `\n• 💰 **${a.currentValue > b.currentValue ? aName : bName}** is the bigger holding (${money(Math.max(a.currentValue, b.currentValue))}).`;
+        const extra = found.length > 2 ? `\n• ➕ You pasted ${found.length} funds, so I compared the first two.` : "";
+
+        return {
+            text: `⚖️ **${aName}** vs **${bName}**\n• ${aName}: ${money(a.currentValue)} (${pct(a.pnlPct)})\n• ${bName}: ${money(b.currentValue)} (${pct(b.pnlPct)})\n• 🏆 ${lead}${bigger}${extra}`,
+            actions: [PAGE.mutualfund],
+            blocks: [
+                { kind: "fundlist", title: found.length > 2 ? "Your funds" : "", items: found.map(fundItem) },
+                {
+                    kind: "compare", title: `${aName} vs ${bName}`, aLabel: aName, bLabel: bName,
+                    rows: [
+                        { label: "Invested", a: a.invested, b: b.invested, better: false },
+                        { label: "Current value", a: a.currentValue, b: b.currentValue, better: "high" },
+                        { label: "Gain / loss", a: a.pnl, b: b.pnl, better: "high" },
+                        { label: "Return", a: a.pnlPct, b: b.pnlPct, fmt: "spct", better: "high" }
+                    ]
+                }
+            ]
+        };
+    } catch (error) {
+        console.error("Rover fund lookup:", error);
+        return null;
+    }
 }
 
 /* Tried before the keyword intents. Returns a reply, or null to carry on as usual. */

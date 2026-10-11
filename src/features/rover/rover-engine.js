@@ -2,7 +2,7 @@ import { formatINR } from "../dashboard/dashboard-service.js";
 import { REPORTS } from "./rover-reports.js";
 import { EXTRA_INTENTS, EXTRA_SUGGESTIONS, visualsFor, compareReply, isCompare, pickView, pickChartType } from "./rover-queries.js";
 import { listReply, isListRequest, LIST_SUGGESTIONS } from "./rover-lists.js";
-import { MORE_INTENTS, MORE_SUGGESTIONS, NO_DATA_INTENTS, moreVisualsFor, lookupReply } from "./rover-more.js";
+import { MORE_INTENTS, MORE_SUGGESTIONS, NO_DATA_INTENTS, moreVisualsFor, lookupReply, fundReply } from "./rover-more.js";
 
 /*
  * Rover engine (pure logic, no DOM, no storage).
@@ -348,6 +348,10 @@ export const SUGGESTIONS = [...new Set([
 export function respond(input, snapshot) {
     const raw = String(input || "").trim();
     const text = normalize(raw);
+
+    // A pasted / typed fund name: that fund's summary; two or more: a comparison.
+    const fund = fundReply(raw, text, snapshot || {});
+    if (fund) return fund;
 
     // "list all my stocks", "all expenses list", "list my FDs" ...: a full list, answered before anything else
     // (so "show me all my stocks" lists them instead of just opening the page).

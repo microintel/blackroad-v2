@@ -329,8 +329,10 @@ export function RoverView({ hrefFor }) {
     // A broker logo that can't load (offline) falls back to its first letter.
     list.addEventListener("error", (e) => {
         const img = e.target;
+        // A logo inside a chart that can't load: drop it, the chart's own mark stays.
+        if (img instanceof SVGImageElement && img.matches("image[data-stk-logo], image[data-mf-logo]")) { img.closest(".rv-svg-logo")?.remove(); return; }
         // A stock logo that can't load: drop the picture, the symbol's initials stay (same as the Stocks page).
-        if (img instanceof HTMLImageElement && img.matches("img[data-stk-logo]")) { img.remove(); return; }
+        if (img instanceof HTMLImageElement && img.matches("img[data-stk-logo], img[data-mf-logo]")) { img.remove(); return; }
         if (!(img instanceof HTMLImageElement) || !img.classList.contains("rv-choice-img")) return;
         img.parentElement.textContent = img.parentElement.dataset.letter || "";
     }, true);

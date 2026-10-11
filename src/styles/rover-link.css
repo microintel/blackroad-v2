@@ -36,39 +36,46 @@
 }
 @media (max-width: 768px) { .br-rover-top { display: none; } }
 
-/* Ctrl+R: the opening animation before the Rover page loads (~1.4s):
-   1) a black circle grows from the Rover button, 2) the 8 dots of the mark pop in one by one while the ring
-   turns and settles, 3) the name rises in, 4) a short hold, then Rover loads. */
+/* Ctrl+R: the opening animation before the Rover page loads (~1.5s). Calm and flat:
+   1) the screen fades to black, 2) the 8 dots of the mark appear one after another around the ring,
+   3) the name settles in, 4) a thin gold line fills while Rover loads. No spin, no glow, no overshoot. */
 .br-rover-launch {
     position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; pointer-events: all;
     background: #000; color: var(--br-gold, #D4AF37);
-    animation: br-rover-reveal 720ms cubic-bezier(.65, 0, .25, 1) both;
+    animation: br-rover-fade 280ms ease-out both;
 }
-.br-rover-launch-inner { position: relative; display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.br-rover-launch-mark {
-    filter: drop-shadow(0 0 10px rgba(212, 175, 55, .35));
-    animation: br-rover-spin 1100ms cubic-bezier(.22, .8, .25, 1) 260ms both;
-}
+.br-rover-launch-inner { display: flex; flex-direction: column; align-items: center; gap: 22px; }
 .br-rover-launch-mark circle {
     transform-box: fill-box; transform-origin: center; opacity: 0;
-    animation: br-rover-dot 420ms cubic-bezier(.3, 1.5, .5, 1) both;
+    animation: br-rover-dot 360ms cubic-bezier(.22, .7, .3, 1) both;
 }
-.br-rover-launch-mark circle:nth-child(1) { animation-delay: 380ms; }
-.br-rover-launch-mark circle:nth-child(2) { animation-delay: 440ms; }
-.br-rover-launch-mark circle:nth-child(3) { animation-delay: 500ms; }
-.br-rover-launch-mark circle:nth-child(4) { animation-delay: 560ms; }
-.br-rover-launch-mark circle:nth-child(5) { animation-delay: 620ms; }
-.br-rover-launch-mark circle:nth-child(6) { animation-delay: 680ms; }
-.br-rover-launch-mark circle:nth-child(7) { animation-delay: 740ms; }
-.br-rover-launch-mark circle:nth-child(8) { animation-delay: 800ms; }
+.br-rover-launch-mark circle:nth-child(1) { animation-delay: 240ms; }
+.br-rover-launch-mark circle:nth-child(2) { animation-delay: 310ms; }
+.br-rover-launch-mark circle:nth-child(3) { animation-delay: 380ms; }
+.br-rover-launch-mark circle:nth-child(4) { animation-delay: 450ms; }
+.br-rover-launch-mark circle:nth-child(5) { animation-delay: 520ms; }
+.br-rover-launch-mark circle:nth-child(6) { animation-delay: 590ms; }
+.br-rover-launch-mark circle:nth-child(7) { animation-delay: 660ms; }
+.br-rover-launch-mark circle:nth-child(8) { animation-delay: 730ms; }
 .br-rover-launch-inner span {
-    font-size: 22px; font-weight: 600; letter-spacing: .02em; color: #fff;
-    animation: br-rover-name 560ms cubic-bezier(.2, .8, .2, 1) 860ms both;
+    font-size: 20px; font-weight: 600; letter-spacing: .04em; color: #fff;
+    animation: br-rover-name 520ms cubic-bezier(.22, .7, .3, 1) 780ms both;
 }
-@keyframes br-rover-reveal { from { clip-path: circle(0% at 92% 6%); } to { clip-path: circle(150% at 92% 6%); } }
-@keyframes br-rover-spin { from { transform: rotate(-200deg) scale(.82); } to { transform: rotate(0) scale(1); } }
-@keyframes br-rover-dot { 0% { opacity: 0; transform: scale(0); } 100% { opacity: 1; transform: scale(1); } }
-@keyframes br-rover-name { from { opacity: 0; transform: translateY(10px); letter-spacing: .14em; } to { opacity: 1; transform: translateY(0); letter-spacing: .02em; } }
+.br-rover-launch-line {
+    position: relative; width: 112px; height: 2px; overflow: hidden; border-radius: 1px;
+    background: rgba(255, 255, 255, .14);
+    animation: br-rover-name 400ms ease-out 900ms both;
+}
+.br-rover-launch-line::after {
+    content: ""; position: absolute; inset: 0; background: var(--br-gold, #D4AF37);
+    transform: scaleX(0); transform-origin: left center;
+    animation: br-rover-line 600ms cubic-bezier(.4, 0, .2, 1) 900ms both;
+}
+@keyframes br-rover-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes br-rover-dot { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
+@keyframes br-rover-name { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes br-rover-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) {
-    .br-rover-launch, .br-rover-launch-inner span, .br-rover-launch-mark, .br-rover-launch-mark circle { animation: none; opacity: 1; }
+    .br-rover-launch, .br-rover-launch-inner span, .br-rover-launch-line, .br-rover-launch-mark circle { animation: none; opacity: 1; transform: none; }
+    .br-rover-launch-line::after { animation: none; transform: scaleX(1); }
 }

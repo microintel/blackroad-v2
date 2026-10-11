@@ -21,7 +21,7 @@ export function RoverHeader({ backHref }) {
         <div class="br-header-actions">
             <button type="button" class="br-icon-button" data-action="toggle-theme" aria-label="${themeUi.label}" title="${themeUi.label}">${themeUi.icon}</button>
             <button type="button" class="br-icon-button br-currency-toggle" data-action="toggle-currency" aria-label="${curUi.label}" title="${curUi.label}">${curUi.icon}</button>
-            <button type="button" class="br-button rv-new" data-action="new-chat">${icon("plus", { size: 16 })}<span>New chat</span></button>
+            <button type="button" class="br-button rv-new" data-action="new-chat" title="New chat (Ctrl+N)">${icon("plus", { size: 16 })}<span>New chat</span></button>
         </div>
     `;
     return header;

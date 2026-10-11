@@ -102,7 +102,7 @@ const wantsSmallest = (t) => /\b(smallest|lowest|least|cheapest)\b/.test(t);
 
 /* ---------- small builders ---------- */
 
-const col = (label, fmt) => ({ label, fmt });
+const col = (label, fmt, logo) => ({ label, fmt, ...(logo ? { logo } : {}) });
 
 const table = (title, columns, rows, extra = {}) => {
     const shown = rows.slice(0, MAX_ROWS);
@@ -157,7 +157,7 @@ function fundsList(d) {
         text: `🌱 **${plural(m.sips.length, "mutual fund SIP")}** · worth **${money(m.currentValue)}** on ${money(m.invested)} invested (${signed(m.pnl)}).`,
         blocks: [
             { kind: "kpi", items: [{ label: "Value", value: m.currentValue }, { label: "Invested", value: m.invested }, { label: "Gain", value: m.pnl, tone: "auto" }] },
-            table("Your mutual funds", [col("Fund / SIP", "text"), col("Invested", "money"), col("Value", "money"), col("Gain", "signed"), col("Return", "spct")],
+            table("Your mutual funds", [col("Fund / SIP", "text", "mf"), col("Invested", "money"), col("Value", "money"), col("Gain", "signed"), col("Return", "spct")],
                 [...m.sips].sort((a, b) => b.currentValue - a.currentValue).map((s) => [s.name, s.invested, s.currentValue, s.pnl, s.pnlPct]), { more: "Open Mutual Fund to see the rest." })
         ],
         actions: [PAGE.mutualfund]

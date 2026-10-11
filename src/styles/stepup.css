@@ -327,3 +327,61 @@
     .br-stepup .br-grid-4,
     .br-stepup .br-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 }
+
+/* ---------- Mutual fund logo (MicroIntel mf-logos) ----------
+   The first letter sits behind the image as a fallback if it is missing. */
+.mf-logo {
+    position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    overflow: hidden; background: var(--br-bg); box-shadow: inset 0 0 0 1px var(--br-hairline);
+    font-weight: 700; color: var(--text-secondary);
+}
+.mf-logo::before { content: attr(data-initials); position: absolute; }
+.mf-logo img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; background: var(--br-bg); padding: 6px; box-sizing: border-box; }
+.mf-logo-xs { width: 44px; height: 44px; border-radius: 12px; font-size: 17px; }
+.mf-logo-sm { width: 56px; height: 56px; border-radius: 15px; font-size: 21px; }
+.mf-logo-md { width: 72px; height: 72px; border-radius: 18px; font-size: 27px; }
+.mf-logo-lg { width: 100px; height: 100px; border-radius: 25px; font-size: 36px; }
+.mf-logo-xl { width: 144px; height: 144px; border-radius: 34px; font-size: 50px; }
+@media (max-width: 480px) {
+    .mf-logo-lg { width: 84px; height: 84px; border-radius: 21px; }
+    .mf-logo-xl { width: 120px; height: 120px; border-radius: 29px; }
+}
+
+.su-mf-name { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.su-mf-preview { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; min-width: 0; }
+.su-mf-preview[hidden] { display: none; }
+.su-mf-preview-text { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+
+/* ---------- Fund suggestions (mfapi.in) ---------- */
+.su-mf-suggest {
+    display: flex; flex-direction: column; gap: 2px; padding: 6px;
+    border-radius: 16px; background: var(--br-surface);
+    max-height: 264px; overflow-y: auto; overscroll-behavior: contain;
+}
+.su-mf-suggest[hidden] { display: none; }
+.su-mf-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 8px; text-align: left;
+    background: transparent; border: 0; border-radius: 12px; color: inherit; font: inherit; cursor: pointer;
+}
+button.su-mf-item:hover, button.su-mf-item:focus-visible { background: var(--br-surface-active); outline: none; }
+.su-mf-item-sk { cursor: default; }
+.su-mf-item-name {
+    min-width: 0; font-size: var(--br-font-size-sm); line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.su-mf-empty { padding: 12px; color: var(--text-secondary); font-size: var(--br-font-size-sm); }
+
+/* ---------- How to link a fund ---------- */
+.su-howto { display: flex; flex-direction: column; gap: 16px; }
+.su-howto-logo { display: block; width: 100%; max-width: 360px; height: auto; max-height: 150px; object-fit: contain; object-position: left center; }
+.su-howto-title { margin: 0; font-size: 20px; }
+.su-howto-steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.su-howto-steps li { counter-increment: step; display: flex; gap: 14px; align-items: flex-start; }
+.su-howto-steps li::before {
+    content: counter(step); flex: none; width: 30px; height: 30px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+    background: var(--br-surface-active); color: var(--text-primary, inherit);
+}
+.su-howto-steps li > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.su-howto-steps p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
+.su-howto-btn { align-self: flex-start; margin-top: 8px; text-decoration: none; }

@@ -493,12 +493,12 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 
 .rv-logo {
     position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 11px; overflow: hidden; font-size: 12px; font-weight: 700;
+    width: 52px; height: 52px; border-radius: 14px; overflow: hidden; font-size: 15px; font-weight: 700;
     color: var(--br-text-secondary); background: var(--br-surface-muted);
 }
 .rv-logo::before { content: attr(data-initials); position: absolute; letter-spacing: .02em; }
 .rv-logo img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; background: transparent; padding: 0; }
-.rv-logo-lg { width: 56px; height: 56px; border-radius: 16px; font-size: 17px; }
+.rv-logo-lg { width: 68px; height: 68px; border-radius: 18px; font-size: 20px; }
 
 @media (max-width: 420px) {
     .rv-stk { grid-template-columns: auto minmax(0, 1fr); }
@@ -587,3 +587,33 @@ button.rv-action:disabled { opacity: .6; cursor: default; }
 @keyframes rv-bloom { from { opacity: 0; transform: scale(.2); } }
 @keyframes rv-ring { from { stroke-dasharray: 0 var(--len); } }
 .rv-lolli-stem { transform-box: fill-box; transform-origin: left center; }
+
+/* Fund / stock logo beside a name inside a table (same look as the stock cards). */
+.rv-cell-logo { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.rv-cell-logo > span:last-child { min-width: 0; }
+.rv-cell-logo .rv-logo { width: 42px; height: 42px; border-radius: 12px; font-size: 14px; }
+/* Fund house logos are wide marks on white: show them whole, on a light tile, like the Mutual Fund page. */
+.rv-logo-mf img { object-fit: contain; background: var(--br-bg); padding: 4px; box-sizing: border-box; }
+
+/* Logos inside charts. */
+.rv-mini { flex: none; display: inline-flex; }
+.rv-mini .rv-logo { width: 24px; height: 24px; border-radius: 7px; font-size: 9px; }
+.rv-leg-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rv-leg-name > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rv-bar-label.has-logo { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rv-bar-label.has-logo > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rv-bars.has-logo .rv-bar { grid-template-columns: minmax(96px, 34%) minmax(0, 1fr) auto; }
+.rv-tm-logo { display: block; margin-bottom: 3px; }
+.rv-tm .rv-mini .rv-logo { background: #fff; width: 26px; height: 26px; }
+.rv-svg-logo-disc { fill: #fff; stroke-width: 1.4; fill-opacity: 1 !important; animation: none !important; transform: none !important; }
+.rv-svg-logo image { pointer-events: none; }
+.rv-svg-logo { pointer-events: none; }
+.is-new .rv-svg-logo { animation: rv-logo-in 500ms ease-out both; animation-delay: calc(var(--d, 0ms) + 500ms + var(--n, 0) * 70ms); }
+@keyframes rv-logo-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .is-new .rv-svg-logo { animation: none; } }
+
+/* Mutual fund logos: a little bigger (tables, fund cards and the main fund card). */
+.rv-cell-logo .rv-logo-mf { width: 50px; height: 50px; border-radius: 14px; font-size: 16px; }
+.rv-stk .rv-logo-mf { width: 60px; height: 60px; border-radius: 16px; font-size: 18px; }
+.rv-stk.is-hero .rv-logo-mf, .rv-logo-mf.rv-logo-lg { width: 84px; height: 84px; border-radius: 22px; font-size: 24px; }
+.rv-mini .rv-logo-mf { width: 28px; height: 28px; border-radius: 8px; font-size: 10px; }

@@ -106,6 +106,14 @@ async function start() {
 
     header.querySelector('[data-action="new-chat"]').addEventListener("click", view.newChat);
 
+    /* Ctrl+N (Cmd+N on Mac) starts a new chat. Alt+N does the same where the browser keeps Ctrl+N for itself. */
+    document.addEventListener("keydown", (e) => {
+        if (e.shiftKey || String(e.key).toLowerCase() !== "n") return;
+        if (!((e.ctrlKey || e.metaKey) && !e.altKey) && !(e.altKey && !e.ctrlKey && !e.metaKey)) return;
+        e.preventDefault();
+        view.newChat();
+    });
+
     pinToViewport();
 
     shell.append(header, view.el);

@@ -217,13 +217,13 @@ const VISUALS = {
 
     stocks: (d) => d.holdings?.length ? [
         stockCards(d.holdings, "Your stocks"),
-        { kind: "chart", type: "lollipop", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
-        { kind: "chart", alt: true, type: "bar", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
-        d.holdings.length > 1 ? { kind: "chart", type: "bubble", title: "Money put in vs return (size = current value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: d.holdings.slice(0, 12).map((h) => ({ label: h.symbol, x: h.invested, y: h.pnlPct, r: h.value })) } : null,
-        { kind: "table", title: "Your holdings", columns: [{ label: "Stock", fmt: "text" }, { label: "Value", fmt: "money" }, { label: "P&L", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: d.holdings.map((h) => [h.symbol, h.value, h.pnl, h.pnlPct]) },
-        { kind: "chart", type: "donut", alt: true, title: "Share of stock value", centerLabel: "Stocks", items: d.holdings.slice(0, 6).map((h) => ({ label: h.symbol, value: h.value })) },
-        d.holdings.length > 1 ? { kind: "chart", type: "treemap", title: "Share of stock value", items: d.holdings.slice(0, 12).map((h) => ({ label: h.symbol, value: h.value })) } : null,
-        d.holdings.length > 1 ? { kind: "chart", alt: true, type: "stacked", title: "Share of stock value", items: d.holdings.slice(0, 8).map((h) => ({ label: h.symbol, value: h.value })) } : null
+        { kind: "chart", logo: "stock", type: "lollipop", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
+        { kind: "chart", logo: "stock", alt: true, type: "bar", signed: true, title: "Profit / loss by stock", items: holdingsBars(d) },
+        d.holdings.length > 1 ? { kind: "chart", logo: "stock", type: "bubble", title: "Money put in vs return (size = current value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: d.holdings.slice(0, 12).map((h) => ({ label: h.symbol, x: h.invested, y: h.pnlPct, r: h.value })) } : null,
+        { kind: "table", title: "Your holdings", columns: [{ label: "Stock", fmt: "text", logo: "stock" }, { label: "Value", fmt: "money" }, { label: "P&L", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: d.holdings.map((h) => [h.symbol, h.value, h.pnl, h.pnlPct]) },
+        { kind: "chart", logo: "stock", type: "donut", alt: true, title: "Share of stock value", centerLabel: "Stocks", items: d.holdings.slice(0, 6).map((h) => ({ label: h.symbol, value: h.value })) },
+        d.holdings.length > 1 ? { kind: "chart", logo: "stock", type: "treemap", title: "Share of stock value", items: d.holdings.slice(0, 12).map((h) => ({ label: h.symbol, value: h.value })) } : null,
+        d.holdings.length > 1 ? { kind: "chart", logo: "stock", alt: true, type: "stacked", title: "Share of stock value", items: d.holdings.slice(0, 8).map((h) => ({ label: h.symbol, value: h.value })) } : null
     ] : [],
 
     mutualfunds: (d) => {
@@ -232,9 +232,9 @@ const VISUALS = {
         const series = (d.series || []).filter((s) => s.date);
         return [
             { kind: "chart", type: "columns", title: "Invested vs current value", labels: mf.sips.map((s) => s.name.length > 10 ? s.name.slice(0, 9) + "…" : s.name), series: [{ name: "Invested", values: mf.sips.map((s) => s.invested), color: "info" }, { name: "Value", values: mf.sips.map((s) => s.currentValue), color: "gold" }] },
-            mf.sips.length > 1 ? { kind: "chart", alt: true, type: "lollipop", signed: true, title: "Gain by SIP", items: mf.sips.map((s) => ({ label: s.name, value: s.pnl })) } : null,
-            mf.sips.length > 1 ? { kind: "chart", alt: true, type: "bubble", title: "Money put in vs return (size = value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: mf.sips.map((s) => ({ label: s.name, x: s.invested, y: s.pnlPct, r: s.currentValue })) } : null,
-            { kind: "table", title: "Your SIPs", columns: [{ label: "SIP", fmt: "text" }, { label: "Invested", fmt: "money" }, { label: "Value", fmt: "money" }, { label: "Gain", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: mf.sips.map((s) => [s.name, s.invested, s.currentValue, s.pnl, s.pnlPct]) },
+            mf.sips.length > 1 ? { kind: "chart", logo: "mf", alt: true, type: "lollipop", signed: true, title: "Gain by SIP", items: mf.sips.map((s) => ({ label: s.name, value: s.pnl })) } : null,
+            mf.sips.length > 1 ? { kind: "chart", logo: "mf", alt: true, type: "bubble", title: "Money put in vs return (size = value)", xLabel: "Invested", yLabel: "Return", xFmt: "money", yFmt: "spct", rLabel: "Value", points: mf.sips.map((s) => ({ label: s.name, x: s.invested, y: s.pnlPct, r: s.currentValue })) } : null,
+            { kind: "table", title: "Your SIPs", columns: [{ label: "SIP", fmt: "text", logo: "mf" }, { label: "Invested", fmt: "money" }, { label: "Value", fmt: "money" }, { label: "Gain", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: mf.sips.map((s) => [s.name, s.invested, s.currentValue, s.pnl, s.pnlPct]) },
             series.length > 1 ? { kind: "chart", type: "line", title: "Mutual fund profit over time", labels: series.map((s) => s.date.slice(2, 7)), series: [{ name: "Profit / loss", values: series.map((s) => s.pnl), color: "gold" }] } : null
         ];
     },
@@ -319,9 +319,9 @@ const VISUALS = {
 
     topstocks: (d) => d.holdings?.length ? [
         stockCards([...d.holdings].sort((a, b) => b.pnl - a.pnl), "Your stocks, best first"),
-        { kind: "chart", type: "lollipop", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
-        { kind: "chart", alt: true, type: "bar", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
-        { kind: "table", title: "Ranked by profit", columns: [{ label: "Stock", fmt: "text" }, { label: "P&L", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => [h.symbol, h.pnl, h.pnlPct]) }
+        { kind: "chart", logo: "stock", type: "lollipop", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
+        { kind: "chart", logo: "stock", alt: true, type: "bar", signed: true, title: "Best to weakest", items: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => ({ label: h.symbol, value: h.pnl })) },
+        { kind: "table", title: "Ranked by profit", columns: [{ label: "Stock", fmt: "text", logo: "stock" }, { label: "P&L", fmt: "signed" }, { label: "Return", fmt: "spct" }], rows: [...d.holdings].sort((a, b) => b.pnl - a.pnl).map((h) => [h.symbol, h.pnl, h.pnlPct]) }
     ] : [],
 
     investments: (d) => investmentVisuals(d),

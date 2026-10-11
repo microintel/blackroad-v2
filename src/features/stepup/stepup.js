@@ -3,6 +3,7 @@ import { icon } from "../../components/icons.js";
 import { runTask } from "../../components/task-loader.js";
 import { COLORS } from "../../components/chart-colors.js";
 import { dataService } from "../../data/data-service.js";
+import { loadMfLogos, getCachedMfFunds, findMfLogo, searchMfSchemes, mfLogoHTML } from "../../services/mf-logos.js";
 
 import {
     fmt,
@@ -45,6 +46,10 @@ const navTxt = (n) => (isUSD() ? usd(n) : "₹" + n);
 ========================================= */
 
 const ACTIVE_PROFILE_KEY = "sip-active-profile"; // same key as the old app
+
+/* Mutual fund logos (MicroIntel mf-logos service). Starts from the cached
+   copy so logos show instantly; refreshed in the background. */
+let mfFunds = getCachedMfFunds();
 const PENDING_STATUSES = ["payment_initiated", "paid", "processing", "failed", "cancelled"];
 
 let store = null;
@@ -128,6 +133,15 @@ export async function StepUp() {
     // Same as the old app: quietly top up a linked fund's NAV history on load.
     syncLinkedFund(page, { silent: true });
 
+    // Fetch / refresh the fund logo list; redraw the logos only if it was empty before.
+    loadMfLogos().then((funds) => {
+        if (!funds.length || mfFunds.length) { if (funds.length) mfFunds = funds; return; }
+        mfFunds = funds;
+        if (!page.isConnected) return;
+        renderProfileBar(page);
+        if (tab === "settings") render(page);
+    });
+
     return page;
 }
 
@@ -210,8 +224,10 @@ function modalsHTML() {
                 <form data-form="profile">
                     <div class="br-modal-body">
                         <p class="br-field-help" data-error style="display:none;color:var(--br-danger);"></p>
+                        <div class="su-mf-preview" data-mf-preview hidden></div>
                         <label class="br-form-grid" style="display:block;"><span>Name</span>
-                            <input name="name" type="text" class="br-input" placeholder="e.g. Nifty 50 index fund" required></label>
+                            <input name="name" type="text" class="br-input" placeholder="e.g. Nifty 50 index fund" autocomplete="off" required></label>
+                        <div class="su-mf-suggest" data-mf-suggest hidden></div>
                     </div>
                     <div class="br-modal-footer">
                         <button type="button" class="br-button" data-action="close-modal">Cancel</button>
@@ -378,6 +394,7 @@ function renderProfileBar(page) {
 
     bar.innerHTML = `
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            ${profile ? mfLogoHTML(profile.name, mfFunds, "lg") : ""}
             <select class="br-select" data-su-profile style="min-width:180px;">
                 ${profiles
                     .map(
@@ -386,7 +403,6 @@ function renderProfileBar(page) {
                     )
                     .join("")}
             </select>
-            <button type="button" class="br-button" data-action="new-profile">+ New SIP</button>
         </div>
     `;
 }
@@ -551,6 +567,27 @@ function growthHTML(calc) {
 function fundHTML() {
     const lf = settings.linkedFund;
 
+    const howToCard = `
+        <section class="br-card su-howto">
+            <img class="su-howto-logo" src="https://raw.githubusercontent.com/microintel/endgram/main/photo/invisible-home.png" alt="Invisible House" data-mf-howto>
+            <h3 class="su-howto-title">How to link a fund</h3>
+            <ol class="su-howto-steps">
+                <li>
+                    <div>
+                        <strong>Open Invisible House</strong>
+                        <p>The free tool that gives you a fund's full NAV history.</p>
+                        <a class="br-button br-button-primary su-howto-btn" href="https://microintel.github.io/invisible-house/" target="_blank" rel="noopener noreferrer">Go to Invisible House ↗</a>
+                    </div>
+                </li>
+                <li><div><strong>Search your fund</strong><p>${
+                    profile ? `Try <em>${escapeHTML(profile.name)}</em>. ` : ""
+                }Pick the same plan you invest in (Direct or Regular, Growth or IDCW).</p></div></li>
+                <li><div><strong>Download the file</strong><p>Open the fund, find <em>Full NAV History</em> and tap <em>Download</em>.</p></div></li>
+                <li><div><strong>Import it here</strong><p>Choose the file below, set your SIP start date and tap <em>Import &amp; link</em>.</p></div></li>
+            </ol>
+        </section>
+    `;
+
     const linkCard = `
         <section class="br-card">
             <h3 style="margin-bottom:8px;">Link a fund</h3>
@@ -581,7 +618,7 @@ function fundHTML() {
         </section>
     `;
 
-    if (!lf) return linkCard;
+    if (!lf) return howToCard + `<div style="height:16px"></div>` + linkCard;
 
     let history;
 
@@ -1286,7 +1323,7 @@ function settingsHTML() {
                     ${profiles
                         .map(
                             (p) => `<div class="su-row">
-                        <span>${escapeHTML(p.name)}${profile && p.id === profile.id ? ` <span class="br-badge br-badge-success">Active</span>` : ""}</span>
+                        <span class="su-mf-name">${mfLogoHTML(p.name, mfFunds, "md")}<span>${escapeHTML(p.name)}${profile && p.id === profile.id ? ` <span class="br-badge br-badge-success">Active</span>` : ""}</span></span>
                         <span style="display:flex;gap:8px;">
                             <button type="button" class="br-button" data-action="rename-profile" data-id="${p.id}">Rename</button>
                             <button type="button" class="br-button br-button-danger" data-action="delete-profile" data-id="${p.id}">Delete</button>
@@ -1686,8 +1723,85 @@ function openProfileModal(page, id) {
 
     layer.querySelector("[data-profile-title]").textContent = p ? "Rename SIP" : "New SIP";
     layer.querySelector("form").name.value = p ? p.name : "";
+    updateMfPicker(page);
+    hideMfSuggest(page);
 
     openModal(page, "profile");
+}
+
+/* Logo preview for the typed SIP name. */
+function updateMfPicker(page) {
+    const layer = modal(page, "profile");
+    const name = layer.querySelector("form").name.value;
+    const box = layer.querySelector("[data-mf-preview]");
+
+    if (name.trim()) {
+        const hit = findMfLogo(name, mfFunds);
+        box.innerHTML = `${mfLogoHTML(name, mfFunds, "xl")}<span class="su-mf-preview-text">${escapeHTML(hit ? hit.name : name.trim())}</span>`;
+        box.hidden = false;
+    } else {
+        box.innerHTML = "";
+        box.hidden = true;
+    }
+}
+
+/* Fund suggestions from mfapi.in (skeleton rows while loading). */
+let mfSuggestTimer = null;
+let mfSuggestReq = 0;
+let mfSuggestAbort = null;
+
+function hideMfSuggest(page) {
+    clearTimeout(mfSuggestTimer);
+    mfSuggestReq++;
+    if (mfSuggestAbort) mfSuggestAbort.abort();
+    const box = modal(page, "profile").querySelector("[data-mf-suggest]");
+    box.hidden = true;
+    box.innerHTML = "";
+}
+
+function scheduleMfSuggest(page) {
+    clearTimeout(mfSuggestTimer);
+    const q = modal(page, "profile").querySelector("form").name.value.trim();
+
+    if (q.length < 2) return hideMfSuggest(page);
+
+    mfSuggestTimer = setTimeout(() => runMfSuggest(page, q), 300);
+}
+
+async function runMfSuggest(page, q) {
+    const box = modal(page, "profile").querySelector("[data-mf-suggest]");
+    const req = ++mfSuggestReq;
+
+    if (mfSuggestAbort) mfSuggestAbort.abort();
+    mfSuggestAbort = new AbortController();
+
+    box.hidden = false;
+    box.innerHTML = Array.from({ length: 3 }, () => `
+        <div class="su-mf-item su-mf-item-sk">
+            <span class="br-sk" style="width:44px;height:44px;border-radius:12px;flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column;gap:7px;"><span class="br-sk" style="width:80%;height:12px"></span><span class="br-sk" style="width:45%;height:10px"></span></span>
+        </div>`).join("");
+
+    try {
+        const list = await searchMfSchemes(q, mfSuggestAbort.signal, 6);
+
+        if (req !== mfSuggestReq) return;
+
+        box.innerHTML = list.length
+            ? list.map((x, i) => `
+                <button type="button" class="su-mf-item" data-mf-pick="${i}">
+                    ${mfLogoHTML(x.schemeName, mfFunds, "xs")}
+                    <span class="su-mf-item-name">${escapeHTML(x.schemeName)}</span>
+                </button>`).join("")
+            : `<div class="su-mf-empty">No matching funds — you can still use this name.</div>`;
+
+        box._list = list;
+        if (!list.length) updateMfPicker(page);
+    } catch (e) {
+        if (req !== mfSuggestReq || (e && e.name === "AbortError")) return;
+        box.innerHTML = `<div class="su-mf-empty">Couldn't load suggestions — you can still type a name.</div>`;
+        updateMfPicker(page);
+    }
 }
 
 async function saveProfileForm(page) {
@@ -1762,6 +1876,52 @@ function askResetProfile(page) {
 ========================================= */
 
 function attachEvents(page) {
+    // A logo that fails to load is removed so the letter behind it shows
+    page.addEventListener(
+        "error",
+        (event) => {
+            const img = event.target;
+            if (img && img.matches && img.matches("img[data-mf-logo]")) img.remove();
+            if (img && img.matches && img.matches("img[data-mf-howto]")) img.style.display = "none";
+        },
+        true
+    );
+
+    page.addEventListener("input", (event) => {
+        if (event.target.matches('[data-form="profile"] [name="name"]')) {
+            // While suggestions are open they take the space of the big preview,
+            // so the form doesn't jump around; the preview comes back after a pick.
+            const typing = event.target.value.trim().length >= 2;
+            if (typing) modal(page, "profile").querySelector("[data-mf-preview]").hidden = true;
+            else updateMfPicker(page);
+            scheduleMfSuggest(page);
+        }
+    });
+
+    // Keep the input focused when tapping a suggestion; close the list when leaving the field
+    page.addEventListener("mousedown", (event) => {
+        if (event.target.closest("[data-mf-suggest]")) event.preventDefault();
+    });
+    page.addEventListener("focusout", (event) => {
+        if (!event.target.matches('[data-form="profile"] [name="name"]')) return;
+        setTimeout(() => {
+            if (!page.isConnected) return;
+            hideMfSuggest(page);
+            updateMfPicker(page);
+        }, 150);
+    });
+
+    page.addEventListener("click", (event) => {
+        const pick = event.target.closest("[data-mf-pick]");
+        if (!pick) return;
+        const box = pick.closest("[data-mf-suggest]");
+        const item = box && box._list && box._list[Number(pick.dataset.mfPick)];
+        if (!item) return;
+        modal(page, "profile").querySelector("form").name.value = item.schemeName;
+        hideMfSuggest(page);
+        updateMfPicker(page);
+    });
+
     page.addEventListener("click", async (event) => {
         const tabBtn = event.target.closest("[data-su-tab]");
 

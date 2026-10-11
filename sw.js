@@ -5,12 +5,15 @@
    - Page navigations (/income, /stocks ...): network-first,
      falling back to the cached index.html (SPA fallback).
    - Cross-origin requests (stock LTP API, MFAPI) are NEVER
-     cached or intercepted.
+     cached or intercepted, EXCEPT the stock logo images and the
+     mutual fund logo images: those are kept in their own cache
+     ("blackroad-logos-v1", not wiped when the app version changes)
+     so Rover and the app show them instantly and offline.
    - IndexedDB user data is never touched by the worker.
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v132";
+const CACHE_VERSION = "v140";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -177,6 +180,7 @@ const SHELL = [
     "./src/components/task-loader.js",
     "./src/app/ux.js",
     "./src/services/bank-logos.js",
+    "./src/services/mf-logos.js",
     "./src/styles/notifications.css",
     "./src/styles/skeleton.css",
     "./src/styles/stepup.css",
@@ -219,12 +223,79 @@ self.addEventListener("activate", (event) => {
     );
 });
 
+
+/* ---------- Stock and mutual fund logos (images only) ----------
+   Cache first. Kept for 30 days, refreshed quietly in the background after 7.
+   Only real images are stored (an error page or JSON is never cached). */
+const LOGO_CACHE = "blackroad-logos-v1";
+const LOGO_MAX_ENTRIES = 600;
+const LOGO_REFRESH_AFTER = 7 * 24 * 60 * 60 * 1000;
+const LOGO_EXPIRES_AFTER = 30 * 24 * 60 * 60 * 1000;
+
+function isLogoRequest(req, url) {
+    if (req.destination !== "image") return false;
+
+    // Stock logos (same API the Stocks page uses).
+    if (url.hostname === "indian-stock-ltp.vercel.app" && url.pathname === "/api/logo") return true;
+
+    // Mutual fund logos (MicroIntel mf-logos).
+    return /(^|\.)(githubusercontent\.com|github\.io|jsdelivr\.net)$/.test(url.hostname) && url.pathname.includes("mf-logos");
+}
+
+async function fetchAndStoreLogo(req, cache) {
+    // CORS mode so the real image bytes can be stored (an opaque copy would count as several MB of quota).
+    const res = await fetch(req.url, { mode: "cors", credentials: "omit", referrerPolicy: "no-referrer" });
+    const type = res.headers.get("content-type") || "";
+
+    if (!res.ok || !/^image\//i.test(type)) return res;
+
+    const blob = await res.blob();
+    const stored = new Response(blob, { status: 200, headers: { "content-type": type, "x-cached-at": String(Date.now()) } });
+
+    await cache.put(req.url, stored.clone());
+
+    // Keep the cache from growing without limit: drop the oldest entries.
+    const keys = await cache.keys();
+    if (keys.length > LOGO_MAX_ENTRIES) await Promise.all(keys.slice(0, keys.length - LOGO_MAX_ENTRIES).map((k) => cache.delete(k)));
+
+    return stored;
+}
+
+async function logoResponse(event) {
+    const req = event.request;
+    const cache = await caches.open(LOGO_CACHE);
+    const hit = await cache.match(req.url);
+
+    if (hit) {
+        const age = Date.now() - Number(hit.headers.get("x-cached-at") || 0);
+
+        if (age < LOGO_EXPIRES_AFTER) {
+            if (age > LOGO_REFRESH_AFTER) event.waitUntil(fetchAndStoreLogo(req, cache).catch(() => {}));
+            return hit;
+        }
+    }
+
+    try {
+        return await fetchAndStoreLogo(req, cache);
+    } catch (e) {
+        // Offline or the host does not allow CORS: use an older copy, else let the browser load it normally.
+        if (hit) return hit;
+        try { return await fetch(req); } catch (e2) { return Response.error(); }
+    }
+}
+
 self.addEventListener("fetch", (event) => {
     const req = event.request;
 
     if (req.method !== "GET") return;
 
     const url = new URL(req.url);
+
+    // Stock and mutual fund logos: cached so they load instantly and offline.
+    if (isLogoRequest(req, url)) {
+        event.respondWith(logoResponse(event));
+        return;
+    }
 
     // Never touch cross-origin traffic (live price / NAV APIs).
     if (url.origin !== self.location.origin) return;

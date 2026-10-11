@@ -3,6 +3,7 @@ import { isUSD } from "../../services/currency.js";
 import { esc } from "../../components/chat/chat-format.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { stockLogoUrl } from "../stocks/stocks-live.js";
+import { loadMfLogos, getCachedMfFunds, findMfLogo } from "../../services/mf-logos.js";
 
 /*
  * Rover visuals: turns a reply's `blocks` into charts, tables, comparisons and gauges.
@@ -81,6 +82,29 @@ function kpi(b) {
     return `<div class="rv-block rv-kpis">${cards.join("")}</div>`;
 }
 
+/* ---------- logos inside charts ----------
+   A chart block can carry `logo: "stock"` (labels are stock symbols) or `logo: "mf"` (labels are fund names).
+   The share / dot / block / row then shows that logo. The plain coloured mark stays underneath, so if a
+   picture can't load it is simply dropped and the chart looks as it did before. */
+
+let clipN = 0;
+
+const logoUrl = (kind, label) => kind === "stock" ? stockLogoUrl(label) : kind === "mf" ? (findMfLogo(String(label || ""), mfFunds)?.url || "") : "";
+
+/* A round logo drawn inside an SVG chart, centred on (cx, cy). */
+function svgLogo(kind, label, cx, cy, r, ring) {
+    const url = logoUrl(kind, label);
+    if (!url) return "";
+    const id = `rvc${++clipN}`;
+    const ri = r - 1.2;
+    const side = kind === "mf" ? ri * 1.7 : ri * 2;
+    const attr = kind === "mf" ? "data-mf-logo" : "data-stk-logo";
+    return `<g class="rv-svg-logo"><clipPath id="${id}"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${ri.toFixed(2)}"/></clipPath><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" class="rv-svg-logo-disc" style="stroke:${ring}"/><image href="${esc(url)}" x="${(cx - side / 2).toFixed(2)}" y="${(cy - side / 2).toFixed(2)}" width="${side.toFixed(2)}" height="${side.toFixed(2)}" clip-path="url(#${id})" preserveAspectRatio="xMidYMid ${kind === "mf" ? "meet" : "slice"}" referrerpolicy="no-referrer" ${attr}/></g>`;
+}
+
+/* A small logo for HTML parts of a chart (legend rows, bar labels, blocks). */
+const miniLogo = (kind, label) => kind ? `<span class="rv-mini">${kind === "mf" ? mfLogo(label) : logo(label, false)}</span>` : "";
+
 /* ---------- donut ---------- */
 
 const donutTip = (i, pct, n) => tipAttr(i.label, [["Share", `${pct.toFixed(1)}%`, color(n)], ["Amount", plain(i.value)]]);
@@ -94,12 +118,14 @@ function donut(b) {
     const segs = items.map((i, n) => {
         const pct = (i.value / total) * 100;
         const seg = `<circle class="rv-seg br-tip-seg" cx="21" cy="21" r="15.9155" style="stroke:${color(n)};stroke-dasharray:${Math.max(pct - 0.6, 0.1).toFixed(2)} ${(100 - Math.max(pct - 0.6, 0.1)).toFixed(2)};stroke-dashoffset:${(25 - at).toFixed(2)};--n:${n}" ${donutTip(i, pct, n)}/>`;
+        const mid = ((at + pct / 2) / 100) * 2 * Math.PI;
+        const badge = b.logo && pct >= 8 ? svgLogo(b.logo, i.label, 21 + 15.9155 * Math.sin(mid), 21 - 15.9155 * Math.cos(mid), 2.9, color(n)) : "";
         at += pct;
-        return seg;
+        return seg + badge;
     }).join("");
 
     const legend = items.map((i, n) =>
-        `<li ${donutTip(i, (i.value / total) * 100, n)}><i style="background:${color(n)}"></i><span>${esc(i.label)}</span><b>${((i.value / total) * 100).toFixed(1)}%</b><em>${fmt(i.value)}</em></li>`
+        `<li ${donutTip(i, (i.value / total) * 100, n)}><i style="background:${color(n)}"></i><span class="rv-leg-name">${miniLogo(b.logo, i.label)}<span>${esc(i.label)}</span></span><b>${((i.value / total) * 100).toFixed(1)}%</b><em>${fmt(i.value)}</em></li>`
     ).join("");
 
     return wrap(b.title, `
@@ -125,12 +151,12 @@ function bars(b) {
         const c = b.signed ? (i.value >= 0 ? TONE.success : TONE.danger) : color(n);
         const label = b.signed ? fmt(i.value, "signed") : fmt(i.value, b.fmt || "money");
         const tip = tipAttr(i.label, [[b.signed ? "Change" : "Value", b.signed ? plain(i.value, "signed") : plain(i.value, b.fmt || "money"), c]]);
-        return `<div class="rv-bar" ${tip}><span class="rv-bar-label">${esc(i.label)}</span>
+        return `<div class="rv-bar" ${tip}><span class="rv-bar-label${b.logo ? " has-logo" : ""}">${miniLogo(b.logo, i.label)}<span>${esc(i.label)}</span></span>
             <span class="rv-bar-track"><span class="rv-bar-fill" style="width:${w.toFixed(1)}%;background:${c};--n:${n}"></span></span>
             <b class="${b.signed ? tone(i.value) : ""}">${label}</b></div>`;
     }).join("");
 
-    return wrap(b.title, `<div class="rv-bars">${rows}</div>`);
+    return wrap(b.title, `<div class="rv-bars${b.logo ? " has-logo" : ""}">${rows}</div>`);
 }
 
 /* ---------- grouped columns (e.g. income vs expenses by month) ---------- */
@@ -233,7 +259,7 @@ function stacked(b) {
     if (!total) return "";
 
     const segs = items.map((i, n) => `<span class="rv-strip-seg" style="flex:${i.value};background:${color(n)};--n:${n}" ${donutTip(i, (i.value / total) * 100, n)}></span>`).join("");
-    const legend = items.map((i, n) => `<li ${donutTip(i, (i.value / total) * 100, n)}><i style="background:${color(n)}"></i><span>${esc(i.label)}</span><b>${((i.value / total) * 100).toFixed(1)}%</b><em>${fmt(i.value)}</em></li>`).join("");
+    const legend = items.map((i, n) => `<li ${donutTip(i, (i.value / total) * 100, n)}><i style="background:${color(n)}"></i><span class="rv-leg-name">${miniLogo(b.logo, i.label)}<span>${esc(i.label)}</span></span><b>${((i.value / total) * 100).toFixed(1)}%</b><em>${fmt(i.value)}</em></li>`).join("");
 
     return wrap(b.title, `<div class="rv-strip" role="img" aria-label="${esc(b.title || "Share")}">${segs}</div><ul class="rv-legend rv-legend-wide">${legend}</ul>`);
 }
@@ -280,7 +306,7 @@ function lollipop(b) {
     const max = Math.max(...items.map((i) => Math.abs(i.value)), 0);
     if (!max) return "";
 
-    const W = 320, rowH = 28, LAB = 78, VAL = 74, T = 4;
+    const W = 320, rowH = b.logo ? 30 : 28, LAB = b.logo ? 94 : 78, VAL = 74, T = 4;
     const H = T + items.length * rowH + 4;
     const x0 = LAB, x1 = W - VAL;
     const mid = b.signed ? (x0 + x1) / 2 : x0;
@@ -295,7 +321,7 @@ function lollipop(b) {
         return `<g class="rv-lolli" ${tip} style="--n:${n}">
             <text x="0" y="${y + 3}" class="rv-lolli-label">${esc(clip(i.label, 12))}</text>
             <line x1="${mid}" x2="${x.toFixed(1)}" y1="${y}" y2="${y}" class="rv-lolli-stem" style="stroke:${c}"/>
-            <circle cx="${x.toFixed(1)}" cy="${y}" r="5.5" style="fill:${c}"/>
+            <circle cx="${x.toFixed(1)}" cy="${y}" r="5.5" style="fill:${c}"/>${b.logo ? svgLogo(b.logo, i.label, x, y, 11, c) : ""}
             <text x="${W}" y="${y + 3}" class="rv-lolli-val ${b.signed ? tone(i.value) : ""}" text-anchor="end">${esc(label)}</text>
             <rect x="0" y="${y - rowH / 2}" width="${W}" height="${rowH}" fill="transparent"/>
         </g>`;
@@ -398,7 +424,7 @@ function treemap(b) {
         const big = c.w > 22 && c.h > 24;
         const k = items.findIndex((i) => i.label === c.label);
         return `<div class="rv-tm" style="left:${c.x.toFixed(2)}%;top:${c.y.toFixed(2)}%;width:${c.w.toFixed(2)}%;height:${c.h.toFixed(2)}%;--n:${n}" ${donutTip(c, share, k)}>
-            <div style="background:${color(k)}">${big ? `<b>${esc(clip(c.label, 16))}</b><span>${share.toFixed(0)}% · ${compact(c.value)}</span>` : c.w > 12 && c.h > 14 ? `<span>${share.toFixed(0)}%</span>` : ""}</div>
+            <div style="background:${color(k)}">${b.logo && c.w > 10 && c.h > 16 ? `<span class="rv-tm-logo">${miniLogo(b.logo, c.label)}</span>` : ""}${big ? `<b>${esc(clip(c.label, 16))}</b><span>${share.toFixed(0)}% · ${compact(c.value)}</span>` : c.w > 12 && c.h > 14 ? `<span>${share.toFixed(0)}%</span>` : ""}</div>
         </div>`;
     }).join("");
 
@@ -423,7 +449,7 @@ function bubble(b) {
     const x = (v) => L + ((v - xlo) / (xhi - xlo)) * iw;
     const y = (v) => T + ih - ((v - ylo) / (yhi - ylo)) * ih;
     const rmax = Math.max(...pts.map((p) => p.r || 1), 1);
-    const rad = (p) => 5 + Math.sqrt((p.r || 1) / rmax) * 11;
+    const rad = (p) => (b.logo ? 9 : 5) + Math.sqrt((p.r || 1) / rmax) * (b.logo ? 12 : 11);
 
     const gy = [0, 0.5, 1].map((f) => { const v = ylo + (yhi - ylo) * f; return `<line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="rv-grid"/><text x="${L - 5}" y="${(y(v) + 3).toFixed(1)}" class="rv-axis" text-anchor="end">${axisFmt(v, b.yFmt)}</text>`; }).join("");
     const gx = [0, 0.5, 1].map((f) => { const v = xlo + (xhi - xlo) * f; return `<text x="${x(v).toFixed(1)}" y="${H - 14}" class="rv-axis" text-anchor="${f === 0 ? "start" : f === 1 ? "end" : "middle"}">${axisFmt(v, b.xFmt)}</text>`; }).join("");
@@ -433,7 +459,7 @@ function bubble(b) {
         const c = p.tone ? TONE[p.tone] : p.y >= 0 ? TONE.success : TONE.danger;
         const rows = [[b.xLabel || "X", plain(p.x, b.xFmt || "money")], [b.yLabel || "Y", plain(p.y, b.yFmt || "money"), c]];
         if (p.r) rows.push([b.rLabel || "Size", plain(p.r)]);
-        return `<g class="rv-bubble" style="--n:${i}" ${tipAttr(p.label, rows)}><circle cx="${x(p.x).toFixed(1)}" cy="${y(p.y).toFixed(1)}" r="${rad(p).toFixed(1)}" style="fill:${c}"/>${rad(p) > 9 ? `<text x="${x(p.x).toFixed(1)}" y="${(y(p.y) + 2.6).toFixed(1)}" class="rv-bubble-text" text-anchor="middle">${esc(clip(p.label, 5))}</text>` : ""}</g>`;
+        return `<g class="rv-bubble" style="--n:${i}" ${tipAttr(p.label, rows)}><circle cx="${x(p.x).toFixed(1)}" cy="${y(p.y).toFixed(1)}" r="${rad(p).toFixed(1)}" style="fill:${c}"/>${b.logo && logoUrl(b.logo, p.label) ? svgLogo(b.logo, p.label, x(p.x), y(p.y), rad(p) - 1.5, c) : rad(p) > 9 ? `<text x="${x(p.x).toFixed(1)}" y="${(y(p.y) + 2.6).toFixed(1)}" class="rv-bubble-text" text-anchor="middle">${esc(clip(p.label, 5))}</text>` : ""}</g>`;
     }).join("");
 
     const axisLabels = `<text x="${(L + iw / 2).toFixed(1)}" y="${H - 1}" class="rv-axis" text-anchor="middle">${esc(b.xLabel || "")}</text><text x="8" y="${(T + ih / 2).toFixed(1)}" class="rv-axis" text-anchor="middle" transform="rotate(-90 8 ${(T + ih / 2).toFixed(1)})">${esc(b.yLabel || "")}</text>`;
@@ -462,6 +488,23 @@ const chart = (b) => (CHARTS[b.type] ? CHARTS[b.type](b) : "");
 
 /* ---------- table ---------- */
 
+/* ---------- logos inside table cells ----------
+   A column can carry `logo: "mf"` (fund house logo, same service as the Mutual Fund page) or
+   `logo: "stock"` (same logo as the Stocks page). If the picture can't load, the letters stay. */
+
+let mfFunds = getCachedMfFunds();
+loadMfLogos().then((funds) => { if (funds && funds.length) mfFunds = funds; });
+
+const mfLogo = (name, big) => {
+    const text = String(name || "").trim();
+    const letter = (text.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase();
+    const hit = findMfLogo(text, mfFunds);
+    const img = hit ? `<img src="${esc(hit.url)}" alt="" loading="lazy" decoding="async" data-mf-logo>` : "";
+    return `<span class="rv-logo rv-logo-mf${big ? " rv-logo-lg" : ""}" data-initials="${esc(letter)}">${img}</span>`;
+};
+
+const cellLogo = (kind, value) => kind === "mf" ? mfLogo(value) : kind === "stock" ? logo(value, false) : "";
+
 function table(b) {
     const cols = b.columns || [];
     if (!cols.length || !(b.rows || []).length) return "";
@@ -470,7 +513,9 @@ function table(b) {
     const body = b.rows.map((r) => `<tr>${r.map((v, i) => {
         const c = cols[i] || {};
         const signed = c.fmt === "signed" || c.fmt === "spct";
-        return `<td class="${i > 0 && c.fmt !== "text" ? "is-num" : ""} ${signed ? tone(Number(v)) : ""}">${fmt(v, c.fmt || (i === 0 ? "text" : "money"))}</td>`;
+        const text = fmt(v, c.fmt || (i === 0 ? "text" : "money"));
+        const inner = c.logo ? `<span class="rv-cell-logo">${cellLogo(c.logo, v)}<span>${text}</span></span>` : text;
+        return `<td class="${i > 0 && c.fmt !== "text" ? "is-num" : ""} ${signed ? tone(Number(v)) : ""}">${inner}</td>`;
     }).join("")}</tr>`).join("");
 
     return wrap(b.title, `<div class="rv-table-wrap"><table class="rv-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>${b.note ? `<p class="rv-note">${esc(b.note)}</p>` : ""}`);
@@ -573,6 +618,25 @@ function stocklist(b) {
     return wrap(b.title, `<div class="rv-stks">${cards}</div>${more}`, "rv-stk-block");
 }
 
+/* ---------- mutual fund cards (fund house logo + name + value + gain, like the stock cards) ---------- */
+
+function fundlist(b) {
+    const items = (b.items || []).slice(0, b.limit || 8);
+    if (!items.length) return "";
+
+    const cards = items.map((i) => {
+        const up = i.pnl >= 0;
+        const tip = tipAttr(i.name, [["Invested", plain(i.invested)], ["Value", plain(i.value)], ["Gain / loss", plain(i.pnl, "signed"), up ? TONE.success : TONE.danger], ["Return", plain(i.pnlPct, "spct")]]);
+        return `<div class="rv-stk${b.hero ? " is-hero" : ""}" ${tip}>
+            ${mfLogo(i.name, b.hero)}
+            <div class="rv-stk-main"><b>${esc(i.name)}</b><span>${esc(i.sub || `Invested ${plain(i.invested)}`)}</span></div>
+            <div class="rv-stk-nums"><b>${fmt(i.value)}</b><span class="${up ? "is-up" : "is-down"}">${up ? "▲" : "▼"} ${fmt(Math.abs(i.pnl))} · ${fmt(i.pnlPct, "spct")}</span></div>
+        </div>`;
+    }).join("");
+
+    return wrap(b.title, `<div class="rv-stks">${cards}</div>`, "rv-stk-block");
+}
+
 /* ---------- statement rows (emoji + label + amount) ---------- */
 
 function statement(b) {
@@ -619,13 +683,13 @@ function reminders(b) {
 
 /* ---------- entry point ---------- */
 
-const RENDER = { kpi, chart, table, compare, gauge, stocklist, statement, reminders };
+const RENDER = { kpi, chart, table, compare, gauge, stocklist, fundlist, statement, reminders };
 
 /* Rough height of a block, only used to balance the two columns on wide screens. */
 function weight(b) {
     if (b.kind === "compare") return 70 + (b.rows || []).length * 68;
     if (b.kind === "gauge") return 250;
-    if (b.kind === "stocklist") return 60 + Math.min((b.items || []).length, 8) * 66;
+    if (b.kind === "stocklist" || b.kind === "fundlist") return 60 + Math.min((b.items || []).length, 8) * 66;
     if (b.kind === "statement") return 60 + (b.sections || []).reduce((n, x) => n + 30 + (x.rows || []).length * 44, 0);
     if (b.kind === "reminders") return 60 + Math.min((b.items || []).length, 8) * 62;
     if (b.kind === "chart") {
@@ -668,7 +732,7 @@ export function renderBlocks(blocks) {
 
     cells.forEach((c) => {
         // Lists of stocks, statement rows and reminders read best at full width.
-        if (["kpi", "table", "stocklist", "statement", "reminders"].includes(c.b.kind)) { flush(); out.push(cell(c)); }
+        if (["kpi", "table", "stocklist", "fundlist", "statement", "reminders"].includes(c.b.kind)) { flush(); out.push(cell(c)); }
         else run.push(c);
     });
     flush();

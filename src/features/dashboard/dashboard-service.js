@@ -393,7 +393,9 @@ export async function getMutualFundSummary() {
             invested,
             currentValue,
             pnl,
-            pnlPct: invested ? (pnl / invested) * 100 : 0
+            pnlPct: invested ? (pnl / invested) * 100 : 0,
+            since: profileEntries[0].date || "",
+            entries: profileEntries.length
         });
     }
 
