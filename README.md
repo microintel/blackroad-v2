@@ -1,155 +1,369 @@
-# BlackRoad V2
+<div align="center">
 
-Personal finance web application, rebuilt gradually from the original BlackRoad project.
+# BlackRoad
 
-**Stack (current):** HTML, CSS, vanilla JavaScript (ES modules), IndexedDB, PWA (later phase)
-**Future migration target:** React, Next.js, Material UI, TypeScript (not started)
+### Your entire financial life. One private app.
 
-## Running
+Track income, stocks, mutual funds, deposits, loans and net worth in one place, with your data stored on your own device.
 
-The app uses ES modules, so it must be served over HTTP (not opened as a `file://` page).
-Routing is hash-based (`index.html#/income`), so **any static server works** and reloading,
-bookmarking or resizing / toggling device mode never gives a 404:
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Stack](https://img.shields.io/badge/stack-HTML%20%7C%20CSS%20%7C%20Vanilla%20JS-blue)
+![Storage](https://img.shields.io/badge/storage-IndexedDB%20(local)-orange)
+![PWA](https://img.shields.io/badge/PWA-installable-purple)
+![Developed by](https://img.shields.io/badge/developed%20by-Microintel-black)
+
+### 🌐 [Open the Live App → microintel.github.io/blackroad-v2](https://microintel.github.io/blackroad-v2/)
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Live Demo](#live-demo)
+- [BlackRoad in Simple Words](#blackroad-in-simple-words)
+- [Problem Statement](#problem-statement)
+- [Our Solution](#our-solution)
+- [Key Features](#key-features)
+- [Layered Architecture](#layered-architecture-simple-view)
+- [Detailed Architecture](#architecture)
+- [Data Flow](#data-flow)
+- [Privacy and Security](#privacy-and-security)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Vision](#vision)
+- [Mission](#mission)
+- [Roadmap](#roadmap)
+- [Developed By](#developed-by)
+
+---
+
+## Live Demo
+
+**https://microintel.github.io/blackroad-v2/**
+
+Open the link on your phone or computer. You can register, sign in, or continue as a guest. On mobile or desktop you can also install it like an app (Add to Home Screen / Install).
+
+## BlackRoad in Simple Words
+
+Think of BlackRoad as **a digital diary for all your money**.
+
+- You write down what you earn and spend.
+- You record the shares, mutual funds and fixed deposits you own.
+- You note the money you lent to or borrowed from people.
+
+BlackRoad then adds everything up and tells you, in plain language, **how much you are worth today**, how healthy your finances are, and what changed.
+
+**The important part:** your money data is saved **inside your own phone or computer**, not on someone else's server. That is why it is private, and why it keeps working even without internet.
+
+You can also ask **Rover**, the built-in assistant, questions like *"How much did I spend this month?"* and it answers from your own data.
+
+---
+
+## Problem Statement
+
+Managing personal money today is scattered and stressful:
+
+- **Fragmented tools.** Income lives in one app, stocks in a broker app, mutual funds in another, fixed deposits in a bank portal, and money lent to friends in a notebook or WhatsApp chat.
+- **No single net worth view.** People cannot easily answer "How much am I actually worth today?" or "Where did my money go this month?"
+- **Privacy concerns.** Most finance apps need cloud accounts, upload bank and broker data to remote servers, and monetize user information.
+- **Poor offline access.** Many tools stop working without internet and lock your data behind subscriptions.
+- **Hard-to-read broker reports.** Brokerage P&L statements arrive as dense PDFs that are difficult to analyze.
+- **Little guidance.** Raw numbers are shown, but there is no help understanding financial health, risk, goals or what changed.
+
+## Our Solution
+
+**BlackRoad** is a unified personal finance application that brings every part of your money into one clean, fast, private interface.
+
+| Problem | How BlackRoad solves it |
+|---|---|
+| Scattered tools | One app with Income, Stocks, Mutual Funds, Fixed Deposits, Lending and Accounting modules sharing one design and one data layer |
+| No net worth view | A live Dashboard and Net Worth page combine all modules into one picture |
+| Privacy | All data is stored locally in the browser or device (IndexedDB). No server holds your financial records |
+| Offline use | Installable as a PWA with a service worker, so it works offline |
+| Broker reports | Brokerage Report Readers parse broker P&L files and present them clearly |
+| Lack of guidance | Financial Intelligence (health score, cash-flow forecast, risk, goals, what-if) and **Rover**, an offline chat assistant that answers questions from your own data |
+| Data lock-in | One global import/export system, with legacy backup files still accepted |
+
+## Key Features
+
+| Module | What it does |
+|---|---|
+| **Dashboard** | Live net worth, asset allocation, mutual fund profit/loss, wealth lanes and Financial Intelligence cards |
+| **Net Worth** | Combined view of assets and liabilities across all modules |
+| **Income and Expenses** | Ledger, income statement, statistics, search, compare, expand and jump-to, with per-income transactions and PDF export |
+| **Stocks** | Transactions, live prices, P&L charts, MTF (margin) tracking and a print/PDF report |
+| **Fixed Deposits** | Add, edit, close and delete deposits with maturity calculations |
+| **Lending** | People ledger, loans and EMI tracking, overview of dues |
+| **Mutual Fund (StepUp)** | SIP profiles, step-ups, skips, XIRR, NAV sync, goal tracking and charts |
+| **Accounting** | Manual accounting records |
+| **Calculators** | Finance calculators for planning |
+| **Brokerage Report Readers** | Reads broker P&L statements (Angel One) and renders them cleanly |
+| **Connect Broker** | Read-only connection to a broker account to view holdings, positions, funds, orders and trades |
+| **Rover** | Offline chat assistant that answers questions on net worth, spending, stocks, funds, deposits and loans from on-device data |
+| **Data Management** | Global backup, restore, import, export and clear data |
+| **Notifications** | Reminders and dues |
+| **Account and Appearance** | Sign in, register, guest mode, Light and Dark themes |
+
+---
+
+## Layered Architecture (Simple View)
+
+BlackRoad is built in layers. Each layer only talks to the layer right below it, which keeps the app clean, easy to fix and easy to grow.
+
+```mermaid
+flowchart TB
+    L1["<b>Layer 1 · User Interface</b><br/>Landing page · Dashboard · Forms · Charts · Light/Dark themes · Rover chat"]
+    L2["<b>Layer 2 · App Core</b><br/>Navigation (router) · Sign in / Register / Guest · Preferences"]
+    L3["<b>Layer 3 · Finance Modules</b><br/>Income · Stocks · Mutual Funds · Fixed Deposits · Lending · Accounting · Calculators · Net Worth"]
+    L4["<b>Layer 4 · Intelligence</b><br/>Financial health · Risk · Goals · What-if · Rover assistant"]
+    L5["<b>Layer 5 · Data Services</b><br/>Business rules · Calculations · Backup / Restore · Import / Export"]
+    L6["<b>Layer 6 · On-Device Storage</b><br/>IndexedDB · localStorage · Service Worker (offline)"]
+    EXT["<b>Optional outside services (read-only)</b><br/>Mutual fund NAV · Live stock prices · Broker (Angel One)"]
+
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+    L3 -. fetches .-> EXT
+```
+
+| Layer | In simple words |
+|---|---|
+| **1 · User Interface** | What you see and tap |
+| **2 · App Core** | Moves you between screens and knows who you are |
+| **3 · Finance Modules** | The actual money features |
+| **4 · Intelligence** | Turns numbers into easy advice and answers |
+| **5 · Data Services** | Does the maths and keeps data safe and portable |
+| **6 · On-Device Storage** | Keeps everything on your own device |
+
+---
+
+## Architecture
+
+### Detailed System Architecture
+
+```mermaid
+flowchart TB
+    USER(["👤 User<br/>Mobile · Tablet · Desktop"])
+
+    subgraph CLIENT["BlackRoad Client (runs entirely in the browser / PWA)"]
+        direction TB
+
+        subgraph PRESENT["1 · Presentation Layer"]
+            direction LR
+            SITE["Public Site<br/>Landing · Download"]
+            SHELL["App Shell<br/>Sidebar · Topbar · Mobile Nav"]
+            ROVERUI["Rover Chat UI<br/>(separate page)"]
+            DESIGN["Design System<br/>Light / Dark Themes · Tokens · Icons · Charts"]
+        end
+
+        subgraph APP["2 · Application Core"]
+            direction LR
+            ROUTER["Hash Router<br/>index.html#/route"]
+            AUTH["Auth and Session<br/>Sign in · Register · Guest"]
+            PREF["Preferences<br/>Theme · Currency"]
+        end
+
+        subgraph FEATURES["3 · Feature Modules"]
+            direction LR
+            DASH["Dashboard<br/>and Net Worth"]
+            INC["Income<br/>and Expenses"]
+            STK["Stocks"]
+            MF["Mutual Fund<br/>StepUp"]
+            FD["Fixed<br/>Deposits"]
+            LEND["Lending"]
+            ACC["Accounting"]
+            CALC["Calculators"]
+            NOTI["Notifications"]
+        end
+
+        subgraph INTEL["4 · Intelligence Layer"]
+            direction LR
+            FI["Financial Intelligence<br/>Health · Risk · Cash-flow · Goals · What-If"]
+            ENGINE["Rules Engine<br/>(pure functions)"]
+            ROVERENG["Rover Engine<br/>Intent matching · Answers"]
+        end
+
+        subgraph BROKER["5 · Broker Integration"]
+            direction LR
+            CONNECT["Connect Broker<br/>(read-only session)"]
+            PNL["Brokerage Report Readers<br/>PDF parse · Render · Export"]
+        end
+
+        subgraph DATA["6 · Data Layer"]
+            direction LR
+            SERVICES["Module Services<br/>Business rules and calculations"]
+            STORES["Stores<br/>One store per module"]
+            BACKUP["Backup · Restore · Legacy Import"]
+        end
+
+        subgraph STORAGE["7 · On-Device Storage"]
+            direction LR
+            IDB[("IndexedDB<br/>Per-user scoped databases")]
+            LS[("localStorage<br/>Session · Theme · Chat history")]
+            SS[("sessionStorage<br/>Broker session (tab only)")]
+        end
+
+        SW["Service Worker<br/>Offline cache · PWA install"]
+    end
+
+    subgraph EXTERNAL["External Services (optional, read-only)"]
+        direction LR
+        MFAPI["Mutual Fund NAV API<br/>(mfapi.in)"]
+        LTP["Live Stock Price API"]
+        ANGEL["Angel One SmartAPI"]
+    end
+
+    USER --> PRESENT
+    PRESENT --> APP
+    APP --> FEATURES
+    FEATURES --> DATA
+    FEATURES --> INTEL
+    INTEL --> DATA
+    ROVERUI --> ROVERENG
+    BROKER --> DATA
+    DATA --> STORAGE
+    AUTH --> LS
+    CONNECT --> SS
+    SW -. caches .-> CLIENT
+
+    MF -. NAV sync .-> MFAPI
+    STK -. live prices .-> LTP
+    CONNECT -. login and fetch .-> ANGEL
+```
+
+### Layer Responsibilities
+
+| Layer | Responsibility |
+|---|---|
+| **Presentation** | Everything the user sees: the public site, app shell, shared theme and design system, and the Rover chat page |
+| **Application Core** | Routing between screens, authentication and guest mode, user preferences |
+| **Feature Modules** | The finance modules. Each owns its screen and its calculations |
+| **Intelligence** | Explainable, rule-based insights and the offline Rover assistant. No data leaves the device |
+| **Broker Integration** | Read-only broker connection and broker report parsing |
+| **Data Layer** | Services apply business rules; stores read and write; backup and restore handle portability |
+| **On-Device Storage** | IndexedDB for financial records, localStorage for light settings, sessionStorage for temporary broker sessions |
+
+### Module and Data Relationship
+
+```mermaid
+flowchart LR
+    INC["Income and Expenses"] --> NW
+    STK["Stocks"] --> NW
+    MF["Mutual Funds"] --> NW
+    FD["Fixed Deposits"] --> NW
+    LEND["Lending"] --> NW
+
+    NW{{"Net Worth and Dashboard"}}
+
+    NW --> FI["Financial Intelligence"]
+    NW --> ROVER["Rover Assistant"]
+    NW --> NOTIF["Notifications and Dues"]
+```
+
+## Data Flow
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant UI as Feature Screen
+    participant S as Module Service
+    participant ST as Store
+    participant DB as IndexedDB (local)
+    participant D as Dashboard / Rover
+
+    U->>UI: Add or edit a record
+    UI->>S: Validate and calculate
+    S->>ST: Save
+    ST->>DB: Write to the user's scoped database
+    DB-->>ST: Saved
+    ST-->>UI: Updated data
+    UI-->>U: Screen refreshes
+    D->>S: Read on demand
+    S-->>D: Totals, net worth, answers
+```
+
+## Privacy and Security
+
+- **Local-first.** Financial records live in IndexedDB on your device and are scoped per signed-in user.
+- **No financial data upload.** BlackRoad does not send your records to a server.
+- **Read-only broker access.** The broker connection only views data. Credentials are kept for the current tab session and cleared on logout.
+- **Offline assistant.** Rover answers from on-device data.
+- **You own your data.** Full backup and restore are always available.
+- **Guest mode** is read-protected from writes so demo data cannot overwrite real accounts.
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Frontend | HTML, CSS, Vanilla JavaScript (ES Modules) |
+| Storage | IndexedDB, localStorage |
+| Offline / Install | PWA (Web App Manifest + Service Worker) |
+| Routing | Hash-based, so it works on any static host |
+| Theming | Semantic design tokens with Light and Dark modes |
+| Hosting | Any static server, including GitHub Pages |
+
+## Getting Started
+
+The app uses ES modules, so serve it over HTTP instead of opening the file directly.
 
 ```bash
-python serve.py                 # http://localhost:8080
-# or
-python -m http.server 8080      # then open http://localhost:8080/index.html
-# or VS Code Live Server, npx serve, GitHub Pages, ...
+# Clone
+git clone https://github.com/microintel/blackroad-v2.git
+cd blackroad-v2
+
+# Run (any one of these)
+python serve.py                  # http://localhost:8080
+python -m http.server 8080       # then open /index.html
+npx serve
 ```
 
-Older path-style links (`/income`) and `?go=/route` links are converted to the hash form on load.
-Sign-in, sign-out, restore and account changes do a full reload of `index.html#/route`.
+Or just use the live app at **https://microintel.github.io/blackroad-v2/**.
 
-## Public site pages
+Locally, open `http://localhost:8080` and sign in, register, or continue as a guest.
 
-`home.html` (landing page) and `download.html` (installers + "Install Web") sit next to `index.html`
-and link to each other and to the app (`index.html#/dashboard`, `#/login`, `#/register`).
-The app's sidebar and sign-in screen link back to both. Installer links are read from
-`blackroad-apps.json` (edit that file to update downloads); the remote copy is only a fallback.
-Theme is shared across all pages through the `br-theme` key.
+---
 
-## Project structure
+## Vision
 
-```text
-blackroad-v2/
-├── index.html
-├── README.md
-├── assets/
-│   ├── icons/            app icons (from the original project)
-│   └── audio/            click.mp3 (from the original project)
-└── src/
-    ├── app/
-    │   ├── app.js        renders shell + current view
-    │   ├── router.js     pathname router
-    │   ├── navigation.js sidebar structure
-    │   └── views.js      route -> view
-    ├── components/layout/
-    │   ├── sidebar.js
-    │   └── topbar.js
-    ├── data/
-    │   ├── database.js       opens scoped IndexedDB databases (old schemas)
-    │   ├── db-registry.js    database names / versions / stores
-    │   ├── data-service.js   one store per module
-    │   └── stores/           base-store + one store per module
-    ├── features/
-    │   ├── dashboard/        dashboard.js, dashboard-service.js
-    │   ├── stocks/           stocks.js, stocks-service.js, stocks-live.js, stocks-print.js
-    │   ├── deposits/         deposits.js, deposits-service.js
-    │   ├── lending/          lending.js, lending-service.js
-    │   ├── stepup/           stepup.js, stepup-service.js, stepup-fund.js, stepup-charts.js
-    │   └── income/           income.js, income-service.js,
-    │                         income-statement.js, income-statistics.js,
-    │                         income-search.js, income-compare.js,
-    │                         income-expand.js, income-jumpto.js,
-    │                         income-shared.js
-    └── styles/               tokens.css, global.css, layout.css,
-                              components.css, dashboard.css, income.css, lending.css, stepup.css
-```
+> To make every person financially aware and in control by giving them one simple, private and intelligent home for their entire financial life, available on every device.
 
-## Databases (unchanged from the original app)
+## Mission
 
-Names are scoped per signed-in user as `<name>::<scope>` (scope from `localStorage.br_active_scope`, default `anon`).
+- Bring **all personal finance tracking into one place**.
+- Keep user data **private and in the user's hands**.
+- Turn raw numbers into **clear, explainable insights** anyone can understand.
+- Make financial tools **fast, offline-ready and free of clutter**.
+- Build a product that grows from a web app into a **native experience on every platform**.
 
-| Module | Database | Version | Object stores |
-|---|---|---|---|
-| Income & Expenses | `BlackRoad2` | 3 | `entries` (id), `meta` (key) |
-| Stocks | `blackStocks` | 1 | `state` (no keyPath: keys `transactions`, `prices`, `seqCounter`) |
-| Lending | `LendLedger` | 3 | `parties`, `entries` (index `partyId`), `loans` |
-| Fixed Deposits | `BlackRoadFD` | 1 | `deposits` |
-| StepUp | `sip-compounder` | 2 | `settings` (id), `entries`, `profiles` |
-| Accounting | `BlackRoad Accounting` | 1 | `sst` (no keyPath: key `manual`) |
+## Roadmap
 
-Do not rename databases, change stores or keys, or reset user data.
-
-## Development phases
-
-| Phase | Name | Status |
+| Stage | Goal | Status |
 |---|---|---|
-| 0 | Project inspection | Done |
-| 1 | Project foundation | Done |
-| 2 | Design system | Done |
-| 3 | Application shell + routing | Done |
-| 4 | Data layer / IndexedDB abstraction | Done (all six stores match the old schemas) |
-| 5 | Dashboard | Done (live net worth, allocation, MF P/L, wealth lanes) |
-| 6 | Income & Expenses | Done (Ledger, Statement, Statistics, Search, Compare, Expand, Jump-to) |
-| 7 | Stocks | Done (stocks.js, stocks-service.js, stocks-live.js) |
-| 8 | Fixed Deposits | Done (add / edit / close / delete, maturity math ported unchanged) |
-| 9 | Lending | Done (Overview, People + person ledger, Loans / EMI) |
-| 10 | StepUp | Done except PDF report: profiles, settings, step-ups, skips, entries, SIP ledger + allocation tracking, XIRR, fund link / NAV sync (mfapi.in), NAV auto-fill on allocation, charts (portfolio, fund history, projection, path to goal). PDF report pending |
-| 11 | Accounting | Done |
-| 12 | Notifications + Account | Done |
-| 13 | Global data management (import / export) | Done |
-| 14 | Migration / backward compatibility | Done (legacy per-module backup files accepted by global Restore) |
-| 15 | PWA (manifest, service worker) | Done (manifest.json, sw.js, registered in index.html) |
-| 16a | Mobile layout | Done (drawer, bottom tab bar, bottom-sheet modals, safe areas, no sideways scroll on all 10 routes at 390px; src/styles/mobile.css, src/components/layout/mobile-nav.js) |
-| 16b | Dark = pure black | Done (bg, cards, sidebar, topbar, hero, modals all #000; borders separate; all 4 styles + 5 accents adapted; badges/pills/status colours restyled; theme-color meta follows mode) |
-| 16c | Stocks print report + clear all data | Done (Reports tab: Print / Save as PDF via stocks-print.js, same design as old app, black-on-white even in dark mode; "Clear all stocks data" with confirm modal, blocked for guests) |
-| 16d | Register | Done (Sign in / Register switch on both auth screens, prominent "Create an account" button, no-reload switching; validation and storage unchanged from services/auth.js) |
-| 16e | 404 fix | Done (hardNavigate() in router.js; serve.py dev server) |
-| 16 | Final testing | Automated pass done (see below); manual device checks + StepUp Part 2 remain |
+| Web app (PWA) | Full set of finance modules, themes, offline support | ✅ Live |
+| Rover assistant | Offline chat over personal finance data | ✅ Live |
+| Financial Intelligence | Move from example data to live user data | 🔄 In progress |
+| StepUp PDF report | Export mutual fund report | 🔄 In progress |
+| **Native apps** | **Android and iOS native apps, plus desktop apps for Windows, macOS and Linux** | 🚀 **Planned** |
+| Multi-broker support | Reports and connections for more brokers | 🚀 Planned |
+| Optional encrypted sync | Opt-in sync across devices without giving up privacy | 💡 Future |
 
-## Rules
+> **Native app:** In the future, Microintel will build BlackRoad as a native app for a faster, smoother experience, with deeper device integration such as biometric lock, notifications and widgets.
 
-- The original app is the source of truth for calculations, business rules and data.
-- One application: all modules share the sidebar, topbar and the design tokens/components.
-- Import / export is one global system (Phase 13), not per module.
-- No mock data, no invented schemas.
+## Developed By
 
-## Developer
+<div align="center">
 
-**Microintel**
+### Microintel
 
-## Phase 16 test results
+Building simple, private and intelligent software.
 
-Headless Chromium (Playwright) against the served app:
+</div>
 
-- All 10 routes load with no JS errors: dashboard, income, stocks, deposits, lending, stepup, accounting, data, notifications, account.
-- Service worker registers and activates.
-- All 6 IndexedDB databases open with the same names and versions as the old app.
-- Full backup -> wipe -> restore round-trip: identical data after restore.
-- Legacy per-module files detected: Income, Stocks, Lending, Fixed Deposits, StepUp; unknown files rejected.
+---
 
-Still open: StepUp PDF report, and manual checks with real old-app data on a phone.
+<div align="center">
 
-## Rover (chat assistant)
+**BlackRoad** · Developed by **Microintel**
 
-Rover is a **separate page**, `rover.html`, not part of the BlackRoad screens. It answers questions about
-net worth, spending, stocks, mutual funds, deposits and loans from the data already on the device
-(offline, read-only), and uses the same sign-in, theme and currency as the app. Inside the app, a small
-button (bottom-right) opens it in a new tab. It follows the app's own layers:
+[Live App](https://microintel.github.io/blackroad-v2/)
 
-```text
-rover.html                           thin page, like index.html
-src/app/rover-app.js                 start-up (like app.js): preferences, sign-in, guest data, page
-src/components/layout/rover-header.js   header (same look as the app header)
-src/components/chat/                 chat-message, chat-composer, chat-suggestions, chat-format
-src/features/rover/
-├── rover-view.js     the page: assembles the components and runs the chat
-├── rover-engine.js   understands the question and writes the answer (add new intents here)
-├── rover-more.js     more questions: income statement, reminders / dues, single stocks, how-to, backup, calculators
-├── rover-data.js     the only file that reads app data (reuses the Dashboard service)
-├── rover-history.js  per-account chat history in localStorage
-└── rover-link.js     the app's button that opens rover.html
-src/styles/rover.css (page)   src/styles/rover-link.css (app button)
-```
+</div>
