@@ -10,6 +10,7 @@ import {
     round2,
     calculateStockHolding,
     getActiveHoldings,
+    getSoldStocks,
     calculatePortfolioTotals,
     calculatePortfolioWeight,
     validateTransaction,
@@ -62,6 +63,7 @@ let pollTimer = null;
 let refreshing = false;
 let detailSymbol = null;
 let holdingFilter = "all";
+let soldFilter = "all";
 let flashSymbol = null;
 let flashTxnId = null;
 let saving = false;
@@ -77,12 +79,13 @@ export async function Stocks() {
         <div class="br-income-tabs" role="group" aria-label="Stocks views">
             <button type="button" class="br-income-tab active" data-stocks-tab="holdings">Holdings <span class="stk-count" data-count="holdings"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="transactions">Transactions <span class="stk-count" data-count="transactions"></span></button>
+            <button type="button" class="br-income-tab" data-stocks-tab="sold">Sold <span class="stk-count" data-count="sold"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="analytics">Analytics</button>
             <button type="button" class="br-income-tab" data-stocks-tab="reports">Reports</button>
         </div>
 
         <!-- SUMMARY -->
-        <section class="inc-summary" aria-label="Portfolio summary">
+        <section class="inc-summary" aria-label="Portfolio summary" data-stocks-summary-wrap>
             <div class="inc-metric inc-metric-primary">
                 <span class="inc-label">Current value</span>
                 <div class="inc-total-row">
@@ -115,6 +118,21 @@ export async function Stocks() {
                     </div>
                 </div>
                 <div data-holdings-list></div>
+            </section>
+        </div>
+
+        <!-- SOLD -->
+        <div class="inc-view" data-stocks-view="sold" hidden>
+            <section class="inc-section">
+                <div class="stk-sold-head">
+                    <div class="stk-sold-summary" data-sold-summary></div>
+                    <div class="br-chip-row" role="group" aria-label="Filter sold stocks">
+                        <button type="button" class="br-chip active" data-action="sold-filter" data-filter="all">All</button>
+                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="missed" aria-label="Grown" title="Grown">${icon("gem", { size: 14 })}</button>
+                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="good" aria-label="Fallen" title="Fallen">${icon("trending-down", { size: 14 })}</button>
+                    </div>
+                </div>
+                <div data-sold-list></div>
             </section>
         </div>
 
@@ -435,9 +453,13 @@ async function loadState(page) {
 async function refreshPrices(page, silent) {
     if (refreshing || !page.isConnected) return;
 
-    const symbols = getActiveHoldings(transactions, prices).map(
-        (h) => h.symbol
-    );
+    // Active holdings first, then sold stocks (so the Sold tab has a live LTP too)
+    const symbols = [
+        ...new Set([
+            ...getActiveHoldings(transactions, prices).map((h) => h.symbol),
+            ...getSoldStocks(transactions, prices).map((x) => x.symbol)
+        ])
+    ];
 
     const status = page.querySelector("[data-live-status]");
 
@@ -470,6 +492,7 @@ async function refreshPrices(page, silent) {
                 renderHoldings(page);
                 renderAnalytics(page);
                 renderDetail(page);
+                renderSold(page);
             }
         }
 
@@ -513,6 +536,7 @@ async function persist() {
 function renderAll(page) {
     renderSummary(page);
     renderHoldings(page);
+    renderSold(page);
     renderTransactions(page);
     renderTagFilter(page);
     renderReports(page);
@@ -536,6 +560,7 @@ function updateCounts(page) {
     };
     set("holdings", getActiveHoldings(transactions, prices).length);
     set("transactions", transactions.length);
+    set("sold", getSoldStocks(transactions, prices).filter((x) => x.fullySold).length);
 }
 
 /* =========================================
@@ -715,6 +740,80 @@ function renderHoldings(page) {
                         </div>
                     </dl>
                     ${mtfBlock}
+                </article>`;
+        })
+        .join("")}</div>`;
+}
+
+/* =========================================
+   SOLD — last sold price vs live LTP
+========================================= */
+
+function renderSold(page) {
+    const list = page.querySelector("[data-sold-list]");
+    const summary = page.querySelector("[data-sold-summary]");
+    if (!list || !summary) return;
+
+    const all = getSoldStocks(transactions, prices)
+        .filter((x) => x.fullySold)
+        .sort((a, b) => b.impact - a.impact);
+
+    page.querySelectorAll('[data-action="sold-filter"]').forEach((b) =>
+        b.classList.toggle("active", b.dataset.filter === soldFilter)
+    );
+    updateCounts(page);
+
+    if (all.length === 0) {
+        summary.innerHTML = "";
+        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}</div>`;
+        return;
+    }
+
+    const up = (x) => x.diffPerShare >= 0;
+    const upTotal = all.filter(up).reduce((n, x) => n + Math.abs(x.impact), 0);
+    const downTotal = all.filter((x) => !up(x)).reduce((n, x) => n + Math.abs(x.impact), 0);
+
+    summary.innerHTML = `
+        <span class="stk-sold-pill" title="Total">${icon("layers", { size: 16 })}<strong>${all.length}</strong></span>
+        <span class="stk-sold-pill pos" title="Grown">${icon("gem", { size: 16 })}<strong>${fmtMoney(upTotal, true)}</strong></span>
+        <span class="stk-sold-pill neg" title="Fallen">${icon("trending-down", { size: 16 })}<strong>${fmtMoney(downTotal, true)}</strong></span>`;
+
+    const shown = all.filter((x) =>
+        soldFilter === "missed" ? up(x) : soldFilter === "good" ? !up(x) : true
+    );
+
+    if (shown.length === 0) {
+        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}</div>`;
+        return;
+    }
+
+    list.innerHTML = `<div class="stk-sold-list">${shown
+        .map((x) => {
+            const grew = up(x);
+            const tone = grew ? "pos" : "neg";
+
+            return `
+                <article class="stk-sold-card ${tone}">
+                    <div class="stk-sold-top">
+                        ${stockLogoHTML(x.symbol, "lg")}
+                        <div class="stk-sold-id">
+                            <span class="stk-name">${escapeHTML(x.name)}</span>
+                            <div class="stk-sold-meta">
+                                <span>${icon("calendar-days", { size: 12 })}${fmtDate(x.lastSoldDate)}</span>
+                                <span>${icon("layers", { size: 12 })}${x.lastSoldQty}</span>
+                            </div>
+                        </div>
+                        <div class="stk-sold-result">
+                            <strong>${icon(grew ? "gem" : "trending-down", { size: 15 })}${fmtMoney(Math.abs(x.impact), true)}</strong>
+                            <span class="stk-sold-pct">${icon(grew ? "arrow-up-right" : "arrow-down-right", { size: 12 })}${Math.abs(x.diffPct).toFixed(2)}%</span>
+                        </div>
+                    </div>
+                    <div class="stk-sold-prices">
+                        <span>${fmtMoney(x.lastSoldPrice)}</span>
+                        <i class="stk-sold-line"></i>
+                        ${icon("arrow-right", { size: 12 })}
+                        <span class="stk-sold-ltp">${fmtMoney(x.ltp)}</span>
+                    </div>
                 </article>`;
         })
         .join("")}</div>`;
@@ -1851,6 +1950,9 @@ function switchTab(page, tab) {
     page.querySelectorAll("[data-stocks-view]").forEach((view) => {
         view.hidden = view.dataset.stocksView !== tab;
     });
+
+    const sumWrap = page.querySelector("[data-stocks-summary-wrap]");
+    if (sumWrap) sumWrap.hidden = tab === "sold";
 }
 
 /* =========================================
@@ -1952,6 +2054,9 @@ function attachEvents(page) {
         } else if (action === "hold-filter") {
             holdingFilter = actionEl.dataset.filter;
             renderHoldings(page);
+        } else if (action === "sold-filter") {
+            soldFilter = actionEl.dataset.filter;
+            renderSold(page);
         } else if (action === "mtf-mode") {
             setMtfMode(page, actionEl.dataset.mode);
         } else if (action === "sell-all") {

@@ -349,6 +349,62 @@ export function getActiveHoldings(transactions, prices) {
         .filter((h) => h.quantity > 0);
 }
 
+/*
+ * Sold stocks, valued against today's price.
+ *
+ * For every symbol that has at least one SELL, take the LAST sale
+ * (price, qty, date) and compare it with the current LTP:
+ *   diffPerShare = ltp - lastSoldPrice
+ *   impact       = diffPerShare * lastSoldQty
+ * impact > 0  -> the stock ran up after you sold  (a "diamond" you let go)
+ * impact <= 0 -> it fell after you sold            (a good exit)
+ * Read-only: nothing here is persisted or changes any holding maths.
+ */
+export function getSoldStocks(transactions, prices) {
+    const out = [];
+
+    for (const symbol of getAllSymbols(transactions)) {
+        const txns = getSymbolTransactions(symbol, transactions);
+        const sells = txns.filter((t) => t.type === "SELL");
+        if (!sells.length) continue;
+
+        const r = replaySymbol(symbol, transactions);
+        if (r.error) continue;
+
+        const last = sells[sells.length - 1];
+        const live = prices[symbol] !== undefined && prices[symbol] !== null;
+        const ltp = getCurrentPrice(symbol, transactions, prices);
+        const lastSoldPrice = Number(last.price) || 0;
+        const lastSoldQty = Number(last.quantity) || 0;
+
+        const diffPerShare = round2(ltp - lastSoldPrice);
+        const diffPct =
+            lastSoldPrice > 0 ? round2((diffPerShare / lastSoldPrice) * 100) : 0;
+        const impact = round2(diffPerShare * lastSoldQty);
+
+        out.push({
+            symbol,
+            name: getSymbolName(symbol, transactions),
+            lastSoldPrice,
+            lastSoldQty,
+            lastSoldDate: last.date,
+            lastSoldTime: last.time || "",
+            lastSoldValue: round2(lastSoldPrice * lastSoldQty),
+            ltp,
+            hasLive: live,
+            diffPerShare,
+            diffPct,
+            impact,
+            missed: impact > 0,
+            stillHeldQty: r.quantity,
+            fullySold: !(r.quantity > 0),
+            realizedPnL: r.realizedPnL
+        });
+    }
+
+    return out;
+}
+
 export function calculatePortfolioTotals(transactions, prices) {
     const holdings = getActiveHoldings(transactions, prices);
 
