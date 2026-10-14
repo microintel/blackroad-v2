@@ -7,6 +7,7 @@ import {
 } from "./notifications-service.js";
 
 import { navigate } from "../../app/router.js";
+import { stockMiniLogoHTML, watchStockLogos } from "../stocks/stocks-live.js";
 
 const DUE_META = {
     overdue: { label: "Overdue", badge: "br-badge-danger" },
@@ -17,6 +18,7 @@ const DUE_META = {
 export async function Notifications() {
     const page = document.createElement("section");
     page.className = "br-page";
+    watchStockLogos(page);
 
     page.innerHTML = `
         <div class="br-page-heading">
@@ -146,7 +148,7 @@ function renderStocks(page, body, data) {
         .map((r) => `
             <div class="nf-item" data-path="/stocks">
                 <div class="nf-main">
-                    <b>${escapeHTML(r.name)}</b>
+                    <b style="display:flex;align-items:center;gap:8px;">${stockMiniLogoHTML(r.symbol, 24)}<span>${escapeHTML(r.name)}</span></b>
                     <span class="br-muted">${r.quantity} qty · avg ${formatINR(r.avgPrice)} · LTP ${formatINR(r.ltp)}
                         <span class="br-badge ${r.live ? "br-badge-success" : "br-badge-info"}">${r.live ? "live" : "cached"}</span></span>
                 </div>

@@ -138,7 +138,7 @@ function stocksList(d, text, view) {
         { kind: "kpi", items: [{ label: "Value", value }, { label: "Invested", value: invested }, { label: "Profit / loss", value: pnl, tone: "auto" }] }
     ];
     if (view === "table") {
-        blocks.push(table("Your stocks", [col("Stock", "text"), col("Qty", "num"), col("Avg", "money"), col("LTP", "money"), col("Value", "money"), col("P&L", "signed"), col("Return", "spct")],
+        blocks.push(table("Your stocks", [col("Stock", "text", "stock"), col("Qty", "num"), col("Avg", "money"), col("LTP", "money"), col("Value", "money"), col("P&L", "signed"), col("Return", "spct")],
             list.map((h) => [h.symbol, h.quantity, h.avg, h.ltp, h.value, h.pnl, h.pnlPct]), { more: "Open Stocks to see the rest." }));
     } else {
         blocks.push({ kind: "stocklist", title: `Your ${label}`, items, limit: 100 });

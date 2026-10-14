@@ -154,7 +154,7 @@ function stocksExtreme(d, t, dir) {
         text: lead,
         actions: [PAGE.stocks],
         blocks: list.length > 1 ? [table(byReturn ? (useDir === "high" ? "Best stocks" : "Weakest stocks") : (useDir === "high" ? "Biggest holdings" : "Smallest holdings"),
-            [col("Stock", "text"), col("Value", "money"), col("P&L", "signed"), col("Return", "spct")],
+            [{ label: "Stock", fmt: "text", logo: "stock" }, col("Value", "money"), col("P&L", "signed"), col("Return", "spct")],
             sorted.slice(0, 5).map((h) => [h.symbol, h.value, h.pnl, h.pnlPct]))] : []
     };
 }

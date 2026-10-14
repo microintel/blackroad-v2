@@ -39,7 +39,7 @@ import {
 import { printStocksReport } from "./stocks-print.js";
 import { createPnlChart } from "./stocks-pnl-chart.js";
 import { isGuestSync } from "../../services/auth.js";
-import { fetchLTP, fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS, stockLogoUrl } from "./stocks-live.js";
+import { stockMiniLogoHTML, fetchLTP, fetchStockDetails, fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS, stockLogoUrl } from "./stocks-live.js";
 
 /* Stock logo from the symbol. If the image fails to load, the
    capture-phase error handler below swaps it for the symbol's initials. */
@@ -936,9 +936,12 @@ function renderSearchResults(page, raw) {
     }
 
     const row = (symbol, main, sub) => `
-        <div data-action="search-pick" data-symbol="${escapeAttribute(symbol)}" style="padding:8px 4px;cursor:pointer;border-bottom:1px solid var(--br-border);">
-            <div>${main}</div>
-            <div class="br-muted" style="font-size:12px;">${sub}</div>
+        <div data-action="search-pick" data-symbol="${escapeAttribute(symbol)}" style="padding:8px 4px;cursor:pointer;border-bottom:1px solid var(--br-border);display:flex;align-items:center;gap:10px;">
+            ${stockMiniLogoHTML(symbol, 32)}
+            <div style="min-width:0;">
+                <div>${main}</div>
+                <div class="br-muted" style="font-size:12px;">${sub}</div>
+            </div>
         </div>`;
 
     let html = "";
@@ -1010,7 +1013,7 @@ function renderAnalytics(page) {
     const insight = (label, h, value, cls) => `
         <div class="br-card">
             <div class="br-muted">${label}</div>
-            <div style="font-weight:600;margin:4px 0;">${escapeHTML(h.name)}</div>
+            <div style="font-weight:600;margin:4px 0;display:flex;align-items:center;gap:8px;">${stockMiniLogoHTML(h.symbol, 24)}<span>${escapeHTML(h.name)}</span></div>
             <div class="${cls}">${value}</div>
         </div>`;
 
@@ -1033,8 +1036,8 @@ function renderAnalytics(page) {
         ${weighted
             .map(
                 (h, i) => `
-            <div style="display:grid;grid-template-columns:90px 1fr 52px;gap:10px;align-items:center;margin:8px 0;">
-                <span style="color:${chartColor(i)};font-weight:600;">${escapeHTML(h.symbol)}</span>
+            <div style="display:grid;grid-template-columns:116px 1fr 52px;gap:10px;align-items:center;margin:8px 0;">
+                <span style="display:flex;align-items:center;gap:6px;min-width:0;">${stockMiniLogoHTML(h.symbol, 20)}<span style="color:${chartColor(i)};font-weight:600;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(h.symbol)}</span></span>
                 <div style="height:8px;background:var(--br-border);border-radius:4px;overflow:hidden;">
                     <div style="height:100%;width:${Math.min(100, h.weight)}%;background:${chartColor(i)};"></div>
                 </div>
@@ -1054,8 +1057,8 @@ function renderAnalytics(page) {
             const w = Math.min(100, (Math.abs(h.unrealizedPnLPct) / maxAbs) * 100);
             const color = cls === "pos" ? "var(--br-success)" : "var(--br-danger)";
             return `
-            <div style="display:grid;grid-template-columns:90px 1fr 70px;gap:10px;align-items:center;margin:8px 0;" title="${escapeAttribute(h.name)}">
-                <span>${escapeHTML(h.symbol)}</span>
+            <div style="display:grid;grid-template-columns:116px 1fr 70px;gap:10px;align-items:center;margin:8px 0;" title="${escapeAttribute(h.name)}">
+                <span style="display:flex;align-items:center;gap:6px;min-width:0;">${stockMiniLogoHTML(h.symbol, 20)}<span style="overflow:hidden;text-overflow:ellipsis;">${escapeHTML(h.symbol)}</span></span>
                 <div style="height:8px;background:var(--br-border);border-radius:4px;overflow:hidden;">
                     <div style="height:100%;width:${w}%;background:${color};"></div>
                 </div>
@@ -1330,14 +1333,34 @@ async function lookupSymbol(page) {
     }
 
     let ltp = null;
+    let companyName = "";
     try {
-        ltp = await fetchLTP(sym);
+        const d = await fetchStockDetails(sym);
+        ltp = d.ltp;
+        companyName = d.companyName;
     } catch (err) {
-        ltp = null;
+        // Details call failed — fall back to the plain LTP call
+        try {
+            ltp = await fetchLTP(sym);
+        } catch (err2) {
+            ltp = null;
+        }
     }
 
     // Symbol changed (or modal closed) while we were waiting — drop this result
     if (req !== symLookupReq) return;
+
+    // Fill the stock name from the API — only into an empty box, or one we
+    // filled ourselves earlier. A name the user typed/saved is never overwritten.
+    if (companyName) {
+        const nameEl = form.name;
+        if (nameEl.value.trim() === "" || nameEl.dataset.autoFilled === "1") {
+            nameEl.value = companyName;
+            nameEl.dataset.autoFilled = "1";
+            fieldError(nameEl, "");
+        }
+        page.querySelector("[data-sym-title]").textContent = `${companyName} (${sym})`;
+    }
 
     if (typeof ltp === "number" && isFinite(ltp) && ltp >= 0) {
         symLookupLtp = ltp;
@@ -1366,6 +1389,7 @@ function openTxnModal(page, id, duplicate) {
     clearTxnErrors(page);
     resetSymPreview(page);
     delete form.price.dataset.autoFilled;
+    delete form.name.dataset.autoFilled;
     // A duplicate is saved as a brand-new transaction through the
     // normal validated save path, so it never carries the source id.
     editingTxnId = id && !duplicate ? id : null;
@@ -2102,6 +2126,7 @@ function attachEvents(page) {
 
             // A hand-typed price is the user's own: stop auto-filling over it
             if (event.target === form.price) delete form.price.dataset.autoFilled;
+            if (event.target === form.name) delete form.name.dataset.autoFilled;
 
             updateTxnForm(page);
             return;
