@@ -28,6 +28,14 @@
 .br-chart-label { fill: var(--br-text-secondary); font-size: 10px; }
 .br-chart-buy-line { stroke: var(--br-text-secondary); stroke-dasharray: 3 3; }
 .br-chart-buy-dot { fill: var(--br-surface); stroke: var(--br-gold); stroke-width: 2; }
+.stk-chart-wrap { position: relative; }
+.stk-mark { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid var(--br-surface); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,.25); z-index: 2; }
+.stk-mark.buy { background: var(--br-success); }
+.stk-mark.sell { background: var(--br-danger); }
+.stk-mark.is-tip-active { transform: scale(1.35); }
+.stk-mark-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; font-size: 12px; color: var(--br-text-secondary); }
+.stk-mark-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.stk-mark-legend .stk-mark { position: static; margin: 0; width: 10px; height: 10px; border-width: 0; box-shadow: none; cursor: default; }
 .br-chart-tip { min-height: 20px; font-size: 12px; color: var(--br-text-secondary); margin-top: 6px; }
 .br-stock-link { background: none; border: 0; padding: 0; color: var(--br-text); font: inherit; font-weight: 500; cursor: pointer; text-align: left; }
 .br-stock-link:hover { color: var(--br-gold-text); }
@@ -382,3 +390,40 @@
 .stk-sold-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), var(--tone)); opacity: .7; }
 .stk-sold-prices .br-icon { color: var(--tone); flex: none; }
 .stk-sold-ltp { color: var(--tone); font-weight: 600; }
+
+
+/* =========================================================
+   BIG NUMBERS
+   Long amounts (crores, USD with commas, large P&L) shrink and wrap inside
+   their own box instead of pushing neighbouring items or widening the page.
+   ========================================================= */
+
+.br-stocks .inc-amount { font-size: clamp(15px, 1.2vw + 8px, 20px); }
+.br-stocks .inc-amount-lg { font-size: clamp(22px, 3.4vw + 8px, 34px); min-width: 0; }
+.br-stocks .inc-total-row > :first-child { min-width: 0; }
+.br-stocks .stk-actions { flex: none; }
+.br-stocks .br-stat-value { font-size: clamp(16px, 1.4vw + 8px, 24px); overflow-wrap: anywhere; }
+.br-stocks .br-stat { min-width: 0; }
+.br-stocks .br-grid > * { min-width: 0; }
+
+/* holding card: name gives way before the value does */
+.stk-card-top > .stk-id { flex: 1 1 0; }
+.stk-value { flex: 0 1 auto; min-width: 0; max-width: 58%; }
+.stk-value strong, .stk-value span { overflow-wrap: anywhere; }
+.stk-stats > div { min-width: 0; }
+.stk-stats dd { overflow-wrap: anywhere; }
+.stk-card-mtf-line > span { min-width: 0; overflow-wrap: anywhere; }
+
+/* sold card */
+.stk-sold-result { flex: 0 1 auto; min-width: 0; max-width: 55%; }
+.stk-sold-result strong, .stk-sold-pct { max-width: 100%; overflow-wrap: anywhere; }
+.stk-sold-prices { flex-wrap: wrap; row-gap: 4px; }
+.stk-sold-prices > span { min-width: 0; overflow-wrap: anywhere; }
+.stk-sold-line { flex: 1 1 16px; min-width: 16px; }
+
+/* detail + MTF summary */
+.br-detail-grid > div { min-width: 0; }
+.br-detail-grid .v { overflow-wrap: anywhere; }
+.stk-mtf-metrics > * { min-width: 0; }
+.stk-sold-pill { max-width: 100%; }
+.stk-sold-pill strong { overflow-wrap: anywhere; }

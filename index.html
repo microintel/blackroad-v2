@@ -97,6 +97,36 @@
         href="./src/styles/theme.css"
     >
 
+    <!-- Start fetching the app's code in parallel instead of one import after another -->
+    <link rel="modulepreload" href="./src/components/layout/sidebar.js">
+    <link rel="modulepreload" href="./src/app/navigation.js">
+    <link rel="modulepreload" href="./src/app/router.js">
+    <link rel="modulepreload" href="./src/components/icons.js">
+    <link rel="modulepreload" href="./src/services/angel-session.js">
+    <link rel="modulepreload" href="./src/components/layout/topbar.js">
+    <link rel="modulepreload" href="./src/services/preferences.js">
+    <link rel="modulepreload" href="./src/services/currency.js">
+    <link rel="modulepreload" href="./src/components/confirm-dialog.js">
+    <link rel="modulepreload" href="./src/services/auth.js">
+    <link rel="modulepreload" href="./src/data/db-registry.js">
+    <link rel="modulepreload" href="./src/app/views.js">
+    <link rel="modulepreload" href="./src/components/motion.js">
+    <link rel="modulepreload" href="./src/services/guest-seed.js">
+    <link rel="modulepreload" href="./src/data/data-service.js">
+    <link rel="modulepreload" href="./src/data/database.js">
+    <link rel="modulepreload" href="./src/data/stores/income-store.js">
+    <link rel="modulepreload" href="./src/data/stores/base-store.js">
+    <link rel="modulepreload" href="./src/data/stores/stocks-store.js">
+    <link rel="modulepreload" href="./src/data/stores/deposit-store.js">
+    <link rel="modulepreload" href="./src/data/stores/lending-store.js">
+    <link rel="modulepreload" href="./src/data/stores/stepup-store.js">
+    <link rel="modulepreload" href="./src/data/stores/accounting-store.js">
+    <link rel="modulepreload" href="./src/components/layout/mobile-nav.js">
+    <link rel="modulepreload" href="./src/components/currency-transition.js">
+    <link rel="modulepreload" href="./src/components/chart-tooltip.js">
+    <link rel="modulepreload" href="./src/components/skeleton.js">
+    <link rel="modulepreload" href="./src/app/ux.js">
+
     <link
         rel="stylesheet"
         href="./src/styles/global.css"

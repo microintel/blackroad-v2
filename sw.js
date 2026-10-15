@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v153";
+const CACHE_VERSION = "v155";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -37,6 +37,7 @@ const SHELL = [
     "./src/app/views.js",
     "./src/components/chart-colors.js",
     "./src/components/chart-tooltip.js",
+    "./src/components/dom-patch.js",
     "./src/components/icons.js",
     "./src/components/motion.js",
     "./src/components/skeleton.js",
@@ -285,6 +286,15 @@ async function logoResponse(event) {
     }
 }
 
+const ASSET_FRESH_MS = 6 * 60 * 60 * 1000;
+
+/* The single-page app: the folder itself, index.html, or an extension-less route. */
+function isAppShellPath(pathname) {
+    const last = pathname.split("/").pop();
+
+    return last === "" || last === "index.html" || !last.includes(".");
+}
+
 self.addEventListener("fetch", (event) => {
     const req = event.request;
 
@@ -325,29 +335,55 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // Page navigation: network first, offline -> cached shell.
-    if (req.mode === "navigate") {
+    // Opening the app (/, index.html, or a route that falls back to it):
+    // answered from the cached shell at once, then the shell is refreshed
+    // quietly in the background. No waiting on the network, so the installed
+    // app opens instantly (and the same way offline). A new version still
+    // arrives through CACHE_VERSION: the new worker re-downloads the whole
+    // shell and the page reloads once when it takes over.
+    if (req.mode === "navigate" && isAppShellPath(url.pathname)) {
         event.respondWith(
-            fetch(req)
-                .then((res) => {
-                    const copy = res.clone();
-                    caches
-                        .open(CACHE_NAME)
-                        .then((c) => c.put("./index.html", copy));
-                    return res;
-                })
-                .catch(() =>
-                    caches
-                        .match("./index.html")
-                        .then((r) => r || caches.match("./"))
-                )
+            caches.match("./index.html").then((cached) => {
+                const refresh = fetch(req)
+                    .then((res) => {
+                        if (res && res.ok) {
+                            const copy = res.clone();
+                            caches.open(CACHE_NAME).then((c) => c.put("./index.html", copy));
+                        }
+                        return res;
+                    })
+                    .catch(() => cached);
+
+                if (cached) {
+                    event.waitUntil(refresh.catch(() => {}));
+                    return cached;
+                }
+
+                return refresh;
+            })
         );
         return;
     }
 
-    // Static assets: cache first, refresh in background.
+    // Any other page navigation: network first, offline -> its own cached copy.
+    if (req.mode === "navigate") {
+        event.respondWith(
+            fetch(req).catch(() =>
+                caches.match(req).then((r) => r || caches.match("./index.html"))
+            )
+        );
+        return;
+    }
+
+    // Static assets: cache first. A cached file is refreshed in the background
+    // only when the saved copy is over 6 hours old, so opening the app does not
+    // fire a re-download of every file (that competed with start-up).
     event.respondWith(
         caches.match(req).then((cached) => {
+            const age = cached ? Date.now() - (Date.parse(cached.headers.get("date") || "") || 0) : Infinity;
+
+            if (cached && age < ASSET_FRESH_MS) return cached;
+
             const refresh = fetch(req)
                 .then((res) => {
                     if (res && res.status === 200 && res.type === "basic") {
@@ -358,7 +394,12 @@ self.addEventListener("fetch", (event) => {
                 })
                 .catch(() => cached);
 
-            return cached || refresh;
+            if (cached) {
+                event.waitUntil(refresh.catch(() => {}));
+                return cached;
+            }
+
+            return refresh;
         })
     );
 });

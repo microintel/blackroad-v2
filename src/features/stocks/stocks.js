@@ -38,6 +38,7 @@ import {
 
 import { printStocksReport } from "./stocks-print.js";
 import { createPnlChart } from "./stocks-pnl-chart.js";
+import { setHTML } from "../../components/dom-patch.js";
 import { isGuestSync } from "../../services/auth.js";
 import { stockMiniLogoHTML, fetchLTP, fetchStockDetails, fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS, stockLogoUrl } from "./stocks-live.js";
 
@@ -50,6 +51,9 @@ function stockLogoHTML(symbol, size) {
 
 let store = null;
 let realizedChart = null;
+/* true while a live price update redraws: only changed values are touched */
+let patching = false;
+const put = (el, html) => setHTML(el, html, { patch: patching });
 
 // In-memory mirror of the persisted state — reloaded on every entry
 // into the module, kept in sync with every write.
@@ -478,6 +482,7 @@ async function refreshPrices(page, silent) {
         if (!page.isConnected) return;
 
         if (updated > 0) {
+            const changed = Object.keys(updates).some((k) => prices[k] !== updates[k]);
             Object.assign(prices, updates);
             // Guests are read-only: show the live prices but don't write them to the DB.
             if (!isGuestSync()) await persist();
@@ -487,12 +492,17 @@ async function refreshPrices(page, silent) {
                 "[data-price-input]"
             );
 
-            if (!typing) {
-                renderSummary(page);
-                renderHoldings(page);
-                renderAnalytics(page);
-                renderDetail(page);
-                renderSold(page);
+            if (!typing && changed) {
+                patching = true;
+                try {
+                    renderSummary(page);
+                    renderHoldings(page);
+                    renderAnalytics(page);
+                    renderDetail(page);
+                    renderSold(page);
+                } finally {
+                    patching = false;
+                }
             }
         }
 
@@ -580,8 +590,7 @@ function renderSummary(page) {
             <span class="inc-hint">${hint}</span>
         </div>`;
 
-    page.querySelector("[data-stocks-summary]").innerHTML =
-        metric(
+    put(page.querySelector("[data-stocks-summary]"), metric(
             "Invested",
             fmtMoney(totals.investedValue, true),
             totals.hasMTF
@@ -590,7 +599,7 @@ function renderSummary(page) {
         ) +
         metric("Unrealized P&amp;L", fmtSigned(totals.unrealizedPnL, true), fmtPct(totals.unrealizedPnLPct), pnlClass(totals.unrealizedPnL)) +
         metric("Realized P&amp;L", fmtSigned(totals.realizedPnL, true), "Booked from sales", pnlClass(totals.realizedPnL)) +
-        metric("Total P&amp;L", fmtSigned(totals.totalPnL, true), fmtPct(totals.totalPnLPct), pnlClass(totals.totalPnL));
+        metric("Total P&amp;L", fmtSigned(totals.totalPnL, true), fmtPct(totals.totalPnLPct), pnlClass(totals.totalPnL)));
 
     renderMtfSummary(page, totals);
 }
@@ -622,7 +631,7 @@ function renderMtfSummary(page, totals) {
         </div>`;
 
     box.hidden = false;
-    box.innerHTML = `
+    put(box, `
         <div class="inc-section-head">
             <div>
                 <h3>MTF position</h3>
@@ -641,7 +650,7 @@ function renderMtfSummary(page, totals) {
             ${m("Net equity", fmtMoney(totals.netEquity, true), "Value after repaying MTF")}
             ${m("Return on my amount", fmtPct(totals.returnOnOwnPct), "Unrealized P&amp;L ÷ my amount", pnlClass(totals.returnOnOwnPct))}
         </div>
-    `;
+    `);
 }
 
 function statCard(label, value, tone) {
@@ -677,24 +686,24 @@ function renderHoldings(page) {
     );
 
     if (all.length === 0) {
-        container.innerHTML = `
+        put(container, `
             <div class="inc-empty">
                 ${icon("chart-candlestick", { size: 22 })}
                 <h4>No active holdings yet</h4>
                 <p>Add your first buy and your portfolio, P&amp;L and allocation will appear here.</p>
                 <button type="button" class="br-button br-button-primary" data-action="add-txn">${icon("plus", { size: 18 })} Add transaction</button>
-            </div>`;
+            </div>`);
         return;
     }
 
     if (holdings.length === 0) {
-        container.innerHTML = `<div class="inc-empty"><h4>No holdings in this filter</h4><p>Switch to “All” to see everything.</p></div>`;
+        put(container, `<div class="inc-empty"><h4>No holdings in this filter</h4><p>Switch to “All” to see everything.</p></div>`);
         return;
     }
 
     const stat = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
 
-    container.innerHTML = `<div class="stk-list">${holdings
+    put(container, `<div class="stk-list">${holdings
         .map((h) => {
             const weight = calculatePortfolioWeight(h.symbol, transactions, prices);
 
@@ -717,7 +726,7 @@ function renderHoldings(page) {
                 : "";
 
             return `
-                <article class="inc-entry stk-card${h.symbol === flashSymbol ? " stk-flash" : ""}">
+                <article data-key="${escapeAttribute(h.symbol)}" class="inc-entry stk-card${h.symbol === flashSymbol ? " stk-flash" : ""}">
                     <div class="stk-card-top">
                         ${stockLogoHTML(h.symbol, "lg")}
                         <div class="stk-id">
@@ -742,7 +751,7 @@ function renderHoldings(page) {
                     ${mtfBlock}
                 </article>`;
         })
-        .join("")}</div>`;
+        .join("")}</div>`);
 }
 
 /* =========================================
@@ -773,27 +782,27 @@ function renderSold(page) {
     const upTotal = all.filter(up).reduce((n, x) => n + Math.abs(x.impact), 0);
     const downTotal = all.filter((x) => !up(x)).reduce((n, x) => n + Math.abs(x.impact), 0);
 
-    summary.innerHTML = `
+    put(summary, `
         <span class="stk-sold-pill" title="Total">${icon("layers", { size: 16 })}<strong>${all.length}</strong></span>
         <span class="stk-sold-pill pos" title="Grown">${icon("gem", { size: 16 })}<strong>${fmtMoney(upTotal, true)}</strong></span>
-        <span class="stk-sold-pill neg" title="Fallen">${icon("trending-down", { size: 16 })}<strong>${fmtMoney(downTotal, true)}</strong></span>`;
+        <span class="stk-sold-pill neg" title="Fallen">${icon("trending-down", { size: 16 })}<strong>${fmtMoney(downTotal, true)}</strong></span>`);
 
     const shown = all.filter((x) =>
         soldFilter === "missed" ? up(x) : soldFilter === "good" ? !up(x) : true
     );
 
     if (shown.length === 0) {
-        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}</div>`;
+        put(list, `<div class="inc-empty">${icon("gem", { size: 22 })}</div>`);
         return;
     }
 
-    list.innerHTML = `<div class="stk-sold-list">${shown
+    put(list, `<div class="stk-sold-list">${shown
         .map((x) => {
             const grew = up(x);
             const tone = grew ? "pos" : "neg";
 
             return `
-                <article class="stk-sold-card ${tone}">
+                <article data-key="${escapeAttribute(x.symbol)}" class="stk-sold-card ${tone}">
                     <div class="stk-sold-top">
                         ${stockLogoHTML(x.symbol, "lg")}
                         <div class="stk-sold-id">
@@ -816,7 +825,7 @@ function renderSold(page) {
                     </div>
                 </article>`;
         })
-        .join("")}</div>`;
+        .join("")}</div>`);
 }
 
 /* =========================================
@@ -989,13 +998,13 @@ function renderAnalytics(page) {
     realizedChart?.update(transactions, prices);
 
     // Overall performance
-    page.querySelector("[data-an-overall]").innerHTML = `
+    put(page.querySelector("[data-an-overall]"), `
         <div class="br-grid br-grid-3">
             ${statCard("Total P&L", fmtSigned(totals.totalPnL, true) + " (" + fmtPct(totals.totalPnLPct) + ")", pnlClass(totals.totalPnL))}
             ${statCard("Already banked", fmtSigned(totals.realizedPnL, true), pnlClass(totals.realizedPnL))}
             ${statCard("If you sold today", fmtSigned(totals.unrealizedPnL, true), pnlClass(totals.unrealizedPnL))}
         </div>
-    `;
+    `);
 
     if (holdings.length === 0) {
         page.querySelector("[data-an-insights]").innerHTML = "";
@@ -1017,10 +1026,9 @@ function renderAnalytics(page) {
             <div class="${cls}">${value}</div>
         </div>`;
 
-    page.querySelector("[data-an-insights]").innerHTML =
-        insight("Best performer", best, fmtPct(best.unrealizedPnLPct), "br-pnl-" + pnlClass(best.unrealizedPnLPct)) +
+    put(page.querySelector("[data-an-insights]"), insight("Best performer", best, fmtPct(best.unrealizedPnLPct), "br-pnl-" + pnlClass(best.unrealizedPnLPct)) +
         insight("Worst performer", worst, fmtPct(worst.unrealizedPnLPct), "br-pnl-" + pnlClass(worst.unrealizedPnLPct)) +
-        insight("Biggest holding", largest, fmtMoney(largest.currentValue, true), "");
+        insight("Biggest holding", largest, fmtMoney(largest.currentValue, true), ""));
 
     // Allocation: donut + rows
     const byValue = holdings.slice().sort((a, b) => b.currentValue - a.currentValue);
@@ -1029,14 +1037,14 @@ function renderAnalytics(page) {
         weight: calculatePortfolioWeight(h.symbol, transactions, prices)
     }));
 
-    page.querySelector("[data-an-alloc]").innerHTML = `
+    put(page.querySelector("[data-an-alloc]"), `
         <div style="display:flex;justify-content:center;position:relative;margin-bottom:16px;">
             ${buildDonut(weighted, totals.currentValue)}
         </div>
         ${weighted
             .map(
                 (h, i) => `
-            <div style="display:grid;grid-template-columns:116px 1fr 52px;gap:10px;align-items:center;margin:8px 0;">
+            <div style="display:grid;grid-template-columns:116px 1fr minmax(52px,auto);gap:10px;align-items:center;margin:8px 0;">
                 <span style="display:flex;align-items:center;gap:6px;min-width:0;">${stockMiniLogoHTML(h.symbol, 20)}<span style="color:${chartColor(i)};font-weight:600;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(h.symbol)}</span></span>
                 <div style="height:8px;background:var(--br-border);border-radius:4px;overflow:hidden;">
                     <div style="height:100%;width:${Math.min(100, h.weight)}%;background:${chartColor(i)};"></div>
@@ -1045,19 +1053,19 @@ function renderAnalytics(page) {
             </div>`
             )
             .join("")}
-    `;
+    `);
 
     // Performance bars
     const sorted = holdings.slice().sort((a, b) => b.unrealizedPnLPct - a.unrealizedPnLPct);
     const maxAbs = Math.max(1, ...sorted.map((h) => Math.abs(h.unrealizedPnLPct)));
 
-    page.querySelector("[data-an-perf]").innerHTML = sorted
+    put(page.querySelector("[data-an-perf]"), sorted
         .map((h) => {
             const cls = pnlClass(h.unrealizedPnLPct);
             const w = Math.min(100, (Math.abs(h.unrealizedPnLPct) / maxAbs) * 100);
             const color = cls === "pos" ? "var(--br-success)" : "var(--br-danger)";
             return `
-            <div style="display:grid;grid-template-columns:116px 1fr 70px;gap:10px;align-items:center;margin:8px 0;" title="${escapeAttribute(h.name)}">
+            <div style="display:grid;grid-template-columns:116px 1fr minmax(70px,auto);gap:10px;align-items:center;margin:8px 0;" title="${escapeAttribute(h.name)}">
                 <span style="display:flex;align-items:center;gap:6px;min-width:0;">${stockMiniLogoHTML(h.symbol, 20)}<span style="overflow:hidden;text-overflow:ellipsis;">${escapeHTML(h.symbol)}</span></span>
                 <div style="height:8px;background:var(--br-border);border-radius:4px;overflow:hidden;">
                     <div style="height:100%;width:${w}%;background:${color};"></div>
@@ -1065,7 +1073,7 @@ function renderAnalytics(page) {
                 <span class="br-pnl-${cls}" style="text-align:right;">${fmtPct(h.unrealizedPnLPct)}</span>
             </div>`;
         })
-        .join("");
+        .join(""));
 
     // Portfolio health
     const profitable = holdings.filter((h) => h.unrealizedPnL >= 0).length;
@@ -1073,7 +1081,7 @@ function renderAnalytics(page) {
     const largestPct = weighted[0].weight;
     const top3Pct = round2(weighted.slice(0, 3).reduce((s, h) => s + h.weight, 0));
 
-    page.querySelector("[data-an-health]").innerHTML = `
+    put(page.querySelector("[data-an-health]"), `
         <div class="br-grid br-grid-3">
             ${statCard("Holdings", holdings.length)}
             ${statCard("Profitable", profitable, "pos")}
@@ -1086,7 +1094,7 @@ function renderAnalytics(page) {
             ${totals.hasMTF ? statCard("Net equity (after MTF)", fmtMoney(totals.netEquity, true)) : ""}
         </div>
         <p class="br-muted" style="margin-top:12px;">${escapeHTML(weighted[0].name)} makes up ${largestPct.toFixed(1)}% of your portfolio. This is informational only, not investment advice.</p>
-    `;
+    `);
 }
 
 function buildDonut(weighted, totalValue) {
@@ -1110,7 +1118,7 @@ function buildDonut(weighted, totalValue) {
         </svg>
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
             <span class="br-muted" style="font-size:11px;">Total value</span>
-            <span style="font-weight:600;">${fmtMoney(totalValue, true)}</span>
+            <span style="font-weight:600;font-size:${fmtMoney(totalValue, true).length <= 9 ? 16 : fmtMoney(totalValue, true).length <= 12 ? 13 : 11}px;max-width:88px;overflow-wrap:anywhere;line-height:1.15;">${fmtMoney(totalValue, true)}</span>
         </div>
     </div>`;
 }
@@ -1184,7 +1192,7 @@ function renderTransactions(page) {
                         <div class="stk-txn-stock">
                             ${stockLogoHTML(t.symbol, "sm")}
                             <div class="stk-txn-stock-text">
-                                <div>${escapeHTML(t.name)}</div>
+                                <div><button type="button" class="br-stock-link" data-action="open-detail" data-symbol="${escapeAttribute(t.symbol)}" title="View price chart with all buys and sells">${escapeHTML(t.name)}</button></div>
                                 <div class="br-muted">${escapeHTML(t.symbol)}</div>
                             </div>
                         </div>
@@ -1818,7 +1826,7 @@ function renderDetail(page) {
         logoHost.innerHTML = stockLogoHTML(h.symbol, "xl");
     }
 
-    page.querySelector("[data-detail-grid]").innerHTML = [
+    put(page.querySelector("[data-detail-grid]"), [
         cell("Shares you own", h.quantity),
         cell("Average price paid", fmtMoney(h.avgPrice)),
         cell("Current price", fmtMoney(h.currentPrice)),
@@ -1839,15 +1847,14 @@ function renderDetail(page) {
         cell("Bought in total", h.totalBuyQty),
         cell("Sold in total", h.totalSellQty),
         cell("Realized P&L", fmtSigned(h.realizedPnL, true), "br-pnl-" + pnlClass(h.realizedPnL))
-    ].join("");
+    ].join(""));
 
     const priceInput = page.querySelector("[data-detail-price]");
     if (document.activeElement !== priceInput) {
         priceInput.value = h.currentPrice;
     }
 
-    page.querySelector("[data-detail-txns]").innerHTML =
-        getSymbolTransactions(detailSymbol, transactions)
+    put(page.querySelector("[data-detail-txns]"), getSymbolTransactions(detailSymbol, transactions)
             .slice()
             .reverse()
             .map(
@@ -1859,7 +1866,7 @@ function renderDetail(page) {
                     <td>${fmtMoney(t.price)}</td>
                 </tr>`
             )
-            .join("");
+            .join(""));
 }
 
 async function loadDetailChart(page, symbol) {
@@ -1890,7 +1897,7 @@ async function loadDetailChart(page, symbol) {
             return;
         }
 
-        box.innerHTML = buildChart(history, buyDate);
+        box.innerHTML = buildChart(history, buyDate, txns);
 
         if (full.length && buyDate && full[0].date > buyDate) {
             tip.textContent = `Source data starts ${fmtDate(full[0].date)}.`;
@@ -1909,13 +1916,33 @@ async function loadDetailChart(page, symbol) {
     }
 }
 
-function buildChart(history, buyDate) {
+function buildChart(history, buyDate, txns = []) {
     const w = 600, h = 220, padL = 54, padR = 12, padT = 14, padB = 26;
     const plotW = w - padL - padR, plotH = h - padT - padB;
     const n = history.length;
     const closes = history.map((p) => p.close);
 
+    /* Every buy/sell that falls inside the chart: grouped per day + side so
+       several trades on one day become one mark (the tooltip lists them all). */
+    const firstDate = history[0].date, lastDate = history[n - 1].date;
+    const groups = new Map();
+    let outside = 0;
+    txns.forEach((t) => {
+        if (t.date < firstDate || t.date > lastDate) { outside++; return; }
+        let idx = history.findIndex((p) => p.date >= t.date);
+        if (idx === -1) { outside++; return; }
+        const key = idx + "|" + t.type;
+        if (!groups.has(key)) groups.set(key, { idx, type: t.type, list: [] });
+        groups.get(key).list.push(t);
+    });
+    const marks = [...groups.values()].map((g) => {
+        const qty = g.list.reduce((a, t) => a + t.quantity, 0);
+        const value = g.list.reduce((a, t) => a + t.quantity * t.price, 0);
+        return { ...g, qty, price: qty ? value / qty : g.list[0].price };
+    });
+
     let min = Math.min(...closes), max = Math.max(...closes);
+    marks.forEach((m) => { min = Math.min(min, m.price); max = Math.max(max, m.price); });
     if (min === max) { min -= 1; max += 1; }
     const pad = (max - min) * 0.1;
     min -= pad; max += pad;
@@ -1931,8 +1958,8 @@ function buildChart(history, buyDate) {
     if (buyDate && buyDate >= history[0].date && buyDate <= history[n - 1].date) {
         let idx = history.findIndex((p) => p.date >= buyDate);
         if (idx === -1) idx = 0;
-        marker = `<line x1="${x(idx).toFixed(2)}" x2="${x(idx).toFixed(2)}" y1="${padT}" y2="${padT + plotH}" class="br-chart-buy-line"></line>
-                  <circle cx="${x(idx).toFixed(2)}" cy="${y(history[idx].close).toFixed(2)}" r="4.5" class="br-chart-buy-dot"></circle>`;
+        marker = `<line x1="${x(idx).toFixed(2)}" x2="${x(idx).toFixed(2)}" y1="${padT}" y2="${padT + plotH}" class="br-chart-buy-line"></line>`;
+        if (!marks.length) marker += `<circle cx="${x(idx).toFixed(2)}" cy="${y(history[idx].close).toFixed(2)}" r="4.5" class="br-chart-buy-dot"></circle>`;
     }
 
     const yTicks = [max - (max - min) * 0.05, (max + min) / 2, min + (max - min) * 0.05];
@@ -1947,14 +1974,34 @@ function buildChart(history, buyDate) {
         .map(({ p, i }) => `<rect class="br-tip-hit" x="${(x(i) - bandW / 2).toFixed(2)}" y="0" width="${bandW.toFixed(2)}" height="${h}" ${tipAttr(fmtDate(p.date), [["Close", fmtMoney(p.close), color]])}></rect>`)
         .join("");
 
-    return `<svg viewBox="0 0 ${w} ${h}" class="br-price-chart br-tip-scrub" preserveAspectRatio="none" role="img" aria-label="Price chart">
+    /* Buy / sell marks are HTML overlays (not SVG) so they stay round-edged
+       and the same size however the chart is stretched on phone or desktop. */
+    const markHTML = marks.map((m) => {
+        const isBuy = m.type === "BUY";
+        const rows = m.list.map((t) => [
+            `${t.type} ${t.quantity} @ ${fmtMoney(t.price)}${t.isMTF ? " (MTF)" : ""}`,
+            fmtMoney(round2(t.quantity * t.price), true),
+            isBuy ? "var(--br-success)" : "var(--br-danger)"
+        ]);
+        const left = (x(m.idx) / w * 100).toFixed(3);
+        const top = (y(m.price) / h * 100).toFixed(3);
+        return `<span class="stk-mark ${isBuy ? "buy" : "sell"}" style="left:${left}%;top:${top}%;" ${tipAttr(`${isBuy ? "Bought" : "Sold"} · ${fmtDate(history[m.idx].date)}`, rows)} aria-label="${isBuy ? "Buy" : "Sell"} ${m.qty} shares">${m.list.length > 1 ? m.list.length : ""}</span>`;
+    }).join("");
+
+    const buys = txns.filter((t) => t.type === "BUY").length;
+    const sells = txns.length - buys;
+    const legend = txns.length
+        ? `<div class="stk-mark-legend"><span><i class="stk-mark buy"></i>Buy (${buys})</span><span><i class="stk-mark sell"></i>Sell (${sells})</span>${marker ? `<span class="br-muted">First bought ${fmtDate(buyDate)}</span>` : ""}${outside ? `<span class="br-muted">${outside} trade${outside > 1 ? "s" : ""} outside the chart's date range</span>` : ""}</div>`
+        : "";
+
+    return `<div class="stk-chart-wrap"><svg viewBox="0 0 ${w} ${h}" class="br-price-chart br-tip-scrub" preserveAspectRatio="none" role="img" aria-label="Price chart">
         ${yTicks.map((v) => `<line x1="${padL}" x2="${w - padR}" y1="${y(v).toFixed(2)}" y2="${y(v).toFixed(2)}" class="br-chart-grid"></line>`).join("")}
         <polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"></polyline>
         ${marker}
         ${yTicks.map((v) => `<text x="2" y="${(y(v) + 4).toFixed(2)}" class="br-chart-label">${fmtMoney(v, true)}</text>`).join("")}
         ${xTicks.map((i) => `<text x="${x(i).toFixed(2)}" y="${h - 6}" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}" class="br-chart-label">${fmtDate(history[i].date).replace(/\s\d{4}$/, "")}</text>`).join("")}
         ${bands}
-    </svg>${marker ? `<div class="br-muted" style="font-size:12px;">Bought ${fmtDate(buyDate)}</div>` : ""}`;
+    </svg>${markHTML}</div>${legend || (marker ? `<div class="br-muted" style="font-size:12px;">Bought ${fmtDate(buyDate)}</div>` : "")}`;
 }
 
 /* =========================================

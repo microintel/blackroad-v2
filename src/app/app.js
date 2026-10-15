@@ -7,7 +7,6 @@ import { pageLeave, pageEnter, initTabs } from "../components/motion.js";
 import { navigate } from "./router.js";
 import { getSession, currentUser, logout, isGuestSync } from "../services/auth.js";
 import { seedGuestData } from "../services/guest-seed.js";
-import { AuthScreen } from "../features/auth/auth-screen.js";
 import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
 import { themeToggleContent, currencyToggleContent } from "../components/layout/topbar.js";
@@ -236,6 +235,11 @@ async function renderApp() {
     }
 
     if (route.module === "login" || route.module === "register") {
+        // Loaded only when the sign-in screen is needed: a signed-in start never downloads it.
+        const { AuthScreen } = await import("../features/auth/auth-screen.js");
+
+        if (myId !== renderId) return;
+
         root.innerHTML = "";
         root.appendChild(AuthScreen(route.module));
         return;
