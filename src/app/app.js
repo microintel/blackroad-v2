@@ -7,6 +7,7 @@ import { pageLeave, pageEnter, initTabs } from "../components/motion.js";
 import { navigate } from "./router.js";
 import { getSession, currentUser, logout, isGuestSync } from "../services/auth.js";
 import { seedGuestData } from "../services/guest-seed.js";
+import { mountAccountMenu } from "../components/layout/account-menu.js";
 import { BottomNav, setupDrawer } from "../components/layout/mobile-nav.js";
 import { initPreferences, toggleTheme, getTheme } from "../services/preferences.js";
 import { themeToggleContent, currencyToggleContent } from "../components/layout/topbar.js";
@@ -109,6 +110,9 @@ function updateShell(shell, route) {
     const title = shell.querySelector(".br-page-title");
     if (title) title.textContent = route.title;
 
+    // Pick up a picture changed in Account.
+    shell.querySelector(".br-header")?.__refreshAccount?.();
+
     shell.querySelectorAll(".br-nav-item").forEach((link) => {
         const on = link.getAttribute("href") === "#" + path;
         link.classList.toggle("is-active", on);
@@ -141,9 +145,8 @@ function buildShell(route) {
         .querySelector('[aria-label="Notifications"]')
         ?.addEventListener("click", () => navigate("/notifications"));
 
-    topbar
-        .querySelector(".br-account-button")
-        ?.addEventListener("click", () => navigate("/account"));
+    // Desktop: the profile picture opens a menu (Account / Log out).
+    mountAccountMenu(topbar);
 
     // Light / Dark toggle. The shell now lives across pages, so this is
     // attached once, to the button that stays.
@@ -169,10 +172,10 @@ function buildShell(route) {
 
     // Logout
     topbar
-        .querySelector('[data-action="logout"]')
-        ?.addEventListener("click", async () => {
+        .querySelectorAll('[data-action="logout"]')
+        .forEach((button) => button.addEventListener("click", async () => {
             if (await confirmLogout()) hardNavigate("/login");
-        });
+        }));
 
     const content = document.createElement("div");
 

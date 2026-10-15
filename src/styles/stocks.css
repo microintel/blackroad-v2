@@ -427,3 +427,104 @@
 .stk-mtf-metrics > * { min-width: 0; }
 .stk-sold-pill { max-width: 100%; }
 .stk-sold-pill strong { overflow-wrap: anywhere; }
+
+
+/* =========================================================
+   STOCK DETAIL — inline page (replaces the old popup)
+   ========================================================= */
+
+.stk-detail { display: flex; flex-direction: column; gap: var(--br-space-3); }
+.stk-detail[hidden] { display: none; }
+.stk-detail-bar { display: flex; align-items: center; }
+.stk-detail-bar .br-button { display: inline-flex; align-items: center; gap: 8px; }
+.stk-detail-card { display: flex; flex-direction: column; gap: var(--br-space-4); min-width: 0; }
+.stk-detail-card h4 { margin: var(--br-space-2) 0 0; }
+.stk-detail-card .br-detail-grid { margin-bottom: 0; }
+.stk-detail-price { display: block; }
+.stk-detail-head h3 { overflow-wrap: anywhere; }
+
+/* =========================================================
+   CHART — buy / sell marks (larger and easier to read)
+   ========================================================= */
+
+.stk-mark {
+    width: 24px; height: 24px; margin: -12px 0 0 -12px;
+    border: 2px solid var(--br-surface);
+    font-size: 11px; font-weight: 800; letter-spacing: 0;
+    box-shadow: 0 0 0 1.5px currentColor, 0 2px 6px rgba(0,0,0,.35);
+    z-index: 3; position: absolute;
+}
+.stk-mark.buy { background: var(--br-success); color: var(--br-success); }
+.stk-mark.sell { background: var(--br-danger); color: var(--br-danger); }
+.stk-mark { --ink: #fff; }
+.stk-mark.buy, .stk-mark.sell { -webkit-text-fill-color: #fff; }
+.stk-mark sup { position: absolute; top: -9px; right: -9px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--br-surface); color: var(--br-text); -webkit-text-fill-color: var(--br-text); font-size: 9px; line-height: 15px; text-align: center; box-shadow: 0 0 0 1px var(--br-border-strong); }
+.stk-mark.is-tip-active { transform: scale(1.25); z-index: 4; }
+
+.stk-mark-price {
+    position: absolute; z-index: 2; transform: translate(-50%, 0); margin-top: 15px;
+    padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; white-space: nowrap;
+    background: var(--br-surface); border: 1px solid currentColor; pointer-events: none;
+}
+.stk-mark-price.buy { color: var(--br-success); }
+.stk-mark-price.sell { color: var(--br-danger); margin-top: -34px; }
+
+.stk-mark-guide { stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .75; vector-effect: non-scaling-stroke; }
+.stk-mark-guide.buy { stroke: var(--br-success); }
+.stk-mark-guide.sell { stroke: var(--br-danger); }
+
+.stk-mark-legend { gap: 6px 18px; font-size: 13px; margin-top: 10px; }
+.stk-mark-legend .stk-mark { width: 18px; height: 18px; margin: 0; border-width: 0; box-shadow: none; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; position: static; }
+
+@media (max-width: 600px) {
+    .stk-mark-price { display: none; }
+    .stk-mark { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+}
+
+/* =========================================================
+   SOLD — clean cards
+   ========================================================= */
+
+.stk-sold-head { margin-bottom: var(--br-space-3); }
+.stk-sold-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--br-space-2); width: 100%; }
+.stk-sold-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--br-space-3) var(--br-space-4); border-radius: 14px; background: var(--surface-secondary); min-width: 0; }
+.stk-sold-stat span { font-size: 12px; color: var(--text-secondary); }
+.stk-sold-stat strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; color: var(--text-primary); }
+.stk-sold-stat.pos strong { color: var(--br-success); }
+.stk-sold-stat.neg strong { color: var(--br-danger); }
+
+.stk-sold-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--br-space-3); margin-bottom: var(--br-space-4); }
+.stk-sold-pick { display: flex; align-items: center; gap: var(--br-space-2); min-width: 0; flex: 1 1 240px; max-width: 360px; }
+.stk-sold-pick .br-select { flex: 1; min-width: 0; }
+
+.stk-sold-card { cursor: pointer; gap: var(--br-space-4); outline: none; }
+.stk-sold-card:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.stk-sold-card .stk-name { display: block; }
+.stk-sold-meta { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stk-sold-pct { flex: none; align-self: flex-start; color: var(--tone); }
+
+.stk-sold-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--br-space-2) var(--br-space-3);
+    margin: 0; padding-top: var(--br-space-3); border-top: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+}
+.stk-sold-grid > div { min-width: 0; }
+.stk-sold-grid dt { font-size: 11px; color: var(--text-secondary); }
+.stk-sold-grid dd { margin: 2px 0 0; font-size: 14px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.stk-sold-grid dd.stk-sold-ltp { color: var(--tone); }
+
+@media (max-width: 600px) {
+    .stk-sold-summary { grid-template-columns: 1fr; }
+    .stk-sold-stat { flex-direction: row; align-items: baseline; justify-content: space-between; }
+    .stk-sold-pick { max-width: none; flex-basis: 100%; }
+    .stk-sold-tools .br-chip-row { width: 100%; }
+}
+
+/* sold card: two-column facts + one full-width result line */
+.stk-sold-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stk-sold-grid dd.stk-sold-ltp { color: var(--text-primary); }
+.stk-sold-grid .stk-sold-result-row { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: var(--br-space-3); padding-top: var(--br-space-2); border-top: 1px dashed var(--border); }
+.stk-sold-grid .stk-sold-result-row dd { margin: 0; font-size: 16px; color: var(--tone); text-align: right; }
+.stk-sold-grid .stk-sold-result-row dt { font-size: 12px; }
+.stk-sold-grid .stk-sold-result-row dt { flex: 1 1 0; min-width: 0; }
+.stk-sold-grid .stk-sold-result-row dd { flex: none; white-space: nowrap; overflow-wrap: normal; max-width: 70%; }

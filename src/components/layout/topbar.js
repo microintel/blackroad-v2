@@ -56,8 +56,8 @@ export function Topbar(title) {
             <div class="br-header-actions">
 
                 <nav class="br-header-links" aria-label="Site">
-                    <a href="./home.html">${icon("house", { size: 18 })}<span>Home</span></a>
-                    <a href="./download.html">${icon("download", { size: 18 })}<span>Download BlackRoad</span></a>
+                    <a href="./home.html" aria-label="Home" title="Home">${icon("house", { size: 20 })}<span class="br-header-link-text">Home</span></a>
+                    <a href="./download.html" aria-label="Download BlackRoad" title="Download BlackRoad">${icon("download", { size: 20 })}<span class="br-header-link-text">Download BlackRoad</span></a>
                 </nav>
 
 
@@ -105,17 +105,39 @@ export function Topbar(title) {
                 </button>
 
 
-                <button
-                    class="br-account-button"
-                    type="button"
-                >
-                    ${icon("user-round", { size: 16 })}
-                    Account
-                </button>
+                <div class="br-account-menu">
+                    <button
+                        class="br-account-button"
+                        type="button"
+                        data-account-menu-btn
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                        aria-label="Account menu"
+                        title="Account"
+                    >
+                        <span class="br-account-avatar" data-account-avatar>${icon("user-round", { size: 18 })}</span>
+                    </button>
+
+                    <div class="br-account-pop" role="menu" hidden>
+                        <div class="br-account-pop-head">
+                            <span class="br-account-avatar br-account-avatar--lg" data-account-avatar-lg></span>
+                            <div class="br-account-pop-who">
+                                <strong data-account-name>Account</strong>
+                                <small data-account-sub hidden></small>
+                            </div>
+                        </div>
+                        <button type="button" role="menuitem" class="br-account-item" data-account-go>
+                            ${icon("user-round", { size: 18 })}<span>Account</span>
+                        </button>
+                        <button type="button" role="menuitem" class="br-account-item br-account-item--danger" data-action="logout">
+                            ${icon("log-out", { size: 18 })}<span>Log out</span>
+                        </button>
+                    </div>
+                </div>
 
 
                 <button
-                    class="br-icon-button"
+                    class="br-icon-button br-header-logout"
                     type="button"
                     data-action="logout"
                     aria-label="Log out"

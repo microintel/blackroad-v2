@@ -68,6 +68,7 @@ let refreshing = false;
 let detailSymbol = null;
 let holdingFilter = "all";
 let soldFilter = "all";
+let soldStock = "";
 let flashSymbol = null;
 let flashTxnId = null;
 let saving = false;
@@ -130,10 +131,16 @@ export async function Stocks() {
             <section class="inc-section">
                 <div class="stk-sold-head">
                     <div class="stk-sold-summary" data-sold-summary></div>
+                </div>
+                <div class="stk-sold-tools">
+                    <label class="stk-sold-pick">
+                        <span class="br-muted">Stock</span>
+                        <select class="br-select" data-sold-stock aria-label="Show a sold stock"><option value="">All sold stocks</option></select>
+                    </label>
                     <div class="br-chip-row" role="group" aria-label="Filter sold stocks">
                         <button type="button" class="br-chip active" data-action="sold-filter" data-filter="all">All</button>
-                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="missed" aria-label="Grown" title="Grown">${icon("gem", { size: 14 })}</button>
-                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="good" aria-label="Fallen" title="Fallen">${icon("trending-down", { size: 14 })}</button>
+                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="missed">Rose after sale</button>
+                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="good">Fell after sale</button>
                     </div>
                 </div>
                 <div data-sold-list></div>
@@ -358,41 +365,40 @@ export async function Stocks() {
             </div>
         </div>
 
-        <!-- STOCK DETAIL MODAL -->
-        <div class="br-modal-layer" data-detail-modal hidden>
-            <div class="br-modal" role="dialog" aria-modal="true" style="width:min(820px,100%);">
-                <div class="br-modal-header">
-                    <div class="stk-detail-head">
-                        <span data-detail-logo></span>
-                        <div>
-                            <h3 data-detail-title>Stock detail</h3>
-                            <p class="br-muted">Everything about this one holding.</p>
-                        </div>
+        <!-- STOCK DETAIL (inline page, not a popup) -->
+        <section class="stk-detail" data-detail-modal hidden aria-label="Stock detail">
+            <div class="stk-detail-bar">
+                <button type="button" class="br-button" data-action="close-detail">${icon("arrow-left", { size: 16 })} <span data-detail-back>Back</span></button>
+            </div>
+            <div class="br-card stk-detail-card">
+                <div class="stk-detail-head">
+                    <span data-detail-logo></span>
+                    <div>
+                        <h3 data-detail-title>Stock detail</h3>
+                        <p class="br-muted">Everything about this one stock.</p>
                     </div>
-                    <button type="button" class="br-modal-close" data-action="close-detail" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
-                <div class="br-modal-body">
-                    <div class="br-detail-grid" data-detail-grid></div>
 
-                    <label style="display:block;margin-bottom:20px;">
-                        <span class="br-muted">Current price (manual override)</span>
-                        <input type="number" step="0.01" min="0" class="br-input" style="width:140px;display:block;" data-detail-price>
-                    </label>
+                <div class="br-detail-grid" data-detail-grid></div>
 
-                    <h4>Price since you bought</h4>
-                    <div data-detail-chart></div>
-                    <div class="br-chart-tip" data-detail-tip></div>
+                <label class="stk-detail-price">
+                    <span class="br-muted">Current price (manual override)</span>
+                    <input type="number" step="0.01" min="0" class="br-input" style="width:140px;display:block;" data-detail-price>
+                </label>
 
-                    <h4>Every buy and sell</h4>
-                    <div class="br-table-wrap">
-                        <table class="br-table">
-                            <thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>Price</th></tr></thead>
-                            <tbody data-detail-txns></tbody>
-                        </table>
-                    </div>
+                <h4>Price chart with your buys and sells</h4>
+                <div data-detail-chart></div>
+                <div class="br-chart-tip" data-detail-tip></div>
+
+                <h4>Every buy and sell</h4>
+                <div class="br-table-wrap">
+                    <table class="br-table">
+                        <thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>Price</th></tr></thead>
+                        <tbody data-detail-txns></tbody>
+                    </table>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- CLEAR ALL DATA MODAL -->
         <div class="br-modal-layer" data-clear-modal hidden>
@@ -761,6 +767,7 @@ function renderHoldings(page) {
 function renderSold(page) {
     const list = page.querySelector("[data-sold-list]");
     const summary = page.querySelector("[data-sold-summary]");
+    const pick = page.querySelector("[data-sold-stock]");
     if (!list || !summary) return;
 
     const all = getSoldStocks(transactions, prices)
@@ -772,9 +779,27 @@ function renderSold(page) {
     );
     updateCounts(page);
 
+    // Stock picker: rebuilt only when the list of sold stocks changes
+    if (pick) {
+        const names = all.map((x) => x.symbol).sort();
+        const sig = names.join("|");
+        if (pick.dataset.sig !== sig) {
+            pick.dataset.sig = sig;
+            pick.innerHTML =
+                '<option value="">All sold stocks</option>' +
+                all
+                    .slice()
+                    .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+                    .map((x) => `<option value="${escapeAttribute(x.symbol)}">${escapeHTML(x.name)} (${escapeHTML(x.symbol)})</option>`)
+                    .join("");
+        }
+        if (soldStock && !names.includes(soldStock)) soldStock = "";
+        pick.value = soldStock;
+    }
+
     if (all.length === 0) {
         summary.innerHTML = "";
-        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}</div>`;
+        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}<h4>No fully sold stocks yet</h4><p>Stocks you sell completely will appear here with how their price moved since.</p></div>`;
         return;
     }
 
@@ -783,16 +808,17 @@ function renderSold(page) {
     const downTotal = all.filter((x) => !up(x)).reduce((n, x) => n + Math.abs(x.impact), 0);
 
     put(summary, `
-        <span class="stk-sold-pill" title="Total">${icon("layers", { size: 16 })}<strong>${all.length}</strong></span>
-        <span class="stk-sold-pill pos" title="Grown">${icon("gem", { size: 16 })}<strong>${fmtMoney(upTotal, true)}</strong></span>
-        <span class="stk-sold-pill neg" title="Fallen">${icon("trending-down", { size: 16 })}<strong>${fmtMoney(downTotal, true)}</strong></span>`);
+        <div class="stk-sold-stat"><span>Sold stocks</span><strong>${all.length}</strong></div>
+        <div class="stk-sold-stat pos"><span>Rose after sale</span><strong>${fmtMoney(upTotal, true)}</strong></div>
+        <div class="stk-sold-stat neg"><span>Fell after sale</span><strong>${fmtMoney(downTotal, true)}</strong></div>`);
 
     const shown = all.filter((x) =>
-        soldFilter === "missed" ? up(x) : soldFilter === "good" ? !up(x) : true
+        (!soldStock || x.symbol === soldStock) &&
+        (soldFilter === "missed" ? up(x) : soldFilter === "good" ? !up(x) : true)
     );
 
     if (shown.length === 0) {
-        put(list, `<div class="inc-empty">${icon("gem", { size: 22 })}</div>`);
+        put(list, `<div class="inc-empty">${icon("gem", { size: 22 })}<h4>Nothing matches</h4><p>Try another stock or filter.</p></div>`);
         return;
     }
 
@@ -800,29 +826,25 @@ function renderSold(page) {
         .map((x) => {
             const grew = up(x);
             const tone = grew ? "pos" : "neg";
+            const sign = grew ? "+" : "−";
 
             return `
-                <article data-key="${escapeAttribute(x.symbol)}" class="stk-sold-card ${tone}">
+                <article data-key="${escapeAttribute(x.symbol)}" class="stk-sold-card ${tone}" data-action="open-detail" data-symbol="${escapeAttribute(x.symbol)}" role="button" tabindex="0" title="Open chart and trades">
                     <div class="stk-sold-top">
                         ${stockLogoHTML(x.symbol, "lg")}
                         <div class="stk-sold-id">
                             <span class="stk-name">${escapeHTML(x.name)}</span>
-                            <div class="stk-sold-meta">
-                                <span>${icon("calendar-days", { size: 12 })}${fmtDate(x.lastSoldDate)}</span>
-                                <span>${icon("layers", { size: 12 })}${x.lastSoldQty}</span>
-                            </div>
+                            <div class="stk-sold-meta">${escapeHTML(x.symbol)}</div>
                         </div>
-                        <div class="stk-sold-result">
-                            <strong>${icon(grew ? "gem" : "trending-down", { size: 15 })}${fmtMoney(Math.abs(x.impact), true)}</strong>
-                            <span class="stk-sold-pct">${icon(grew ? "arrow-up-right" : "arrow-down-right", { size: 12 })}${Math.abs(x.diffPct).toFixed(2)}%</span>
-                        </div>
+                        <span class="stk-sold-pct">${icon(grew ? "arrow-up-right" : "arrow-down-right", { size: 12 })}${Math.abs(x.diffPct).toFixed(2)}%</span>
                     </div>
-                    <div class="stk-sold-prices">
-                        <span>${fmtMoney(x.lastSoldPrice)}</span>
-                        <i class="stk-sold-line"></i>
-                        ${icon("arrow-right", { size: 12 })}
-                        <span class="stk-sold-ltp">${fmtMoney(x.ltp)}</span>
-                    </div>
+                    <dl class="stk-sold-grid">
+                        <div><dt>Sold at</dt><dd>${fmtMoney(x.lastSoldPrice)}</dd></div>
+                        <div><dt>Price now</dt><dd>${fmtMoney(x.ltp)}</dd></div>
+                        <div><dt>Sold on</dt><dd>${fmtDate(x.lastSoldDate)}</dd></div>
+                        <div><dt>Quantity</dt><dd>${x.lastSoldQty}</dd></div>
+                        <div class="stk-sold-result-row"><dt>${grew ? "Gain missed after selling" : "Loss avoided by selling"}</dt><dd>${sign}${fmtMoney(Math.abs(x.impact), true)}</dd></div>
+                    </dl>
                 </article>`;
         })
         .join("")}</div>`);
@@ -1796,9 +1818,18 @@ async function exportCSV() {
 
 let chartRequest = 0;
 
+const DETAIL_HIDES = "[data-stocks-view], .br-income-tabs, [data-stocks-summary-wrap]";
+
 function openDetail(page, symbol) {
     detailSymbol = symbol;
+
+    const back = { holdings: "Holdings", transactions: "Transactions", sold: "Sold", analytics: "Analytics", reports: "Reports" }[currentTab] || "Back";
+    page.querySelector("[data-detail-back]").textContent = back;
+
+    page.querySelectorAll(DETAIL_HIDES).forEach((el) => { el.hidden = true; });
     page.querySelector("[data-detail-modal]").hidden = false;
+    window.scrollTo(0, 0);
+
     renderDetail(page);
     loadDetailChart(page, symbol);
 }
@@ -1807,6 +1838,8 @@ function closeDetail(page) {
     detailSymbol = null;
     chartRequest++;
     page.querySelector("[data-detail-modal]").hidden = true;
+    page.querySelector(".br-income-tabs").hidden = false;
+    switchTab(page, currentTab); // shows the right view + summary again
 }
 
 function renderDetail(page) {
@@ -1928,11 +1961,18 @@ function buildChart(history, buyDate, txns = []) {
     const groups = new Map();
     let outside = 0;
     txns.forEach((t) => {
-        if (t.date < firstDate || t.date > lastDate) { outside++; return; }
-        let idx = history.findIndex((p) => p.date >= t.date);
-        if (idx === -1) { outside++; return; }
-        const key = idx + "|" + t.type;
-        if (!groups.has(key)) groups.set(key, { idx, type: t.type, list: [] });
+        /* A trade older than the price data sits on the left edge, a newer one on
+           the right edge, so every buy and sell is always visible. */
+        let idx;
+        let edge = "";
+        if (t.date < firstDate) { idx = 0; edge = "before"; outside++; }
+        else if (t.date > lastDate) { idx = n - 1; edge = "after"; outside++; }
+        else {
+            idx = history.findIndex((p) => p.date >= t.date);
+            if (idx === -1) idx = n - 1;
+        }
+        const key = idx + "|" + t.type + "|" + edge;
+        if (!groups.has(key)) groups.set(key, { idx, type: t.type, edge, list: [] });
         groups.get(key).list.push(t);
     });
     const marks = [...groups.values()].map((g) => {
@@ -1978,26 +2018,36 @@ function buildChart(history, buyDate, txns = []) {
        and the same size however the chart is stretched on phone or desktop. */
     const markHTML = marks.map((m) => {
         const isBuy = m.type === "BUY";
+        const showDate = m.edge || m.list.length > 1;
         const rows = m.list.map((t) => [
-            `${t.type} ${t.quantity} @ ${fmtMoney(t.price)}${t.isMTF ? " (MTF)" : ""}`,
+            `${showDate ? fmtDate(t.date) + " · " : ""}${t.type} ${t.quantity} @ ${fmtMoney(t.price)}${t.isMTF ? " (MTF)" : ""}`,
             fmtMoney(round2(t.quantity * t.price), true),
             isBuy ? "var(--br-success)" : "var(--br-danger)"
         ]);
         const left = (x(m.idx) / w * 100).toFixed(3);
         const top = (y(m.price) / h * 100).toFixed(3);
-        return `<span class="stk-mark ${isBuy ? "buy" : "sell"}" style="left:${left}%;top:${top}%;" ${tipAttr(`${isBuy ? "Bought" : "Sold"} · ${fmtDate(history[m.idx].date)}`, rows)} aria-label="${isBuy ? "Buy" : "Sell"} ${m.qty} shares">${m.list.length > 1 ? m.list.length : ""}</span>`;
+        const label = marks.length <= 8
+            ? `<span class="stk-mark-price ${isBuy ? "buy" : "sell"}" style="left:${left}%;top:${top}%;">${fmtMoney(m.price)}</span>`
+            : "";
+        return `${label}<span class="stk-mark ${isBuy ? "buy" : "sell"}" style="left:${left}%;top:${top}%;" ${tipAttr(m.edge ? `${isBuy ? "Bought" : "Sold"} · ${m.edge === "before" ? "before the chart starts" : "after the chart ends"}` : `${isBuy ? "Bought" : "Sold"} · ${fmtDate(history[m.idx].date)}`, rows)} role="img" aria-label="${isBuy ? "Buy" : "Sell"} ${m.qty} shares">${isBuy ? "B" : "S"}${m.list.length > 1 ? `<sup>${m.list.length}</sup>` : ""}</span>`;
     }).join("");
+
+    /* A dashed line from every mark straight down to the date axis */
+    const guides = marks.map((m) =>
+        `<line x1="${x(m.idx).toFixed(2)}" x2="${x(m.idx).toFixed(2)}" y1="${y(m.price).toFixed(2)}" y2="${padT + plotH}" class="stk-mark-guide ${m.type === "BUY" ? "buy" : "sell"}"></line>`
+    ).join("");
 
     const buys = txns.filter((t) => t.type === "BUY").length;
     const sells = txns.length - buys;
     const legend = txns.length
-        ? `<div class="stk-mark-legend"><span><i class="stk-mark buy"></i>Buy (${buys})</span><span><i class="stk-mark sell"></i>Sell (${sells})</span>${marker ? `<span class="br-muted">First bought ${fmtDate(buyDate)}</span>` : ""}${outside ? `<span class="br-muted">${outside} trade${outside > 1 ? "s" : ""} outside the chart's date range</span>` : ""}</div>`
+        ? `<div class="stk-mark-legend"><span><i class="stk-mark buy">B</i>Buy (${buys})</span><span><i class="stk-mark sell">S</i>Sell (${sells})</span>${marker ? `<span class="br-muted">First bought ${fmtDate(buyDate)}</span>` : ""}${outside ? `<span class="br-muted">${outside} trade${outside > 1 ? "s are" : " is"} outside the price data's dates — shown at the chart edge</span>` : ""}</div>`
         : "";
 
     return `<div class="stk-chart-wrap"><svg viewBox="0 0 ${w} ${h}" class="br-price-chart br-tip-scrub" preserveAspectRatio="none" role="img" aria-label="Price chart">
         ${yTicks.map((v) => `<line x1="${padL}" x2="${w - padR}" y1="${y(v).toFixed(2)}" y2="${y(v).toFixed(2)}" class="br-chart-grid"></line>`).join("")}
         <polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"></polyline>
         ${marker}
+        ${guides}
         ${yTicks.map((v) => `<text x="2" y="${(y(v) + 4).toFixed(2)}" class="br-chart-label">${fmtMoney(v, true)}</text>`).join("")}
         ${xTicks.map((i) => `<text x="${x(i).toFixed(2)}" y="${h - 6}" text-anchor="${i === 0 ? "start" : i === n - 1 ? "end" : "middle"}" class="br-chart-label">${fmtDate(history[i].date).replace(/\s\d{4}$/, "")}</text>`).join("")}
         ${bands}
@@ -2189,6 +2239,12 @@ function attachEvents(page) {
     });
 
     page.addEventListener("change", async (event) => {
+        if (event.target.matches("[data-sold-stock]")) {
+            soldStock = event.target.value;
+            renderSold(page);
+            return;
+        }
+
         if (event.target.matches('[data-txn-form] [name="symbol"]')) {
             scheduleSymLookup(page, true);
             return;
@@ -2245,6 +2301,12 @@ function attachEvents(page) {
             return;
         }
 
+        if ((event.key === "Enter" || event.key === " ") && event.target.matches?.(".stk-sold-card[data-symbol]")) {
+            event.preventDefault();
+            openDetail(page, event.target.dataset.symbol);
+            return;
+        }
+
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
             event.preventDefault();
             openSearch(page);
@@ -2253,10 +2315,12 @@ function attachEvents(page) {
 
         if (event.key === "Escape") {
             const open = page.querySelector(".br-modal-layer:not([hidden])");
-            if (!open) return;
+            if (!open) {
+                if (detailSymbol) closeDetail(page);
+                return;
+            }
             if (open.hasAttribute("data-search-modal")) closeSearch(page);
             else if (open.hasAttribute("data-txn-detail-modal")) closeTxnDetail(page);
-            else if (open.hasAttribute("data-detail-modal")) closeDetail(page);
             else if (open.hasAttribute("data-delete-modal")) closeDeleteModal(page);
             else if (open.hasAttribute("data-clear-modal")) open.hidden = true;
             else closeTxnModal(page);

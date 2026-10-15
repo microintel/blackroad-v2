@@ -341,3 +341,68 @@
 /* INR / USD display toggle (next to the theme button) */
 .br-currency-toggle.is-busy { opacity: 0.55; pointer-events: none; }
 .br-currency-toggle.is-error { color: var(--br-danger); }
+
+
+/* =========================================================
+   TOP BAR — desktop: icon-only site links + profile picture menu
+   ========================================================= */
+
+.br-header-link-text { display: none; }
+.br-header-links a { padding: 0; width: 40px; justify-content: center; }
+
+.br-header-logout { display: none; }
+
+.br-account-menu { position: relative; margin-left: var(--br-space-1); }
+
+.br-account-button {
+    width: 40px; height: 40px; min-height: 40px; padding: 0;
+    border-radius: 50%; background: transparent; justify-content: center;
+}
+.br-account-button:hover { background: transparent; }
+.br-account-button:focus-visible { outline: 2px solid var(--br-gold, var(--accent)); outline-offset: 2px; }
+
+.br-account-avatar {
+    display: inline-grid; place-items: center; flex: none;
+    width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+    background: var(--br-surface-soft); color: var(--br-text-secondary);
+    box-shadow: 0 0 0 1px var(--br-border, rgba(128,128,128,.3));
+    transition: box-shadow var(--br-transition-fast);
+}
+.br-account-button:hover .br-account-avatar,
+.br-account-button[aria-expanded="true"] .br-account-avatar { box-shadow: 0 0 0 2px var(--br-gold, var(--accent)); }
+.br-account-avatar .br-avatar-img { display: block; width: 100%; height: 100%; }
+.br-account-avatar--lg { width: 44px; height: 44px; }
+
+.br-account-pop {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+    min-width: 232px; max-width: 300px; padding: var(--br-space-2);
+    border: 1px solid var(--br-border-strong, var(--br-border));
+    border-radius: var(--br-radius-lg, 14px);
+    background: var(--br-surface);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
+}
+.br-account-pop[hidden] { display: none; }
+
+.br-account-pop-head {
+    display: flex; align-items: center; gap: var(--br-space-3);
+    padding: var(--br-space-2) var(--br-space-2) var(--br-space-3);
+    margin-bottom: var(--br-space-1); border-bottom: 1px solid var(--br-border);
+}
+.br-account-pop-who { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.br-account-pop-who strong { font-size: 14px; font-weight: 600; color: var(--br-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.br-account-pop-who small { font-size: 12px; color: var(--br-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.br-account-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    min-height: 40px; padding: 0 var(--br-space-3);
+    border: 0; border-radius: var(--br-radius-md); background: transparent;
+    color: var(--br-text); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.br-account-item:hover, .br-account-item:focus-visible { background: var(--br-surface-soft); outline: none; }
+.br-account-item--danger { color: var(--br-danger, #DC2626); }
+
+/* Phones keep the old layout: slide-out menu, and a log-out icon in the bar. */
+@media (max-width: 768px) {
+    .br-account-menu { display: none; }
+    .br-header-logout { display: grid; }
+}

@@ -415,12 +415,14 @@ export async function Dashboard() {
     /* Cartoon avatar instead of the name's first letter. */
     const guestPhoto = !firstName(user) && isGuestSync() ? loadGuestAvatar() : "";
 
-    const initial = firstName(user)
-        ? avatarMarkup(
-            await loadAvatarUrl(),
-            (user && (user.email || user.name)) || ""
-        )
-        : (guestPhoto ? avatarImg(guestPhoto, "guest") : "");
+    const initial = guestPhoto
+        ? avatarImg(guestPhoto, "guest")
+        : (user || isGuestSync())
+            ? avatarMarkup(
+                isGuestSync() ? "" : await loadAvatarUrl(),
+                isGuestSync() ? "guest" : ((user && (user.email || user.name)) || "")
+            )
+            : "";
 
     const updatedText = await loadDataUpdated();
 
