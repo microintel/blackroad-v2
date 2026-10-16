@@ -21,7 +21,6 @@ export async function DataManagement() {
         <div class="br-page-heading">
             <div>
                 <h2>Data Management</h2>
-                <p>One backup and one restore for all of BlackRoad.</p>
             </div>
         </div>
 
@@ -61,7 +60,6 @@ export async function DataManagement() {
             <div class="br-card-heading">
                 <div>
                     <h3>Storage used on this device</h3>
-                    <p class="br-muted">How much space BlackRoad takes on this device.</p>
                 </div>
             </div>
             <div class="dm-storage" data-storage>
@@ -210,7 +208,6 @@ async function loadStorage(page) {
             <div>
                 <div class="dm-storage-value">${formatBytes(total)}</div>
                 <div class="br-muted">used on this device${quota ? ` of ${formatBytes(quota)} available` : ""}</div>
-                <div class="br-field-help">Your records are ${formatBytes(dataBytes)}. The rest is app files and the device's own housekeeping, which can vary slightly after a restore.</div>
             </div>
             ${quota ? `<strong>${pct < 1 ? "<1" : pct.toFixed(1)}%</strong>` : ""}
         </div>
@@ -226,7 +223,6 @@ async function loadStorage(page) {
                 : "Not protected: your device may clear this data if it runs low on space."}
             ${persisted ? "" : ` <button type="button" class="br-button" data-action="persist">Protect my data</button>`}
         </p>`}
-        <p class="br-field-help">Sizes are estimates reported by your device.</p>
     `;
 }
 

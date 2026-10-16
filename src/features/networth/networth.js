@@ -239,7 +239,6 @@ export async function NetWorth() {
         <div class="br-page-heading">
             <div>
                 <h2>Net Worth Evolution</h2>
-                <p>Assets minus liabilities, calculated from your dated records.</p>
             </div>
         </div>
 

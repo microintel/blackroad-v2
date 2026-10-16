@@ -15,6 +15,7 @@ import {
     calculatePortfolioWeight,
     validateTransaction,
     getTxnPnLMap,
+    getTxnReturnMap,
     getAllSymbols,
     getAllTags,
     extractTags,
@@ -114,7 +115,6 @@ export async function Stocks() {
                 <div class="inc-section-head">
                     <div>
                         <h3>Active holdings</h3>
-                        <p>Stocks you currently hold, valued at the last known price.</p>
                     </div>
                     <div class="br-chip-row" data-hold-filters role="group" aria-label="Filter holdings" hidden>
                         <button type="button" class="br-chip active" data-action="hold-filter" data-filter="all">All</button>
@@ -186,6 +186,7 @@ export async function Stocks() {
                                 <th>Price</th>
                                 <th>Amount</th>
                                 <th>Realized P&amp;L</th>
+                                <th>Return</th>
                                 <th>Held</th>
                                 <th></th>
                             </tr>
@@ -209,7 +210,6 @@ export async function Stocks() {
                 <div class="br-card-heading">
                     <div>
                         <h3>Realized P&amp;L per sale</h3>
-                        <p class="br-muted">Profit or loss from each sale, oldest to newest.</p>
                     </div>
                 </div>
                 <div data-an-realized-chart></div>
@@ -238,7 +238,6 @@ export async function Stocks() {
                 <div class="br-card-heading">
                     <div>
                         <h3>Monthly report</h3>
-                        <p class="br-muted">Invested, withdrawn and realized P&amp;L for a period.</p>
                     </div>
 
                     <select class="br-select" data-report-month></select>
@@ -249,7 +248,6 @@ export async function Stocks() {
                 <div class="br-page-actions" style="margin-top:16px;">
                     <button type="button" class="br-button br-button-primary" data-action="print-report">Print / Save as PDF</button>
                 </div>
-                <p class="br-field-help">Choose "Save as PDF" in the print dialog to keep a one-page copy of this period.</p>
             </section>
 
             <section class="br-card">
@@ -269,7 +267,6 @@ export async function Stocks() {
                 <div class="br-modal-header">
                     <div>
                         <h3 id="stk-txn-title" data-txn-modal-title>Add transaction</h3>
-                        <p class="br-muted">Stored in the existing BlackRoad stocks ledger.</p>
                     </div>
                     <button type="button" class="br-modal-close" data-action="close-txn-modal" aria-label="Close" title="Close">${icon("x", { size: 18 })}</button>
                 </div>
@@ -307,7 +304,6 @@ export async function Stocks() {
                             <span class="stk-switch-ui" aria-hidden="true"></span>
                             <span class="stk-switch-text">
                                 <strong>Bought with MTF</strong>
-                                <small>The broker funds part of the trade. You pay only your margin.</small>
                             </span>
                         </label>
 
@@ -375,7 +371,6 @@ export async function Stocks() {
                     <span data-detail-logo></span>
                     <div>
                         <h3 data-detail-title>Stock detail</h3>
-                        <p class="br-muted">Everything about this one stock.</p>
                     </div>
                 </div>
 
@@ -641,7 +636,6 @@ function renderMtfSummary(page, totals) {
         <div class="inc-section-head">
             <div>
                 <h3>MTF position</h3>
-                <p>Your own money and the broker-funded part, kept apart.</p>
             </div>
         </div>
         ${splitBar(totals.ownInvested, totals.fundedInvested)}
@@ -880,6 +874,9 @@ function openTxnDetail(page, id) {
         ...mtfDetailCells(t, cell),
         pnl !== undefined && pnl !== null
             ? cell("Realized P&L", fmtSigned(pnl, true), "br-pnl-" + pnlClass(pnl))
+            : "",
+        !isBuy && getTxnReturnMap(transactions)[t.id] != null
+            ? cell("Return", fmtPct(getTxnReturnMap(transactions)[t.id]), "br-pnl-" + pnlClass(pnl))
             : "",
         !isBuy && getTxnHoldMap(transactions)[t.id]
             ? cell("Held for", fmtHold(getTxnHoldMap(transactions)[t.id]), pnl !== undefined && pnl !== null ? "br-pnl-" + pnlClass(pnl) : "")
@@ -1187,11 +1184,12 @@ function getFilteredTransactions(page) {
 function renderTransactions(page) {
     const tbody = page.querySelector("[data-txn-table] tbody");
     const pnlMap = getTxnPnLMap(transactions);
+    const returnMap = getTxnReturnMap(transactions);
     const holdMap = getTxnHoldMap(transactions);
     const list = getFilteredTransactions(page);
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No matching transactions" : "No transactions yet"}</h4><p>${transactions.length ? "Try a different search or filter." : "Your buys and sells will be listed here."}</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No matching transactions" : "No transactions yet"}</h4><p>${transactions.length ? "Try a different search or filter." : "Your buys and sells will be listed here."}</p></div></td></tr>`;
         return;
     }
 
@@ -1225,6 +1223,9 @@ function renderTransactions(page) {
                     <td class="${
                         pnl !== undefined ? "br-pnl-" + pnlClass(pnl) : ""
                     }">${pnl !== undefined ? fmtSigned(pnl, true) : "—"}</td>
+                    <td class="${
+                        pnl !== undefined && returnMap[t.id] != null ? "br-pnl-" + pnlClass(pnl) : ""
+                    }">${t.type === "SELL" && returnMap[t.id] != null ? fmtPct(returnMap[t.id]) : "—"}</td>
                     <td class="${
                         pnl !== undefined ? "br-pnl-" + pnlClass(pnl) : ""
                     }">${t.type === "SELL" && holdMap[t.id] ? fmtHold(holdMap[t.id]) : "—"}</td>
@@ -1597,7 +1598,7 @@ function updateTxnForm(page) {
 
     const own = readMtfOwn(form, total);
     if (own === undefined || isNaN(own) || total <= 0) {
-        preview.innerHTML = `<p class="inc-hint">Enter your margin to see how the trade splits between your money and the broker's.</p>`;
+        preview.innerHTML = "";
         return;
     }
     if (own > total + 0.004) {

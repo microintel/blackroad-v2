@@ -460,10 +460,6 @@ export function renderIncomeStatistics(entries = []) {
             <div class="br-page-heading">
                 <div>
                     <h2>Statistics</h2>
-                    <p>
-                        Understand your income, expenses,
-                        investments and financial activity.
-                    </p>
                 </div>
             </div>
 

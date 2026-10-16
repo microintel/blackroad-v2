@@ -452,7 +452,6 @@ export async function Dashboard() {
             <div class="br-dash-hello">
                 <p class="br-dash-date">${longDate()}</p>
                 <h2>${hello}</h2>
-                <p class="br-dash-sub">Here’s how your money looks today.</p>
                 ${tierBadge}
             </div>
             ${initial ? `<button type="button" class="br-dash-avatar${guestPhoto ? " br-dash-avatar--guest" : ""}" data-path="/account" aria-label="Open account">${initial}</button>` : ""}

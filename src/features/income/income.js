@@ -138,11 +138,6 @@ export async function Income() {
                             Invested by category
                         </h3>
 
-                        <p>
-                            Current money still parked
-                            in each investment category.
-                        </p>
-
                     </div>
 
                 </div>
@@ -519,6 +514,18 @@ function fieldHTML(
 
 function attachEvents(page) {
 
+    /* Statement period rows are keyboard-reachable: Enter / Space opens them. */
+    page.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+
+        const row = event.target.closest?.(".st-row-tap");
+
+        if (row && event.target === row) {
+            event.preventDefault();
+            row.click();
+        }
+    });
+
     page.addEventListener("change", (event) => {
         if (
             event.target.closest("[data-compare-select]") &&
@@ -558,7 +565,7 @@ function attachEvents(page) {
              */
 
             const periodRow =
-                event.target.closest("tr[data-month-key], tr[data-year-key]");
+                event.target.closest("tr[data-month-key], tr[data-year-key], .st-row-tap");
 
             if (periodRow && !event.target.closest("a, button, input, select, textarea")) {
                 openPeriodInLedger(
@@ -1835,10 +1842,6 @@ function renderSummary(
 
             </div>
 
-            <span class="inc-hint">
-                All recorded income
-            </span>
-
         </div>
 
 
@@ -1936,10 +1939,6 @@ function statCard(
             <strong class="inc-amount ${tone}">
                 ${value}
             </strong>
-
-            <span class="inc-hint">
-                ${description}
-            </span>
 
         </div>
 

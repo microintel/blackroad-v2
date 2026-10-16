@@ -16,6 +16,7 @@ import { startCurrencyTransition, endCurrencyTransition } from "../components/cu
 import { initChartTooltips } from "../components/chart-tooltip.js";
 import { pageSkeleton, skeletonVariantFor } from "../components/skeleton.js";
 import { initUX } from "./ux.js";
+import { initTabSwipe } from "./tab-swipe.js";
 
 initPreferences();
 initChartTooltips();
@@ -367,6 +368,7 @@ document.addEventListener(
     async () => {
         watchNavIntent();
         initUX();
+        initTabSwipe();
 
         // Initial page
         await renderApp();

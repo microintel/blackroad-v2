@@ -159,7 +159,6 @@ export async function Calculators() {
         <div class="br-page-heading">
             <div>
                 <h2>Calculators</h2>
-                <p>Estimate what your investments could grow to. Nothing here is saved.</p>
             </div>
         </div>
 
@@ -297,7 +296,6 @@ function paintData(page) {
     box.innerHTML = `
         <div class="cl-inputs-head">
             <h3>Use my investments</h3>
-            <p class="br-muted">Tap to fill the amount from your records.</p>
         </div>
         ${body}`;
 }

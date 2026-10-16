@@ -39,7 +39,6 @@ export async function Accounting() {
         <div class="br-page-heading">
             <div>
                 <h2>Accounting</h2>
-                <p>Net worth from your manual entries plus live data.</p>
             </div>
 
             <div class="br-page-actions">
@@ -54,7 +53,6 @@ export async function Accounting() {
                 <section class="br-card">
                     <div class="br-stat-label">Net worth</div>
                     <div class="br-stat-value" data-net>₹0</div>
-                    <p class="br-muted">Assets minus liabilities, calculated live</p>
                     <div data-donut></div>
                 </section>
 
@@ -66,7 +64,6 @@ export async function Accounting() {
                     <div class="ac-live-row"><span class="ac-label-ico">${ico("chart-pie")}Mutual Funds</span><strong data-live="mf">₹0</strong></div>
                     <div class="ac-live-row"><span class="ac-label-ico">${ico("coins")}Loans &amp; Liabilities</span><strong data-live="liab">₹0</strong></div>
                     <div class="ac-live-row"><span class="ac-label-ico">${ico("hand-coins")}Lending Receivable</span><strong data-live="recv">₹0</strong></div>
-                    <p class="br-field-help">Pulled automatically from Mutual Fund and Lending. Everything else is entered manually.</p>
                 </section>
             </div>
 

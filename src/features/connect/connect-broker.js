@@ -50,7 +50,6 @@ function listView() {
         <div class="br-page-heading">
             <div>
                 <h2>Connect Broker</h2>
-                <p>Choose your broker to link your account.</p>
             </div>
         </div>
 
@@ -81,7 +80,6 @@ function detailView(b, connecting) {
         <div class="br-page-heading">
             <div>
                 <h2>${esc(b.name)}</h2>
-                <p>${angelOn ? "Your connected account." : "Connect your account through the broker's API."}</p>
             </div>
 
             <button type="button" class="br-button" data-action="back">

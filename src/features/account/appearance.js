@@ -14,7 +14,6 @@ export function AppearanceCard() {
             <div class="br-appearance-row br-setting-row" data-group="sound">
                 <div>
                     <b>Click sound</b>
-                    <p>Play a soft click when you tap.</p>
                 </div>
                 <button type="button" class="br-switch" role="switch" data-value="1" aria-label="Click sound on tap"></button>
             </div>

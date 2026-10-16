@@ -64,7 +64,6 @@ const HEADING = `
     <div class="br-page-heading">
         <div>
             <h2>Account</h2>
-            <p>BlackRoad account settings.</p>
         </div>
     </div>
 `;
@@ -101,7 +100,6 @@ function renderSignedOut(page) {
 
         <section class="br-card" style="margin-top:20px;">
             <div class="br-card-heading"><h3>Just looking around?</h3></div>
-            <p class="br-muted">Guest mode lets you browse BlackRoad but not save changes.</p>
             <button type="button" class="br-button" data-action="guest">Continue as guest</button>
         </section>
 
@@ -237,7 +235,6 @@ async function renderProfile(page, user) {
                             Flip horizontally
                         </label>
 
-                        <p class="br-muted">Powered by DiceBear. Only the link is saved, and it is included in your backups.</p>
                         <p class="br-field-help ac-error" data-error="avatar" hidden></p>
 
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -270,7 +267,6 @@ async function renderProfile(page, user) {
                     <div class="br-card-heading"><h3>Data last updated</h3></div>
                     <form class="ac-stack" data-form="dataUpdated">
                         <label><span>Date &amp; time your BlackRoad data is up to date as of</span><input name="updated" type="datetime-local" step="1" class="br-input" value="${escapeAttr(dataUpdated)}"></label>
-                        <p class="br-muted">Saved with your data, so it is included in every backup and restore.</p>
                         <p class="br-field-help ac-error" data-error="dataUpdated" hidden></p>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <button type="submit" class="br-button br-button-primary">Save</button>
@@ -295,14 +291,12 @@ async function renderProfile(page, user) {
                     <div class="ac-plan-row">
                         <div>
                             <b>Premium plan (demo toggle)</b>
-                            <p class="br-muted">Flips your plan locally to preview Premium-only UI.</p>
                         </div>
                         <label class="ac-switch-label">
                             <input type="checkbox" data-premium ${user.plan === "Premium" ? "checked" : ""}>
                             Premium
                         </label>
                     </div>
-                    <p class="br-muted">Google Sign-In: reserved for Premium members (under development).</p>
                 </section>
             </div>
         </div>

@@ -73,7 +73,6 @@ export async function Lending() {
         <div class="br-page-heading">
             <div>
                 <h2>Lending</h2>
-                <p>Track money you lend or borrow, and your bank loans / EMIs.</p>
             </div>
 
             <div data-ll-actions></div>

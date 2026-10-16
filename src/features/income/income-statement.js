@@ -21,115 +21,46 @@ export function renderIncomeStatement(
     const yearRows =
         buildYearlyRows(rows);
 
+    const chips = [
+        ["Income", summary.income, "inc-dot-income"],
+        ["Expenses", summary.expense, "inc-dot-expense"],
+        ["Invested", summary.contributions, "inc-dot-invested"],
+        ["Sales", summary.assetSales, "inc-dot-sales"]
+    ];
+
     return `
-        <section class="br-statement">
+        <section class="br-statement st">
 
-            <div class="br-statement-summary">
-
-                ${summaryCard(
-                    "Income",
-                    summary.income,
-                    "Money received",
-                    "",
-                    "inc-c-income"
-                )}
-
-                ${summaryCard(
-                    "Expenses",
-                    summary.expense,
-                    "Money spent",
-                    "",
-                    "inc-c-expense"
-                )}
-
-                ${summaryCard(
-                    "Investments",
-                    summary.contributions,
-                    "Money moved into assets",
-                    "",
-                    "inc-c-invested"
-                )}
-
-                ${summaryCard(
-                    "Investment sales",
-                    summary.assetSales,
-                    "Money returned from assets",
-                    "",
-                    "inc-c-sales"
-                )}
-
-                ${summaryCard(
-                    "Realized gain / loss",
-                    summary.realizedGainLoss,
-                    "Investment performance",
-                    "",
-                    signClass(summary.realizedGainLoss)
-                )}
-
-                ${summaryCard(
-                    "Closing cash flow",
-                    summary.cash,
-                    "Income − expenses − investments + sales",
-                    summary.cash >= 0
-                        ? "positive"
-                        : "negative",
-                    summary.cash >= 0
-                        ? "inc-c-balance"
-                        : "inc-c-expense"
-                )}
-
-            </div>
-
-            <div class="br-card br-statement-card">
-
-                <div class="br-card-header">
-                    <div>
-                        <h3>Financial statement</h3>
-
-                        <p class="br-muted">
-                            Monthly and yearly cash-flow breakdown
-                            from your existing Income ledger.
-                        </p>
-                    </div>
-
-                    <div class="br-statement-period">
-                        ${entries.length}
-                        ${
-                            entries.length === 1
-                                ? "entry"
-                                : "entries"
-                        }
-                    </div>
-                </div>
-
+            <div class="st-hero">
+                <span class="st-hero-label">Cash flow</span>
+                <strong class="st-hero-value ${balanceClass(summary.cash)}">${formatMoney(summary.cash)}</strong>
                 ${
-                    rows.length
-                        ? renderPeriodViews(rows, yearRows)
-                        : emptyStatement()
+                    Math.abs(Number(summary.realizedGainLoss) || 0) >= 0.005
+                        ? `<span class="st-hero-sub ${signClass(summary.realizedGainLoss)}">${signed(summary.realizedGainLoss)} realized</span>`
+                        : ""
                 }
-
             </div>
 
-            <div
-                class="br-card"
-                style="margin-top:20px;"
-            >
-                <div class="br-card-header">
-                    <div>
-                        <h3>Investment positions</h3>
-
-                        <p class="br-muted">
-                            Net invested amount by category.
-                        </p>
+            <div class="st-chips">
+                ${chips.map(([label, value, dot]) => `
+                    <div class="st-chip">
+                        <span class="st-chip-label"><i class="st-dot ${dot}"></i>${label}</span>
+                        <strong>${amount(value)}</strong>
                     </div>
-                </div>
-
-                ${renderInvestmentTable(
-                    investmentBreakdownByCategory(
-                        entries
-                    )
-                )}
+                `).join("")}
             </div>
+
+            ${
+                rows.length
+                    ? renderPeriodViews(rows, yearRows)
+                    : emptyStatement()
+            }
+
+            ${renderInvestmentList(
+                investmentBreakdownByCategory(
+                    entries
+                )
+            )}
 
         </section>
     `;
@@ -166,30 +97,40 @@ function balanceClass(
         : "inc-c-balance";
 }
 
-function summaryCard(
-    label,
-    value,
-    description,
-    tone = "",
-    kind = ""
+/* A dash instead of "₹0" keeps the lists quiet. */
+function amount(
+    value
 ) {
-    return `
-        <div
-            class="br-card br-statement-stat ${tone} ${kind}"
-        >
-            <span class="br-muted">
-                ${label}
-            </span>
+    return Math.abs(Number(value) || 0) < 0.005
+        ? "–"
+        : formatMoney(value);
+}
 
-            <strong>
-                ${formatMoney(value)}
-            </strong>
+/* One coloured figure. Zero ones are hidden on phones to keep rows short. */
+function fig(
+    cls,
+    dot,
+    title,
+    value
+) {
+    const zero =
+        Math.abs(Number(value) || 0) < 0.005
+            ? " st-zero"
+            : "";
 
-            <small class="br-muted">
-                ${description}
-            </small>
-        </div>
-    `;
+    return `<span class="${cls}${zero}" title="${title}"><i class="st-dot ${dot}"></i>${amount(value)}</span>`;
+}
+
+function signed(
+    value
+) {
+    const number =
+        Number(value) || 0;
+
+    return (
+        (number > 0 ? "+" : number < 0 ? "−" : "") +
+        formatMoney(Math.abs(number))
+    );
 }
 
 function buildMonthlyRows(
@@ -358,7 +299,7 @@ function buildYearlyRows(
 }
 
 /*
- * Months / Years toggle. Both tables are drawn and a CSS-only radio
+ * Months / Years toggle. Both lists are drawn and a CSS-only radio
  * switch shows one of them, so it keeps working when the Statement
  * view is served from the render cache.
  */
@@ -373,326 +314,127 @@ function renderPeriodViews(
         <input type="radio" class="br-statement-radio"
             name="statement-unit" id="statement-unit-year"
             value="year">
-
-        <div class="br-statement-toggle" role="group"
+        <div class="br-statement-toggle st-toggle" role="group"
             aria-label="Statement period">
             <label for="statement-unit-month">Months</label>
             <label for="statement-unit-year">Years</label>
         </div>
-
         <div class="br-statement-view br-statement-view-month">
-            ${renderMonthlyTable(monthRows)}
+            ${renderPeriodList(monthRows)}
         </div>
-
         <div class="br-statement-view br-statement-view-year">
-            ${renderMonthlyTable(yearRows, "year")}
+            ${renderPeriodList(yearRows, "year")}
         </div>
     `;
 }
 
-function renderMonthlyTable(
+function cashOf(
+    row
+) {
+    return (
+        row.income -
+        row.expense -
+        row.investment +
+        row.sales
+    );
+}
+
+function renderPeriodList(
     rows,
     unit = "month"
 ) {
+    const total = rows.reduce(
+        (sum, row) => ({
+            income: sum.income + row.income,
+            expense: sum.expense + row.expense,
+            investment: sum.investment + row.investment,
+            sales: sum.sales + row.sales,
+            gainLoss: sum.gainLoss + row.gainLoss
+        }),
+        { income: 0, expense: 0, investment: 0, sales: 0, gainLoss: 0 }
+    );
+
+    const line = (
+        row,
+        title,
+        attrs = "",
+        extraClass = ""
+    ) => {
+        const cash = cashOf(row);
+        const gain = Number(row.gainLoss) || 0;
+
+        return `
+            <div class="st-row ${extraClass}" ${attrs}>
+                <div class="st-row-title">${title}</div>
+                <div class="st-row-figs">
+                    ${fig("inc-c-income", "inc-dot-income", "Income", row.income)}
+                    ${fig("inc-c-expense", "inc-dot-expense", "Expenses", row.expense)}
+                    ${fig("inc-c-invested", "inc-dot-invested", "Invested", row.investment)}
+                    ${fig("inc-c-sales", "inc-dot-sales", "Sales", row.sales)}
+                </div>
+                <div class="st-row-cash">
+                    <strong class="${balanceClass(cash)}">${formatMoney(cash)}</strong>
+                    ${
+                        Math.abs(gain) >= 0.005
+                            ? `<small class="${signClass(gain)}">${signed(gain)}</small>`
+                            : ""
+                    }
+                </div>
+            </div>
+        `;
+    };
+
     return `
-        <div
-            class="br-table-wrap"
-        >
-            <table
-                class="br-table br-statement-table"
-            >
-                <thead>
-                    <tr>
-                        <th>Period</th>
-                        <th>Income</th>
-                        <th>Expenses</th>
-                        <th>Invested</th>
-                        <th>Sales</th>
-                        <th>Cash flow</th>
-                        <th>Gain / Loss</th>
-                    </tr>
-                </thead>
+        <div class="st-list">
+            ${rows.map((row) => {
+                const mk = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, "0")}`;
 
-                <tbody>
-                    ${rows
-                        .map(
-                            (
-                                row
-                            ) => {
-                                const cash =
-                                    row.income -
-                                    row.expense -
-                                    row.investment +
-                                    row.sales;
-
-                                const mk = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, "0")}`;
-
-                                return `
-                                    <tr ${unit === "year" ? `data-year-key="${row.key}"` : `data-month-key="${mk}"`}>
-
-                                        <td>
-                                            <strong>
-                                                ${
-                                                    unit === "year"
-                                                        ? row.date.getFullYear()
-                                                        : formatMonth(
-                                                              row.date
-                                                          )
-                                                }
-                                            </strong>
-
-                                            <small
-                                                class="br-muted"
-                                            >
-                                                ${
-                                                    row.entries
-                                                }
-                                                ${
-                                                    row.entries ===
-                                                    1
-                                                        ? "entry"
-                                                        : "entries"
-                                                }
-                                                ·
-                                                ${
-                                                    row.transactions
-                                                }
-                                                ${
-                                                    row.transactions ===
-                                                    1
-                                                        ? "transaction"
-                                                        : "transactions"
-                                                }
-                                            </small>
-                                        </td>
-
-                                        <td class="inc-c-income">
-                                            ${formatMoney(
-                                                row.income
-                                            )}
-                                        </td>
-
-                                        <td class="inc-c-expense">
-                                            ${formatMoney(
-                                                row.expense
-                                            )}
-                                        </td>
-
-                                        <td class="inc-c-invested">
-                                            ${formatMoney(
-                                                row.investment
-                                            )}
-                                        </td>
-
-                                        <td class="inc-c-sales">
-                                            ${formatMoney(
-                                                row.sales
-                                            )}
-                                        </td>
-
-                                        <td class="${balanceClass(cash)}">
-                                            <strong>
-                                                ${formatMoney(
-                                                    cash
-                                                )}
-                                            </strong>
-                                        </td>
-
-                                        <td class="${signClass(row.gainLoss)}">
-                                            ${formatMoney(
-                                                row.gainLoss
-                                            )}
-                                        </td>
-
-                                    </tr>
-                                `;
-                            }
-                        )
-                        .join("")}
-                </tbody>
-
-                <tfoot>
-                    ${renderTotals(rows)}
-                </tfoot>
-
-            </table>
+                return line(
+                    row,
+                    unit === "year"
+                        ? row.date.getFullYear()
+                        : formatMonth(row.date),
+                    unit === "year"
+                        ? `data-year-key="${row.key}" role="button" tabindex="0"`
+                        : `data-month-key="${mk}" role="button" tabindex="0"`,
+                    "st-row-tap"
+                );
+            }).join("")}
+            ${line(total, "Total", "", "st-row-total")}
         </div>
     `;
 }
 
-function renderTotals(
-    rows
-) {
-    const total = rows.reduce(
-        (result, row) => {
-            result.income +=
-                row.income;
-
-            result.expense +=
-                row.expense;
-
-            result.investment +=
-                row.investment;
-
-            result.sales +=
-                row.sales;
-
-            result.gainLoss +=
-                row.gainLoss;
-
-            return result;
-        },
-        {
-            income: 0,
-            expense: 0,
-            investment: 0,
-            sales: 0,
-            gainLoss: 0
-        }
-    );
-
-    const cash =
-        total.income -
-        total.expense -
-        total.investment +
-        total.sales;
-
-    return `
-        <tr>
-
-            <th>Total</th>
-
-            <th class="inc-c-income">
-                ${formatMoney(
-                    total.income
-                )}
-            </th>
-
-            <th class="inc-c-expense">
-                ${formatMoney(
-                    total.expense
-                )}
-            </th>
-
-            <th class="inc-c-invested">
-                ${formatMoney(
-                    total.investment
-                )}
-            </th>
-
-            <th class="inc-c-sales">
-                ${formatMoney(
-                    total.sales
-                )}
-            </th>
-
-            <th class="${balanceClass(cash)}">
-                ${formatMoney(
-                    cash
-                )}
-            </th>
-
-            <th class="${signClass(total.gainLoss)}">
-                ${formatMoney(
-                    total.gainLoss
-                )}
-            </th>
-
-        </tr>
-    `;
-}
-
-function renderInvestmentTable(
+function renderInvestmentList(
     rows
 ) {
     if (!rows.length) {
-        return `
-            <p class="br-muted">
-                No investment activity recorded yet.
-            </p>
-        `;
+        return "";
     }
 
     return `
-        <div
-            class="br-table-wrap"
-        >
-            <table
-                class="br-table"
-            >
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Total bought</th>
-                        <th>Total sold</th>
-                        <th>Currently invested</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    ${rows
-                        .map(
-                            (
-                                row
-                            ) => `
-                                <tr>
-
-                                    <td>
-                                        <strong>
-                                            ${escapeHTML(
-                                                row.category
-                                            )}
-                                        </strong>
-                                    </td>
-
-                                    <td class="inc-c-invested">
-                                        ${formatMoney(
-                                            row.invested
-                                        )}
-                                    </td>
-
-                                    <td class="inc-c-sales">
-                                        ${formatMoney(
-                                            row.sold
-                                        )}
-                                    </td>
-
-                                    <td class="inc-c-invested">
-                                        <strong>
-                                            ${formatMoney(
-                                                row.net
-                                            )}
-                                        </strong>
-                                    </td>
-
-                                </tr>
-                            `
-                        )
-                        .join("")}
-                </tbody>
-            </table>
+        <div class="st-section">
+            <h3 class="st-section-title">Investments</h3>
+            <div class="st-list">
+                ${rows.map((row) => `
+                    <div class="st-row st-row-invest">
+                        <div class="st-row-title">${escapeHTML(row.category)}</div>
+                        <div class="st-row-figs">
+                            ${fig("inc-c-invested", "inc-dot-invested", "Bought", row.invested)}
+                            ${fig("inc-c-sales", "inc-dot-sales", "Sold", row.sold)}
+                        </div>
+                        <div class="st-row-cash">
+                            <strong class="inc-c-invested">${formatMoney(row.net)}</strong>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
         </div>
     `;
 }
 
 function emptyStatement() {
-    return `
-        <div
-            style="
-                padding:40px 20px;
-                text-align:center;
-            "
-        >
-            <h3>
-                No statement data
-            </h3>
-
-            <p class="br-muted">
-                Add income and transactions to
-                generate your statement.
-            </p>
-        </div>
-    `;
+    return `<div class="st-empty">No data yet</div>`;
 }
 
 function formatMonth(

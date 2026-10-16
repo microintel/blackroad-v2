@@ -45,7 +45,6 @@ function listView() {
         <div class="br-page-heading">
             <div>
                 <h2>Brokerage Report Readers</h2>
-                <p>Indian brokers. Pick one to see its reports.</p>
             </div>
         </div>
 
@@ -72,7 +71,6 @@ function detailView(b, activeReport) {
         <div class="br-page-heading">
             <div>
                 <h2>${esc(b.name)} reports</h2>
-                <p>Choose a report.</p>
             </div>
 
             <button type="button" class="br-button" data-action="back">

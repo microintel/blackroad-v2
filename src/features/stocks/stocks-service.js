@@ -93,6 +93,7 @@ export function replaySymbol(symbol, transactions) {
     let totalBuyQty = 0;
     let totalSellQty = 0;
     const txnPnL = {};
+    const txnReturnPct = {};
 
     for (const t of txns) {
         if (t.type === "BUY") {
@@ -122,6 +123,8 @@ export function replaySymbol(symbol, transactions) {
 
             realizedPnL = round2(realizedPnL + txnRealized);
             txnPnL[t.id] = txnRealized;
+            // Return on the cost of the shares sold (null when there is no cost).
+            txnReturnPct[t.id] = costBasis > 0 ? (txnRealized / costBasis) * 100 : null;
             // Selling releases my amount and the MTF-funded part in the
             // same proportion as they sit in the position.
             const keep = qty > 0 ? 1 - t.quantity / qty : 0;
@@ -143,6 +146,7 @@ export function replaySymbol(symbol, transactions) {
         totalBuyQty,
         totalSellQty,
         txnPnL,
+        txnReturnPct,
         error: null
     };
 }
@@ -255,6 +259,17 @@ export function fmtTime(t) {
         second: "2-digit",
         hour12: true
     });
+}
+
+export function getTxnReturnMap(transactions) {
+    const map = {};
+
+    getAllSymbols(transactions).forEach((sym) => {
+        const r = replaySymbol(sym, transactions);
+        if (r.txnReturnPct) Object.assign(map, r.txnReturnPct);
+    });
+
+    return map;
 }
 
 export function getTxnPnLMap(transactions) {

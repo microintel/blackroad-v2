@@ -36,7 +36,6 @@ export async function Deposits() {
         <div class="br-page-heading">
             <div>
                 <h2>Fixed Deposits</h2>
-                <p>Track bank FDs, maturity values and interest earned.</p>
             </div>
 
             <button type="button" class="br-button br-button-primary" data-action="add-fd">

@@ -104,7 +104,6 @@ export async function StepUp() {
         <div class="br-page-heading">
             <div>
                 <h2>Mutual Fund</h2>
-                <p>SIP compounder — step-ups, skipped months and NAV allocation tracking.</p>
             </div>
             <div data-su-profilebar></div>
         </div>
@@ -192,7 +191,6 @@ function modalsHTML() {
                             <label><span>Units (optional)</span>
                                 <input name="units" type="number" step="0.0001" min="0" class="br-input"></label>
                         </div>
-                        <p class="br-field-help" style="margin-top:8px;">Enter the actual NAV, or the units you received. If only NAV is given, units = amount / NAV.</p>
                     </div>
                     <div class="br-modal-footer">
                         <button type="button" class="br-button" data-action="close-modal">Cancel</button>
@@ -612,7 +610,6 @@ function fundHTML() {
                 }
             </form>
             <p class="br-field-help" style="margin-top:8px;">
-                Importing replaces this SIP's daily entries with the fund's real NAV history from your start date.
                 <a href="https://microintel.github.io/invisible-house/" target="_blank" rel="noopener noreferrer">Get fund data</a>
             </p>
         </section>
@@ -665,7 +662,6 @@ function fundHTML() {
                     <span><i style="background:var(--br-info)"></i>Expected · average (${projection.avgPct >= 0 ? "+" : ""}${projection.avgPct.toFixed(1)}%/yr)</span>
                     <span><i style="background:var(--br-danger)"></i>Pessimistic · worst year (${projection.worstPct >= 0 ? "+" : ""}${projection.worstPct.toFixed(1)}%/yr)</span>
                 </div>
-                <p class="br-muted" style="margin:8px 0 0;">Based only on this fund's own calendar-year returns. Not a forecast.</p>
             </section>`
                     : ""
             }
@@ -1139,7 +1135,6 @@ function ledgerHTML() {
     const pendingBox = pending.length
         ? `<section class="br-card" style="margin-bottom:20px;">
             <h3 style="margin-bottom:4px;">Pending allocations</h3>
-            <p class="br-muted" style="margin:0 0 12px;">Only instalments marked <b>Allocated</b> count toward invested amount and units.</p>
             ${pending
                 .map(
                     (r) => `
@@ -1340,7 +1335,6 @@ function settingsHTML() {
                             : ""
                     }
                 </div>
-                <p class="br-field-help" style="margin-top:8px;">Backup and restore of all SIPs is part of <a href="#/data">Data Management</a>.</p>
             </section>
         </div>
     `;
@@ -2096,9 +2090,7 @@ function attachEvents(page) {
         const prev = entries.length ? entries[entries.length - 1].date : null;
         const n = sipCountBetween(settings.startDate, prev, date);
 
-        preview.textContent = n
-            ? `Up to ${n} SIP instalment${n > 1 ? "s" : ""} due by this date — only those marked Allocated are counted.`
-            : "";
+        preview.textContent = "";
     });
 
 }

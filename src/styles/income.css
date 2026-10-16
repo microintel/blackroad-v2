@@ -1707,3 +1707,151 @@
 .br-income .inc-pie-body { flex: 1; }
 .br-income .inc-bar-card { align-items: center; }
 .br-income .inc-bar-svg { display: block; width: min(100%, 560px); height: auto; }
+
+/* =========================================================
+   STATEMENT - minimal, native-app style
+   Flat lists, one big number, colour dots instead of labels.
+   ========================================================= */
+.br-income .st { gap: 20px; }
+
+.br-income .st-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0 2px;
+    text-align: center;
+}
+.br-income .st-hero-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--br-text-muted);
+}
+.br-income .st-hero-value {
+    font-size: clamp(32px, 9vw, 46px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+}
+.br-income .st-hero-sub { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.br-income .st-chips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.br-income .st-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--br-border);
+    border-radius: 14px;
+    min-width: 0;
+}
+.br-income .st-chip-label { font-size: 12px; color: var(--br-text-muted); }
+.br-income .st-chip strong {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.br-income .st-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+.br-income .inc-dot-income { background: var(--inc-c-income); }
+.br-income .inc-dot-expense { background: var(--inc-c-expense); }
+.br-income .inc-dot-invested { background: var(--inc-c-invested); }
+.br-income .inc-dot-sales { background: var(--inc-c-sales); }
+
+/* Months / Years: full-width segmented control on phones */
+.br-income .st-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+}
+.br-income .st-toggle label { justify-content: center; }
+
+.br-income .st-list {
+    border: 1px solid var(--br-border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--br-surface);
+}
+.br-income .st-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title cash" "figs figs";
+    gap: 6px 12px;
+    align-items: center;
+    padding: 14px 16px;
+    border-top: 1px solid var(--br-border);
+}
+.br-income .st-row:first-child { border-top: 0; }
+.br-income .st-row-title { grid-area: title; font-size: 15px; font-weight: 600; min-width: 0; }
+.br-income .st-row-figs {
+    grid-area: figs;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+}
+.br-income .st-zero { display: none; }
+.br-income .st-row-cash {
+    grid-area: cash;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-variant-numeric: tabular-nums;
+}
+.br-income .st-row-cash strong { font-size: 16px; font-weight: 600; }
+.br-income .st-row-cash small { font-size: 12px; }
+
+.br-income .st-row-tap { cursor: pointer; transition: background .15s ease; }
+.br-income .st-row-tap:hover { background: var(--hover-background); }
+.br-income .st-row-tap:active { background: var(--active-background); }
+.br-income .st-row-total { background: var(--hover-background); }
+.br-income .st-row-total .st-row-title { color: var(--br-text-muted); font-weight: 600; }
+
+.br-income .st-section { display: flex; flex-direction: column; gap: 8px; }
+.br-income .st-section-title {
+    margin: 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--br-text-muted);
+}
+.br-income .st-empty { padding: 48px 0; text-align: center; color: var(--br-text-muted); }
+
+@media (min-width: 760px) {
+    .br-income .st-chips { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .br-income .st-row {
+        grid-template-columns: minmax(120px, 1fr) minmax(0, 2.6fr) minmax(110px, 1fr);
+        grid-template-areas: "title figs cash";
+        padding: 14px 20px;
+    }
+    .br-income .st-row-figs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px 16px;
+        font-size: 13.5px;
+    }
+    .br-income .st-row-invest .st-row-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .br-income .st-zero { display: inline; }
+    .br-income .st-row-title { font-size: 15px; }
+}
