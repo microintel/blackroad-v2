@@ -129,6 +129,15 @@ export function Topbar(title) {
                         <button type="button" role="menuitem" class="br-account-item" data-account-go>
                             ${icon("user-round", { size: 18 })}<span>Account</span>
                         </button>
+                        <button type="button" role="menuitem" class="br-account-item br-account-item--phone" data-account-notify>
+                            ${icon("bell", { size: 18 })}<span>Notifications</span>
+                        </button>
+                        <button type="button" role="menuitem" class="br-account-item br-account-item--phone" data-pref="theme">
+                            <span class="br-account-item-icon"></span><span class="br-account-item-text"></span>
+                        </button>
+                        <button type="button" role="menuitem" class="br-account-item br-account-item--phone" data-pref="currency">
+                            <span class="br-account-item-icon"></span><span class="br-account-item-text"></span>
+                        </button>
                         <button type="button" role="menuitem" class="br-account-item br-account-item--danger" data-action="logout">
                             ${icon("log-out", { size: 18 })}<span>Log out</span>
                         </button>

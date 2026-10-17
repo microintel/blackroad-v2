@@ -202,35 +202,6 @@ export async function Income() {
                 </div>
 
 
-                <div class="inc-ledger-filters">
-
-                    <input
-                        type="date"
-                        class="br-input"
-                        aria-label="From date"
-                        title="From date"
-                        data-ledger-from
-                    />
-
-                    <input
-                        type="date"
-                        class="br-input"
-                        aria-label="To date"
-                        title="To date"
-                        data-ledger-to
-                    />
-
-                    <button
-                        type="button"
-                        class="br-button"
-                        data-action="collapse-all"
-                    >
-                        Collapse all
-                    </button>
-
-                </div>
-
-
                 <div data-ledger></div>
 
             </section>

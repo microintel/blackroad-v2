@@ -383,49 +383,132 @@ function breakdownCard(title, sub, map, total, emptyText, palette = SERIES) {
         </div>`;
 }
 
-/* Income / expense / balance by month, inline SVG (no chart library) */
-function monthlyChart(monthly) {
-    const keys = [...monthly.keys()].sort();
-    if (!keys.length) return "";
-    const data = keys.map((k) => {
-        const m = monthly.get(k);
-        return { income: m.income, expense: m.expense, balance: m.income - m.expense - m.investment + m.sale };
-    });
-    const vals = data.flatMap((d) => [d.income, d.expense, d.balance]);
+/* Income / expense / balance by month, inline SVG (no chart library).
+   The card carries its own data and a range picker (presets + From / To
+   month), so it keeps working when the Statistics view is served from cache. */
+const RANGE_PRESETS = [["6M", 6], ["1Y", 12], ["3Y", 36], ["5Y", 60], ["All", 0]];
+const DEFAULT_RANGE = 12;
+
+function chartSVG(series) {
+    if (!series.length) return `<p class="br-muted" style="padding:24px 0">No months in this range.</p>`;
+
+    const vals = series.flatMap((d) => [d.income, d.expense, d.balance]);
     const max = Math.max(...vals, 1);
     const min = Math.min(...vals, 0);
-    const W = Math.max(640, keys.length * 56), H = 220, pad = 28;
-    const step = keys.length > 1 ? (W - pad * 2) / (keys.length - 1) : 0;
+    const W = Math.max(640, series.length * 26), H = 240, pad = 28;
+    const step = series.length > 1 ? (W - pad * 2) / (series.length - 1) : 0;
+    const every = Math.max(1, Math.ceil(56 / (step || 56)));
     const y = (v) => H - pad - ((v - min) / (max - min || 1)) * (H - pad * 2);
-    const pts = (f) => data.map((d, i) => `${pad + i * step},${y(f(d))}`).join(" ");
-    const dots = (f, c) => data.map((d, i) => `<circle cx="${pad + i * step}" cy="${y(f(d))}" r="3" fill="${c}"/>`).join("");
+    const pts = (f) => series.map((d, i) => `${pad + i * step},${y(f(d))}`).join(" ");
+    const dots = (f, c) => series.map((d, i) => `<circle cx="${pad + i * step}" cy="${y(f(d))}" r="3" fill="${c}"/>`).join("");
     const line = (f, c) => `<polyline fill="none" stroke="${c}" stroke-width="2.5" points="${pts(f)}"/>${dots(f, c)}`;
 
     return `
-        <div class="br-card">
+        <svg viewBox="0 0 ${W} ${H}" style="min-width:100%;width:${W}px;max-width:none;height:auto" role="img" aria-label="Monthly income, expense and balance">
+            <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" stroke="currentColor" opacity=".2"/>
+            ${line((d) => d.income, COLORS.success)}
+            ${line((d) => d.expense, COLORS.danger)}
+            ${line((d) => d.balance, COLORS.info)}
+            ${series.map((d, i) => i % every ? "" : `<text x="${pad + i * step}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${escapeHtml(monthLabel(d.key))}</text>`).join("")}
+            ${series.map((d, i) => {
+                const bandW = series.length > 1 ? step : W - pad * 2;
+                const bandX = series.length > 1 ? pad + i * step - step / 2 : pad;
+                return `<rect class="br-tip-hit" x="${bandX}" y="0" width="${bandW}" height="${H}" ${tipAttr(monthLabel(d.key), [
+                    ["Income", formatMoney(d.income), COLORS.success],
+                    ["Expense", formatMoney(d.expense), COLORS.danger],
+                    ["Balance", formatMoney(d.balance), COLORS.info]
+                ])}></rect>`;
+            }).join("")}
+        </svg>`;
+}
+
+function monthlyChart(monthly) {
+    const keys = [...monthly.keys()].sort();
+    if (!keys.length) return "";
+
+    const data = keys.map((k) => {
+        const m = monthly.get(k);
+        return { key: k, income: m.income, expense: m.expense, balance: m.income - m.expense - m.investment + m.sale };
+    });
+
+    const last = data.length - 1;
+    const from = Math.max(0, data.length - DEFAULT_RANGE);
+    const opts = (sel) => data.map((d, i) => `<option value="${i}"${i === sel ? " selected" : ""}>${escapeHtml(monthLabel(d.key))}</option>`).join("");
+
+    return `
+        <div class="br-card stat-range-card" data-stat-chart data-series="${escapeHtml(JSON.stringify(data))}" data-from="${from}" data-to="${last}">
             <div class="br-card-heading"><div>
                 <h3>Monthly chart</h3>
                 <p class="br-muted"><span style="color:${COLORS.success}">●</span> Income &nbsp; <span style="color:${COLORS.danger}">●</span> Expense &nbsp; <span style="color:${COLORS.info}">●</span> Balance</p>
             </div></div>
-            <div class="br-table-wrap">
-                <svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 640)}px;width:100%;height:auto" role="img" aria-label="Monthly income, expense and balance">
-                    <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" stroke="currentColor" opacity=".2"/>
-                    ${line((d) => d.income, COLORS.success)}
-                    ${line((d) => d.expense, COLORS.danger)}
-                    ${line((d) => d.balance, COLORS.info)}
-                    ${keys.map((k, i) => `<text x="${pad + i * step}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">${escapeHtml(monthLabel(k))}</text>`).join("")}
-                    ${keys.map((k, i) => {
-                        const bandW = keys.length > 1 ? step : W - pad * 2;
-                        const bandX = keys.length > 1 ? pad + i * step - step / 2 : pad;
-                        return `<rect class="br-tip-hit" x="${bandX}" y="0" width="${bandW}" height="${H}" ${tipAttr(monthLabel(k), [
-                            ["Income", formatMoney(data[i].income), COLORS.success],
-                            ["Expense", formatMoney(data[i].expense), COLORS.danger],
-                            ["Balance", formatMoney(data[i].balance), COLORS.info]
-                        ])}></rect>`;
-                    }).join("")}
-                </svg>
+
+            <div class="stat-range">
+                <div class="stat-range-pills" role="group" aria-label="Chart range">
+                    ${RANGE_PRESETS.map(([label, n]) => `<button type="button" data-range-preset="${n}" aria-pressed="${(n === 0 ? from === 0 : n === DEFAULT_RANGE && from === Math.max(0, data.length - n)) ? "true" : "false"}">${label}</button>`).join("")}
+                </div>
+                <div class="stat-range-pick">
+                    <label><span>From</span><select data-range-from aria-label="From month">${opts(from)}</select></label>
+                    <label><span>To</span><select data-range-to aria-label="To month">${opts(last)}</select></label>
+                </div>
             </div>
+
+            <div class="br-table-wrap" data-chart-body>${chartSVG(data.slice(from, last + 1))}</div>
         </div>`;
+}
+
+/* One delegated listener (installed once) redraws the chart for a new range. */
+function paintRange(card, from, to) {
+    let data = [];
+
+    try { data = JSON.parse(card.dataset.series || "[]"); } catch { data = []; }
+
+    const n = data.length;
+
+    from = Math.max(0, Math.min(from, n - 1));
+    to = Math.max(0, Math.min(to, n - 1));
+    if (from > to) [from, to] = [to, from];
+
+    card.dataset.from = String(from);
+    card.dataset.to = String(to);
+    card.querySelector("[data-range-from]").value = String(from);
+    card.querySelector("[data-range-to]").value = String(to);
+    card.querySelector("[data-chart-body]").innerHTML = chartSVG(data.slice(from, to + 1));
+
+    card.querySelectorAll("[data-range-preset]").forEach((btn) => {
+        const k = Number(btn.dataset.rangePreset);
+        const on = to === n - 1 && (k === 0 ? from === 0 : from === Math.max(0, n - k));
+
+        btn.setAttribute("aria-pressed", String(on));
+    });
+}
+
+if (typeof document !== "undefined" && !window.__brStatRange) {
+    window.__brStatRange = true;
+
+    document.addEventListener("click", (event) => {
+        const btn = event.target.closest?.("[data-range-preset]");
+        const card = btn && btn.closest("[data-stat-chart]");
+
+        if (!card) return;
+
+        const n = JSON.parse(card.dataset.series || "[]").length;
+        const k = Number(btn.dataset.rangePreset);
+
+        paintRange(card, k === 0 ? 0 : Math.max(0, n - k), n - 1);
+    });
+
+    document.addEventListener("change", (event) => {
+        const sel = event.target.closest?.("[data-range-from], [data-range-to]");
+        const card = sel && sel.closest("[data-stat-chart]");
+
+        if (!card) return;
+
+        paintRange(
+            card,
+            Number(card.querySelector("[data-range-from]").value),
+            Number(card.querySelector("[data-range-to]").value)
+        );
+    });
 }
 
 function renderExtraStatistics(entries) {
@@ -433,12 +516,6 @@ function renderExtraStatistics(entries) {
     const x = computeExtras(entries);
     const sum = (m) => [...m.values()].reduce((a, c) => a + c.total, 0);
     return `
-        ${ratioCards(x)}
-        ${monthlyChart(x.monthly)}
-        <div class="br-grid br-grid-2">
-            ${breakdownCard("Expense by category", "Tap a category to see its transactions.", x.expCats, sum(x.expCats), "No expenses logged yet")}
-            ${breakdownCard("Income by category", "Genuine income only, by entry category.", x.incCats, sum(x.incCats), "No income logged yet", [COLORS.success, ...SERIES])}
-        </div>
         ${breakdownCard("Investment returns", "Dividends, interest and other portfolio earnings.", x.retCats, sum(x.retCats), "No investment returns logged yet", [COLORS.info, ...SERIES])}
     `;
 }
@@ -507,27 +584,6 @@ export function renderIncomeStatistics(entries = []) {
 
             </div>
 
-            <div class="br-grid">
-
-                <div class="br-card">
-
-                    <div class="br-card-heading">
-                        <div>
-                            <h3>Monthly Overview</h3>
-                            <p class="br-muted">
-                                Income and spending by month.
-                            </p>
-                        </div>
-                    </div>
-
-                    ${renderMonthlyTable(statistics.monthly)}
-
-                </div>
-
-                
-
-            </div>
-
             <div class="br-card">
 
                 <div class="br-card-heading">
@@ -573,6 +629,29 @@ export function renderIncomeStatistics(entries = []) {
                     </div>
 
                 </div>
+
+            </div>
+
+            ${entries.length ? (() => { const x = computeExtras(entries); return monthlyChart(x.monthly) + ratioCards(x); })() : ""}
+
+            <div class="br-grid">
+
+                <div class="br-card">
+
+                    <div class="br-card-heading">
+                        <div>
+                            <h3>Monthly Overview</h3>
+                            <p class="br-muted">
+                                Income and spending by month.
+                            </p>
+                        </div>
+                    </div>
+
+                    ${renderMonthlyTable(statistics.monthly)}
+
+                </div>
+
+                
 
             </div>
 

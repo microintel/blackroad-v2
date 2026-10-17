@@ -35,7 +35,7 @@ const LEGEND_PREVIEW = 6;
 
 /* Slices: [{ label, value, color }]. Zero / negative values are skipped. */
 function pieSVG(rows, total, label, centerTitle, centerValue) {
-    const R = 90, r = 56, cx = 100, cy = 100;
+    const R = 92, r = 66, cx = 100, cy = 100;
     const point = (angle, radius) => [
         cx + radius * Math.sin(angle),
         cy - radius * Math.cos(angle)
@@ -62,7 +62,7 @@ function pieSVG(rows, total, label, centerTitle, centerValue) {
 
         start = end;
 
-        return `<path class="inc-pie-slice" data-i="${i}" fill="${s.color}" stroke="var(--br-surface, #000)" stroke-width="1" d="M${x1} ${y1}A${R} ${R} 0 ${large} 1 ${x2} ${y2}L${x3} ${y3}A${r} ${r} 0 ${large} 0 ${x4} ${y4}Z"/>`;
+        return `<path class="inc-pie-slice" data-i="${i}" fill="${s.color}" stroke="var(--br-surface, #000)" stroke-width="2" d="M${x1} ${y1}A${R} ${R} 0 ${large} 1 ${x2} ${y2}L${x3} ${y3}A${r} ${r} 0 ${large} 0 ${x4} ${y4}Z"/>`;
     });
 
     return `
@@ -75,34 +75,70 @@ function pieSVG(rows, total, label, centerTitle, centerValue) {
         </svg>`;
 }
 
-function legend(rows, total) {
-    const many = rows.length > LEGEND_PREVIEW;
+function legend(rows, total, preview = LEGEND_PREVIEW, expandable = true) {
+    const many = rows.length > preview;
 
     return `
         <ul class="inc-pie-legend${many ? " is-collapsed" : ""}" data-legend>${rows.map((s, i) => `
-            <li class="${i >= LEGEND_PREVIEW ? "inc-pie-more" : ""}" data-i="${i}" tabindex="0">
+            <li class="${i >= preview ? "inc-pie-more" : ""}" data-i="${i}" tabindex="0">
                 <span class="inc-pie-dot" style="background:${s.color}"></span>
                 <span class="inc-pie-name">${esc(s.label)}</span>
                 <span class="inc-pie-val">${formatMoney(s.value)}
                     <small>${((s.value / total) * 100).toFixed(1)}%</small></span>
             </li>`).join("")}
         </ul>
+        ${many && expandable ? `<button type="button" class="inc-pie-toggle" data-legend-toggle aria-expanded="false">Show all ${rows.length}</button>` : ""}
+        ${many && !expandable ? `<p class="inc-pie-more-note">Top ${preview} of ${rows.length} shown. See Bars for all.</p>` : ""}`;
+}
+
+/* Horizontal-bar view of the same slices (same data-i hooks as the legend). */
+function barsList(rows, total) {
+    const many = rows.length > LEGEND_PREVIEW;
+    const max = Math.max(...rows.map((s) => s.value), 1);
+
+    return `
+        <ul class="inc-pie-legend inc-bars${many ? " is-collapsed" : ""}" data-legend>${rows.map((s, i) => `
+            <li class="${i >= LEGEND_PREVIEW ? "inc-pie-more" : ""}" data-i="${i}" tabindex="0">
+                <div class="inc-bars-top">
+                    <span class="inc-pie-name"><i class="inc-pie-dot" style="background:${s.color}"></i>${esc(s.label)}</span>
+                    <span class="inc-pie-val">${formatMoney(s.value)} <small>${((s.value / total) * 100).toFixed(1)}%</small></span>
+                </div>
+                <div class="inc-bars-track"><span style="width:${Math.max(1.5, (s.value / max) * 100).toFixed(2)}%;background:${s.color}"></span></div>
+            </li>`).join("")}
+        </ul>
         ${many ? `<button type="button" class="inc-pie-toggle" data-legend-toggle aria-expanded="false">Show all ${rows.length}</button>` : ""}`;
 }
 
-function card(title, hint, slices, centerTitle, centerValue, emptyText, extra = "") {
+/* view: "pie" | "bars" | null (null = donut only, no switch) */
+function card(title, hint, slices, centerTitle, centerValue, emptyText, extra = "", view = null) {
     const rows = slices.filter((s) => s.value > 0);
     const total = rows.reduce((n, s) => n + s.value, 0);
 
     const data = esc(JSON.stringify(rows.map((s) => [s.label, formatMoney(s.value), ((s.value / (total || 1)) * 100).toFixed(1) + "%"])));
 
+    const sw = view && total ? `
+        <div class="inc-switch" role="group" aria-label="Chart type">
+            <button type="button" data-view-set="bars" aria-pressed="${view === "bars"}">Bars</button>
+            <button type="button" data-view-set="pie" aria-pressed="${view === "pie"}">Pie</button>
+        </div>` : "";
+
+    const body = !total
+        ? `<p class="inc-quiet">${esc(emptyText)}</p>`
+        : view
+            ? `<div class="inc-pie-body inc-view inc-view-pie">${pieSVG(rows, total, title, centerTitle, centerValue)}${legend(rows, total, 3, false)}</div>
+               <div class="inc-pie-body inc-view inc-view-bars">${barsList(rows, total)}</div>`
+            : `<div class="inc-pie-body">${pieSVG(rows, total, title, centerTitle, centerValue)}${legend(rows, total)}</div>`;
+
     return `
-        <div class="inc-pie-card" data-pie-card data-rows="${data}">
-            <h4>${esc(title)}</h4>
-            <p class="inc-pie-hint">${esc(hint)}</p>
-            ${total
-                ? `<div class="inc-pie-body">${pieSVG(rows, total, title, centerTitle, centerValue)}${legend(rows, total)}</div>`
-                : `<p class="inc-quiet">${esc(emptyText)}</p>`}
+        <div class="inc-pie-card" data-pie-card data-rows="${data}"${view ? ` data-view="${view}"` : ""}>
+            <div class="inc-pie-head">
+                <div>
+                    <h4>${esc(title)}</h4>
+                    <p class="inc-pie-hint">${esc(hint)}</p>
+                </div>
+                ${sw}
+            </div>
+            ${body}
             ${extra}
         </div>`;
 }
@@ -144,16 +180,18 @@ function barsSection(expense, invested) {
         { label: "Invested", value: Math.max(0, Number(invested) || 0), color: "#8B5CF6" }
     ];
     const max = Math.max(...bars.map((b) => b.value), 1);
-    const W = 420, H = 260, base = 220, top = 36, bw = 110;
-    const xs = [W / 2 - bw - 30, W / 2 + 30];
 
-    const body = bars.map((b, i) => {
-        const h = Math.max(b.value > 0 ? 3 : 0, (b.value / max) * (base - top));
+    const body = bars.map((b) => {
+        const pct = Math.max(b.value > 0 ? 1.5 : 0, (b.value / max) * 100);
 
         return `
-            <rect x="${xs[i]}" y="${base - h}" width="${bw}" height="${h}" rx="8" fill="${b.color}"/>
-            <text x="${xs[i] + bw / 2}" y="${base - h - 10}" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">${esc(formatMoney(b.value))}</text>
-            <text x="${xs[i] + bw / 2}" y="${base + 22}" text-anchor="middle" font-size="13" fill="currentColor" opacity=".75">${b.label}</text>`;
+            <div class="inc-hbar">
+                <div class="inc-hbar-top">
+                    <span class="inc-hbar-label"><i style="background:${b.color}"></i>${b.label}</span>
+                    <strong class="inc-hbar-value">${esc(formatMoney(b.value))}</strong>
+                </div>
+                <div class="inc-hbar-track"><span style="width:${pct.toFixed(2)}%;background:${b.color}"></span></div>
+            </div>`;
     }).join("");
 
     const ratio = bars[0].value > 0
@@ -168,11 +206,8 @@ function barsSection(expense, invested) {
                     <p>${esc(ratio) || "Money put to work compared with money spent."}</p>
                 </div>
             </div>
-            <div class="inc-pie-card inc-bar-card">
-                <svg class="inc-bar-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Total invested versus total expenses">
-                    <line x1="20" x2="${W - 20}" y1="${base}" y2="${base}" stroke="currentColor" opacity=".2"/>
-                    ${body}
-                </svg>
+            <div class="inc-pie-card inc-bar-card" role="img" aria-label="Total invested versus total expenses">
+                ${body}
             </div>
         </section>`;
 }
@@ -208,14 +243,15 @@ export function renderLedgerCharts(entries) {
                 ${card("Income, expenses and balance", "Income vs expenses vs cash balance", overview,
                     "Income", formatMoney(summary.income), "Nothing recorded yet.", negative)}
                 ${card("All expenses", "By category", expenses,
-                    "Total", formatMoney(expTotal), "No expenses recorded yet.")}
+                    "Total", formatMoney(expTotal), "No expenses recorded yet.", "", "bars")}
                 ${card("All invested", "Net invested by category", invested,
-                    "Total", formatMoney(invTotal), "No investments recorded yet.")}
+                    "Total", formatMoney(invTotal), "No investments recorded yet.", "", "pie")}
             </div>
         </section>
 
         ${barsSection(summary.expense, summary.contributions)}`;
 }
+
 
 export const renderIncomeOverview = renderLedgerCharts;
 export const bindIncomeOverview = bindLedgerCharts;
@@ -285,7 +321,7 @@ export function bindLedgerCharts(root) {
 
         // Click / tap keeps the focus; tapping it again, or empty space, clears it.
         cardEl.addEventListener("click", (e) => {
-            if (e.target.closest("[data-legend-toggle]")) return;
+            if (e.target.closest("[data-legend-toggle], [data-view-set]")) return;
 
             const i = indexOf(e.target);
 
@@ -301,10 +337,11 @@ export function bindLedgerCharts(root) {
             }
         });
 
-        const list = cardEl.querySelector("[data-legend]");
-        const toggle = cardEl.querySelector("[data-legend-toggle]");
+        cardEl.querySelectorAll("[data-legend-toggle]").forEach((toggle) => {
+            const list = toggle.previousElementSibling;
 
-        if (toggle && list) {
+            if (!list) return;
+
             toggle.addEventListener("click", () => {
                 const open = list.classList.toggle("is-expanded");
 
@@ -314,7 +351,19 @@ export function bindLedgerCharts(root) {
 
                 if (!open) list.scrollTop = 0;
             });
-        }
+        });
+
+        cardEl.querySelectorAll("[data-view-set]").forEach((btn) =>
+            btn.addEventListener("click", () => {
+                cardEl.dataset.view = btn.dataset.viewSet;
+                cardEl.querySelectorAll("[data-view-set]").forEach((b) =>
+                    b.setAttribute("aria-pressed", String(b === btn))
+                );
+                sticky = -1;
+                hover = -1;
+                paint();
+            })
+        );
 
         paint();
     });

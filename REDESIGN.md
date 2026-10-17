@@ -81,3 +81,9 @@ Scope: presentation only. No store, service, calculation, route or schema was to
 ### Update: circle is now CSS-driven and starts at zero size on the icon
 - The reveal used to be started from JS after the browser reported the transition ready, so the new theme could show for a frame or two before the circle began. `preferences.js` now sets `--br-vt-x / --br-vt-y / --br-vt-r` (icon centre, radius to the farthest corner) before the snapshot, and `theme.css` gives `::view-transition-new(root)` a `circle(0)` at that point plus a keyframe animation to full size. The vars are removed when the transition ends. Cache v48 -> v49.
 - Verified by sampling the pseudo-element's clip-path on every frame after a click: on desktop and phone, on Dashboard, Mutual Fund and Income, dark to light and back, the centre never leaves the icon and the radius starts at 0.
+
+## Professional UI pass (Income Statement, Overview charts, Mutual Fund Settings, Dashboard)
+Presentation only. Calculations, stores and routes are unchanged.
+- New `src/styles/pro.css`, linked last in index.html and precached in sw.js (CACHE_VERSION v166). Remove that one link to revert the look.
+- income-statement.js: added a column header row and `data-k` labels on figures (markup only).
+- income-charts.js: thinner donut ring; expenses-vs-invested is now two horizontal bars instead of a large SVG.

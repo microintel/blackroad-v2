@@ -1,0 +1,931 @@
+/* =========================================================
+   PRO LAYER  -  professional layout pass
+   Presentation only. Loaded LAST, so it refines (never
+   replaces) the existing styles. Covers:
+     1. Income Statement  (summary, table, investments)
+     2. Income Overview   (donuts + expenses-vs-invested bars)
+     3. Mutual Fund       (header + Settings)
+     4. Dashboard
+   Uses the theme tokens only, so Light and Dark both work.
+   ========================================================= */
+
+:root {
+    --pro-card-border: 1px solid var(--border);
+    --pro-radius: 14px;
+    --pro-head-bg: var(--surface-secondary, var(--br-surface));
+}
+
+
+/* =========================================================
+   1. INCOME STATEMENT
+   ========================================================= */
+
+/* Summary: one hero card + four figures, side by side on desktop */
+.br-income .st {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+}
+
+.br-income .st > * { grid-column: 1 / -1; min-width: 0; }
+
+.br-income .st-hero {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px;
+    text-align: left;
+    background: var(--br-surface);
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+}
+
+.br-income .st-hero-label { font-size: 11.5px; letter-spacing: .09em; }
+.br-income .st-hero-value { font-size: clamp(28px, 7vw, 36px); letter-spacing: -.025em; }
+.br-income .st-hero-sub { font-size: 12.5px; }
+
+.br-income .st-chips {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.br-income .st-chip {
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--br-surface);
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+}
+
+.br-income .st-chip-label {
+    display: flex;
+    align-items: center;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.br-income .st-chip strong { font-size: 16px; }
+
+@media (min-width: 900px) {
+    .br-income .st { grid-template-columns: minmax(260px, 5fr) minmax(0, 7fr); }
+    .br-income .st-hero { grid-column: 1; }
+    .br-income .st-chips { grid-column: 2; }
+}
+
+/* Months / Years switch: compact, left aligned */
+.br-income .st-toggle {
+    width: 100%;
+    max-width: 220px;
+    margin: 4px 0 0;
+}
+
+.br-income .st-toggle label { min-height: 32px; flex: 1; }
+
+/* The table card */
+.br-income .st-list {
+    position: relative;
+    display: block;
+    max-height: min(68vh, 700px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+    background: var(--br-surface);
+}
+
+/* Column header (desktop only) */
+.br-income .st-head { display: none; }
+
+.br-income .st-row-total {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--pro-head-bg);
+    border-top: 1px solid var(--border);
+}
+
+.br-income .st-row-total .st-row-title { color: var(--text-primary); }
+
+/* Rows */
+.br-income .st-row { padding: 12px 16px; gap: 8px 12px; }
+.br-income .st-row-title { font-size: 14px; font-weight: 600; }
+.br-income .st-row-cash strong { font-size: 15px; }
+
+.br-income .st-row-tap:hover { background: var(--hover-background); }
+
+/* Phone: labelled 4-column figures so each value is identifiable */
+.br-income .st-row-figs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 12px;
+}
+
+.br-income .st-row-invest .st-row-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.br-income .st-row-figs > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.br-income .st-row-figs > span::before {
+    content: attr(data-k);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--br-text-muted);
+}
+
+.br-income .st-zero { display: flex; opacity: .45; }
+.br-income .st-row-figs .st-dot { display: none; }
+
+.br-income .st-section { gap: 10px; }
+
+.br-income .st-section-title {
+    margin: 4px 2px 0;
+    font-size: 12px;
+    letter-spacing: .09em;
+}
+
+.br-income .st-section .st-list { max-height: none; overflow: hidden; }
+
+/* Desktop: real table columns */
+@media (min-width: 760px) {
+    .br-income .st-head {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) minmax(0, 3fr) minmax(120px, 1.1fr);
+        gap: 12px;
+        padding: 11px 20px;
+        background: var(--pro-head-bg);
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--br-text-muted);
+    }
+
+    .br-income .st-head-figs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        text-align: right;
+    }
+
+    .br-income .st-head-invest .st-head-figs,
+    .br-income .st-row-invest .st-row-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .br-income .st-head-cash { text-align: right; }
+
+    .br-income .st-row {
+        grid-template-columns: minmax(120px, 1fr) minmax(0, 3fr) minmax(120px, 1.1fr);
+        grid-template-areas: "title figs cash";
+        gap: 12px;
+        padding: 11px 20px;
+    }
+
+    .br-income .st-row-figs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        font-size: 13.5px;
+        text-align: right;
+    }
+
+    .br-income .st-row-figs > span { display: block; }
+    .br-income .st-row-figs > span::before { display: none; }
+    .br-income .st-zero { display: block; opacity: .35; }
+
+    .br-income .st-row-cash { align-items: flex-end; text-align: right; }
+    .br-income .st-row-tap { border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
+    .br-income .st-head + .st-row { border-top: 0; }
+}
+
+/* Statement table is the only long thing on the page; keep it from
+   sitting under the floating assistant button */
+@media (max-width: 759px) {
+    .br-income .st-list { max-height: 62vh; }
+}
+
+
+/* =========================================================
+   2. INCOME OVERVIEW  (donut cards + comparison bars)
+   ========================================================= */
+
+.br-income .inc-section-head h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.br-income .inc-section-head p { margin-top: 2px; font-size: 12.5px; color: var(--br-text-muted); }
+
+.br-income .inc-pie-grid { gap: 16px; align-items: stretch; }
+
+@media (min-width: 700px) and (max-width: 999px) {
+    .br-income .inc-pie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.br-income .inc-pie-card {
+    padding: 20px;
+    border-radius: var(--pro-radius);
+    background: var(--br-surface);
+}
+
+.br-income .inc-pie-card h4 { font-size: 15px; letter-spacing: -.005em; }
+.br-income .inc-pie-hint { margin: 2px 0 16px; font-size: 12px; }
+
+.br-income .inc-pie-body { gap: 18px; }
+
+.br-income .inc-pie-svg { width: min(100%, 210px); margin: 0 auto; }
+
+/* Legend: tidy rows with hairline dividers */
+.br-income .inc-pie-legend { gap: 0; }
+
+.br-income .inc-pie-legend li {
+    padding: 9px 6px;
+    margin-inline: -6px;
+    border-radius: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    font-size: 13.5px;
+}
+
+.br-income .inc-pie-legend li:first-child { border-top: 0; }
+.br-income .inc-pie-dot { width: 9px; height: 9px; border-radius: 3px; }
+.br-income .inc-pie-val { font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.br-income .inc-pie-val small { margin-top: 1px; font-size: 11px; }
+
+.br-income .inc-pie-toggle {
+    align-self: stretch;
+    margin-top: 12px;
+    padding: 9px 14px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.br-income .inc-pie-note {
+    margin-top: auto;
+    padding-top: 14px;
+    font-size: 12px;
+}
+
+/* Expenses vs invested: two horizontal bars */
+.br-income .inc-bar-card {
+    align-items: stretch;
+    gap: 18px;
+    padding: 22px 20px;
+}
+
+.br-income .inc-hbar { display: flex; flex-direction: column; gap: 8px; }
+
+.br-income .inc-hbar-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.br-income .inc-hbar-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.br-income .inc-hbar-label i { width: 9px; height: 9px; border-radius: 3px; }
+
+.br-income .inc-hbar-value {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.br-income .inc-hbar-track {
+    height: 12px;
+    border-radius: 999px;
+    background: var(--hover-background);
+    overflow: hidden;
+}
+
+.br-income .inc-hbar-track span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .br-income .inc-hbar-track span { animation: pro-grow .7s cubic-bezier(.2, .7, .2, 1) both; }
+}
+
+@keyframes pro-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+
+/* =========================================================
+   3. MUTUAL FUND  (header + Settings)
+   ========================================================= */
+
+/* Header: title left, fund picker right, one tidy row */
+.br-income.br-stepup .br-page-heading {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.br-stepup [data-su-profilebar] { flex: 1 1 auto; min-width: 0; }
+
+.br-stepup [data-su-profilebar] > div {
+    flex-wrap: nowrap !important;
+    justify-content: flex-end;
+    gap: 12px !important;
+}
+
+.br-stepup [data-su-profilebar] .mf-logo-lg {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 17px;
+    flex: none;
+}
+
+.br-stepup [data-su-profilebar] .br-select {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 420px;
+}
+
+@media (max-width: 760px) {
+    .br-income.br-stepup .br-page-heading { flex-direction: column; align-items: stretch; gap: 12px; }
+    .br-stepup [data-su-profilebar] > div { justify-content: stretch; }
+    .br-stepup [data-su-profilebar] .br-select { max-width: none; }
+}
+
+/* Settings: cards in two balanced columns (no stretched gaps) */
+.br-income.br-stepup .su-settings-grid {
+    display: block;
+    max-width: none;
+    column-count: 2;
+    column-gap: 20px;
+}
+
+.br-income.br-stepup .su-settings-grid > .br-card {
+    display: block;
+    break-inside: avoid;
+    margin: 0 0 20px;
+    padding: 20px;
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+    background: var(--br-surface);
+}
+
+.br-income.br-stepup .su-settings-grid > .br-card:first-child { padding-top: 20px; }
+.br-income.br-stepup .su-settings-grid > .br-card:last-child { border-bottom: var(--pro-card-border); }
+
+/* Manage SIPs always spans both columns */
+.br-income.br-stepup .su-settings-grid > .br-card:last-child { column-span: all; margin-bottom: 0; }
+
+.br-income.br-stepup .su-settings-grid > .br-card > h3 {
+    position: static;
+    margin: 0 0 14px !important;
+    padding-bottom: 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.br-income.br-stepup .su-settings-grid > .br-card:focus-within > h3 { color: var(--text-primary); }
+
+.br-income.br-stepup .su-settings-grid > .br-card > :not(h3) { grid-column: auto; }
+
+.br-income.br-stepup .su-settings-grid .su-stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 0 !important;
+}
+
+.br-income.br-stepup .su-settings-grid .su-list + .su-stack {
+    margin-top: 16px !important;
+    padding-top: 16px;
+    border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.br-income.br-stepup .su-settings-grid .su-stack > :not(label) {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+}
+
+.br-income.br-stepup .su-settings-grid .su-stack .br-button { width: 100%; justify-content: center; }
+
+.br-income.br-stepup .su-settings-grid .su-stack label > span { font-size: 12px; font-weight: 500; }
+
+/* Goal card: Save + Clear side by side */
+.br-income.br-stepup .su-settings-grid .su-stack > div[style] {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    gap: 10px !important;
+}
+
+/* Schedule / skipped / SIP lists */
+.br-income.br-stepup .su-settings-grid .su-row {
+    flex-wrap: nowrap;
+    padding: 10px 0;
+    gap: 12px;
+    min-height: 44px;
+}
+
+.br-income.br-stepup .su-settings-grid .su-row > span:first-child { min-width: 0; }
+
+.br-income.br-stepup .su-settings-grid .su-row .br-button {
+    min-height: 32px;
+    padding-inline: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.br-income.br-stepup .su-settings-grid .su-row .br-button:hover { background: var(--hover-background); color: var(--text-primary); }
+
+.br-income.br-stepup .su-settings-grid .su-row .br-button.br-button-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+
+.br-income.br-stepup .su-settings-grid .su-row .br-button.br-button-danger:hover {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+/* Manage SIPs: logo + name on the left, actions on the right */
+.br-income.br-stepup .su-settings-grid .su-mf-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.br-income.br-stepup .su-settings-grid .su-mf-name .mf-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 15px;
+    flex: none;
+}
+
+.br-income.br-stepup .su-settings-grid .su-mf-name > span:last-child {
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.br-income.br-stepup .su-settings-grid .su-row > span[style*="display:flex"] {
+    flex: none;
+    display: flex !important;
+    gap: 8px !important;
+}
+
+.br-income.br-stepup .su-settings-grid > .br-card:last-child > div[style] {
+    margin-top: 16px !important;
+    padding-top: 16px;
+    border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+@media (max-width: 900px) {
+    .br-income.br-stepup .su-settings-grid { column-count: 1; }
+}
+
+@media (max-width: 520px) {
+    .br-income.br-stepup .su-settings-grid > .br-card { padding: 16px; }
+    .br-income.br-stepup .su-settings-grid .su-stack { grid-template-columns: minmax(0, 1fr); }
+
+    /* long SIP names: actions drop below the name instead of squeezing it */
+    .br-income.br-stepup .su-settings-grid .su-row:has(.su-mf-name) { flex-wrap: wrap; }
+    .br-income.br-stepup .su-settings-grid .su-row:has(.su-mf-name) > span[style*="display:flex"] {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+
+/* =========================================================
+   4. DASHBOARD
+   ========================================================= */
+
+.br-dash { gap: 20px; }
+
+.br-dash .br-card { border: var(--pro-card-border); border-radius: var(--pro-radius); }
+
+/* Greeting */
+.br-dash-heading { padding: 8px 2px 0; }
+.br-dash-hello h2 { font-size: clamp(24px, 5.5vw, 30px); }
+.br-dash-avatar--guest, .br-dash-avatar { width: 52px; height: 52px; }
+
+/* Top row: net worth + allocation, equal halves on wide screens */
+@media (min-width: 1100px) {
+    .br-dash-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+/* Hero: clean, no gradient wash */
+@supports (background: color-mix(in srgb, red 10%, blue)) {
+    .br-dash-hero { background: var(--br-surface); }
+}
+
+.br-dash-hero {
+    background: var(--br-surface);
+    justify-content: space-between;
+    padding: 24px;
+}
+
+.br-dash-hero > .br-stat-label { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.br-dash-networth { font-size: clamp(32px, 8vw, 46px); }
+
+.br-dash-ratio-bar { height: 10px; }
+
+.br-dash-foot {
+    gap: 0;
+    margin-top: 8px;
+    padding: 0;
+    border-top: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--hover-background);
+}
+
+.br-dash-foot > div { padding: 12px 14px; }
+.br-dash-foot > div + div { border-left: 1px solid var(--border); }
+.br-dash-foot .br-stat-label { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.br-dash-foot strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 480px) {
+    .br-dash-hero { padding: 18px; }
+    .br-dash-foot > div { padding: 10px; }
+    .br-dash-foot strong { font-size: 13px; }
+}
+
+/* Allocation */
+.br-dash-allocation { container-type: inline-size; padding: 22px; }
+.br-dash-allocation .br-card-heading { margin-bottom: 14px; }
+.br-dash-allocation .br-card-heading h3 { font-size: 15px; }
+
+.br-dash-alloc { flex-wrap: nowrap; gap: 24px; }
+.br-dash-donut { width: 156px; height: 156px; margin-inline: 0; }
+.br-dash-donut circle { stroke-width: 14; }
+.br-dash-donut-center small { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.br-dash-donut-center b { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.br-dash-legend { min-width: 0; gap: 0; }
+
+.br-dash-legend li {
+    grid-template-columns: 10px minmax(0, 1fr) auto auto;
+    padding: 10px 8px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    border-radius: 8px;
+}
+
+.br-dash-legend li:first-child { border-top: 0; }
+.br-dash-legend-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-dash-legend-pct { font-size: 12px; min-width: 3.4em; text-align: right; font-variant-numeric: tabular-nums; }
+.br-dash-legend-amt { min-width: 0; font-variant-numeric: tabular-nums; }
+.br-dash-dot { border-radius: 3px; }
+
+@container (max-width: 440px) {
+    .br-dash-alloc { flex-direction: column; align-items: stretch; gap: 16px; }
+    .br-dash-donut { margin-inline: auto; }
+}
+
+/* Wealth lanes */
+.br-dash-lanes-title { margin: 6px 0 -6px; }
+.br-dash-lanes-title h3 { font-size: 15px; font-weight: 600; }
+
+.br-dash-tile { padding: 16px; gap: 3px; }
+.br-dash-tile-icon { width: 34px; height: 34px; border-radius: 9px; }
+.br-dash-tile-name { font-size: 12.5px; }
+.br-dash-tile-value { font-size: clamp(17px, 4.4vw, 21px); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 719px) {
+    .br-dash-lanes { gap: 10px; }
+    .br-dash-tile { padding: 14px; }
+}
+
+/* Mutual fund P&L card */
+.br-dash-pnl-card { padding: 22px; }
+.br-dash-pnl-card .br-card-heading { margin-bottom: 16px; }
+.br-dash-pnl-card .br-card-heading h3 { font-size: 15px; }
+
+.br-dash-mini {
+    gap: 0;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--hover-background);
+}
+
+.br-dash-mini > div { padding: 12px 14px; }
+.br-dash-mini > div + div { border-left: 1px solid var(--border); }
+.br-dash-mini .br-stat-label { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.br-dash-mini strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 480px) {
+    .br-dash-pnl-card { padding: 16px; }
+    .br-dash-mini > div { padding: 10px; }
+    .br-dash-mini strong { font-size: 13px; }
+}
+
+@media (min-width: 1100px) {
+    .br-dash-pnl { height: 280px; }
+}
+
+
+/* =========================================================
+   5. OVERVIEW: equal-height cards, Bars / Pie switch
+   ========================================================= */
+
+.br-income .inc-pie-grid .inc-pie-card { height: 100%; }
+.br-income .inc-pie-grid .inc-pie-body { flex: 1; }
+
+.br-income .inc-pie-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+}
+
+.br-income .inc-switch {
+    flex: none;
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--hover-background);
+}
+
+.br-income .inc-switch button {
+    min-height: 26px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--br-text-muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.br-income .inc-switch button[aria-pressed="true"] {
+    background: var(--br-surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .14);
+}
+
+.br-income .inc-pie-card[data-view="bars"] .inc-view-pie,
+.br-income .inc-pie-card[data-view="pie"] .inc-view-bars { display: none; }
+
+/* Bars list */
+.br-income .inc-pie-legend.inc-bars li {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    padding: 9px 6px;
+    border-top: 0;
+}
+
+.br-income .inc-bars-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.br-income .inc-bars-top .inc-pie-name { display: flex; align-items: center; gap: 8px; }
+.br-income .inc-bars-top .inc-pie-dot { flex: none; }
+
+.br-income .inc-bars-top .inc-pie-val { white-space: nowrap; }
+.br-income .inc-bars-top .inc-pie-val small { display: inline; margin-left: 4px; }
+
+.br-income .inc-bars-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--hover-background);
+    overflow: hidden;
+}
+
+.br-income .inc-bars-track span { display: block; height: 100%; border-radius: 999px; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .br-income .inc-bars-track span { animation: pro-grow .6s cubic-bezier(.2, .7, .2, 1) both; transform-origin: left; }
+}
+
+
+/* =========================================================
+   6. MOBILE: profile menu in the top bar (top right)
+   Same menu as desktop, plus Notifications, Theme and Currency.
+   ========================================================= */
+
+.br-account-item--phone { display: none; }
+
+.br-account-item-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: none; }
+.br-account-item-icon .br-icon { width: 18px; height: 18px; }
+.br-account-item.is-busy { opacity: .55; pointer-events: none; }
+
+@media (max-width: 768px) {
+    .br-account-menu { display: block; margin-left: 4px; }
+    .br-account-button { display: inline-flex; width: 48px; height: 48px; min-height: 48px; }
+    .br-account-button .br-account-avatar { width: 42px; height: 42px; }
+
+    .br-account-item--phone { display: flex; }
+    .br-account-item { min-height: 46px; }
+    .br-account-pop { min-width: 250px; max-width: calc(100vw - 24px); }
+
+    /* these moved into the profile menu */
+    .br-header-actions [aria-label="Notifications"],
+    .br-header-actions [data-action="toggle-theme"],
+    .br-header-actions [data-action="toggle-currency"],
+    .br-header-actions .br-header-logout { display: none; }
+
+    .rv-shell .br-header-actions [data-action="toggle-theme"],
+    .rv-shell .br-header-actions [data-action="toggle-currency"] { display: grid; }
+}
+
+.br-income .inc-pie-more-note { margin: 10px 0 0; font-size: 12px; color: var(--br-text-muted); text-align: center; }
+
+/* Same height in Bars and Pie mode, so switching never moves the other cards */
+@media (min-width: 1000px) {
+    .br-income .inc-pie-grid .inc-pie-card { min-height: 548px; }
+}
+
+
+/* =========================================================
+   7. LEDGER SUMMARY (same card design as Statement)
+   ========================================================= */
+
+.br-income .inc-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 16px;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.br-income .inc-summary .inc-metric-primary {
+    justify-content: center;
+    gap: 6px;
+    padding: 20px;
+    background: var(--br-surface);
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+}
+
+.br-income .inc-summary .inc-metric-primary > .inc-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--br-text-muted);
+}
+
+.br-income .inc-summary .inc-total-row { justify-content: space-between; gap: 12px; }
+.br-income .inc-summary .inc-amount-lg { font-size: clamp(28px, 7vw, 36px); letter-spacing: -.025em; }
+
+.br-income .inc-summary .inc-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.br-income .inc-summary .inc-metrics .inc-metric {
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--br-surface);
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+}
+
+.br-income .inc-summary .inc-metrics .inc-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--br-text-muted);
+}
+
+.br-income .inc-summary .inc-metrics .inc-label::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--inc-c-balance);
+}
+
+.br-income .inc-summary .inc-metrics .inc-metric:nth-child(1) .inc-label::before { background: var(--inc-c-expense); }
+.br-income .inc-summary .inc-metrics .inc-metric:nth-child(2) .inc-label::before { background: var(--inc-c-invested); }
+
+.br-income .inc-summary .inc-metrics .inc-amount { font-size: 16px; font-weight: 600; }
+
+@media (min-width: 900px) {
+    .br-income .inc-summary { grid-template-columns: minmax(260px, 5fr) minmax(0, 7fr); }
+}
+
+/* Invested by category: same cards */
+.br-income .br-investment-strip { gap: 12px; }
+
+.br-income .br-investment-chip {
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--br-surface);
+    border: var(--pro-card-border);
+    border-radius: var(--pro-radius);
+}
+
+/* =========================================================
+   8. STATISTICS: monthly chart range picker
+   ========================================================= */
+
+.stat-range {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.stat-range-pills {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--hover-background);
+}
+
+.stat-range-pills button {
+    min-height: 30px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--br-text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.stat-range-pills button[aria-pressed="true"] {
+    background: var(--br-surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .14);
+}
+
+.stat-range-pick { display: flex; gap: 10px; }
+
+.stat-range-pick label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--br-text-muted); }
+
+.stat-range-pick select {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    background: var(--input-background);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 13px;
+}
+
+@media (max-width: 520px) {
+    .stat-range-pills { width: 100%; }
+    .stat-range-pills button { flex: 1; padding: 0; }
+    .stat-range-pick { width: 100%; }
+    .stat-range-pick label { flex: 1; }
+    .stat-range-pick select { flex: 1; min-width: 0; }
+}
+
+.br-income .inc-summary .inc-metrics .inc-metric { flex-direction: column; align-items: stretch; justify-content: center; }
+.br-income .inc-summary .inc-metrics .inc-amount { white-space: nowrap; overflow-wrap: normal; }
+@media (max-width: 480px) {
+    .br-income .inc-summary .inc-metrics .inc-amount { font-size: 15px; }
+}

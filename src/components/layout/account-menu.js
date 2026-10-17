@@ -11,6 +11,10 @@ import { loadAvatarUrl } from "../../services/avatar-service.js";
 import { loadGuestAvatar } from "../../services/guest-avatar.js";
 import { currentUser, isGuestSync, getGuestProfile, GUEST_PROFILES } from "../../services/auth.js";
 import { navigate } from "../../app/router.js";
+import { toggleTheme, getTheme } from "../../services/preferences.js";
+import { toggleCurrency, getCurrency } from "../../services/currency.js";
+import { startCurrencyTransition } from "../currency-transition.js";
+import { themeToggleContent, currencyToggleContent } from "./topbar.js";
 
 /* Picture + name for whoever is signed in. Never throws. */
 async function whoAmI() {
@@ -100,6 +104,67 @@ export function mountAccountMenu(header) {
             button.focus();
         }
     });
+
+    /* Phones: Notifications, Theme and Currency live in this menu. The same
+       toggles as the header buttons (which are hidden on phones). */
+    const themeBtn = root.querySelector('[data-pref="theme"]');
+    const curBtn = root.querySelector('[data-pref="currency"]');
+
+    const paintTheme = (theme = getTheme()) => {
+        const ui = themeToggleContent(theme);
+
+        themeBtn.querySelector(".br-account-item-icon").innerHTML = ui.icon;
+        themeBtn.querySelector(".br-account-item-text").textContent = theme === "dark" ? "Theme: Dark" : "Theme: Light";
+        themeBtn.setAttribute("aria-label", ui.label);
+    };
+
+    const paintCurrency = (currency = getCurrency()) => {
+        const ui = currencyToggleContent(currency);
+
+        curBtn.querySelector(".br-account-item-icon").innerHTML = ui.icon;
+        curBtn.querySelector(".br-account-item-text").textContent = currency === "USD" ? "Currency: US dollars" : "Currency: Rupees";
+        curBtn.setAttribute("aria-label", ui.label);
+        curBtn.classList.remove("is-busy");
+    };
+
+    paintTheme();
+    paintCurrency();
+
+    root.querySelector("[data-account-notify]").addEventListener("click", () => {
+        close();
+        navigate("/notifications");
+    });
+
+    themeBtn.addEventListener("click", () => {
+        const r = button.getBoundingClientRect();
+
+        close();
+        toggleTheme({ el: button, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    });
+
+    curBtn.addEventListener("click", () => {
+        close();
+        curBtn.classList.add("is-busy");
+        startCurrencyTransition(getCurrency() === "USD" ? "INR" : "USD");
+        toggleCurrency();
+    });
+
+    const onTheme = (e) => {
+        if (!root.isConnected) return window.removeEventListener("br:theme-change", onTheme);
+        paintTheme(e.detail?.theme);
+    };
+    const onCur = (e) => {
+        if (!root.isConnected) return window.removeEventListener("br:currency-change", onCur);
+        paintCurrency(e.detail?.currency);
+    };
+    const onErr = () => {
+        if (!root.isConnected) return window.removeEventListener("br:currency-error", onErr);
+        curBtn.classList.remove("is-busy");
+    };
+
+    window.addEventListener("br:theme-change", onTheme);
+    window.addEventListener("br:currency-change", onCur);
+    window.addEventListener("br:currency-error", onErr);
 
     header.__refreshAccount = refresh;
     refresh();

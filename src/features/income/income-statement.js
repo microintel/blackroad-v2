@@ -118,7 +118,7 @@ function fig(
             ? " st-zero"
             : "";
 
-    return `<span class="${cls}${zero}" title="${title}"><i class="st-dot ${dot}"></i>${amount(value)}</span>`;
+    return `<span class="${cls}${zero}" title="${title}" data-k="${title}"><i class="st-dot ${dot}"></i>${amount(value)}</span>`;
 }
 
 function signed(
@@ -386,6 +386,13 @@ function renderPeriodList(
 
     return `
         <div class="st-list">
+            <div class="st-head" aria-hidden="true">
+                <span>${unit === "year" ? "Year" : "Month"}</span>
+                <span class="st-head-figs">
+                    <span>Income</span><span>Expenses</span><span>Invested</span><span>Sales</span>
+                </span>
+                <span class="st-head-cash">Cash flow</span>
+            </div>
             ${rows.map((row) => {
                 const mk = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, "0")}`;
 
@@ -416,6 +423,11 @@ function renderInvestmentList(
         <div class="st-section">
             <h3 class="st-section-title">Investments</h3>
             <div class="st-list">
+                <div class="st-head st-head-invest" aria-hidden="true">
+                    <span>Category</span>
+                    <span class="st-head-figs"><span>Bought</span><span>Sold</span></span>
+                    <span class="st-head-cash">Net</span>
+                </div>
                 ${rows.map((row) => `
                     <div class="st-row st-row-invest">
                         <div class="st-row-title">${escapeHTML(row.category)}</div>

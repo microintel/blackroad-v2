@@ -627,8 +627,6 @@ function fundHTML() {
         }</div></section>`;
     } else {
         const { series, years, totalGrowthPct, cagrPct } = fundCache.data;
-        const projection = buildFundProjection(series, fundProjYears);
-
         const stat = (label, value, cls = "") => statCard(label, value, cls);
 
         history = `
@@ -642,29 +640,6 @@ function fundHTML() {
                 </div>
                 <canvas data-su-chart="fund-history" style="width:100%;height:260px;display:block;"></canvas>
             </section>
-
-            ${
-                projection
-                    ? `<section class="br-card" style="margin-top:20px;">
-                <div class="br-toolbar" style="margin-bottom:12px;">
-                    <div class="br-toolbar-left"><h3 style="margin:0;">Fund projection</h3></div>
-                    <div class="br-toolbar-right">
-                        <select class="br-select" data-su-fund-years>
-                            ${[5, 10, 15, 20]
-                                .map((y) => `<option value="${y}" ${y === fundProjYears ? "selected" : ""}>${y} years</option>`)
-                                .join("")}
-                        </select>
-                    </div>
-                </div>
-                <canvas data-su-chart="fund-projection" style="width:100%;height:260px;display:block;"></canvas>
-                <div class="su-legend">
-                    <span><i style="background:var(--br-success)"></i>Optimistic · best year (${projection.bestPct >= 0 ? "+" : ""}${projection.bestPct.toFixed(1)}%/yr)</span>
-                    <span><i style="background:var(--br-info)"></i>Expected · average (${projection.avgPct >= 0 ? "+" : ""}${projection.avgPct.toFixed(1)}%/yr)</span>
-                    <span><i style="background:var(--br-danger)"></i>Pessimistic · worst year (${projection.worstPct >= 0 ? "+" : ""}${projection.worstPct.toFixed(1)}%/yr)</span>
-                </div>
-            </section>`
-                    : ""
-            }
 
             ${goalProjectionHTML(series)}
         `;
@@ -713,11 +688,20 @@ function goalProjectionHTML(series) {
         ? `At the expected rate, you'll reach ${fmtK(settings.goalAmount)} by ${new Date(hit.date).toLocaleDateString("en-IN", {
               day: "numeric", month: "short", year: "numeric"
           })}.`
-        : `Not projected to reach ${fmtK(settings.goalAmount)} within ${fundProjYears} years at the expected rate — try a longer horizon above.`;
+        : `Not projected to reach ${fmtK(settings.goalAmount)} within ${fundProjYears} years at the expected rate — try a longer horizon.`;
 
     return `
         <section class="br-card" style="margin-top:20px;">
-            <h3 style="margin-bottom:4px;">Path to target corpus</h3>
+            <div class="br-toolbar" style="margin-bottom:8px;">
+                <div class="br-toolbar-left"><h3 style="margin:0;">Path to target corpus</h3></div>
+                <div class="br-toolbar-right">
+                    <select class="br-select" data-su-fund-years aria-label="Projection horizon">
+                        ${[5, 10, 15, 20]
+                            .map((y) => `<option value="${y}" ${y === fundProjYears ? "selected" : ""}>${y} years</option>`)
+                            .join("")}
+                    </select>
+                </div>
+            </div>
             <p class="${hit ? "su-pos" : "su-neg"}" style="margin:0 0 12px;">${reach}</p>
             <canvas data-su-chart="goal-projection" style="width:100%;height:260px;display:block;"></canvas>
             <div class="su-legend">
@@ -780,26 +764,6 @@ function drawCharts(page) {
                 }
             ]
         });
-    }
-
-    const proj = page.querySelector('[data-su-chart="fund-projection"]');
-    if (proj) {
-        const p = buildFundProjection(series, fundProjYears);
-        if (p) {
-            drawChart(proj, {
-                yFormat: (n) => "₹" + Math.round(n).toLocaleString("en-IN"),
-                series: [
-                    {
-                        name: "History",
-                        color: COLORS.textSecondary,
-                        points: series.slice(-Math.min(series.length, 1500)).map((r) => ({ x: r.date, y: r.growth }))
-                    },
-                    { name: "Optimistic", color: COLORS.success, dashed: true, points: p.optimistic.map((r) => ({ x: r.date, y: r.value })) },
-                    { name: "Expected", color: COLORS.info, points: p.expected.map((r) => ({ x: r.date, y: r.value })) },
-                    { name: "Pessimistic", color: COLORS.danger, dashed: true, points: p.pessimistic.map((r) => ({ x: r.date, y: r.value })) }
-                ]
-            });
-        }
     }
 
     const goal = page.querySelector('[data-su-chart="goal-projection"]');
