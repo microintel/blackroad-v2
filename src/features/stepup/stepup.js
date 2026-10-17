@@ -69,6 +69,7 @@ let historySortDesc = true;
 let historyDate = "";
 let historyLimit = 30;
 let growthMode = "month";
+let profitRange = "3M"; // 1M | 3M | 6M | 1Y | ALL
 let editingEntryId = null;
 let allocTarget = null;
 let toastTimer = null;
@@ -101,10 +102,7 @@ export async function StepUp() {
     page.className = "br-page br-income br-stepup";
 
     page.innerHTML = `
-        <div class="br-page-heading">
-            <div>
-                <h2>Mutual Fund</h2>
-            </div>
+        <div class="br-page-heading su-heading">
             <div data-su-profilebar></div>
         </div>
 
@@ -325,6 +323,21 @@ async function recalcAndReload() {
 }
 
 async function switchProfile(page, id) {
+    if (profile && profile.id === id) return;
+
+    const content = page.querySelector("[data-su-content]");
+    const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const from = profiles.findIndex((p) => profile && p.id === profile.id);
+    const to = profiles.findIndex((p) => p.id === id);
+    const dir = to >= from ? 1 : -1;
+
+    // Presentation only: old fund slides/fades out, the new one slides in.
+    if (content && !calm) {
+        page.style.setProperty("--su-dir", dir);
+        content.classList.add("su-leave");
+        await new Promise((r) => setTimeout(r, 150));
+    }
+
     profile = profiles.find((p) => p.id === id) || profile;
 
     if (profile) {
@@ -333,6 +346,15 @@ async function switchProfile(page, id) {
 
     await loadProfileData();
     historyLimit = 30;
+
+    if (content) content.classList.remove("su-leave");
+
+    if (!calm) {
+        page.classList.add("su-switched");
+        clearTimeout(page._suSwitchTimer);
+        page._suSwitchTimer = setTimeout(() => page.classList.remove("su-switched"), 900);
+    }
+
     render(page);
 }
 
@@ -390,17 +412,33 @@ function renderProfileBar(page) {
         return;
     }
 
+    const cur = profile || profiles[0];
+
     bar.innerHTML = `
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            ${profile ? mfLogoHTML(profile.name, mfFunds, "lg") : ""}
-            <select class="br-select" data-su-profile style="min-width:180px;">
+        <div class="su-switch" data-su-switch>
+            <button type="button" class="su-switch-btn" data-su-switch-btn aria-haspopup="listbox" aria-expanded="false">
+                ${mfLogoHTML(cur.name, mfFunds, "sm")}
+                <span class="su-switch-text">
+                    <small>${profiles.length > 1 ? "Switch fund" : "Your fund"}</small>
+                    <strong>${escapeHTML(cur.name)}</strong>
+                </span>
+                ${profiles.length > 1 ? icon("chevron-down", { size: 18 }) : ""}
+            </button>
+            ${
+                profiles.length > 1
+                    ? `<div class="su-switch-menu" role="listbox" hidden>
                 ${profiles
                     .map(
-                        (p) =>
-                            `<option value="${p.id}" ${profile && p.id === profile.id ? "selected" : ""}>${escapeHTML(p.name)}</option>`
+                        (p) => `<button type="button" role="option" class="su-switch-item ${p.id === cur.id ? "is-active" : ""}" data-su-pick="${p.id}" aria-selected="${p.id === cur.id}">
+                    ${mfLogoHTML(p.name, mfFunds, "xs")}
+                    <span>${escapeHTML(p.name)}</span>
+                    ${p.id === cur.id ? icon("check", { size: 16 }) : ""}
+                </button>`
                     )
                     .join("")}
-            </select>
+            </div>`
+                    : ""
+            }
         </div>
     `;
 }
@@ -425,11 +463,53 @@ function statCard(label, value, cls = "", sub = "") {
 
 const posNeg = (n) => (n >= 0 ? "su-pos" : "su-neg");
 
+function factItem(label, value, sub = "", cls = "") {
+    return `<div class="su-fact">
+        <dt>${escapeHTML(label)}</dt>
+        <dd class="${cls}">${value}</dd>
+        ${sub ? `<small>${sub}</small>` : ""}
+    </div>`;
+}
+
 /* ---------- Overview ---------- */
+
+/* Total units actually held = every allocated instalment, priced at its real
+   NAV (the same figure the SIP ledger's "Total units" column ends on). The
+   daily-entry chain in recalcAll() only counts instalments that fall inside
+   an entry's date window, so allocations dated after the last entry (or
+   skipped by it) were missing from the Overview total. */
+function heldUnits(calc) {
+    const series =
+        fundCache.data && settings.linkedFund && fundCache.schemeCode === settings.linkedFund.schemeCode
+            ? fundCache.data.series
+            : null;
+    const ledger = buildSipLedger(calc, settings, series);
+    return ledger.length ? ledger[ledger.length - 1].unitsRunningTotal : 0;
+}
+
+/* Profit growth chart: profit / loss (value - invested) over the last 90 entries. */
+function sparkHTML(calc) {
+    const pts = calc.slice(-90).map((e) => e.portfolioValue - e.investedAmount);
+    if (pts.length < 2) return "";
+    const W = 320, H = 84, pad = 6;
+    const lo = Math.min(0, ...pts), hi = Math.max(0, ...pts), span = hi - lo || 1;
+    const x = (i) => pad + (i / (pts.length - 1)) * (W - pad * 2);
+    const y = (v) => H - pad - ((v - lo) / span) * (H - pad * 2);
+    const zero = y(0).toFixed(1);
+    const line = pts.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+    const area = `${line} L${x(pts.length - 1).toFixed(1)} ${zero} L${x(0).toFixed(1)} ${zero} Z`;
+    const up = pts[pts.length - 1] >= 0;
+    return `<svg class="su-spark ${up ? "is-up" : "is-down"}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profit growth">
+        <line class="su-spark-zero" x1="0" x2="${W}" y1="${zero}" y2="${zero}"/>
+        <path class="su-spark-area" d="${area}"/>
+        <path class="su-spark-line" d="${line}"/>
+    </svg>`;
+}
 
 function overviewHTML() {
     const calc = recalcAll(entries, settings);
     const s = summarizeSip(calc, settings);
+    if (s) s.unitsHeld = heldUnits(calc);
 
     let cards;
 
@@ -454,30 +534,44 @@ function overviewHTML() {
                   new Date(s.today.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })) +
             ` · ${s.today.amount >= 0 ? "+" : ""}${fmtK(s.today.amount)}`;
 
+        const pnlTxt = (s.pnl >= 0 ? "+" : "") + fmtK(s.pnl);
+        const todayTxt = (s.today.pct >= 0 ? "+" : "") + s.today.pct.toFixed(2) + "%";
+
         cards = `
-            <div class="br-grid br-grid-4">
-                ${statCard("Invested", fmtK(s.invested))}
-                ${statCard("Portfolio value", fmtK(s.value), posNeg(s.value - s.invested))}
-                ${statCard("Profit / loss", (s.pnl >= 0 ? "+" : "") + fmtK(s.pnl), posNeg(s.pnl))}
-                ${statCard("Return", fmtPct(s.ret), posNeg(s.ret))}
-            </div>
-            <div class="br-grid br-grid-4" style="margin-top:16px;">
-                ${statCard("XIRR", xirr)}
-                ${statCard(
-                    "Today",
-                    (s.today.pct >= 0 ? "+" : "") + s.today.pct.toFixed(2) + "%",
-                    posNeg(s.today.pct),
-                    todaySub
-                )}
-                ${statCard("SIP instalments", s.sips, "", settings.sipSchedule.length > 1 ? "stepped" : "×" + sipAmt(settings.sipAmount))}
-                ${statCard("Units held", s.unitsHeld.toFixed(4), "", `NAV ${navTxt(s.navValue)} (sim)`)}
-            </div>
-            <div class="br-grid br-grid-4" style="margin-top:16px;">
-                ${statCard("Days active", s.daysActive + "d")}
-                ${statCard("Next SIP", nextSip, "", s.nextSip ? `in ${s.nextSip.daysLeft}d` : "")}
-                ${statCard("Win streak", s.streak + (s.streak === 1 ? " day" : " days"))}
-                ${statCard("Avg daily change", (s.avgDay >= 0 ? "+" : "") + s.avgDay.toFixed(2) + "%", posNeg(s.avgDay))}
-            </div>
+            <section class="su-hero ${s.pnl >= 0 ? "is-up" : "is-down"}">
+                <div class="su-hero-top">
+                    <div class="su-hero-main">
+                        <span class="su-label">Portfolio value</span>
+                        <span class="su-hero-value">${fmtK(s.value)}</span>
+                        <span class="su-pill ${posNeg(s.pnl)}">${icon(s.pnl >= 0 ? "trending-up" : "trending-down", { size: 14 })}${pnlTxt} · ${fmtPct(s.ret)}</span>
+                    </div>
+                    ${sparkHTML(calc)}
+                </div>
+                <div class="su-kpis">
+                    <div class="su-kpi"><span class="su-label">Invested</span><strong>${fmtK(s.invested)}</strong></div>
+                    <div class="su-kpi"><span class="su-label">XIRR</span><strong>${xirr}</strong></div>
+                    <div class="su-kpi"><span class="su-label">Today</span><strong class="${posNeg(s.today.pct)}">${todayTxt}</strong><em>${todaySub}</em></div>
+                </div>
+            </section>
+
+            <section class="su-facts">
+                <h3 class="su-section-title">Holdings</h3>
+                <div class="su-units">
+                    <span class="su-units-ico">${icon("gem", { size: 20 })}</span>
+                    <div>
+                        <span class="su-label">Units held</span>
+                        <strong>${s.unitsHeld.toFixed(4)}</strong>
+                    </div>
+                    <small>NAV ${navTxt(s.navValue)} (sim)</small>
+                </div>
+                <dl class="su-facts-grid">
+                    ${factItem("SIP instalments", s.sips, settings.sipSchedule.length > 1 ? "stepped" : "×" + sipAmt(settings.sipAmount))}
+                    ${factItem("Next SIP", nextSip, s.nextSip ? `in ${s.nextSip.daysLeft}d` : "")}
+                    ${factItem("Days active", s.daysActive + "d")}
+                    ${factItem("Win streak", s.streak + (s.streak === 1 ? " day" : " days"))}
+                    ${factItem("Avg daily change", (s.avgDay >= 0 ? "+" : "") + s.avgDay.toFixed(2) + "%", "", posNeg(s.avgDay))}
+                </dl>
+            </section>
             ${goalHTML(s)}
             <section class="br-card" style="margin-top:20px;">
                 <h3 style="margin-bottom:12px;">Portfolio value vs invested</h3>
@@ -562,13 +656,89 @@ function growthHTML(calc) {
 
 /* ---------- Fund (link, NAV sync, history, projection) ---------- */
 
+/* ---------- Profit growth chart with range filter (Fund tab) ---------- */
+
+let profitPts = []; // points currently drawn, read by the hover tooltip
+
+const PROFIT_RANGES = { "1M": 1, "3M": 3, "6M": 6, "1Y": 12, ALL: 0 };
+
+function profitCardHTML() {
+    const calc = recalcAll(entries, settings);
+    if (calc.length < 2) return "";
+
+    const months = PROFIT_RANGES[profitRange];
+    let rows = calc;
+
+    if (months) {
+        const end = new Date(calc[calc.length - 1].date);
+        end.setMonth(end.getMonth() - months);
+        const cut = dateToStr(end);
+        rows = calc.filter((e) => e.date >= cut);
+        if (rows.length < 2) rows = calc.slice(-2);
+    }
+
+    const pts = rows.map((e) => ({ date: e.date, v: e.portfolioValue - e.investedAmount }));
+    const last = pts[pts.length - 1].v;
+    const change = last - pts[0].v;
+    const lo = Math.min(0, ...pts.map((p) => p.v));
+    const hi = Math.max(0, ...pts.map((p) => p.v));
+    const span = hi - lo || 1;
+    const W = 640, H = 220, padX = 8, padY = 14;
+    const x = (i) => padX + (i / (pts.length - 1)) * (W - padX * 2);
+    const y = (v) => H - padY - ((v - lo) / span) * (H - padY * 2);
+    const zero = y(0).toFixed(1);
+    const line = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");
+    const area = `${line} L${x(pts.length - 1).toFixed(1)} ${zero} L${x(0).toFixed(1)} ${zero} Z`;
+    profitPts = pts.map((p, i) => ({ date: p.date, v: p.v, fx: i / (pts.length - 1), fy: y(p.v) / H }));
+    const up = last >= 0;
+    const d = (iso) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" });
+    const sgn = (n) => (n >= 0 ? "+" : "") + fmtK(n);
+
+    return `
+        <section class="br-card su-profit">
+            <div class="su-profit-head">
+                <div>
+                    <span class="su-label">Profit growth</span>
+                    <strong class="su-profit-value ${posNeg(last)}">${sgn(last)}</strong>
+                    <small class="${posNeg(change)}">${sgn(change)} in this range</small>
+                </div>
+                <div class="su-range" role="group" aria-label="Range">
+                    ${Object.keys(PROFIT_RANGES)
+                        .map((r) => `<button type="button" class="su-range-btn ${r === profitRange ? "active" : ""}" data-su-range="${r}">${r === "ALL" ? "All" : r}</button>`)
+                        .join("")}
+                </div>
+            </div>
+            <div class="su-profit-plot" data-su-plot>
+                <svg class="su-profit-chart ${up ? "is-up" : "is-down"}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profit growth chart">
+                    <line class="su-spark-zero" x1="0" x2="${W}" y1="${zero}" y2="${zero}"/>
+                    <path class="su-spark-area" d="${area}"/>
+                    <path class="su-spark-line" d="${line}"/>
+                </svg>
+                <i class="su-tip-line" hidden></i>
+                <i class="su-tip-dot ${up ? "is-up" : "is-down"}" hidden></i>
+                <div class="su-tip" hidden></div>
+            </div>
+            <div class="su-profit-axis">
+                <span>${d(pts[0].date)}</span>
+                <span>High ${sgn(hi)} · Low ${sgn(lo)}</span>
+                <span>${d(pts[pts.length - 1].date)}</span>
+            </div>
+        </section>
+    `;
+}
+
 function fundHTML() {
     const lf = settings.linkedFund;
 
     const howToCard = `
         <section class="br-card su-howto">
-            <img class="su-howto-logo" src="https://raw.githubusercontent.com/microintel/endgram/main/photo/invisible-home.png" alt="Invisible House" data-mf-howto>
-            <h3 class="su-howto-title">How to link a fund</h3>
+            <header class="su-howto-head">
+                <img class="su-howto-logo" src="https://raw.githubusercontent.com/microintel/endgram/main/photo/invisible-home.png" alt="Invisible House" data-mf-howto>
+                <div>
+                    <h3 class="su-howto-title">How to link a fund</h3>
+                    <p class="su-howto-lead">Four quick steps. Takes about a minute.</p>
+                </div>
+            </header>
             <ol class="su-howto-steps">
                 <li>
                     <div>
@@ -587,35 +757,52 @@ function fundHTML() {
     `;
 
     const linkCard = `
-        <section class="br-card">
-            <h3 style="margin-bottom:8px;">Link a fund</h3>
-            <p class="br-muted" style="margin:0 0 12px;" data-su-fund-status>${
+        <section class="br-card su-link">
+            <h3 class="su-link-title">Link a fund</h3>
+            <p class="su-link-status ${lf ? "is-linked" : ""}" data-su-fund-status>${
                 lf
                     ? `Linked: <strong>${escapeHTML(lf.schemeName || lf.schemeCode)}</strong>${
                           lf.fundHouse ? ` · ${escapeHTML(lf.fundHouse)}` : ""
                       }${lf.lastSync ? ` · last synced ${escapeHTML(lf.lastSync)}` : ""}`
                     : "No fund linked yet — pick a NAV file and your SIP start date."
             }</p>
-            <form data-form="fund-import" class="su-inline-form">
-                <label><span>Fund NAV file (.json)</span>
+            <form data-form="fund-import" class="su-inline-form su-link-form">
+                <label class="su-link-file"><span>Fund NAV file (.json)</span>
                     <input name="file" type="file" accept=".json,application/json" class="br-input" required></label>
                 <label><span>SIP start date</span>
                     <input name="start" type="date" class="br-input" value="${escapeHTML(settings.startDate || "")}" required></label>
-                <button type="submit" class="br-button br-button-primary">Import &amp; link</button>
-                ${
-                    lf
-                        ? `<button type="button" class="br-button" data-action="sync-fund">Sync now</button>
-                           <button type="button" class="br-button br-button-danger" data-action="unlink-fund">Unlink</button>`
-                        : ""
-                }
+                <div class="su-link-actions">
+                    <button type="submit" class="br-button br-button-primary">Import &amp; link</button>
+                    ${
+                        lf
+                            ? `<button type="button" class="br-button" data-action="sync-fund">Sync now</button>
+                               <button type="button" class="br-button br-button-danger" data-action="unlink-fund">Unlink</button>`
+                            : ""
+                    }
+                </div>
             </form>
-            <p class="br-field-help" style="margin-top:8px;">
-                <a href="https://microintel.github.io/invisible-house/" target="_blank" rel="noopener noreferrer">Get fund data</a>
-            </p>
+            <a class="su-link-help" href="https://microintel.github.io/invisible-house/" target="_blank" rel="noopener noreferrer">Get fund data ↗</a>
         </section>
     `;
 
     if (!lf) return howToCard + `<div style="height:16px"></div>` + linkCard;
+
+    // Already linked: no "Link a fund" form, just a compact status row.
+    const linkedCard = `
+        <section class="br-card su-linked">
+            <div class="su-linked-info">
+                <span class="su-linked-dot"></span>
+                <div>
+                    <strong data-su-fund-status>${escapeHTML(lf.schemeName || lf.schemeCode)}</strong>
+                    <small>${lf.fundHouse ? escapeHTML(lf.fundHouse) : "Linked fund"}${lf.lastSync ? ` · synced ${escapeHTML(lf.lastSync)}` : ""}</small>
+                </div>
+            </div>
+            <div class="su-linked-actions">
+                <button type="button" class="br-button" data-action="sync-fund">Sync now</button>
+                <button type="button" class="br-button br-button-danger" data-action="unlink-fund">Unlink</button>
+            </div>
+        </section>
+    `;
 
     let history;
 
@@ -645,7 +832,7 @@ function fundHTML() {
         `;
     }
 
-    return linkCard + history;
+    return linkedCard + profitCardHTML() + history;
 }
 
 function goalScenarios(series) {
@@ -1184,6 +1371,21 @@ function upcomingSipDates() {
     return out;
 }
 
+let openSetting = "";
+
+function secOpen(id, title, summary, level, tier) {
+    return `<section class="br-card su-opt" data-level="${level}">
+        <details class="su-acc" data-su-sec="${id}" ${openSetting === id ? "open" : ""}>
+            <summary>
+                <span class="su-acc-title">${title}</span>
+                <span class="su-acc-sum">${summary}</span>
+                ${icon("chevron-down", { size: 16 })}
+            </summary>
+            <div class="su-acc-body">`;
+}
+
+const secClose = () => `</div></details></section>`;
+
 function settingsHTML() {
     const s = settings;
     const skipped = (s && s.skippedSipDates) || [];
@@ -1210,8 +1412,7 @@ function settingsHTML() {
 
     return `
         <div class="su-settings-grid">
-            <section class="br-card">
-                <h3 style="margin-bottom:12px;">Base SIP</h3>
+            ${secOpen("base", "Base SIP", s ? sipAmt(s.sipSchedule[0].amount) + " / month" : "Not set", "1", "Essential")}
                 <form data-form="base" class="su-stack">
                     <label><span>SIP amount (₹)</span>
                         <input name="amount" type="number" step="0.01" min="0" class="br-input" value="${s ? s.sipSchedule[0].amount : ""}" required></label>
@@ -1219,13 +1420,25 @@ function settingsHTML() {
                         <input name="start" type="date" class="br-input" value="${s ? escapeHTML(s.startDate) : ""}" required></label>
                     <button type="submit" class="br-button br-button-primary">Save settings</button>
                 </form>
-            </section>
+            ${secClose()}
 
             ${
                 s
                     ? `
-            <section class="br-card">
-                <h3 style="margin-bottom:12px;">Step-up / step-down</h3>
+            ${secOpen("goal", "Investment goal", s && s.goalAmount ? fmtK(s.goalAmount) : "Not set", "1", "Essential")}
+                <form data-form="goal" class="su-stack">
+                    <label><span>Target corpus (₹)</span>
+                        <input name="amount" type="number" step="1" min="0" class="br-input" value="${s.goalAmount || ""}"></label>
+                    <label><span>Target date (optional)</span>
+                        <input name="date" type="date" class="br-input" value="${s.goalDate ? escapeHTML(s.goalDate) : ""}"></label>
+                    <div style="display:flex;gap:8px;">
+                        <button type="submit" class="br-button br-button-primary">Save goal</button>
+                        <button type="button" class="br-button" data-action="clear-goal">Clear</button>
+                    </div>
+                </form>
+            ${secClose()}
+
+            ${secOpen("step", "Step-up / step-down", s ? (s.sipSchedule.length > 1 ? (s.sipSchedule.length - 1) + " change" + (s.sipSchedule.length > 2 ? "s" : "") : "None") : "", "2", "Optional")}
                 <div class="su-list">${schedule}</div>
                 <form data-form="step" class="su-stack" style="margin-top:12px;">
                     <label><span>New amount (₹)</span>
@@ -1234,10 +1447,9 @@ function settingsHTML() {
                         <input name="from" type="date" class="br-input" required></label>
                     <button type="submit" class="br-button">Add change</button>
                 </form>
-            </section>
+            ${secClose()}
 
-            <section class="br-card">
-                <h3 style="margin-bottom:12px;">Skip an instalment</h3>
+            ${secOpen("skip", "Skip an instalment", skipped.length ? skipped.length + " skipped" : "None", "2", "Optional")}
                 <div class="su-list">
                     ${
                         skipped.length
@@ -1258,26 +1470,11 @@ function settingsHTML() {
                         </select></label>
                     <button type="submit" class="br-button">Skip this instalment</button>
                 </form>
-            </section>
-
-            <section class="br-card">
-                <h3 style="margin-bottom:12px;">Investment goal</h3>
-                <form data-form="goal" class="su-stack">
-                    <label><span>Target corpus (₹)</span>
-                        <input name="amount" type="number" step="1" min="0" class="br-input" value="${s.goalAmount || ""}"></label>
-                    <label><span>Target date (optional)</span>
-                        <input name="date" type="date" class="br-input" value="${s.goalDate ? escapeHTML(s.goalDate) : ""}"></label>
-                    <div style="display:flex;gap:8px;">
-                        <button type="submit" class="br-button br-button-primary">Save goal</button>
-                        <button type="button" class="br-button" data-action="clear-goal">Clear</button>
-                    </div>
-                </form>
-            </section>`
+            ${secClose()}`
                     : ""
             }
 
-            <section class="br-card">
-                <h3 style="margin-bottom:12px;">Manage SIPs</h3>
+            ${secOpen("manage", "Manage SIPs", profiles.length + (profiles.length === 1 ? " SIP" : " SIPs"), "3", "Advanced")}
                 <div class="su-list">
                     ${profiles
                         .map(
@@ -1299,7 +1496,7 @@ function settingsHTML() {
                             : ""
                     }
                 </div>
-            </section>
+            ${secClose()}
         </div>
     `;
 }
@@ -1834,6 +2031,84 @@ function askResetProfile(page) {
 ========================================= */
 
 function attachEvents(page) {
+    // Profit chart: hover (or touch-drag) shows the exact value at that point
+    const showTip = (event) => {
+        const plot = event.target.closest && event.target.closest("[data-su-plot]");
+        if (!plot || !profitPts.length) return;
+        const r = plot.getBoundingClientRect();
+        const f = Math.min(1, Math.max(0, (event.clientX - r.left) / r.width));
+        const pt = profitPts[Math.round(f * (profitPts.length - 1))];
+        const line = plot.querySelector(".su-tip-line");
+        const dot = plot.querySelector(".su-tip-dot");
+        const tip = plot.querySelector(".su-tip");
+        const day = new Date(pt.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+        tip.innerHTML = `<span>${day}</span><strong class="${posNeg(pt.v)}">${(pt.v >= 0 ? "+" : "") + fmtK(pt.v)}</strong>`;
+        [line, dot, tip].forEach((el) => (el.hidden = false));
+        line.style.left = dot.style.left = pt.fx * 100 + "%";
+        dot.style.top = pt.fy * 100 + "%";
+        tip.style.left = pt.fx * 100 + "%";
+        tip.classList.toggle("is-left", pt.fx > 0.7);
+        tip.classList.toggle("is-right", pt.fx < 0.3);
+    };
+    const hideTip = (event) => {
+        const plot = event.target.closest && event.target.closest("[data-su-plot]");
+        if (plot) plot.querySelectorAll(".su-tip-line, .su-tip-dot, .su-tip").forEach((el) => (el.hidden = true));
+    };
+    page.addEventListener("pointermove", showTip);
+    page.addEventListener("pointerdown", showTip);
+    page.addEventListener("pointerout", (e) => {
+        const plot = e.target.closest && e.target.closest("[data-su-plot]");
+        if (plot && !plot.contains(e.relatedTarget)) hideTip(e);
+    });
+
+    // Fund switcher (custom menu instead of a native <select>)
+    const closeSwitch = () => {
+        page.querySelectorAll("[data-su-switch]").forEach((w) => {
+            const m = w.querySelector(".su-switch-menu");
+            if (m) m.hidden = true;
+            const b = w.querySelector("[data-su-switch-btn]");
+            if (b) b.setAttribute("aria-expanded", "false");
+        });
+    };
+    page.addEventListener("click", async (event) => {
+        const pick = event.target.closest("[data-su-pick]");
+        if (pick) {
+            closeSwitch();
+            await switchProfile(page, Number(pick.dataset.suPick));
+            return;
+        }
+        const btn = event.target.closest("[data-su-switch-btn]");
+        if (btn) {
+            const menu = btn.parentElement.querySelector(".su-switch-menu");
+            if (!menu) return;
+            const open = menu.hidden;
+            closeSwitch();
+            menu.hidden = !open;
+            btn.setAttribute("aria-expanded", String(open));
+            return;
+        }
+        closeSwitch();
+    });
+    page.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeSwitch();
+    });
+
+    // Settings accordion: remember which section is open (one at a time)
+    page.addEventListener(
+        "toggle",
+        (event) => {
+            const d = event.target;
+            if (!d || !d.matches || !d.matches("details[data-su-sec]")) return;
+            if (d.open) {
+                openSetting = d.dataset.suSec;
+                page.querySelectorAll("details[data-su-sec]").forEach((o) => { if (o !== d) o.open = false; });
+            } else if (openSetting === d.dataset.suSec) {
+                openSetting = "";
+            }
+        },
+        true
+    );
+
     // A logo that fails to load is removed so the letter behind it shows
     page.addEventListener(
         "error",
@@ -1885,6 +2160,14 @@ function attachEvents(page) {
 
         if (tabBtn) {
             tab = tabBtn.dataset.suTab;
+            render(page);
+            return;
+        }
+
+        const rangeBtn = event.target.closest("[data-su-range]");
+
+        if (rangeBtn) {
+            profitRange = rangeBtn.dataset.suRange;
             render(page);
             return;
         }

@@ -929,3 +929,726 @@
 @media (max-width: 480px) {
     .br-income .inc-summary .inc-metrics .inc-amount { font-size: 15px; }
 }
+
+
+/* =========================================================
+   5. MUTUAL FUND  -  minimal pass
+   Flat sections divided by hairlines instead of boxed cards.
+   Presentation only; theme tokens only (Light + Dark).
+   ========================================================= */
+
+.br-stepup { --su-gap: 28px; --su-line: color-mix(in srgb, var(--border) 75%, transparent); }
+
+/* Sections: no box, no fill, just air + a hairline between them */
+.br-stepup [data-su-content] > .br-card,
+.br-stepup [data-su-content] > section.br-card,
+.br-stepup .su-settings-grid > .br-card {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: var(--su-gap) 0;
+    margin: 0 !important;
+    border-top: 1px solid var(--su-line);
+}
+.br-stepup [data-su-content] > :first-child { border-top: 0; padding-top: 12px; }
+.br-stepup .br-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+
+/* ---------- Overview hero ---------- */
+.su-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .02em;
+    color: var(--text-secondary);
+}
+.su-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: end;
+    padding: 20px 0 var(--su-gap);
+}
+.su-hero-main { display: flex; flex-direction: column; gap: 6px; }
+.su-hero-value {
+    font-size: clamp(34px, 6vw, 48px);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+.su-hero-sub { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.su-hero-side { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.su-hero-side > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.su-hero-side strong { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.su-hero-side em { font-style: normal; font-size: 12px; color: var(--text-muted); }
+
+/* ---------- Holdings: quiet definition grid ---------- */
+.su-facts { padding: var(--su-gap) 0; border-top: 1px solid var(--su-line); }
+.su-section-title { font-size: 15px; font-weight: 600; margin: 0 0 16px; }
+.su-facts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px 28px;
+    margin: 0;
+}
+.su-fact { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.su-fact dt { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.su-fact dd { margin: 0; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.su-fact small { font-size: 12px; color: var(--text-muted); }
+
+/* gain / loss colours without the ▲▼ glyph noise */
+.br-stepup .su-hero .su-pos, .br-stepup .su-hero .su-neg,
+.br-stepup .su-fact dd.su-pos, .br-stepup .su-fact dd.su-neg { font-weight: 600; }
+
+/* Inner forms + tables: lighter chrome */
+.br-stepup .br-table thead th { background: transparent; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.br-stepup .br-table td, .br-stepup .br-table th { border-color: var(--su-line); }
+.br-stepup .su-pending-row { border-color: var(--su-line); }
+.br-stepup .br-input, .br-stepup .br-select { background: transparent; border-color: var(--su-line); }
+.br-stepup .br-input:focus, .br-stepup .br-select:focus { border-color: var(--accent); }
+.br-stepup .br-button:not(.br-button-primary):not(.br-button-danger) { background: transparent; border: 1px solid var(--su-line); }
+.br-stepup .br-button:not(.br-button-primary):not(.br-button-danger):hover { background: var(--hover-background); }
+.br-stepup .br-stat { border: 0; }
+
+/* ---------- Settings: one calm column, ordered by priority ---------- */
+.br-income.br-stepup .su-settings-grid {
+    display: flex;
+    flex-direction: column;
+    column-count: auto;
+    gap: 0;
+    max-width: 720px;
+}
+.br-income.br-stepup .su-settings-grid > .br-card {
+    padding: var(--su-gap) 0;
+    border: 0;
+    border-top: 1px solid var(--su-line);
+    border-radius: 0;
+    background: transparent;
+    margin: 0 !important;
+}
+.br-income.br-stepup .su-settings-grid > .br-card:first-child { border-top: 0; padding-top: 12px; }
+.br-income.br-stepup .su-settings-grid > .br-card > h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 0;
+    padding: 0;
+    margin: 0 0 16px !important;
+}
+.su-tier {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+/* Priority: essentials read at full strength, optional / advanced recede */
+.su-opt[data-level="1"] > h3 .su-tier { color: var(--accent); }
+.su-opt[data-level="3"] { opacity: .92; }
+.br-income.br-stepup .su-settings-grid .su-row { border-color: var(--su-line); }
+.br-income.br-stepup .su-settings-grid .su-row .br-button {
+    border: 0; background: transparent; padding-inline: 8px;
+    color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px;
+}
+.br-income.br-stepup .su-settings-grid .su-row .br-button.br-button-danger { color: var(--danger); border: 0; }
+.br-income.br-stepup .su-settings-grid > .br-card:last-child { column-span: none; }
+
+/* ---------- Link a fund ---------- */
+.su-howto { display: flex; flex-direction: column; gap: 22px; }
+.su-howto-head { display: flex; align-items: center; gap: 16px; }
+.su-howto-head .su-howto-logo { width: 64px; height: 64px; max-height: none; object-fit: contain; flex: none; border-radius: 16px; }
+.su-howto-title { font-size: 18px !important; margin: 0 0 2px !important; }
+.su-howto-lead { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.su-howto-steps { position: relative; gap: 0; }
+.su-howto-steps li { position: relative; padding-bottom: 22px; }
+.su-howto-steps li:last-child { padding-bottom: 0; }
+.su-howto-steps li:not(:last-child)::after {
+    content: ""; position: absolute; left: 14px; top: 32px; bottom: 4px; width: 1px; background: var(--su-line);
+}
+.su-howto-steps li::before {
+    width: 28px; height: 28px; font-size: 13px; background: transparent;
+    border: 1px solid var(--su-line); color: var(--text-secondary);
+}
+.su-howto-steps li:first-child::before { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.su-howto-steps strong { font-size: 14px; font-weight: 600; }
+.su-howto-steps p { font-size: 13px; }
+
+.su-link-title { font-size: 18px !important; margin: 0 0 6px !important; }
+.su-link-status {
+    margin: 0 0 18px; font-size: 13px; line-height: 1.5; color: var(--text-secondary);
+    display: flex; align-items: flex-start; gap: 8px;
+}
+.su-link-status::before {
+    content: ""; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--text-muted);
+}
+.su-link-status.is-linked { color: var(--text-primary); }
+.su-link-status.is-linked::before { background: var(--accent); }
+.su-link-form { align-items: flex-end; gap: 14px; }
+.su-link-form .su-link-file { flex: 1 1 260px; }
+.su-link-form .br-input[type="file"] { padding: 8px 10px; border-style: dashed; cursor: pointer; }
+.su-link-form .br-input[type="file"]::file-selector-button {
+    margin-right: 12px; padding: 6px 12px; border: 0; border-radius: 6px; cursor: pointer;
+    background: var(--active-background); color: var(--text-primary); font: inherit; font-size: 12.5px;
+}
+.su-link-actions { display: flex; flex-wrap: wrap; gap: 10px; flex: 1 1 100%; }
+.su-link-help {
+    display: inline-block; margin-top: 16px; font-size: 13px; font-weight: 500;
+    color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent;
+}
+.su-link-help:hover { border-bottom-color: currentColor; }
+
+/* ---------- Tablet / phone ---------- */
+@media (max-width: 900px) {
+    .su-hero { grid-template-columns: 1fr; gap: 24px; }
+    .su-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+    .br-stepup { --su-gap: 22px; }
+    .su-hero-side { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .su-hero-side > div:last-child { grid-column: 1 / -1; }
+    .su-facts-grid { gap: 18px 16px; }
+    .su-fact dd { font-size: 16px; }
+    .su-link-actions .br-button { flex: 1 1 auto; }
+    .su-howto-head .su-howto-logo { width: 52px; height: 52px; }
+    .br-income.br-stepup .su-settings-grid > .br-card { padding: var(--su-gap) 0; }
+}
+
+/* Nested stat tiles (Fund tab) become plain figures, not boxes */
+.br-stepup .br-card .br-stat,
+.br-stepup .br-grid > .br-stat { background: transparent; padding: 0; border: 0; transform: none; }
+.br-stepup .br-card .br-stat-value { font-size: 20px; }
+
+
+/* =========================================================
+   6. MUTUAL FUND SETTINGS  -  tap to open, one section at a time
+   Each section is its own separate rounded row (clear gaps,
+   no shared borders). Details stay hidden until opened.
+   ========================================================= */
+
+.br-income.br-stepup .su-settings-grid {
+    gap: 10px;
+    max-width: 680px;
+    padding-top: 12px;
+}
+
+.br-income.br-stepup .su-settings-grid > .br-card.su-opt {
+    padding: 0;
+    border: 1px solid var(--su-line);
+    border-radius: 14px;
+    background: transparent;
+    overflow: hidden;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+.br-income.br-stepup .su-settings-grid > .br-card.su-opt:first-child { padding-top: 0; border-top: 1px solid var(--su-line); }
+.br-income.br-stepup .su-settings-grid > .br-card.su-opt:has(details[open]) {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--su-line));
+}
+
+.su-acc > summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 18px;
+    cursor: pointer;
+    list-style: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.su-acc > summary::-webkit-details-marker { display: none; }
+@media (hover: hover) { .su-acc > summary:hover { background: var(--hover-background); } }
+.su-acc > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.su-acc-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.su-acc-title .su-tier { font-weight: 500; }
+.su-acc-sum {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+}
+.su-acc > summary > .br-icon, .su-acc > summary > svg { flex: none; color: var(--text-muted); transition: transform .2s ease; }
+.su-acc[open] > summary > .br-icon, .su-acc[open] > summary > svg { transform: rotate(180deg); }
+
+.su-acc-body { padding: 4px 18px 20px; }
+
+/* Calm forms inside: stacked, quiet fields, a single clear action */
+.br-income.br-stepup .su-acc-body .su-stack { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 0 !important; }
+.br-income.br-stepup .su-acc-body .su-list + .su-stack { margin-top: 16px !important; padding-top: 16px; border-top: 1px solid var(--su-line); }
+.br-income.br-stepup .su-acc-body .su-stack > :not(label) { grid-column: 1 / -1; }
+.br-income.br-stepup .su-acc-body .su-stack .br-button { width: auto; justify-self: start; }
+.br-income.br-stepup .su-acc-body .su-stack .br-button-primary { min-width: 140px; }
+.br-income.br-stepup .su-acc-body .su-stack > div[style] { display: flex !important; gap: 14px !important; align-items: center; }
+.br-income.br-stepup .su-acc-body > div[style] {
+    margin-top: 16px !important; padding-top: 16px; border-top: 1px solid var(--su-line);
+}
+.br-income.br-stepup .su-acc-body .br-input,
+.br-income.br-stepup .su-acc-body .br-select { background: var(--surface-secondary, transparent); }
+.br-income.br-stepup .su-acc-body .su-row:first-child { padding-top: 0; }
+
+@media (max-width: 520px) {
+    .su-acc > summary { padding: 0 14px; min-height: 54px; }
+    .su-acc-sum { max-width: 40%; }
+    .su-acc-title .su-tier { display: none; }
+    .su-acc-body { padding: 2px 14px 18px; }
+    .br-income.br-stepup .su-acc-body .su-stack { grid-template-columns: minmax(0, 1fr); }
+    .br-income.br-stepup .su-acc-body .su-stack .br-button { width: 100%; justify-self: stretch; }
+}
+
+
+/* =========================================================
+   7. MUTUAL FUND  -  soft tiles (no outlines), cool Overview
+   Sections are separate filled tiles with real gaps, so
+   nothing touches or shares a border.
+   ========================================================= */
+
+.br-stepup {
+    --su-tile: color-mix(in srgb, var(--text-primary) 4.5%, transparent);
+    --su-tile-2: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    --su-up: var(--success, #22C55E);
+    --su-down: var(--danger, #F87171);
+}
+
+/* ---- Settings: separate tiles, nothing touching ---- */
+.br-income.br-stepup .su-settings-grid {
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px !important;
+    max-width: 680px;
+}
+.br-income.br-stepup .su-settings-grid > .br-card.su-opt {
+    display: block !important;
+    grid-template-columns: none;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 16px;
+    background: var(--su-tile);
+    overflow: hidden;
+    transition: background-color .18s ease;
+}
+.br-income.br-stepup .su-settings-grid > .br-card.su-opt:has(details[open]) { background: var(--su-tile-2); }
+.br-income.br-stepup [data-su-content] .su-settings-grid > .br-card.su-opt { padding: 0 !important; }
+.su-tier { display: none; }
+.su-acc-body { border: 0; }
+.br-income.br-stepup .su-acc-body .su-list + .su-stack,
+.br-income.br-stepup .su-acc-body > div[style],
+.br-income.br-stepup .su-settings-grid .su-row { border: 0 !important; }
+.br-income.br-stepup .su-acc-body > div[style] { padding-top: 6px; }
+.br-income.br-stepup .su-acc-body .br-input,
+.br-income.br-stepup .su-acc-body .br-select { background: var(--su-tile); border-color: transparent; }
+.br-income.br-stepup .su-acc-body .br-input:focus,
+.br-income.br-stepup .su-acc-body .br-select:focus { border-color: var(--accent); }
+
+/* ---- Overview sections below the hero: tiles too ---- */
+.br-stepup [data-su-content] > .br-card:not(.su-howto):not(.su-link) {
+    border: 0;
+    border-radius: 16px;
+    background: var(--su-tile);
+    padding: 22px;
+    margin-top: 14px !important;
+}
+.br-stepup [data-su-content] > .br-card:first-child { margin-top: 0 !important; }
+
+/* ---- Hero ---- */
+.su-hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 26px !important;
+    margin-top: 14px;
+    border: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    background:
+        radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--su-up) 16%, transparent), transparent 60%),
+        var(--su-tile);
+}
+.su-hero.is-down {
+    background:
+        radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--su-down) 16%, transparent), transparent 60%),
+        var(--su-tile);
+}
+.su-hero-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.su-hero-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.su-hero-value { font-size: clamp(36px, 7vw, 52px); }
+.su-pill {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.su-spark { flex: 1 1 220px; max-width: 340px; height: 84px; overflow: visible; }
+.su-spark path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.su-spark-line { stroke: var(--su-up); stroke-width: 2.5; }
+.su-spark.is-down .su-spark-line { stroke: var(--su-down); }
+.su-spark-base { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .7; }
+.su-spark-area { fill: color-mix(in srgb, var(--su-up) 14%, transparent) !important; stroke: none; }
+.su-spark.is-down .su-spark-area { fill: color-mix(in srgb, var(--su-down) 14%, transparent) !important; }
+@media (prefers-reduced-motion: no-preference) {
+    .su-spark-line { stroke-dasharray: 1; stroke-dashoffset: 0; }
+    .su-spark { animation: su-rise .6s cubic-bezier(.2,.7,.2,1) both .1s; }
+}
+
+.su-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.su-kpi {
+    display: flex; flex-direction: column; gap: 4px; min-width: 0;
+    padding: 14px 16px; border-radius: 14px;
+    background: color-mix(in srgb, var(--background) 55%, transparent);
+}
+.su-kpi strong { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.su-kpi em { font-style: normal; font-size: 12px; color: var(--text-muted); }
+
+/* ---- Holdings ---- */
+.su-facts {
+    border: 0 !important;
+    border-radius: 16px;
+    background: var(--su-tile);
+    padding: 22px !important;
+    margin-top: 14px;
+}
+.su-units {
+    display: flex; align-items: center; gap: 14px; padding: 16px;
+    margin-bottom: 18px; border-radius: 14px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.su-units-ico {
+    flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px;
+    background: var(--accent); color: var(--accent-contrast);
+}
+.su-units > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.su-units strong { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.su-units small { margin-left: auto; font-size: 12px; color: var(--text-secondary); text-align: right; }
+.su-facts-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.su-fact {
+    padding: 14px; border-radius: 14px; gap: 4px;
+    background: color-mix(in srgb, var(--background) 55%, transparent);
+}
+.su-fact dd { font-size: 16px; }
+
+@media (max-width: 900px) {
+    .su-facts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+    .su-hero { padding: 20px !important; border-radius: 20px; gap: 18px; }
+    .su-hero-top { flex-direction: column; align-items: stretch; gap: 14px; }
+    .su-spark { max-width: none; width: 100%; height: 64px; flex: none; }
+    .su-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .su-kpi:last-child { grid-column: 1 / -1; }
+    .su-kpi { padding: 12px 14px; }
+    .su-facts { padding: 18px !important; }
+    .su-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .su-units small { display: none; }
+    .br-stepup [data-su-content] > .br-card:not(.su-howto):not(.su-link) { padding: 18px; }
+}
+
+
+/* =========================================================
+   8. MUTUAL FUND  -  mobile fixes + linked-fund row
+   ========================================================= */
+
+/* Hero children must span the full card (was inheriting align-items:end) */
+.su-hero { align-items: stretch !important; grid-template-columns: none; }
+.su-hero > * { width: 100%; min-width: 0; }
+.su-kpis { width: 100%; }
+
+@media (max-width: 640px) {
+    .su-hero { padding: 18px !important; gap: 16px; }
+    .su-hero-value { font-size: 36px; }
+    .su-spark { height: 56px; }
+    .su-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .su-kpi:last-child { grid-column: auto; }
+    .su-kpi { padding: 11px 12px; border-radius: 12px; }
+    .su-kpi .su-label { font-size: 11px; }
+    .su-kpi strong { font-size: 15px; }
+    .su-kpi em { display: none; }
+}
+
+/* Linked fund: compact status row */
+.su-linked {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    padding: 16px 18px !important; border-radius: 16px;
+}
+.su-linked-info { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 240px; }
+.su-linked-info > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.su-linked-info strong { font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.su-linked-info small { font-size: 12px; color: var(--text-secondary); }
+.su-linked-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.su-linked-actions { display: flex; gap: 8px; }
+@media (max-width: 520px) {
+    .su-linked-actions { width: 100%; }
+    .su-linked-actions .br-button { flex: 1 1 0; }
+}
+
+
+/* =========================================================
+   9. MUTUAL FUND  -  no duplicate page title, profit chart
+   ========================================================= */
+
+/* The top bar already says "Mutual Fund": the fund picker takes the row */
+.br-income.br-stepup .br-page-heading.su-heading {
+    display: block;
+    margin: 0 0 12px;
+    padding: 0;
+}
+.br-stepup .su-heading [data-su-profilebar] { width: 100%; flex: none; }
+.br-stepup .su-heading [data-su-profilebar] > div { justify-content: flex-start; width: 100%; }
+.br-stepup .su-heading [data-su-profilebar] .br-select { max-width: none; flex: 1 1 auto; }
+
+/* Profit chart: dashed zero line instead of the "invested" line */
+.su-spark-zero { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .7; vector-effect: non-scaling-stroke; }
+
+
+/* Fund logo: a little bigger, same height as the picker, centred on its row */
+.br-stepup .su-heading [data-su-profilebar] > div {
+    display: flex;
+    align-items: center;
+    gap: 14px !important;
+}
+.br-stepup .su-heading [data-su-profilebar] .mf-logo-lg {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    font-size: 22px;
+    flex: none;
+    align-self: center;
+}
+.br-stepup .su-heading [data-su-profilebar] .mf-logo img { padding: 7px; }
+.br-stepup .su-heading [data-su-profilebar] .br-select {
+    min-height: 60px;
+    height: 60px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 500;
+}
+@media (max-width: 520px) {
+    .br-stepup .su-heading [data-su-profilebar] > div { gap: 12px !important; }
+    .br-stepup .su-heading [data-su-profilebar] .mf-logo-lg { width: 56px; height: 56px; border-radius: 15px; }
+    .br-stepup .su-heading [data-su-profilebar] .br-select { min-height: 56px; height: 56px; border-radius: 15px; font-size: 15px; }
+}
+
+
+/* Fund tab: profit growth chart + range filter */
+.su-profit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.su-profit-head > div:first-child { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.su-profit-value { font-size: 28px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.su-profit-head small { font-size: 12.5px; font-weight: 500; }
+.su-range { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--su-tile); }
+.su-range-btn {
+    min-width: 40px; min-height: 32px; padding: 0 12px; border: 0; border-radius: 9px;
+    background: transparent; color: var(--text-secondary); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+}
+.su-range-btn:hover { color: var(--text-primary); }
+.su-range-btn.active { background: var(--su-tile-2); color: var(--text-primary); font-weight: 600; }
+.su-range-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.su-profit-chart { display: block; width: 100%; height: 220px; overflow: visible; }
+.su-profit-chart path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.su-profit-chart .su-spark-line { stroke: var(--su-up); stroke-width: 2.5; }
+.su-profit-chart.is-down .su-spark-line { stroke: var(--su-down); }
+.su-profit-chart .su-spark-area { fill: color-mix(in srgb, var(--su-up) 14%, transparent); stroke: none; }
+.su-profit-chart.is-down .su-spark-area { fill: color-mix(in srgb, var(--su-down) 14%, transparent); }
+.su-profit-axis { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.su-profit-axis span:nth-child(2) { text-align: center; }
+@media (max-width: 520px) {
+    .su-profit-chart { height: 170px; }
+    .su-profit-value { font-size: 24px; }
+    .su-range { width: 100%; }
+    .su-range-btn { flex: 1 1 0; }
+    .su-profit-axis span:nth-child(2) { display: none; }
+}
+
+
+/* Profit chart hover tooltip */
+.su-profit-plot { position: relative; touch-action: pan-y; cursor: crosshair; }
+.su-profit-plot [hidden] { display: none !important; }
+.su-tip-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--text-muted); opacity: .6; pointer-events: none; transform: translateX(-.5px); }
+.su-tip-dot {
+    position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; pointer-events: none;
+    background: var(--su-up); border: 2px solid var(--background);
+}
+.su-tip-dot.is-down { background: var(--su-down); }
+.su-tip {
+    position: absolute; top: -4px; transform: translate(-50%, -100%); pointer-events: none; z-index: 2;
+    display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 10px; white-space: nowrap;
+    background: var(--surface-secondary, var(--background)); border: 1px solid var(--su-line); font-variant-numeric: tabular-nums;
+}
+.su-tip span { font-size: 11.5px; color: var(--text-secondary); }
+.su-tip strong { font-size: 14px; font-weight: 600; }
+.su-tip.is-left { transform: translate(-100%, -100%); }
+.su-tip.is-right { transform: translate(0, -100%); }
+
+
+/* =========================================================
+   Fund switcher (replaces the native select)
+   ========================================================= */
+
+.br-stepup .su-heading [data-su-profilebar] { width: 100%; }
+.su-switch { position: relative; width: 100%; max-width: 520px; }
+
+.su-switch-btn {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 10px 16px 10px 10px;
+    border: 0; border-radius: 18px; text-align: left; cursor: pointer; font: inherit; color: var(--text-primary);
+    background: var(--su-tile); transition: background-color .15s ease;
+}
+@media (hover: hover) { .su-switch-btn:hover { background: var(--su-tile-2); } }
+.su-switch-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.su-switch-btn[aria-expanded="true"] { background: var(--su-tile-2); }
+.su-switch-btn .mf-logo-sm { width: 56px; height: 56px; border-radius: 14px; font-size: 20px; }
+.su-switch-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.su-switch-text small { font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
+.su-switch-text strong { font-size: 16px; font-weight: 600; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.su-switch-btn > .br-icon { flex: none; color: var(--text-secondary); transition: transform .2s ease; }
+.su-switch-btn[aria-expanded="true"] > .br-icon { transform: rotate(180deg); }
+
+.su-switch-menu {
+    position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 8px);
+    display: flex; flex-direction: column; gap: 2px; padding: 6px; max-height: 360px; overflow-y: auto; overscroll-behavior: contain;
+    border-radius: 18px; background: var(--surface-secondary, var(--background));
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .35);
+}
+.su-switch-menu[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+    .su-switch-menu:not([hidden]) { animation: su-rise .18s cubic-bezier(.2, .7, .2, 1) both; }
+}
+.su-switch-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 13px;
+    background: transparent; color: var(--text-primary); font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.su-switch-item > span:not(.mf-logo) { flex: 1 1 auto; min-width: 0; line-height: 1.35; }
+.su-switch-item .mf-logo-xs { width: 40px; height: 40px; border-radius: 11px; font-size: 15px; }
+.su-switch-item > .br-icon { flex: none; color: var(--accent); }
+@media (hover: hover) { .su-switch-item:hover { background: var(--su-tile); } }
+.su-switch-item.is-active { background: var(--su-tile-2); font-weight: 600; }
+.su-switch-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+@media (max-width: 520px) {
+    .su-switch { max-width: none; }
+    .su-switch-btn { padding: 9px 14px 9px 9px; gap: 12px; }
+    .su-switch-btn .mf-logo-sm { width: 52px; height: 52px; }
+    .su-switch-text strong { font-size: 15px; }
+}
+
+
+/* =========================================================
+   Mutual Fund, dark mode: sections and cards are #0a0a0a
+   ========================================================= */
+
+:root:not([data-theme="light"]) .br-stepup {
+    --su-card: #0a0a0a;
+    --su-tile: #0a0a0a;
+    --su-tile-2: #141414;          /* open / hover state, a touch lighter */
+    --su-inner: #000000;           /* small tiles sitting on a #0a0a0a card */
+}
+
+:root:not([data-theme="light"]) .br-stepup .br-card,
+:root:not([data-theme="light"]) .br-stepup [data-su-content] > .br-card:not(.su-howto):not(.su-link),
+:root:not([data-theme="light"]) .br-stepup .su-facts,
+:root:not([data-theme="light"]) .br-stepup .su-linked,
+:root:not([data-theme="light"]) .br-stepup .su-howto,
+:root:not([data-theme="light"]) .br-stepup .su-link {
+    background: #0a0a0a;
+}
+
+:root:not([data-theme="light"]) .su-hero {
+    background:
+        radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--su-up) 14%, transparent), transparent 60%),
+        #0a0a0a;
+}
+:root:not([data-theme="light"]) .su-hero.is-down {
+    background:
+        radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--su-down) 14%, transparent), transparent 60%),
+        #0a0a0a;
+}
+
+:root:not([data-theme="light"]) .su-kpi,
+:root:not([data-theme="light"]) .su-fact { background: var(--su-inner); }
+
+:root:not([data-theme="light"]) .br-income.br-stepup .su-settings-grid > .br-card.su-opt { background: #0a0a0a; }
+:root:not([data-theme="light"]) .br-income.br-stepup .su-settings-grid > .br-card.su-opt:has(details[open]) { background: #0a0a0a; }
+:root:not([data-theme="light"]) .br-income.br-stepup .su-acc-body .br-input,
+:root:not([data-theme="light"]) .br-income.br-stepup .su-acc-body .br-select { background: var(--su-inner); }
+
+:root:not([data-theme="light"]) .su-switch-btn { background: #0a0a0a; }
+:root:not([data-theme="light"]) .su-switch-btn[aria-expanded="true"] { background: #141414; }
+:root:not([data-theme="light"]) .su-switch-menu,
+:root:not([data-theme="light"]) .su-tip { background: #0a0a0a; }
+:root:not([data-theme="light"]) .su-range { background: var(--su-inner); }
+
+
+/* Desktop: bigger fund logo in the switcher */
+@media (min-width: 769px) {
+    .su-switch { max-width: 580px; }
+    .su-switch-btn { padding: 12px 20px 12px 12px; gap: 18px; border-radius: 20px; }
+    .su-switch-btn .mf-logo-sm { width: 72px; height: 72px; border-radius: 18px; font-size: 26px; }
+    .su-switch-text strong { font-size: 17px; }
+    .su-switch-item .mf-logo-xs { width: 48px; height: 48px; border-radius: 13px; font-size: 18px; }
+    .su-switch-item { gap: 14px; padding: 9px 12px; }
+}
+
+
+/* =========================================================
+   Fund switch animation
+   ========================================================= */
+
+@media (prefers-reduced-motion: no-preference) {
+    /* old fund leaves */
+    .br-stepup [data-su-content].su-leave {
+        opacity: 0;
+        transform: translateX(calc(var(--su-dir, 1) * -24px));
+        transition: opacity .15s ease, transform .15s ease;
+        pointer-events: none;
+    }
+
+    /* new fund arrives: sections slide in from the side, one after another */
+    .br-stepup.su-switched [data-su-content].su-enter > * {
+        animation: su-slide-in .5s cubic-bezier(.2, .8, .2, 1) both;
+    }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(2) { animation-delay: .06s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(3) { animation-delay: .12s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(4) { animation-delay: .18s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(n+5) { animation-delay: .24s; }
+
+    /* switcher card: logo pops, name slides */
+    .br-stepup.su-switched .su-switch-btn .mf-logo { animation: su-logo-pop .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+    .br-stepup.su-switched .su-switch-text { animation: su-text-in .4s cubic-bezier(.2, .8, .2, 1) .08s both; }
+
+    /* profit chart draws left to right */
+    .br-stepup.su-switched .su-spark,
+    .br-stepup.su-switched .su-profit-chart { animation: su-draw .8s cubic-bezier(.4, 0, .2, 1) .15s both; }
+
+    /* hero value fades up a touch after the card */
+    .br-stepup.su-switched .su-hero-value { animation: su-text-in .55s cubic-bezier(.2, .8, .2, 1) .15s both; }
+}
+
+@keyframes su-slide-in {
+    from { opacity: 0; transform: translateX(calc(var(--su-dir, 1) * 28px)); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes su-logo-pop {
+    from { opacity: 0; transform: scale(.6) rotate(calc(var(--su-dir, 1) * -8deg)); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes su-text-in {
+    from { opacity: 0; transform: translateX(calc(var(--su-dir, 1) * 14px)); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes su-draw {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
