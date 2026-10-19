@@ -274,25 +274,24 @@ export async function Stocks() {
                 <form data-txn-form novalidate>
                     <div class="inc-form-error" data-txn-error role="alert" hidden></div>
 
-                    <!-- Live logo + LTP for the typed symbol -->
-                    <div class="stk-sym-preview" data-sym-preview hidden>
-                        <span data-sym-logo></span>
-                        <div class="stk-sym-info">
-                            <strong data-sym-title></strong>
-                            <span class="br-muted" data-sym-ltp></span>
+                    <div class="inc-fields stk-txn-fields">
+                        <!-- Live logo + LTP for the typed symbol -->
+                        <div class="stk-sym-preview stk-f-preview stk-span-2" data-sym-preview hidden>
+                            <span data-sym-logo></span>
+                            <div class="stk-sym-info">
+                                <strong data-sym-title></strong>
+                                <span class="br-muted" data-sym-ltp></span>
+                            </div>
+                            <button type="button" class="br-button" data-action="use-ltp" data-sym-use hidden>Use price</button>
                         </div>
-                        <button type="button" class="br-button" data-action="use-ltp" data-sym-use hidden>Use price</button>
-                    </div>
-
-                    <div class="inc-fields">
-                        ${fieldHTML("Type", `<select name="type" data-txn-type><option value="BUY">Buy</option><option value="SELL">Sell</option></select>`)}
-                        ${fieldHTML("Date", `<input name="date" type="date" required>`)}
-                        ${fieldHTML("Time", `<input name="time" type="time" step="1">`)}
-                        ${fieldHTML("Symbol", `<input name="symbol" type="text" list="stk-symbols" placeholder="RELIANCE" autocomplete="off" autocapitalize="characters" required><datalist id="stk-symbols" data-symbol-list></datalist>`)}
-                        ${fieldHTML("Stock name", `<input name="name" type="text" placeholder="Reliance Industries" autocomplete="off" required>`)}
-                        ${fieldHTML("Quantity", `<input name="quantity" type="number" inputmode="decimal" step="0.000001" min="0" placeholder="0" required><span class="inc-hint" data-qty-hint></span>`)}
-                        ${fieldHTML("Price per share", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="price" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></span>`)}
-                        ${fieldHTML("Notes (#tags supported)", `<input name="notes" type="text" autocomplete="off">`)}
+                        ${fieldHTML("Type", `<select name="type" data-txn-type><option value="BUY">Buy</option><option value="SELL">Sell</option></select>`, "stk-f-type")}
+                        ${fieldHTML("Date", `<input name="date" type="date" required>`, "stk-f-date")}
+                        ${fieldHTML("Time", `<input name="time" type="time" step="1">`, "stk-f-time")}
+                        ${fieldHTML("Symbol", `<input name="symbol" type="text" list="stk-symbols" placeholder="RELIANCE" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" required><datalist id="stk-symbols" data-symbol-list></datalist>`, "stk-f-symbol")}
+                        ${fieldHTML("Stock name", `<input name="name" type="text" placeholder="Reliance Industries" autocomplete="off" enterkeyhint="next" required>`, "stk-f-name")}
+                        ${fieldHTML("Quantity", `<input name="quantity" type="number" inputmode="decimal" step="0.000001" min="0" placeholder="0" enterkeyhint="next" required><span class="inc-hint" data-qty-hint></span>`, "stk-f-qty")}
+                        ${fieldHTML("Price per share", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="price" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" enterkeyhint="done" required></span>`, "stk-f-price")}
+                        ${fieldHTML("Notes (#tags supported)", `<input name="notes" type="text" autocomplete="off" enterkeyhint="done">`, "stk-f-notes")}
                     </div>
 
                     <div class="stk-total" data-txn-total></div>
@@ -320,7 +319,7 @@ export async function Stocks() {
                         </div>
                     </div>
 
-                    <div class="br-modal-footer">
+                    <div class="br-modal-footer stk-txn-footer">
                         <button type="button" class="br-button" data-action="close-txn-modal">Cancel</button>
                         <button type="submit" class="br-button br-button-primary">Save transaction</button>
                     </div>
@@ -1337,7 +1336,7 @@ function scheduleSymLookup(page, immediate) {
         resetSymPreview(page);
         return;
     }
-    symLookupTimer = setTimeout(() => lookupSymbol(page), immediate ? 0 : 700);
+    symLookupTimer = setTimeout(() => lookupSymbol(page), immediate ? 0 : 450);
 }
 
 async function lookupSymbol(page) {
@@ -1412,6 +1411,52 @@ async function lookupSymbol(page) {
     }
 }
 
+function txnPhoneMode() {
+    return window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+}
+
+/* ---------- phone keyboard: keep the sheet inside the visible area ---------- */
+
+let txnVvCleanup = null;
+
+function bindTxnViewport(page) {
+    unbindTxnViewport();
+    const vv = window.visualViewport;
+    const layer = page.querySelector("[data-txn-modal]");
+    if (!vv || !layer) return;
+
+    const phone = window.matchMedia("(max-width: 768px)");
+    const apply = () => {
+        if (!phone.matches) {
+            layer.style.removeProperty("--stk-vv-h");
+            layer.style.removeProperty("--stk-vv-top");
+            layer.classList.remove("stk-kb-open");
+            return;
+        }
+        layer.style.setProperty("--stk-vv-h", vv.height + "px");
+        layer.style.setProperty("--stk-vv-top", vv.offsetTop + "px");
+        // keyboard up = the visible area is much shorter than the screen
+        layer.classList.toggle("stk-kb-open", vv.height < window.innerHeight * 0.78);
+    };
+
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    apply();
+
+    txnVvCleanup = () => {
+        vv.removeEventListener("resize", apply);
+        vv.removeEventListener("scroll", apply);
+        layer.style.removeProperty("--stk-vv-h");
+        layer.style.removeProperty("--stk-vv-top");
+        layer.classList.remove("stk-kb-open");
+    };
+}
+
+function unbindTxnViewport() {
+    if (txnVvCleanup) txnVvCleanup();
+    txnVvCleanup = null;
+}
+
 function openTxnModal(page, id, duplicate) {
     const modal = page.querySelector("[data-txn-modal]");
     const form = page.querySelector("[data-txn-form]");
@@ -1455,6 +1500,7 @@ function openTxnModal(page, id, duplicate) {
     setMtfMode(page, "amount", true);
     updateTxnForm(page);
     modal.hidden = false;
+    bindTxnViewport(page);
 
     // Editing / duplicating: show the logo + live price right away
     if (id && form.symbol.value.trim()) lookupSymbol(page);
@@ -1464,6 +1510,7 @@ function openTxnModal(page, id, duplicate) {
 }
 
 function closeTxnModal(page) {
+    unbindTxnViewport();
     resetSymPreview(page);
     page.querySelector("[data-txn-modal]").hidden = true;
     editingTxnId = null;
@@ -2292,6 +2339,39 @@ function attachEvents(page) {
 
     page.addEventListener("focusin", (event) => {
         if (event.target.matches?.("[data-price-input]")) event.target.select();
+
+        // Add / edit form on a phone: select the number so typing replaces it,
+        // and keep the focused field visible above the keyboard.
+        const t = event.target;
+        if (t.closest?.("[data-txn-form]") && txnPhoneMode()) {
+            if (t.matches('[name="quantity"], [name="price"], [name="mtfValue"]')) {
+                setTimeout(() => { try { t.select(); } catch { /* not selectable */ } }, 0);
+            }
+            setTimeout(() => {
+                if (document.activeElement === t) t.scrollIntoView({ block: "center", behavior: "smooth" });
+            }, 300);
+        }
+    });
+
+    // Phone keyboards: "Next" / Enter moves symbol -> quantity -> price, and Enter on
+    // the last field saves. (Desktop keeps its normal Enter behaviour.)
+    page.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" || event.isComposing) return;
+        const el = event.target;
+        const form = el.closest?.("[data-txn-form]");
+        if (!form || !el.matches("input") || !txnPhoneMode()) return;
+
+        const next = { symbol: "quantity", name: "quantity", quantity: "price" }[el.name];
+        if (next) {
+            event.preventDefault();
+            form.elements[next].focus();
+            return;
+        }
+        if (el.name === "price" && form.type.value === "BUY" && form.isMTF.checked) {
+            event.preventDefault();
+            form.mtfValue.focus();
+        }
+        // anything else: let Enter submit the form as usual
     });
 
     // Ctrl/Cmd+K -> search, Esc -> close the top open modal.

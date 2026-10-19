@@ -15,6 +15,7 @@ import { initCurrency, toggleCurrency, getCurrency } from "../services/currency.
 import { startCurrencyTransition, endCurrencyTransition } from "../components/currency-transition.js";
 import { initChartTooltips } from "../components/chart-tooltip.js";
 import { pageSkeleton, skeletonVariantFor } from "../components/skeleton.js";
+import { initStates, errorState } from "../components/states.js";
 import { initUX } from "./ux.js";
 import { initTabSwipe } from "./tab-swipe.js";
 
@@ -204,11 +205,8 @@ function buildShell(route) {
 }
 
 const errorCard = (title, text) => `
-    <section class="br-page">
-        <div class="br-card">
-            <h2>${title}</h2>
-            <p class="br-muted">${text}</p>
-        </div>
+    <section class="br-page br-page-state">
+        ${errorState({ title, text: text + " Your data is safe on this device." })}
     </section>
 `;
 
@@ -368,6 +366,7 @@ document.addEventListener(
     async () => {
         watchNavIntent();
         initUX();
+        initStates();
         initTabSwipe();
 
         // Initial page

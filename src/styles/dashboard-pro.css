@@ -1,0 +1,703 @@
+/* =========================================================
+   DASHBOARD: minimal, professional look (loaded last).
+   Visual only. Every rule is scoped to .br-dash, so no other
+   page is affected, and no markup or logic is changed.
+
+   Design rules
+   - One quiet card style: hairline border, large radius, no shadow.
+   - Small uppercase "eyebrow" labels, big confident numbers.
+   - Colour is used for meaning only (gain, loss, section accent).
+   - Phones: wealth lanes become one grouped list, easy to scan.
+   - Desktop: five lanes in a row, centred 1240px column.
+   ":root:root" only raises specificity over older flat-pass rules.
+   ========================================================= */
+
+:root {
+    --dp-radius: 20px;
+    --dp-line: var(--border, var(--br-border));
+    --dp-eyebrow: 11.5px;
+    --dp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --dp-violet: #8b5cf6;
+}
+
+:root[data-theme="light"] { --dp-violet: #7c3aed; }
+
+
+/* ---------- Page frame ---------- */
+
+:root:root .br-page.br-dash {
+    gap: 22px;
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+}
+
+/* One card style for the whole dashboard */
+:root:root .br-page.br-dash .br-card {
+    background: var(--br-surface);
+    border: 1px solid var(--dp-line);
+    border-radius: var(--dp-radius);
+    box-shadow: none;
+}
+
+:root[data-theme="light"] .br-page.br-dash .br-card { box-shadow: 0 1px 2px rgba(30, 25, 10, 0.04); }
+
+/* Shared eyebrow label */
+:root:root .br-page.br-dash .br-stat-label,
+:root:root .br-page.br-dash .br-card-heading h3,
+:root:root .br-page.br-dash .br-dash-lanes-title h3 {
+    font-size: var(--dp-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--br-text-muted);
+}
+
+:root:root .br-page.br-dash .br-dash-lanes-title { margin: 8px 2px -6px; }
+
+
+/* ---------- Greeting ---------- */
+
+:root:root .br-page.br-dash .br-dash-heading { padding: 6px 2px 0; align-items: flex-end; }
+:root:root .br-page.br-dash .br-dash-hello { gap: 4px; }
+
+:root:root .br-page.br-dash .br-dash-date {
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--br-text-muted);
+}
+
+:root:root .br-page.br-dash .br-dash-hello h2 {
+    font-size: clamp(26px, 5.6vw, 34px);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+/* Tier badge: quiet pill */
+:root:root .br-page.br-dash .br-dash-tier {
+    margin-top: 8px;
+    font-size: 12px;
+    border-radius: 999px;
+}
+
+/* The top bar already shows the profile, so the greeting does not repeat it. */
+:root:root .br-page.br-dash .br-dash-avatar,
+:root:root .br-page.br-dash .br-dash-avatar--guest { display: none; }
+
+
+/* ---------- Hero: net worth ---------- */
+
+:root:root .br-page.br-dash .br-dash-hero {
+    gap: 16px;
+    padding: 28px;
+    background:
+        radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--br-gold) 9%, transparent), transparent 62%),
+        var(--br-surface);
+}
+
+:root:root .br-page.br-dash .br-dash-hero > .br-stat-label { color: var(--br-gold-text); gap: 8px; }
+:root:root .br-page.br-dash .br-dash-hero > .br-stat-label .br-icon { opacity: 0.85; }
+
+:root:root .br-page.br-dash .br-dash-networth {
+    font-size: clamp(34px, 8.4vw, 58px);
+    font-weight: 650;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    font-variant-numeric: tabular-nums;
+}
+
+/* gain / loss chips: small, soft, no heavy fill */
+:root:root .br-page.br-dash .br-dash-chips { gap: 8px; margin-top: -2px; }
+
+:root:root .br-page.br-dash .br-dash-chips .br-badge {
+    padding: 4px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+
+:root:root .br-page.br-dash .br-dash-chips .br-badge-success {
+    color: var(--br-success);
+    background: color-mix(in srgb, var(--br-success) 10%, transparent);
+    border-color: color-mix(in srgb, var(--br-success) 22%, transparent);
+}
+
+:root:root .br-page.br-dash .br-dash-chips .br-badge-danger {
+    color: var(--br-danger);
+    background: color-mix(in srgb, var(--br-danger) 10%, transparent);
+    border-color: color-mix(in srgb, var(--br-danger) 22%, transparent);
+}
+
+/* assets vs liabilities bar */
+:root:root .br-page.br-dash .br-dash-ratio { margin-top: 6px; gap: 10px; }
+
+:root:root .br-page.br-dash .br-dash-ratio-bar {
+    height: 6px;
+    background: color-mix(in srgb, var(--br-danger) 24%, transparent);
+}
+
+:root:root .br-page.br-dash .br-dash-ratio-bar span {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--br-success) 70%, transparent), var(--br-success));
+}
+
+:root:root .br-page.br-dash .br-dash-ratio-legend { font-size: 12px; gap: 18px; }
+:root:root .br-page.br-dash .br-dash-ratio-legend .br-dash-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* three key figures: open columns with hairline dividers, no box */
+:root:root .br-page.br-dash .br-dash-foot {
+    margin-top: 6px;
+    padding: 18px 0 0;
+    gap: 0;
+    border: 0;
+    border-top: 1px solid var(--dp-line);
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+}
+
+:root:root .br-page.br-dash .br-dash-foot > div { padding: 0 16px; gap: 6px; justify-content: space-between; }
+:root:root .br-page.br-dash .br-dash-foot > div:first-child { padding-left: 0; }
+:root:root .br-page.br-dash .br-dash-foot > div + div { border-left: 1px solid var(--dp-line); }
+
+:root:root .br-page.br-dash .br-dash-foot strong {
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+:root:root .br-page.br-dash .br-dash-foot .br-stat-label { font-size: 10.5px; letter-spacing: 0.07em; }
+
+
+/* ---------- Allocation ---------- */
+
+:root:root .br-page.br-dash .br-dash-allocation { padding: 26px 28px; }
+:root:root .br-page.br-dash .br-dash-allocation .br-card-heading { margin-bottom: 18px; }
+:root:root .br-page.br-dash .br-dash-alloc { gap: 28px; }
+
+:root:root .br-page.br-dash .br-dash-donut { width: 168px; height: 168px; }
+:root:root .br-page.br-dash .br-dash-donut circle { stroke-width: 10; }
+
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="stocks"] .br-dash-c-stocks,
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="mf"] .br-dash-c-mf,
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="fd"] .br-dash-c-fd,
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="lending"] .br-dash-c-lending { stroke-width: 14; }
+
+:root:root .br-page.br-dash .br-dash-donut-center small {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: var(--br-text-muted);
+}
+
+:root:root .br-page.br-dash .br-dash-donut-center b {
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+:root:root .br-page.br-dash .br-dash-legend li {
+    padding: 11px 10px;
+    border-top: 1px solid color-mix(in srgb, var(--dp-line) 55%, transparent);
+    font-size: 13.5px;
+}
+
+:root:root .br-page.br-dash .br-dash-legend li:first-child { border-top: 0; }
+:root:root .br-page.br-dash .br-dash-dot { width: 8px; height: 8px; border-radius: 50%; }
+:root:root .br-page.br-dash .br-dash-legend-label { color: var(--br-text); }
+:root:root .br-page.br-dash .br-dash-legend-pct { color: var(--br-text-muted); font-size: 12px; }
+:root:root .br-page.br-dash .br-dash-legend-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+
+/* Bars / Pie switch (same look as the Income Statement one) */
+
+:root:root .br-page.br-dash .br-dash-allocation .br-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+:root:root .br-page.br-dash .br-dash-switch {
+    flex: none;
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--br-text) 7%, transparent);
+}
+
+:root:root .br-page.br-dash .br-dash-switch button {
+    min-height: 30px;
+    min-width: 54px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--br-text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root:root .br-page.br-dash .br-dash-switch button:hover { color: var(--br-text); }
+
+:root:root .br-page.br-dash .br-dash-switch button[aria-pressed="true"] {
+    background: var(--br-surface-hover, var(--br-surface));
+    color: var(--br-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="light"] .br-page.br-dash .br-dash-switch button[aria-pressed="true"] { background: #fff; }
+
+:root:root .br-page.br-dash .br-dash-switch button:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; }
+
+/* the hidden view must really be hidden (the donut container is display:flex) */
+.br-dash [data-alloc][hidden],
+.br-dash [data-alloc-bars][hidden] { display: none !important; }
+
+/* Pie and Bars share one grid cell, so they can cross-fade and the card is as tall
+   as the taller view on desktop (the Net Worth card beside it never changes height).
+   Desktop: the inactive view keeps its space but is invisible. Phones: it is removed. */
+:root:root .br-page.br-dash .br-dash-alloc-stage { display: grid; flex: 1; min-height: 0; }
+:root:root .br-page.br-dash .br-dash-alloc-stage > [data-alloc],
+:root:root .br-page.br-dash .br-dash-alloc-stage > [data-alloc-bars] { grid-area: 1 / 1; min-width: 0; align-self: start; }
+
+@media (min-width: 1100px) {
+    :root:root .br-page.br-dash .br-dash-alloc-stage > [data-alloc],
+    :root:root .br-page.br-dash .br-dash-alloc-stage > [data-alloc-bars] { align-self: stretch; }
+    :root:root .br-page.br-dash .br-dash-alloc-stage > [data-alloc][hidden],
+    :root:root .br-page.br-dash .br-dash-alloc-stage > [data-alloc-bars][hidden] { display: flex !important; visibility: hidden; pointer-events: none; }
+}
+
+/* Bars view */
+
+:root:root .br-page.br-dash .br-dash-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: 1;
+    justify-content: center;
+    padding: 4px 0 2px;
+}
+
+:root:root .br-page.br-dash .br-dash-bar-row { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+
+:root:root .br-page.br-dash .br-dash-bar-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+:root:root .br-page.br-dash .br-dash-bar-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--br-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+:root:root .br-page.br-dash .br-dash-bar-val {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: none;
+    font-variant-numeric: tabular-nums;
+}
+
+:root:root .br-page.br-dash .br-dash-bar-val b { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+:root:root .br-page.br-dash .br-dash-bar-val small { min-width: 3.4em; text-align: right; font-size: 12px; color: var(--br-text-muted); }
+
+:root:root .br-page.br-dash .br-dash-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--br-text) 8%, transparent);
+    overflow: hidden;
+}
+
+:root:root .br-page.br-dash .br-dash-bar-track > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transform-origin: left center;
+    animation: dp-grow 700ms var(--dp-ease) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+@keyframes dp-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* soft fade when switching views */
+.br-dash-view-in { animation: dp-view 320ms var(--dp-ease) both; }
+@keyframes dp-view { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 719px) {
+    :root:root .br-page.br-dash .br-dash-bars { gap: 16px; }
+    :root:root .br-page.br-dash .br-dash-bar-name { font-size: 13.5px; }
+    :root:root .br-page.br-dash .br-dash-bar-val b { font-size: 13.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root:root .br-page.br-dash .br-dash-bar-track > span,
+    .br-dash-view-in { animation: none; }
+}
+
+
+/* ---------- Wealth lanes ---------- */
+
+:root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:nth-child(1) { --lane: var(--br-success); }
+:root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:nth-child(2) { --lane: var(--br-info); }
+:root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:nth-child(3) { --lane: var(--br-gold); }
+:root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:nth-child(4) { --lane: var(--dp-violet); }
+:root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:nth-child(5) { --lane: var(--br-danger); }
+
+:root:root .br-page.br-dash .br-dash-tile {
+    --lane: var(--br-gold);
+    padding: 18px;
+    gap: 2px;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s var(--dp-ease);
+}
+
+:root:root .br-page.br-dash .br-dash-tile-top { margin-bottom: 14px; }
+
+:root:root .br-page.br-dash .br-dash-tile-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    color: var(--lane);
+    background: color-mix(in srgb, var(--lane) 12%, transparent);
+}
+
+:root:root .br-page.br-dash .br-dash-tile-chev { opacity: 0; transform: translateX(-4px); }
+
+:root:root .br-page.br-dash .br-dash-tile-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--br-text-secondary);
+}
+
+:root:root .br-page.br-dash .br-dash-tile-value {
+    font-size: clamp(18px, 1.9vw, 22px);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+:root:root .br-page.br-dash .br-dash-trend { margin-top: 4px; font-size: 12px; }
+
+@media (hover: hover) {
+    :root:root .br-page.br-dash .br-dash-tile:hover {
+        background: var(--br-surface);
+        border-color: color-mix(in srgb, var(--lane) 45%, var(--dp-line));
+        transform: translateY(-2px);
+    }
+
+    :root:root .br-page.br-dash .br-dash-tile:hover .br-dash-tile-chev { opacity: 0.8; transform: none; }
+}
+
+
+/* ---------- Mutual fund profit / loss ---------- */
+
+:root:root .br-page.br-dash .br-dash-pnl-card { padding: 26px 28px; }
+:root:root .br-page.br-dash .br-dash-pnl-card .br-card-heading { margin-bottom: 20px; }
+
+:root:root .br-page.br-dash .br-dash-pnl-card .br-card-heading .br-badge {
+    padding: 4px 11px;
+    font-size: 12px;
+    border-radius: 999px;
+}
+
+:root:root .br-page.br-dash .br-dash-mini {
+    gap: 0;
+    margin-bottom: 20px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+}
+
+:root:root .br-page.br-dash .br-dash-mini > div { padding: 0 16px; gap: 6px; justify-content: space-between; }
+:root:root .br-page.br-dash .br-dash-mini > div:first-child { padding-left: 0; }
+:root:root .br-page.br-dash .br-dash-mini > div + div { border-left: 1px solid var(--dp-line); }
+:root:root .br-page.br-dash .br-dash-mini .br-stat-label { font-size: 10.5px; letter-spacing: 0.07em; }
+
+:root:root .br-page.br-dash .br-dash-mini strong {
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+/* range pills */
+:root:root .br-page.br-dash .br-dash-pills {
+    gap: 2px;
+    margin-bottom: 18px;
+    padding: 3px;
+    background: transparent;
+    border: 1px solid var(--dp-line);
+}
+
+:root:root .br-page.br-dash .br-dash-pill {
+    min-height: 30px;
+    padding: 0 14px;
+    font-size: 12px;
+    color: var(--br-text-muted);
+}
+
+:root:root .br-page.br-dash .br-dash-pill.active {
+    color: var(--br-text);
+    background: color-mix(in srgb, var(--br-text) 9%, transparent);
+    box-shadow: none;
+}
+
+/* chart */
+:root:root .br-page.br-dash .br-dash-pnl { height: 210px; }
+:root:root .br-page.br-dash .br-dash-pnl polyline { stroke-width: 1.8; }
+:root:root .br-page.br-dash .br-dash-area { opacity: 0.1; }
+
+:root:root .br-page.br-dash .br-dash-zero {
+    stroke: var(--dp-line);
+    stroke-dasharray: 3 5;
+    vector-effect: non-scaling-stroke;
+}
+
+:root:root .br-page.br-dash .br-dash-pnl-foot {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--br-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+:root:root .br-page.br-dash .br-dash-pnl-foot strong { font-size: 12.5px; font-weight: 650; }
+
+
+/* ---------- Onboarding (empty account) ---------- */
+
+:root:root .br-page.br-dash .br-dash-start { padding: 24px; gap: 18px; }
+:root:root .br-page.br-dash .br-dash-start h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.02em; text-transform: none; color: var(--br-text); }
+
+:root:root .br-page.br-dash .br-dash-start-item {
+    border: 1px solid var(--dp-line);
+    border-radius: 14px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+@media (hover: hover) {
+    :root:root .br-page.br-dash .br-dash-start-item:hover { border-color: color-mix(in srgb, var(--br-gold) 45%, var(--dp-line)); }
+}
+
+
+/* ---------- Footer note ---------- */
+
+:root:root .br-page.br-dash .br-dash-updated {
+    margin: 4px 0 8px;
+    text-align: center;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    color: var(--br-text-muted);
+}
+
+
+/* =========================================================
+   TABLET (720px to 1099px)
+   ========================================================= */
+
+@media (min-width: 720px) and (max-width: 1099px) {
+    :root:root .br-page.br-dash .br-dash-lanes { gap: 14px; }
+}
+
+
+/* =========================================================
+   DESKTOP (1100px and up)
+   ========================================================= */
+
+@media (min-width: 1100px) {
+    :root:root .br-page.br-dash { gap: 26px; }
+    :root:root .br-page.br-dash .br-dash-top { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 22px; }
+    :root:root .br-page.br-dash .br-dash-lanes { gap: 16px; }
+    :root:root .br-page.br-dash .br-dash-pnl { height: 300px; }
+}
+
+/* The allocation card is narrow next to the hero: stack donut over legend only when it must */
+@container (max-width: 470px) {
+    :root:root .br-page.br-dash .br-dash-alloc { gap: 20px; }
+}
+
+
+/* =========================================================
+   PHONES (under 720px)
+   ========================================================= */
+
+@media (max-width: 719px) {
+    :root:root .br-page.br-dash { gap: 16px; }
+    :root:root .br-page.br-dash .br-dash-heading { padding-top: 10px; }
+    :root:root .br-page.br-dash .br-dash-hello h2 { font-size: 27px; }
+
+    :root:root .br-page.br-dash .br-dash-hero { padding: 22px 20px; gap: 14px; border-radius: 22px; }
+    :root:root .br-page.br-dash .br-dash-networth { font-size: clamp(34px, 10.5vw, 44px); }
+
+    :root:root .br-page.br-dash .br-dash-foot > div { padding: 0 10px; }
+    :root:root .br-page.br-dash .br-dash-foot strong { font-size: clamp(11.5px, 3.3vw, 14.5px); letter-spacing: -0.02em; }
+    :root:root .br-page.br-dash .br-dash-foot .br-stat-label { font-size: 9.5px; letter-spacing: 0.05em; }
+
+    :root:root .br-page.br-dash .br-dash-allocation { padding: 22px 20px; }
+    :root:root .br-page.br-dash .br-dash-donut { width: 156px; height: 156px; }
+
+    /* Wealth lanes: ONE grouped list, icon | name + trend | value */
+    :root:root .br-page.br-dash .br-dash-lanes {
+        display: block;
+        background: var(--br-surface);
+        border: 1px solid var(--dp-line);
+        border-radius: 22px;
+        overflow: hidden;
+    }
+
+    :root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) auto 14px;
+        grid-template-areas:
+            "icon name value chev"
+            "icon trend value chev";
+        column-gap: 13px;
+        row-gap: 2px;
+        align-items: center;
+        width: 100%;
+        min-height: 68px;
+        padding: 13px 16px;
+        border: 0;
+        border-radius: 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--dp-line) 70%, transparent);
+        background: transparent;
+        box-shadow: none;
+    }
+
+    :root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:last-child { border-bottom: 0; }
+    :root:root .br-page.br-dash .br-dash-lanes > .br-dash-tile:active { background: color-mix(in srgb, var(--br-text) 5%, transparent); transform: none; }
+
+    :root:root .br-page.br-dash .br-dash-tile-top { display: contents; }
+    :root:root .br-page.br-dash .br-dash-tile-icon { grid-area: icon; width: 40px; height: 40px; border-radius: 13px; }
+    :root:root .br-page.br-dash .br-dash-tile-chev { grid-area: chev; opacity: 0.35; transform: none; justify-self: end; }
+    :root:root .br-page.br-dash .br-dash-tile-name { grid-area: name; font-size: 14px; font-weight: 600; color: var(--br-text); }
+    :root:root .br-page.br-dash .br-dash-tile-value { grid-area: value; font-size: 15.5px; text-align: right; white-space: nowrap; }
+    :root:root .br-page.br-dash .br-dash-trend { grid-area: trend; margin-top: 0; font-size: 12px; min-width: 0; }
+
+    :root:root .br-page.br-dash .br-dash-pnl-card { padding: 22px 16px; }
+    :root:root .br-page.br-dash .br-dash-pnl-card .br-card-heading { padding-inline: 4px; }
+    :root:root .br-page.br-dash .br-dash-mini > div { padding: 0 8px; }
+    :root:root .br-page.br-dash .br-dash-mini strong { font-size: clamp(11px, 3.1vw, 14.5px); letter-spacing: -0.02em; }
+    :root:root .br-page.br-dash .br-dash-mini .br-stat-label { font-size: 9.5px; letter-spacing: 0.05em; }
+    :root:root .br-page.br-dash .br-dash-pnl { height: 180px; }
+    :root:root .br-page.br-dash .br-dash-pills { width: 100%; }
+    :root:root .br-page.br-dash .br-dash-pill { flex: 1 0 auto; padding: 0 10px; }
+}
+
+@media (max-width: 359px) {
+    /* very small phones: profit / loss figures stack as label-left, value-right rows */
+    :root:root .br-page.br-dash .br-dash-mini { display: block; }
+
+    :root:root .br-page.br-dash .br-dash-mini > div,
+    :root:root .br-page.br-dash .br-dash-mini > div:first-child {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 4px;
+        border-left: 0;
+        border-top: 1px solid var(--dp-line);
+    }
+
+    :root:root .br-page.br-dash .br-dash-mini > div:first-child { border-top: 0; }
+    :root:root .br-page.br-dash .br-dash-mini strong { font-size: 13.5px; }
+
+    :root:root .br-page.br-dash .br-dash-foot strong { font-size: 11px; }
+    :root:root .br-page.br-dash .br-dash-tile-value { font-size: 14px; }
+}
+
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+    :root:root .br-page.br-dash .br-dash-tile { transition: none; }
+    :root:root .br-page.br-dash .br-dash-tile:hover { transform: none; }
+}
+
+
+/* ---------- Bars / Pie switch: sliding pill ---------- */
+
+:root:root .br-page.br-dash .br-dash-switch {
+    position: relative;
+    isolation: isolate;
+    --dp-pill: var(--br-surface-hover, var(--br-surface));
+}
+:root[data-theme="light"] .br-page.br-dash .br-dash-switch { --dp-pill: #fff; }
+
+:root:root .br-page.br-dash .br-dash-switch::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: 64px;
+    border-radius: 999px;
+    background: var(--dp-pill);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    transition: transform 380ms var(--dp-ease);
+}
+:root:root .br-page.br-dash .br-dash-switch[data-view="pie"]::before { transform: translateX(66px); }
+
+:root:root:root .br-page.br-dash .br-dash-switch button {
+    position: relative;
+    z-index: 1;
+    min-width: 64px;
+    padding: 0;
+}
+:root:root:root .br-page.br-dash .br-dash-switch button[aria-pressed="true"],
+:root:root:root[data-theme="light"] .br-page.br-dash .br-dash-switch button[aria-pressed="true"] {
+    background: transparent;
+    box-shadow: none;
+}
+:root:root:root .br-page.br-dash .br-dash-switch button:active { transform: scale(0.96); }
+
+@media (prefers-reduced-motion: reduce) {
+    :root:root .br-page.br-dash .br-dash-switch::before { transition: none; }
+}
+
+
+/* ---------- Top row balance: no big holes inside the Net Worth card ----------
+   The hero spreads its rows over whatever height the allocation card has, so the allocation
+   card is now more compact: the two cards sit close to their natural heights and the
+   remaining slack is shared evenly between the rows instead of forming big holes. */
+
+:root:root .br-page.br-dash .br-dash-hero { justify-content: space-between; }
+:root:root .br-page.br-dash .br-dash-hero .br-dash-ratio { margin-top: 0; }
+:root:root .br-page.br-dash .br-dash-hero .br-dash-foot { margin-top: 0; }
+
+@media (min-width: 1100px) {
+    :root:root .br-page.br-dash .br-dash-hero { gap: 18px; padding: 30px 30px; }
+    :root:root .br-page.br-dash .br-dash-hero .br-dash-networth { font-size: clamp(40px, 4.8vw, 70px); }
+    :root:root .br-page.br-dash .br-dash-hero .br-dash-foot > div { padding-top: 2px; }
+
+    :root:root .br-page.br-dash .br-dash-allocation { padding: 26px 28px; }
+    :root:root .br-page.br-dash .br-dash-allocation .br-card-heading { margin-bottom: 14px; }
+    :root:root .br-page.br-dash .br-dash-donut { width: 168px; height: 168px; }
+    :root:root .br-page.br-dash .br-dash-donut circle { stroke-width: 11; }
+    :root:root .br-page.br-dash .br-dash-alloc { gap: 20px; }
+    :root:root .br-page.br-dash .br-dash-legend li { padding: 10px 10px; }
+    :root:root .br-page.br-dash .br-dash-bars { gap: 18px; }
+}

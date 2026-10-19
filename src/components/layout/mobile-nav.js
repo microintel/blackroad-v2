@@ -45,7 +45,22 @@ let teardownDrawer = null;
 export function setupDrawer(shell, sidebar, backdrop, menuButton) {
     if (teardownDrawer) teardownDrawer();
 
+    // A close button inside the drawer (phones only, CSS hides it on desktop)
+    if (!sidebar.querySelector(".br-drawer-close")) {
+        const x = document.createElement("button");
+        x.type = "button";
+        x.className = "br-drawer-close";
+        x.setAttribute("aria-label", "Close navigation");
+        x.innerHTML = icon("x", { size: 20 });
+        x.addEventListener("click", () => close());
+        sidebar.appendChild(x);
+    }
+
     const open = () => {
+        // Menu items glide in one after another: give each a position
+        sidebar
+            .querySelectorAll(".br-brand, .br-sidebar-nav a, .br-sidebar-credit")
+            .forEach((el, i) => el.style.setProperty("--i", Math.min(i, 14)));
         sidebar.classList.add("is-open");
         backdrop.classList.add("is-open");
         document.body.classList.add("br-no-scroll");

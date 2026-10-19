@@ -57,14 +57,17 @@ export async function renderView(route) {
     }
 
     return `
-        <section class="br-page">
-            <div class="br-card">
-                <h2>Page not found</h2>
-
-                <p class="br-muted">
-                    The requested BlackRoad page
-                    does not exist.
-                </p>
+        <section class="br-page br-page-state">
+            <div class="br-state br-state-error" role="alert">
+                <div class="br-st-art" aria-hidden="true"><span class="br-st-ring"></span>
+                    <svg class="br-st-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M9 9l4 4M13 9l-4 4"/></svg>
+                </div>
+                <div class="br-st-code">Error 404</div>
+                <h3 class="br-st-title">Page not found</h3>
+                <p class="br-st-text">The requested BlackRoad page does not exist. It may have moved, or the link is out of date.</p>
+                <div class="br-st-actions">
+                    <button type="button" class="br-button br-button-primary" data-st-home>Go to dashboard</button>
+                </div>
             </div>
         </section>
     `;

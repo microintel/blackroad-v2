@@ -180,6 +180,48 @@ function buildDonut(data) {
     `;
 }
 
+/* ---------------- Asset allocation: bars view (same data as the donut) ---------------- */
+
+function buildAllocBars(data) {
+    if (!data.chartItems.length) {
+        return `<p class="br-muted">No allocation yet.</p>`;
+    }
+
+    const max = Math.max(...data.chartItems.map((item) => item.pct), 1);
+
+    return data.chartItems
+        .map(
+            (item, i) => `
+            <div class="br-dash-bar-row" style="--i:${i}">
+                <div class="br-dash-bar-head">
+                    <span class="br-dash-bar-name">
+                        <span class="br-dash-dot br-dash-bg-${item.key}"></span>${item.label}
+                    </span>
+                    <span class="br-dash-bar-val">
+                        <b>${formatINR(item.amount)}</b>
+                        <small>${item.pct}%</small>
+                    </span>
+                </div>
+                <div class="br-dash-bar-track" role="img"
+                    aria-label="${item.label} ${item.pct} percent">
+                    <span class="br-dash-bg-${item.key}"
+                        style="width:${((item.pct / max) * 100).toFixed(1)}%"></span>
+                </div>
+            </div>`
+        )
+        .join("");
+}
+
+const ALLOC_VIEW_KEY = "br-dash-alloc-view";
+
+function savedAllocView() {
+    try {
+        return localStorage.getItem(ALLOC_VIEW_KEY) === "bars" ? "bars" : "pie";
+    } catch {
+        return "pie";
+    }
+}
+
 /* ---------------- Mutual fund profit / loss chart ---------------- */
 
 function filterSeries(series, rangeKey) {
@@ -447,6 +489,8 @@ export async function Dashboard() {
 
     const mfUp = data.mutualFunds.pnl >= 0;
 
+    const allocView = savedAllocView();
+
     page.innerHTML = `
         <div class="br-dash-heading dash-reveal">
             <div class="br-dash-hello">
@@ -507,9 +551,18 @@ export async function Dashboard() {
             <div class="br-card br-dash-allocation dash-reveal">
                 <div class="br-card-heading">
                     <h3>Asset allocation</h3>
+
+                    ${data.chartItems.length ? `
+                    <div class="br-dash-switch" role="group" aria-label="Chart type" data-view="${allocView}">
+                        <button type="button" data-alloc-view="bars" aria-pressed="${allocView === "bars"}">Bars</button>
+                        <button type="button" data-alloc-view="pie" aria-pressed="${allocView === "pie"}">Pie</button>
+                    </div>` : ""}
                 </div>
 
-                <div class="br-dash-alloc" data-alloc>${buildDonut(data)}</div>
+                <div class="br-dash-alloc-stage">
+                    <div class="br-dash-alloc" data-alloc ${allocView === "bars" ? "hidden" : ""}>${buildDonut(data)}</div>
+                    <div class="br-dash-bars" data-alloc-bars ${allocView === "pie" ? "hidden" : ""}>${buildAllocBars(data)}</div>
+                </div>
             </div>
         </div>
 
@@ -586,6 +639,100 @@ export async function Dashboard() {
     alloc.querySelectorAll("circle[data-seg]").forEach((c) => {
         c.addEventListener("mouseenter", () => highlight(c.dataset.seg));
         c.addEventListener("mouseleave", () => highlight(null));
+    });
+
+    /* Bars / Pie switch for the allocation chart: crossfade, replayed draw-in,
+       and (on phones, where the card height follows the view) a smooth resize */
+    const allocBars = page.querySelector("[data-alloc-bars]");
+    const allocStage = page.querySelector(".br-dash-alloc-stage");
+    const allocSwitch = page.querySelector(".br-dash-switch");
+    const wideLayout = window.matchMedia("(min-width: 1100px)");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const ALLOC_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+    let allocAnims = [];
+
+    const settleAlloc = (view) => {
+        allocAnims.forEach((a) => { try { a.cancel(); } catch { /* already done */ } });
+        allocAnims = [];
+        alloc.hidden = view !== "pie";
+        allocBars.hidden = view !== "bars";
+        if (allocStage) allocStage.style.removeProperty("overflow");
+    };
+
+    /* restart the donut draw-in / bar grow CSS animations */
+    const replayDrawIn = (root) => {
+        root.querySelectorAll(".br-dash-seg, .br-dash-bar-track > span").forEach((el) => {
+            el.style.animation = "none";
+            void el.offsetWidth;
+            el.style.animation = "";
+        });
+    };
+
+    const showAllocView = (view) => {
+        const incoming = view === "pie" ? alloc : allocBars;
+        const outgoing = view === "pie" ? allocBars : alloc;
+        const current = alloc.hidden ? "bars" : "pie";
+
+        allocSwitch?.setAttribute("data-view", view);
+        page.querySelectorAll("[data-alloc-view]").forEach((b) => {
+            b.setAttribute("aria-pressed", String(b.dataset.allocView === view));
+        });
+
+        try {
+            localStorage.setItem(ALLOC_VIEW_KEY, view);
+        } catch { /* private mode: the choice just is not remembered */ }
+
+        if (view === current && allocAnims.length === 0) return;
+
+        if (reduceMotion.matches || !allocStage || !incoming.animate) {
+            settleAlloc(view);
+            replayDrawIn(incoming);
+            return;
+        }
+
+        /* a click during a running animation: finish that one first */
+        const startHeight = allocStage.getBoundingClientRect().height;
+        allocAnims.forEach((a) => { try { a.cancel(); } catch { /* done */ } });
+        allocAnims = [];
+
+        /* both views stack in the same cell while they cross over */
+        incoming.hidden = false;
+        outgoing.hidden = false;
+        replayDrawIn(incoming);
+
+        const out = outgoing.animate(
+            [{ opacity: 1, transform: "translateY(0) scale(1)" },
+             { opacity: 0, transform: "translateY(-8px) scale(0.985)" }],
+            { duration: 190, easing: "ease-in", fill: "forwards" }
+        );
+        const inn = incoming.animate(
+            [{ opacity: 0, transform: "translateY(10px) scale(0.985)" },
+             { opacity: 1, transform: "translateY(0) scale(1)" }],
+            { duration: 420, delay: 120, easing: ALLOC_EASE, fill: "backwards" }
+        );
+        allocAnims = [out, inn];
+
+        /* phones: the card changes height with the view, so glide it */
+        if (!wideLayout.matches) {
+            const endHeight = incoming.getBoundingClientRect().height;
+            allocStage.style.overflow = "hidden";
+            const grow = allocStage.animate(
+                [{ height: startHeight + "px" }, { height: endHeight + "px" }],
+                { duration: 380, easing: ALLOC_EASE }
+            );
+            allocAnims.push(grow);
+        }
+
+        /* the outgoing view leaves once it has faded; keep what the person last chose */
+        const token = (showAllocView.token = (showAllocView.token || 0) + 1);
+        Promise.allSettled(allocAnims.map((a) => a.finished)).then(() => {
+            if (showAllocView.token !== token) return;
+            settleAlloc(view);
+        });
+    };
+
+    page.querySelectorAll("[data-alloc-view]").forEach((btn) => {
+        btn.addEventListener("click", () => showAllocView(btn.dataset.allocView));
     });
 
     /* Range pills (only present when the graph is shown) */

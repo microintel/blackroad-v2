@@ -528,3 +528,90 @@
 .stk-sold-grid .stk-sold-result-row dt { font-size: 12px; }
 .stk-sold-grid .stk-sold-result-row dt { flex: 1 1 0; min-width: 0; }
 .stk-sold-grid .stk-sold-result-row dd { flex: none; white-space: nowrap; overflow-wrap: normal; max-width: 70%; }
+
+
+/* =========================================================
+   ADD / EDIT TRANSACTION — fast entry on phones
+   Compact 2-column form, symbol -> quantity -> price first,
+   and a sheet that stays inside the area above the keyboard.
+   (Desktop layout is untouched: everything below is phone-only,
+   except the preview box which now lives inside the field grid.)
+   ========================================================= */
+
+/* the live preview now sits in the field grid: the grid gap replaces its old bottom margin */
+.br-stocks .stk-txn-fields > .stk-sym-preview { margin-bottom: 0; }
+
+@media (max-width: 768px) {
+
+    /* sheet = exactly the visible area (shrinks when the keyboard opens) */
+    .br-stocks [data-txn-modal] {
+        top: var(--stk-vv-top, 0px);
+        bottom: auto;
+        height: var(--stk-vv-h, 100dvh);
+    }
+
+    .br-stocks [data-txn-modal] .br-modal {
+        max-height: 100%;
+        padding: 12px var(--br-space-4) 0;
+        overscroll-behavior: contain;
+        /* no slide-in: it fought with the keyboard opening and felt slow */
+        animation: none;
+    }
+
+    .br-stocks [data-txn-modal]:not([hidden]) > .br-modal { animation: none; }
+
+    .br-stocks [data-txn-modal] .br-modal-header { margin-bottom: 8px; padding: 0; }
+    .br-stocks [data-txn-modal] .br-modal-header h3 { font-size: 16px; }
+    .br-stocks [data-txn-modal] .br-modal-close { width: 40px; height: 40px; }
+
+    /* compact two-column grid; the three fields you always type come first */
+    .br-stocks [data-txn-modal] .stk-txn-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .br-stocks [data-txn-modal] .stk-f-symbol  { order: 1; grid-column: 1 / -1; }
+    .br-stocks [data-txn-modal] .stk-f-qty     { order: 2; }
+    .br-stocks [data-txn-modal] .stk-f-price   { order: 3; }
+    .br-stocks [data-txn-modal] .stk-f-preview { order: 4; }
+    .br-stocks [data-txn-modal] .stk-f-type    { order: 5; }
+    .br-stocks [data-txn-modal] .stk-f-date    { order: 6; }
+    .br-stocks [data-txn-modal] .stk-f-time    { order: 7; }
+    .br-stocks [data-txn-modal] .stk-f-notes   { order: 8; }
+    .br-stocks [data-txn-modal] .stk-f-name    { order: 9; grid-column: 1 / -1; }
+
+    .br-stocks [data-txn-modal] .inc-field label { gap: 4px; }
+    .br-stocks [data-txn-modal] .inc-field-label { font-size: 12px; }
+    .br-stocks [data-txn-modal] .inc-error { margin-top: 4px; }
+
+    .br-stocks [data-txn-modal] .inc-field input,
+    .br-stocks [data-txn-modal] .inc-field select { min-height: 44px; font-size: 16px; }
+
+    /* smaller helper blocks */
+    .br-stocks [data-txn-modal] .stk-sym-preview { padding: 8px 10px; border-radius: 12px; gap: 10px; }
+    .br-stocks [data-txn-modal] .stk-sym-info strong { font-size: 14px; }
+    .br-stocks [data-txn-modal] .stk-sym-info span { font-size: 12px; }
+    .br-stocks [data-txn-modal] .stk-total { margin-top: 10px; padding: 8px 12px; }
+    .br-stocks [data-txn-modal] .stk-total strong { font-size: 16px; }
+    .br-stocks [data-txn-modal] .stk-mtf-box { margin-top: 10px; padding-top: 10px; }
+    .br-stocks [data-txn-modal] .inc-form-error { margin-bottom: 8px; }
+
+    /* Cancel + Save on ONE row (they used to stack and eat ~110px) */
+    .br-stocks [data-txn-modal] .stk-txn-footer {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 10px;
+        margin: 10px calc(var(--br-space-4) * -1) 0;
+        padding: 8px var(--br-space-4) calc(8px + env(safe-area-inset-bottom));
+    }
+    .br-stocks [data-txn-modal] .stk-txn-footer .br-button { width: auto; flex: 1 1 0; min-height: 46px; }
+    .br-stocks [data-txn-modal] .stk-txn-footer .br-button:first-child { flex: 0 0 30%; }
+    .br-stocks [data-txn-modal] .stk-txn-footer .br-button-primary { flex: 1 1 0; }
+
+    /* keyboard is open: free every spare pixel for the fields */
+    .br-stocks [data-txn-modal].stk-kb-open .br-modal { padding-top: 8px; }
+    .br-stocks [data-txn-modal].stk-kb-open .br-modal-header { margin-bottom: 4px; }
+    .br-stocks [data-txn-modal].stk-kb-open .br-modal-header h3 { font-size: 15px; }
+    .br-stocks [data-txn-modal].stk-kb-open .stk-txn-footer { margin-top: 6px; padding-top: 6px; padding-bottom: 6px; }
+    .br-stocks [data-txn-modal].stk-kb-open .stk-txn-footer .br-button:first-child { display: none; }
+}
