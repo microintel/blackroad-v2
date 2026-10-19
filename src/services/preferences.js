@@ -24,9 +24,24 @@ export const ACCENTS = [{ id: "gold", label: "Gold", color: "#D4AF37" }];
 
 export const THEMES = ["light", "dark"];
 
-const K = { theme: "br-theme", style: "br_style", accent: "br_accent", sound: "br_sound" };
+const K = {
+    theme: "br-theme", style: "br_style", accent: "br_accent", sound: "br_sound",
+    variant: "br-variant"
+};
 
-const THEME_COLOR = { light: "#EEECE7", dark: "#000000" };
+/* Themes the person can pick. `base` is the light / dark mode it builds on, so
+   every rule that targets data-theme="light" or "dark" keeps working.
+   Light and Dark are the originals; Crimson and Teal are built
+   from two colour palettes. */
+export const VARIANTS = [
+    { id: "light",   base: "light", label: "Light",           bg: "#EEECE7", surface: "#F6F5F1", text: "#2B2A27", accent: "#16A34A" },
+    { id: "dark",    base: "dark",  label: "Dark",            bg: "#000000", surface: "#0B0B0B", text: "#FFFFFF", accent: "#22C55E" },
+    { id: "crimson", base: "light", label: "Crimson", bg: "#FFE9E9", surface: "#FFF6F6", text: "#3A0A0A", accent: "#CC3333",
+      swatches: ["#990000", "#CC3333", "#FF6666", "#FF9999", "#FFCCCC"] },
+    { id: "teal",    base: "light", label: "Teal",    bg: "#E0E5E9", surface: "#FBFCFC", text: "#0B2E33", accent: "#055B65",
+      swatches: ["#FBFCFC", "#E0E5E9", "#B2C9C5", "#1BD488", "#45828B", "#055B65"] }
+];
+
 
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
@@ -54,13 +69,30 @@ export function getTheme() {
     return getSavedTheme() || getSystemTheme();
 }
 
+/* The picked theme that applies to the current light / dark mode, else the mode
+   itself. (A saved "midnight" only shows while the app is dark, "sky" while light.) */
+export function getVariant(mode = getTheme()) {
+    const saved = get(K.variant);
+    const v = VARIANTS.find((x) => x.id === saved);
+    return v && v.base === mode && v.id !== mode ? v.id : mode;
+}
+
 export const getStyle = () => "flat";
 export const getAccent = () => "gold";
 export const isSoundOn = () => get(K.sound) === "1";
 
 function syncThemeColor(theme) {
     const m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute("content", THEME_COLOR[theme] || THEME_COLOR.dark);
+    const v = VARIANTS.find((x) => x.id === getVariant(theme));
+    if (m) m.setAttribute("content", v ? v.bg : "#000000");
+}
+
+/* data-variant is what palettes.css reads. */
+function applyLook(mode) {
+    const variant = getVariant(mode);
+    if (variant === "light" || variant === "dark") root().removeAttribute("data-variant");
+    else root().setAttribute("data-variant", variant);
+
 }
 
 let activeTransition = null;
@@ -77,6 +109,7 @@ const prefersReducedMotion = () =>
 function commitTheme(next, persist) {
     root().setAttribute("data-theme", next);
     if (persist) set(K.theme, next);
+    applyLook(next);
     syncThemeColor(next);
 
     window.dispatchEvent(new CustomEvent("br:theme-change", { detail: { theme: next } }));
@@ -211,6 +244,15 @@ export function setTheme(theme, origin = null) {
     return applyTheme(theme, { persist: true, animate: true, origin });
 }
 
+/* Pick one of the four themes. */
+export function setVariant(id, origin = null) {
+    const v = VARIANTS.find((x) => x.id === id);
+    if (!v) return getTheme();
+    if (v.id === "light" || v.id === "dark") set(K.variant, "");
+    else set(K.variant, v.id);
+    return applyTheme(v.base, { persist: true, animate: true, origin });
+}
+
 /* `origin` is {el, x, y}: the pressed button and its centre in viewport pixels. */
 export function toggleTheme(origin = null) {
     return setTheme(getTheme() === "dark" ? "light" : "dark", origin);
@@ -250,6 +292,7 @@ let systemListenerAttached = false;
 
 export function initPreferences() {
     applyTheme(getTheme());
+    applyLook(getTheme());
     root().setAttribute("data-style", "flat");
     root().setAttribute("data-accent", "gold");
 

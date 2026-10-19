@@ -56,19 +56,31 @@ export function setupDrawer(shell, sidebar, backdrop, menuButton) {
         sidebar.appendChild(x);
     }
 
+    // Give each menu item its position once (not on every open).
+    sidebar
+        .querySelectorAll(".br-brand, .br-sidebar-nav a, .br-sidebar-credit")
+        .forEach((el, i) => el.style.setProperty("--i", Math.min(i, 14)));
+
+    let isOpen = false;
+
     const open = () => {
-        // Menu items glide in one after another: give each a position
-        sidebar
-            .querySelectorAll(".br-brand, .br-sidebar-nav a, .br-sidebar-credit")
-            .forEach((el, i) => el.style.setProperty("--i", Math.min(i, 14)));
-        sidebar.classList.add("is-open");
-        backdrop.classList.add("is-open");
-        document.body.classList.add("br-no-scroll");
+        if (isOpen) return;
+        isOpen = true;
+        // One frame: class changes are batched so the slide starts cleanly.
+        requestAnimationFrame(() => {
+            sidebar.classList.add("is-open");
+            backdrop.classList.add("is-open");
+            document.body.classList.add("br-no-scroll");
+        });
     };
     const close = () => {
-        sidebar.classList.remove("is-open");
-        backdrop.classList.remove("is-open");
-        document.body.classList.remove("br-no-scroll");
+        if (!isOpen) return;
+        isOpen = false;
+        requestAnimationFrame(() => {
+            sidebar.classList.remove("is-open");
+            backdrop.classList.remove("is-open");
+            document.body.classList.remove("br-no-scroll");
+        });
     };
 
     menuButton?.addEventListener("click", open);
@@ -100,4 +112,5 @@ export function setupDrawer(shell, sidebar, backdrop, menuButton) {
 
     // Never leave the page scroll-locked after a re-render.
     document.body.classList.remove("br-no-scroll");
+    isOpen = false;
 }

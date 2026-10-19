@@ -40,6 +40,7 @@ import {
 import { printStocksReport } from "./stocks-print.js";
 import { createPnlChart } from "./stocks-pnl-chart.js";
 import { setHTML } from "../../components/dom-patch.js";
+import { enhanceTimeInputs } from "../../components/time-picker.js";
 import { isGuestSync } from "../../services/auth.js";
 import { stockMiniLogoHTML, fetchLTP, fetchStockDetails, fetchLTPs, fetchChartHistory, LIVE_PRICE_POLL_MS, stockLogoUrl } from "./stocks-live.js";
 
@@ -98,7 +99,6 @@ export async function Stocks() {
                     <strong class="inc-amount inc-amount-lg" data-sum-value>${fmtMoney(0, true)}</strong>
                     <div class="stk-actions">
                         <button type="button" class="br-button stk-icon-btn" data-action="open-search" aria-label="Search" title="Search (Ctrl+K)">${icon("search", { size: 18 })}</button>
-                        <button type="button" class="br-button stk-icon-btn" data-action="refresh-prices" aria-label="Refresh prices" title="Refresh prices">${icon("refresh-cw", { size: 18 })}</button>
                         <button type="button" class="br-button br-button-primary inc-add" data-action="add-txn" aria-label="Add transaction" title="Add transaction">${icon("plus", { size: 18 })}</button>
                     </div>
                 </div>
@@ -152,9 +152,12 @@ export async function Stocks() {
             <section class="br-card">
                 <div class="br-toolbar">
                     <div class="br-toolbar-left">
-                        <div class="br-search-box">
-                            <span class="br-search-icon">${icon("search", { size: 16 })}</span>
-                            <input type="search" placeholder="Search stock, symbol or notes..." data-txn-search>
+                        <div class="stk-txn-searchrow">
+                            <div class="br-search-box">
+                                <span class="br-search-icon">${icon("search", { size: 16 })}</span>
+                                <input type="search" placeholder="Search stock, symbol or notes..." data-txn-search>
+                            </div>
+                            <button type="button" class="br-button stk-icon-btn stk-export-btn" data-action="export-csv" aria-label="Export CSV" title="Export CSV">${icon("download", { size: 18 })}</button>
                         </div>
 
                         <select class="br-select" data-txn-filter-type>
@@ -167,11 +170,6 @@ export async function Stocks() {
                         <select class="br-select" data-txn-filter-tag>
                             <option value="">All tags</option>
                         </select>
-                    </div>
-
-                    <div class="br-toolbar-right">
-                        <button type="button" class="br-button" data-action="export-csv">Export CSV</button>
-                        <button type="button" class="br-button" data-action="open-data">Backup &amp; restore</button>
                     </div>
                 </div>
 
@@ -429,6 +427,7 @@ export async function Stocks() {
 
     `;
 
+    enhanceTimeInputs(page);
     attachEvents(page);
     realizedChart = createPnlChart(page.querySelector("[data-an-realized-chart]"), { kind: "realized" });
     await loadState(page);
@@ -917,6 +916,7 @@ function closeTxnDetail(page) {
 function openSearch(page) {
     const input = page.querySelector("[data-search-input]");
     page.querySelector("[data-search-modal]").hidden = false;
+    bindSearchViewport(page);
     input.value = "";
     renderSearchResults(page, "");
     setTimeout(() => input.focus(), 30);
@@ -924,6 +924,45 @@ function openSearch(page) {
 
 function closeSearch(page) {
     page.querySelector("[data-search-modal]").hidden = true;
+    unbindSearchViewport();
+}
+
+// Phones: the search panel sticks to the TOP of the area that is still visible,
+// so the on-screen keyboard never hides the results.
+let searchVvCleanup = null;
+
+function bindSearchViewport(page) {
+    unbindSearchViewport();
+    const vv = window.visualViewport;
+    const layer = page.querySelector("[data-search-modal]");
+    if (!vv || !layer) return;
+
+    const phone = window.matchMedia("(max-width: 768px)");
+    const apply = () => {
+        if (!phone.matches) {
+            layer.style.removeProperty("--stk-vv-h");
+            layer.style.removeProperty("--stk-vv-top");
+            return;
+        }
+        layer.style.setProperty("--stk-vv-h", vv.height + "px");
+        layer.style.setProperty("--stk-vv-top", vv.offsetTop + "px");
+    };
+
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    apply();
+
+    searchVvCleanup = () => {
+        vv.removeEventListener("resize", apply);
+        vv.removeEventListener("scroll", apply);
+        layer.style.removeProperty("--stk-vv-h");
+        layer.style.removeProperty("--stk-vv-top");
+    };
+}
+
+function unbindSearchViewport() {
+    if (searchVvCleanup) searchVvCleanup();
+    searchVvCleanup = null;
 }
 
 function renderSearchResults(page, raw) {

@@ -73,10 +73,16 @@
                 }
             } catch (e) { /* storage blocked: fall back to dark */ }
             d.setAttribute("data-theme", theme);
+            try {
+                var v = localStorage.getItem("br-variant");
+                var okV = theme === "light" && (v === "crimson" || v === "teal");
+                if (okV) d.setAttribute("data-variant", v);
+                var tc = okV ? v : null;
+            } catch (e) { /* ignore */ }
             d.setAttribute("data-style", "flat");
             d.setAttribute("data-accent", "gold");
             var m = document.querySelector('meta[name="theme-color"]');
-            if (m) m.setAttribute("content", theme === "light" ? "#EEECE7" : "#000000");
+            var C = {"light": "#EEECE7", "dark": "#000000", "crimson": "#FFE9E9", "teal": "#E0E5E9"}; if (m) m.setAttribute("content", C[tc || theme]);
         })();
     </script>
 
@@ -162,6 +168,12 @@
         rel="stylesheet"
         href="./src/styles/stocks.css"
     >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/time-picker.css"
+    >
+
 
     <link
         rel="stylesheet"
@@ -292,6 +304,12 @@
         rel="stylesheet"
         href="./src/styles/dashboard-pro.css"
     >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/palettes.css"
+    >
+
 
 </head>
 

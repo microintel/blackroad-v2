@@ -43,7 +43,6 @@ body.br-no-scroll { overflow: hidden; }
         position: fixed; inset: 0;
         background: var(--br-overlay);
         opacity: 0; pointer-events: none;
-        transition: opacity var(--br-transition);
         z-index: 250;
     }
     .br-drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
@@ -144,58 +143,54 @@ body.br-no-scroll { overflow: hidden; }
     html::-webkit-scrollbar, body::-webkit-scrollbar,
     .br-sidebar::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
-    /* panel: slower, softer open — a little quicker on the way out
-       (paint containment would clip the shadow, so only layout is contained) */
+    /* panel: only transform animates (GPU). The shadow is static and lives on a
+       pseudo-element that just fades, so nothing is repainted during the slide. */
     :root:root .br-sidebar {
         contain: layout style;
-        transition: transform 320ms cubic-bezier(0.4, 0, 0.6, 1),
-                    visibility 0s linear 320ms,
-                    box-shadow 320ms ease;
-        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        transform: translate3d(-100%, 0, 0);
+        transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1),
+                    visibility 0s linear 260ms;
+        box-shadow: none;
         border-radius: 0 22px 22px 0;
     }
     :root:root .br-sidebar.is-open {
-        transition: transform 460ms cubic-bezier(0.32, 0.72, 0, 1),
-                    visibility 0s,
-                    box-shadow 460ms ease;
-        box-shadow: 0 0 70px rgba(0, 0, 0, 0.5);
+        transform: translate3d(0, 0, 0);
+        transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+                    visibility 0s;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
     }
 
-    /* backdrop: fade + gentle blur */
+    /* backdrop: opacity-only fade (animating backdrop-filter blur is what made
+       phones stutter, so the blur is removed) */
     :root:root .br-drawer-backdrop {
-        transition: opacity 380ms ease, backdrop-filter 380ms ease, -webkit-backdrop-filter 380ms ease;
-        -webkit-backdrop-filter: blur(0px);
-        backdrop-filter: blur(0px);
+        will-change: opacity;
+        transition: opacity 240ms ease;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
     }
     :root:root .br-drawer-backdrop.is-open {
-        -webkit-backdrop-filter: blur(4px);
-        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
     }
 
-    /* items: slide + fade in one after another, vanish together on close */
+    /* items: no entrance animation. They are simply part of the panel, so the
+       whole menu slides as one piece and nothing appears to re-render. */
     :root:root .br-sidebar .br-brand,
     :root:root .br-sidebar .br-sidebar-nav a,
-    :root:root .br-sidebar .br-sidebar-credit {
-        opacity: 0;
-        transform: translateX(-18px);
-        transition: opacity 160ms ease, transform 160ms ease,
-                    background var(--br-transition-fast), color var(--br-transition-fast);
-    }
+    :root:root .br-sidebar .br-sidebar-credit,
     :root:root .br-sidebar.is-open .br-brand,
     :root:root .br-sidebar.is-open .br-sidebar-nav a,
     :root:root .br-sidebar.is-open .br-sidebar-credit {
         opacity: 1;
         transform: none;
-        transition: opacity 380ms ease, transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
-                    background var(--br-transition-fast), color var(--br-transition-fast);
-        transition-delay: calc(var(--i, 0) * 32ms + 110ms), calc(var(--i, 0) * 32ms + 110ms), 0s, 0s;
-    }
-    :root:root .br-sidebar.is-open .br-sidebar-nav a:active {
-        transform: scale(0.97);
+        transition: background var(--br-transition-fast), color var(--br-transition-fast);
         transition-delay: 0s;
     }
 
-    /* close button: spins in, presses in */
+    /* close button: static too */
     :root:root .br-sidebar .br-drawer-close {
         position: absolute;
         top: calc(var(--br-space-4) + env(safe-area-inset-top));
@@ -210,19 +205,10 @@ body.br-no-scroll { overflow: hidden; }
         background: color-mix(in srgb, var(--br-text) 8%, transparent);
         color: var(--br-text-secondary);
         cursor: pointer;
-        opacity: 0;
-        transform: rotate(-90deg) scale(0.5);
-        transition: opacity 160ms ease, transform 160ms ease, background 200ms ease;
-        -webkit-tap-highlight-color: transparent;
-    }
-    :root:root .br-sidebar.is-open .br-drawer-close {
         opacity: 1;
         transform: none;
-        transition: opacity 300ms ease 220ms, transform 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 220ms, background 200ms ease;
-    }
-    :root:root .br-sidebar.is-open .br-drawer-close:active {
-        transform: rotate(90deg) scale(0.88);
-        transition-delay: 0s;
+        transition: background 200ms ease;
+        -webkit-tap-highlight-color: transparent;
     }
 
     /* menu button in the top bar: tactile press */

@@ -1332,6 +1332,8 @@ function viewCacheToken() {
         id,
         root.getAttribute("data-theme"),
         root.getAttribute("data-accent"),
+        root.getAttribute("data-variant"),
+        root.getAttribute("data-palette"),
         root.getAttribute("data-style")
     ].join("|");
 }

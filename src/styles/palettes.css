@@ -1,0 +1,222 @@
+/* =========================================================
+   THEMES
+   Light and Dark live in theme.css. This file adds two more, each built from a
+   colour palette:
+
+     Crimson    (light)  reds #990000 #CC3333 #FF6666 #FF9999 #FFCCCC
+     Teal       (light)  #FBFCFC #E0E5E9 #B2C9C5 #1BD488 #45828B #055B65
+
+   They build on light / dark, so data-theme stays "light" / "dark" and every
+   existing rule keeps working. html[data-variant] says which one is chosen.
+   Loaded last.
+   ========================================================= */
+
+
+/* ---------- CRIMSON (light) ---------- */
+:root:root[data-theme="light"][data-variant="crimson"] {
+    --background: #FFE9E9;
+    --foreground: #3A0A0A;
+    --surface: #FFF6F6;
+    --surface-secondary: #FFF6F6;
+
+    --text-primary: #3A0A0A;
+    --text-secondary: #7A2323;
+    --text-muted: #8F4A4A;
+
+    --border: #F5C2C2;
+
+    --accent: #CC3333;
+    --accent-hover: #990000;
+    --accent-contrast: #FFFFFF;
+
+    --input-background: #FFF6F6;
+    --input-border: #EBA9A9;
+    --hover-background: #FFDADA;
+    --active-background: #FFCCCC;
+    --overlay: rgba(58, 10, 10, 0.4);
+
+    --br-surface-soft: #FFEFEF;
+    --br-surface-hover: #FFDADA;
+    --br-surface-active: #FFCCCC;
+    --br-surface-muted: #FFCCCC;
+    --br-text-disabled: #D9A0A0;
+    --br-border-strong: #EBA9A9;
+    --br-hairline: #FAD4D4;
+
+    --br-gold: var(--accent);
+    --br-gold-bright: var(--accent-hover);
+    --br-gold-muted: #FF9999;
+    --br-gold-surface: #FFCCCC;
+    --br-gold-text: var(--accent-hover);
+
+    --br-series-1: #CC3333;
+    --br-series-2: #990000;
+    --br-series-4: #FF6666;
+    --br-series-7: #FF9999;
+}
+
+/* ---------- TEAL (light) ---------- */
+:root:root[data-theme="light"][data-variant="teal"] {
+    --background: #E0E5E9;
+    --foreground: #0B2E33;
+    --surface: #FBFCFC;
+    --surface-secondary: #FBFCFC;
+
+    --text-primary: #0B2E33;
+    --text-secondary: #2F6168;
+    --text-muted: #356C75;
+
+    --border: #CBD5DA;
+
+    --accent: #055B65;
+    --accent-hover: #034750;
+    --accent-contrast: #FBFCFC;
+
+    --input-background: #FBFCFC;
+    --input-border: #B2C9C5;
+    --hover-background: #D3DBE0;
+    --active-background: #C6D0D6;
+    --overlay: rgba(11, 46, 51, 0.4);
+
+    --br-surface-soft: #F1F4F5;
+    --br-surface-hover: #D3DBE0;
+    --br-surface-active: #C6D0D6;
+    --br-surface-muted: #C6D0D6;
+    --br-text-disabled: #8FA8AB;
+    --br-border-strong: #B2C9C5;
+    --br-hairline: #E3E9EC;
+
+    --br-gold: var(--accent);
+    --br-gold-bright: #1BD488;
+    --br-gold-muted: #45828B;
+    --br-gold-surface: #D6EEE6;
+    --br-gold-text: var(--accent);
+
+    --br-series-1: #055B65;
+    --br-series-2: #1BD488;
+    --br-series-4: #45828B;
+    --br-series-7: #B2C9C5;
+}
+
+/* Sidebar icons take the theme's accent in the two palette themes. */
+:root:root[data-variant] .br-nav-icon { color: var(--accent); }
+
+
+/* ---------- Places that were hard-coded gold ----------
+   theme.css paints the light-mode primary button, brand mark and text selection
+   #D4AF37. With one of the new themes chosen they follow that theme's accent. */
+
+:root:root[data-theme="light"][data-variant] .br-button-primary,
+:root:root[data-theme="light"][data-variant] .br-brand-logo,
+:root:root[data-theme="light"][data-variant] .br-brand-mark { background: var(--accent); color: var(--accent-contrast); }
+
+:root:root[data-theme="light"][data-variant] .br-button-primary:hover,
+:root:root[data-theme="light"][data-variant] .br-button-primary:active { background: var(--accent-hover); color: var(--accent-contrast); }
+
+:root:root[data-theme="light"][data-variant] .br-button-primary .br-icon { color: var(--accent-contrast); }
+
+/* dark mode: the gold fill already reads --br-gold; the text colour follows too */
+:root:root[data-theme="dark"][data-variant] .br-button-primary,
+:root:root[data-theme="dark"][data-variant] .br-button-primary .br-icon,
+:root:root[data-theme="dark"][data-variant] .br-brand-logo,
+:root:root[data-theme="dark"][data-variant] .br-brand-mark { color: var(--accent-contrast); }
+
+:root:root[data-variant] ::selection { background: var(--accent); color: var(--accent-contrast); }
+
+
+/* ---------- "Themes" popup ---------- */
+
+.lk-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 3500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: var(--overlay, rgba(0, 0, 0, 0.5));
+    opacity: 0;
+    transition: opacity 160ms ease;
+}
+.lk-layer.is-open { opacity: 1; }
+
+.lk-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(520px, 100%);
+    max-height: min(720px, 100%);
+    border-radius: 20px;
+    background: var(--surface, #fff);
+    color: var(--text-primary, #111);
+    border: 1px solid var(--border, rgba(128, 128, 128, 0.3));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lk-layer.is-open .lk-dialog { transform: none; }
+
+.lk-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 18px 10px; }
+.lk-head h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.lk-head p { margin: 3px 0 0; font-size: 13px; color: var(--text-secondary); }
+.lk-close {
+    flex: none; display: grid; place-items: center; width: 38px; height: 38px;
+    border: 0; border-radius: 50%; cursor: pointer;
+    background: var(--hover-background); color: var(--text-secondary);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.lk-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 8px; display: grid; gap: 18px; align-content: start; }
+.lk-title { margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+
+.lk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+.lk-theme {
+    display: grid; gap: 7px; padding: 7px;
+    border: 1.5px solid var(--border); border-radius: 14px;
+    background: transparent; color: var(--text-primary);
+    font: inherit; font-size: 13px; font-weight: 600; text-align: center;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: border-color 140ms ease, transform 140ms ease;
+}
+.lk-theme:active { transform: scale(0.97); }
+.lk-theme[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.lk-prev {
+    position: relative; display: grid; gap: 5px; align-content: start;
+    height: 64px; padding: 8px; border-radius: 9px;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+}
+.lk-strip { position: absolute; inset: 8px; display: flex; border-radius: 6px; overflow: hidden; }
+.lk-strip em { flex: 1; }
+.lk-prev i { display: block; height: 6px; border-radius: 3px; }
+.lk-prev i:nth-child(1) { width: 40%; }
+.lk-prev i:nth-child(2) { width: 72%; }
+.lk-prev b { position: absolute; left: 8px; right: 8px; bottom: 7px; height: 14px; border-radius: 5px; border: 1px solid; }
+
+.lk-foot { padding: 10px 18px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+.lk-done {
+    width: 100%; height: 44px; border: 0; border-radius: 12px; cursor: pointer;
+    background: var(--accent); color: var(--accent-contrast);
+    font: inherit; font-size: 15px; font-weight: 600; -webkit-tap-highlight-color: transparent;
+}
+
+/* phones: slides up from the bottom */
+@media (max-width: 600px) {
+    .lk-layer { align-items: flex-end; padding: 0; }
+    .lk-dialog { width: 100%; max-height: 88dvh; border-radius: 22px 22px 0 0; transform: translateY(40px); }
+}
+@media (prefers-reduced-motion: reduce) { .lk-layer, .lk-dialog { transition-duration: 1ms; } }
+
+/* Appearance card row */
+.lk-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.lk-row-text { display: grid; gap: 2px; min-width: 0; }
+.lk-row-text b { font-size: 14px; }
+.lk-row-text span { font-size: 12.5px; color: var(--text-secondary); }
+.lk-chips { display: flex; align-items: center; gap: 6px; flex: none; }
+.lk-chip { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(128, 128, 128, 0.35); }
+.lk-open {
+    height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 10px;
+    background: transparent; color: var(--text-primary); font: inherit; font-size: 13.5px; font-weight: 600;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+}

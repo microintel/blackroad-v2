@@ -11,9 +11,10 @@ import { loadAvatarUrl } from "../../services/avatar-service.js";
 import { loadGuestAvatar } from "../../services/guest-avatar.js";
 import { currentUser, isGuestSync, getGuestProfile, GUEST_PROFILES } from "../../services/auth.js";
 import { navigate } from "../../app/router.js";
-import { toggleTheme, getTheme } from "../../services/preferences.js";
+import { toggleTheme, getTheme, getVariant, VARIANTS } from "../../services/preferences.js";
 import { toggleCurrency, getCurrency } from "../../services/currency.js";
 import { startCurrencyTransition } from "../currency-transition.js";
+import { openLookPicker } from "../look-picker.js";
 import { themeToggleContent, currencyToggleContent } from "./topbar.js";
 
 /* Picture + name for whoever is signed in. Never throws. */
@@ -86,6 +87,11 @@ export function mountAccountMenu(header) {
         else close();
     });
 
+    root.querySelector("[data-look]")?.addEventListener("click", () => {
+        close();
+        openLookPicker();
+    });
+
     root.querySelector("[data-account-go]").addEventListener("click", () => {
         close();
         navigate("/account");
@@ -114,7 +120,7 @@ export function mountAccountMenu(header) {
         const ui = themeToggleContent(theme);
 
         themeBtn.querySelector(".br-account-item-icon").innerHTML = ui.icon;
-        themeBtn.querySelector(".br-account-item-text").textContent = theme === "dark" ? "Theme: Dark" : "Theme: Light";
+        themeBtn.querySelector(".br-account-item-text").textContent = "Theme: " + (VARIANTS.find((v) => v.id === getVariant(theme === "light" ? "light" : "dark"))?.label || "Dark");
         themeBtn.setAttribute("aria-label", ui.label);
     };
 

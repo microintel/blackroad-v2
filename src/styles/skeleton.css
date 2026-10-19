@@ -104,22 +104,12 @@
 }
 
 
-/* ---------- Drawer: smoother slide, hidden from tab order when closed ---------- */
+/* ---------- Drawer: hidden from tab order when closed ----------
+   (the slide animation itself lives in mobile.css) */
 
 @media (max-width: 768px) {
-    .br-sidebar {
-        visibility: hidden;
-        transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 300ms;
-        will-change: transform;
-        contain: layout paint;
-    }
-
-    .br-sidebar.is-open {
-        visibility: visible;
-        transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
-    }
-
-    .br-drawer-backdrop { transition: opacity 260ms ease; }
+    .br-sidebar { visibility: hidden; }
+    .br-sidebar.is-open { visibility: visible; }
 }
 
 
