@@ -28,6 +28,14 @@ const NUMBER_FIELDS = [
     ["other", "Other Assets", "layers"]
 ];
 
+const AC_TABS = [
+    ["overview", "Overview"],
+    ["banks", "Banks"],
+    ["assets", "Assets"]
+];
+
+let currentAcTab = "overview";
+
 /* Small icon tile used next to asset names. */
 const ico = (name) => `<span class="ac-ico">${icon(name, { size: 16 })}</span>`;
 
@@ -48,56 +56,70 @@ export async function Accounting() {
             </div>
         </div>
 
-        <div class="ac-layout">
-            <div class="ac-side">
-                <section class="br-card">
-                    <div class="br-stat-label">Net worth</div>
-                    <div class="br-stat-value" data-net>₹0</div>
-                    <div data-donut></div>
-                </section>
+        <div class="br-income-tabs br-tabs-flat" role="group" aria-label="Accounting views">
+            ${AC_TABS.map(
+                ([key, label]) => `
+                <button type="button" class="br-income-tab${key === currentAcTab ? " active" : ""}"
+                    data-ac-tab="${key}" aria-pressed="${key === currentAcTab}">${label}</button>`
+            ).join("")}
+        </div>
 
-                <section class="br-card">
-                    <div class="br-card-heading">
-                        <h3>Live data</h3>
-                        <button type="button" class="br-button" data-action="refresh">Refresh</button>
-                    </div>
-                    <div class="ac-live-row"><span class="ac-label-ico">${ico("chart-pie")}Mutual Funds</span><strong data-live="mf">₹0</strong></div>
-                    <div class="ac-live-row"><span class="ac-label-ico">${ico("coins")}Loans &amp; Liabilities</span><strong data-live="liab">₹0</strong></div>
-                    <div class="ac-live-row"><span class="ac-label-ico">${ico("hand-coins")}Lending Receivable</span><strong data-live="recv">₹0</strong></div>
-                </section>
+        <div class="ac-tabpanel" data-ac-panel="overview" ${currentAcTab === "overview" ? "" : "hidden"}>
+            <div class="ac-layout">
+                <div class="ac-side">
+                    <section class="br-card">
+                        <div class="br-stat-label">Net worth</div>
+                        <div class="br-stat-value" data-net>₹0</div>
+                        <div data-donut></div>
+                    </section>
+
+                    <section class="br-card">
+                        <div class="br-card-heading">
+                            <h3>Live data</h3>
+                            <button type="button" class="br-button" data-action="refresh">Refresh</button>
+                        </div>
+                        <div class="ac-live-row"><span class="ac-label-ico">${ico("chart-pie")}Mutual Funds</span><strong data-live="mf">₹0</strong></div>
+                        <div class="ac-live-row"><span class="ac-label-ico">${ico("coins")}Loans &amp; Liabilities</span><strong data-live="liab">₹0</strong></div>
+                        <div class="ac-live-row"><span class="ac-label-ico">${ico("hand-coins")}Lending Receivable</span><strong data-live="recv">₹0</strong></div>
+                    </section>
+                </div>
+
+                <div class="ac-main">
+                    <section class="br-card">
+                        <div class="br-card-heading"><h3>Breakdown</h3></div>
+                        <div data-result></div>
+                    </section>
+                </div>
             </div>
+        </div>
 
-            <div class="ac-main">
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Banks</h3></div>
-                    <div data-banks></div>
-                    <button type="button" class="br-button" data-action="add-bank">+ Add bank</button>
-                </section>
+        <div class="ac-tabpanel" data-ac-panel="banks" ${currentAcTab === "banks" ? "" : "hidden"}>
+            <section class="br-card">
+                <div class="br-card-heading"><h3>Banks</h3></div>
+                <div data-banks></div>
+                <button type="button" class="br-button" data-action="add-bank">+ Add bank</button>
+            </section>
+        </div>
 
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Additional assets</h3></div>
-                    <div data-customs></div>
-                    <button type="button" class="br-button" data-action="add-custom">+ Add additional asset</button>
-                </section>
+        <div class="ac-tabpanel" data-ac-panel="assets" ${currentAcTab === "assets" ? "" : "hidden"}>
+            <section class="br-card">
+                <div class="br-card-heading"><h3>Cash, investments &amp; other</h3></div>
+                <div class="br-form-grid">
+                    ${NUMBER_FIELDS.map(
+                        ([id, label, ic]) => `
+                        <label>
+                            <span class="ac-label-ico">${ico(ic)}${label}</span>
+                            <input type="number" class="br-input" data-field="${id}" placeholder="0" inputmode="decimal">
+                        </label>`
+                    ).join("")}
+                </div>
+            </section>
 
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Cash, investments &amp; other</h3></div>
-                    <div class="br-form-grid">
-                        ${NUMBER_FIELDS.map(
-                            ([id, label, ic]) => `
-                            <label>
-                                <span class="ac-label-ico">${ico(ic)}${label}</span>
-                                <input type="number" class="br-input" data-field="${id}" placeholder="0" inputmode="decimal">
-                            </label>`
-                        ).join("")}
-                    </div>
-                </section>
-
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Breakdown</h3></div>
-                    <div data-result></div>
-                </section>
-            </div>
+            <section class="br-card">
+                <div class="br-card-heading"><h3>Additional assets</h3></div>
+                <div data-customs></div>
+                <button type="button" class="br-button" data-action="add-custom">+ Add additional asset</button>
+            </section>
         </div>
 
         <div class="ac-savebar">
@@ -490,6 +512,24 @@ function bindEvents(page) {
     });
 
     page.addEventListener("click", async (event) => {
+        const tabBtn = event.target.closest("[data-ac-tab]");
+
+        if (tabBtn) {
+            currentAcTab = tabBtn.dataset.acTab;
+
+            page.querySelectorAll("[data-ac-tab]").forEach((t) => {
+                const on = t.dataset.acTab === currentAcTab;
+                t.classList.toggle("active", on);
+                t.setAttribute("aria-pressed", String(on));
+            });
+
+            page.querySelectorAll("[data-ac-panel]").forEach((p) => {
+                p.hidden = p.dataset.acPanel !== currentAcTab;
+            });
+
+            return;
+        }
+
         const removeBtn = event.target.closest("[data-remove]");
 
         if (removeBtn) {

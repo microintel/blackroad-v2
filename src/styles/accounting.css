@@ -167,3 +167,9 @@
 }
 .ac-ico .br-icon { display: block; }
 .ac-line .ac-label-ico { font-weight: 500; }
+
+/* ---------- Tab panels ---------- */
+
+.ac-tabpanel { display: flex; flex-direction: column; gap: var(--br-space-5); margin-top: var(--br-space-5); }
+.ac-tabpanel[hidden] { display: none; }
+.ac-tabpanel > .br-card { margin: 0; }

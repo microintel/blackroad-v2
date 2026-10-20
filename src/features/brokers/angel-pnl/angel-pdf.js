@@ -7,6 +7,7 @@
    ========================================================= */
 
 import { loadPdfLibs } from "./angel-libs.js";
+import { brandLogoPNG } from "../../../services/brand.js";
 import { PDF_FONT_REGULAR_B64, PDF_FONT_BOLD_B64 } from "./angel-fonts.js";
 import {
     CHARGE_LABELS, BAR_COLORS,
@@ -20,6 +21,7 @@ function fmtCell(header, n){
 }
 
 let PDF_BRAND = 'BlackRoad · Equity P&L Report';
+let PDF_LOGO = null;   // BlackRoad logo (blackroad.png) for the header, set per download
 
 function ensurePdfFonts(doc){
   doc.addFileToVFS('DejaVuSans.ttf', PDF_FONT_REGULAR_B64);
@@ -116,10 +118,7 @@ function pdfDrawHeader(doc, { title, subLines, clientBits }){
   doc.setTextColor(...PDF_THEME.subText);
   doc.text(PDF_BRAND.toUpperCase(), x+4, y+7);
 
-  doc.setFillColor(...PDF_THEME.accent);
-  doc.roundedRect(x+w-17, y+3.5, 13, 8.5, 1, 1, 'F');
-  doc.setTextColor(10,10,10); doc.setFontSize(8);
-  doc.text('BR', x+w-17+6.5, y+9, {align:'center'});
+  if(PDF_LOGO) doc.addImage(PDF_LOGO.dataUrl, 'PNG', x+w-17, y+2.5, 12, 12);
 
   doc.setFont('DejaVuSans','bold'); doc.setFontSize(15);
   doc.setTextColor(255,255,255);
@@ -416,6 +415,7 @@ export async function downloadAngelPdf(years, hooks = {}){
   ensurePdfFonts(doc);
   doc.setFont('DejaVuSans','normal');
   PDF_BRAND = 'BlackRoad · Equity P&L Report';
+  PDF_LOGO = await brandLogoPNG({ size: 192, tile: true });
 
   const generatedAt = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   const firstClient = years[0].sheets[0] ? years[0].sheets[0].client : {};

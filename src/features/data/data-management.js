@@ -27,22 +27,12 @@ export async function DataManagement() {
         <div class="br-grid br-grid-2">
             <section class="br-card">
                 <div class="br-card-heading"><h3>Export backup</h3></div>
-                <p class="br-muted">
-                    Downloads everything — Income, Stocks, Fixed Deposits,
-                    Lending, Mutual Fund and Accounting — as one file.
-                </p>
                 <p class="br-field-help" data-last-backup></p>
                 <button type="button" class="br-button br-button-primary" data-action="export">Export all data</button>
             </section>
 
             <section class="br-card">
                 <div class="br-card-heading"><h3>Restore backup</h3></div>
-                <p class="br-muted">
-                    Choose a BlackRoad backup file. Older single-module exports
-                    (Income, Stocks, Lending, Fixed Deposits, Mutual Fund) work too.
-                    You'll see what it contains before anything is changed.
-                </p>
-                <p class="br-field-help">Restoring replaces the current data of every module in the file.</p>
                 <button type="button" class="br-button" data-action="choose">Choose backup file</button>
                 <input type="file" accept="application/json,.json" data-file hidden>
             </section>

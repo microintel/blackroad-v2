@@ -347,7 +347,7 @@ export function navOnOrBefore(navSeriesAsc, targetIso) {
  *   instalment's units are computed off the ACTUAL NAV for its exact date
  *   (fetched from mfapi.in) instead of the app's synthetic tracked NAV.
  */
-export function buildSipLedger(calc, cfg, navSeriesAsc = null) {
+export function buildSipLedger(calc, cfg, navSeriesAsc = null, endCap = null) {
   if (!cfg || !cfg.startDate) return [];
   const schedule = (cfg.sipSchedule && cfg.sipSchedule.length)
     ? cfg.sipSchedule
@@ -357,7 +357,9 @@ export function buildSipLedger(calc, cfg, navSeriesAsc = null) {
 
   const today   = todayStr();
   const lastCalc = calc.length ? calc[calc.length - 1].date : null;
-  const endStr  = lastCalc && lastCalc > today ? lastCalc : today;
+  let endStr    = lastCalc && lastCalc > today ? lastCalc : today;
+  // A withdrawn fund stops at its exit date — no instalments after it.
+  if (endCap && endCap < endStr) endStr = endCap;
 
   let prevAmount = null;
   let unitsRunning = 0;
@@ -651,3 +653,107 @@ export const ALLOC_STATUS_LABEL = {
   missed: 'Missed',
   upcoming: 'Upcoming'
 };
+
+
+/* ══════════════════════════════════════════════════════
+   WITHDRAWN / SWITCHED FUNDS
+   ------------------------------------------------------
+   A fund (profile) can be closed: profile.status === 'closed' with
+   closedDate + redeemedAmount (what actually reached the bank). Nothing is
+   deleted — all entries, allocations and settings stay, so the fund keeps
+   its full history and can be analysed (or reopened) later.
+══════════════════════════════════════════════════════ */
+
+export function isClosedProfile(p) {
+  return !!p && p.status === 'closed';
+}
+
+/**
+ * Lifetime numbers for ONE fund (active or withdrawn), computed with the same
+ * recalcAll()/computeXIRR() engine as the live Overview. For a withdrawn fund
+ * the end value is the redeemed amount (falls back to the value on the exit
+ * date) and entries after the exit date are ignored.
+ */
+export function analyzeFund(profile, cfg, rawEntries) {
+  if (!profile || !cfg || !rawEntries || !rawEntries.length) return null;
+
+  const closed = isClosedProfile(profile);
+  const cap = closed && profile.closedDate ? profile.closedDate : null;
+  const use = cap ? rawEntries.filter(e => e.date <= cap) : rawEntries;
+  if (!use.length) return null;
+
+  const calc = recalcAll(use, normalizeSettings({ ...cfg }));
+  if (!calc.length) return null;
+
+  const last = calc[calc.length - 1];
+  const invested = last.investedAmount;
+  const marketValue = last.portfolioValue;
+  const redeemed = closed && profile.redeemedAmount != null && profile.redeemedAmount !== ''
+    ? Number(profile.redeemedAmount) : null;
+  const endValue = closed ? (redeemed != null ? redeemed : marketValue) : marketValue;
+  const pnl = endValue - invested;
+  const endDate = closed ? (profile.closedDate || last.date) : last.date;
+  const startDate = cfg.startDate || calc[0].date;
+
+  const flows = [];
+  for (const e of calc) {
+    if (e.sipAdded && e.sipTotal > 0) flows.push({ date: new Date(e.date), amount: -e.sipTotal });
+  }
+  flows.push({ date: new Date(endDate), amount: endValue });
+  const days = Math.max(0, Math.round((new Date(endDate) - new Date(startDate)) / 86400000));
+  const xirr = flows.length > 1 ? computeXIRR(flows) : null;
+
+  return {
+    id: profile.id,
+    name: profile.name,
+    closed,
+    startDate,
+    endDate,
+    days,
+    invested,
+    marketValue,
+    endValue,
+    redeemed,
+    pnl,
+    retPct: invested > 0 ? (pnl / invested) * 100 : 0,
+    xirr: days >= 30 && xirr !== null ? xirr * 100 : null,
+    sips: calc.filter(e => e.sipAdded).reduce((n, e) => n + e.sipCount, 0),
+    flows
+  };
+}
+
+/** Roll every fund's stats up into one lifetime picture. */
+export function summarizeJourney(stats) {
+  const list = (stats || []).filter(Boolean);
+  const closed = list.filter(f => f.closed);
+  const active = list.filter(f => !f.closed);
+  const sum = (arr, k) => arr.reduce((t, f) => t + f[k], 0);
+
+  const invested = sum(list, 'invested');
+  const value = sum(list, 'endValue');
+  const pnl = value - invested;
+
+  const flows = list.flatMap(f => f.flows).sort((a, b) => a.date - b.date);
+  const days = flows.length > 1 ? Math.round((flows[flows.length - 1].date - flows[0].date) / 86400000) : 0;
+  const xirr = flows.length > 1 ? computeXIRR(flows) : null;
+
+  const byRet = [...list].sort((a, b) => b.retPct - a.retPct);
+
+  return {
+    count: list.length,
+    activeCount: active.length,
+    closedCount: closed.length,
+    invested,
+    value,
+    pnl,
+    retPct: invested > 0 ? (pnl / invested) * 100 : 0,
+    realizedPnl: sum(closed, 'pnl'),
+    realizedInvested: sum(closed, 'invested'),
+    unrealizedPnl: sum(active, 'pnl'),
+    activeValue: sum(active, 'endValue'),
+    xirr: days >= 30 && xirr !== null ? xirr * 100 : null,
+    best: byRet.length ? byRet[0] : null,
+    worst: byRet.length > 1 ? byRet[byRet.length - 1] : null,
+    longest: [...list].sort((a, b) => b.days - a.days)[0] || null
+  };
+}

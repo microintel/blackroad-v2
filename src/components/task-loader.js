@@ -29,7 +29,7 @@ const KINDS = {
     calculate: { title: "Calculating",          sub: "Crunching the numbers" }
 };
 
-const MIN_VISIBLE = 900;     // ms the loader stays up at the least, so it never just flashes
+const MIN_VISIBLE = 1800;    // ms the loader stays up at the least, so it never just flashes
 
 const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -37,8 +37,16 @@ const esc = (s) =>
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* The animated chart. Used by the overlay and by inline loaders. */
+/* The animated BlackRoad logo shown on the loader overlay (see brand.css). */
 export function loaderChartHTML() {
+    return `
+        <span class="br-tl-logo-wrap" aria-hidden="true">
+            <span class="br-logo"></span>
+        </span>`;
+}
+
+/* The old candlestick chart, kept in case something still wants it. */
+export function loaderCandlesHTML() {
     const candles = [
         { h: 46, b: 20, up: true },
         { h: 58, b: 26, up: false },

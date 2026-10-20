@@ -64,7 +64,7 @@ function listView() {
                             ? `<span class="br-badge br-badge-success cb-connected">${icon("circle-check", { size: 14 })} Connected</span>`
                             : ""
                     }
-                    <span class="cb-cta">${isAngel(b) && angelIsConnected() ? "View data" : "Select"} ${icon("chevron-right", { size: 16 })}</span>
+                    ${isAngel(b) && angelIsConnected() ? `<span class="cb-cta">View data ${icon("chevron-right", { size: 16 })}</span>` : ""}
                 </button>`
             ).join("")}
         </div>
@@ -98,7 +98,6 @@ function detailView(b, connecting) {
             <div class="cb-api">
                 <span class="cb-api-label">API</span>
                 <strong class="cb-api-name">${esc(b.api)}</strong>
-                <p class="br-muted">${esc(b.about)}</p>
             </div>
 
             ${

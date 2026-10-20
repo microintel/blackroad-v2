@@ -255,15 +255,6 @@ export async function Income() {
                             Add income
                         </h3>
 
-                        <p
-                            class="br-muted"
-                            data-modal-sub
-                        >
-                            Income and its related
-                            transactions are stored
-                            in the existing ledger.
-                        </p>
-
                     </div>
 
 
@@ -371,12 +362,6 @@ export async function Income() {
                                 <h4>
                                     Transactions
                                 </h4>
-
-                                <p>
-                                    Add expenses or
-                                    investment movements
-                                    belonging to this entry.
-                                </p>
 
                             </div>
 
@@ -2842,12 +2827,6 @@ function setModalMode(
         "[data-txn-head]"
     ).hidden =
         mode === "txn";
-
-
-    modal.querySelector(
-        "[data-modal-sub]"
-    ).textContent =
-        text.sub;
 
 
     modal.querySelector(

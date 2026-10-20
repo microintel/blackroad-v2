@@ -102,7 +102,7 @@ export async function Stocks() {
                         <button type="button" class="br-button br-button-primary inc-add" data-action="add-txn" aria-label="Add transaction" title="Add transaction">${icon("plus", { size: 18 })}</button>
                     </div>
                 </div>
-                <span class="inc-hint" data-live-status>Your equity portfolio</span>
+                <span class="inc-hint" data-live-status></span>
             </div>
             <div class="inc-metrics" data-stocks-summary></div>
         </section>
@@ -1150,7 +1150,7 @@ function renderAnalytics(page) {
             ${totals.hasMTF ? statCard("MTF funded", fmtMoney(totals.fundedInvested, true)) : ""}
             ${totals.hasMTF ? statCard("Net equity (after MTF)", fmtMoney(totals.netEquity, true)) : ""}
         </div>
-        <p class="br-muted" style="margin-top:12px;">${escapeHTML(weighted[0].name)} makes up ${largestPct.toFixed(1)}% of your portfolio. This is informational only, not investment advice.</p>
+        <p class="br-muted" style="margin-top:12px;">${escapeHTML(weighted[0].name)} makes up ${largestPct.toFixed(1)}% of your portfolio.</p>
     `);
 }
 

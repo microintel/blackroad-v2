@@ -28,7 +28,6 @@ export function openLookPicker() {
             <div class="lk-head">
                 <div>
                     <h3 id="lk-title">Themes</h3>
-                    <p>Tap a theme. It applies right away.</p>
                 </div>
                 <button type="button" class="lk-close" data-lk-close aria-label="Close">${icon("x", { size: 18 })}</button>
             </div>

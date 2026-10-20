@@ -103,6 +103,8 @@ export async function loadMutualFunds() {
     const sips = [];
 
     for (const profile of profiles) {
+        if (profile.status === "closed") continue; // withdrawn funds aren't live holdings
+
         const own = entries
             .filter((e) => e.profileId === profile.id)
             .sort((a, b) => a.date.localeCompare(b.date));

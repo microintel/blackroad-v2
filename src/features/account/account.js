@@ -28,6 +28,16 @@ import {
 
 let toastTimer = null;
 
+const ACCOUNT_TABS = [
+    ["profile", "Profile"],
+    ["avatar", "Avatar"],
+    ["security", "Security"],
+    ["plan", "Plan"],
+    ["appearance", "Appearance"]
+];
+
+let currentAccountTab = "profile";
+
 export async function Account() {
     const page = document.createElement("section");
     page.className = "br-page br-account";
@@ -49,7 +59,15 @@ export async function Account() {
         }
     }
 
-    page.appendChild(AppearanceCard());
+    /* Page title, kept in the same narrow column as the content. */
+    page.insertAdjacentHTML("afterbegin", HEADING.replace("br-page-heading", "br-page-heading acx-heading"));
+
+    /* Signed-in users get Appearance as its own tab (see renderProfile). */
+    if (!page.querySelector("[data-account-panel]")) {
+        const card = AppearanceCard();
+        card.classList.add("acx-appearance-out");
+        page.appendChild(card);
+    }
 
     return page;
 }
@@ -63,30 +81,66 @@ function reloadApp() {
 const HEADING = `
     <div class="br-page-heading">
         <div>
-            <h2>Account</h2>
+            <h2>Settings</h2>
         </div>
     </div>
 `;
+
+const tabsHTML = (tabs, attr, active, label) => `
+    <div class="br-income-tabs br-tabs-flat acx-tabs" role="group" aria-label="${label}">
+        ${tabs.map(([key, text]) => `
+            <button type="button" class="br-income-tab${key === active ? " active" : ""}"
+                ${attr}="${key}" aria-pressed="${key === active}">${text}</button>`).join("")}
+    </div>`;
+
+/* Shows one panel, hides the rest. Returns nothing; calls onShow(key) so panels can load lazily. */
+function bindTabs(page, tabAttr, panelAttr, onShow) {
+    const camel = (a) => a.replace(/^data-/, "").replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const tk = camel(tabAttr);
+    const pk = camel(panelAttr);
+
+    page.addEventListener("click", (event) => {
+        const btn = event.target.closest(`[${tabAttr}]`);
+        if (!btn) return;
+
+        const key = btn.dataset[tk];
+
+        page.querySelectorAll(`[${tabAttr}]`).forEach((t) => {
+            const on = t.dataset[tk] === key;
+            t.classList.toggle("active", on);
+            t.setAttribute("aria-pressed", String(on));
+        });
+
+        page.querySelectorAll(`[${panelAttr}]`).forEach((p) => {
+            p.hidden = p.dataset[pk] !== key;
+        });
+
+        onShow(key);
+    });
+}
 
 /* ---------------- signed out ---------------- */
 
 function renderSignedOut(page) {
     page.innerHTML = `
-        ${HEADING}
+        <div class="acx acx-narrow">
+            <div class="acx-title">
+                <h2>Welcome to BlackRoad</h2>
+                <p>Sign in to save your data, or just look around.</p>
+            </div>
 
-        <div class="br-grid br-grid-2">
-            <section class="br-card">
-                <div class="br-card-heading"><h3>Sign in</h3></div>
+            ${tabsHTML([["login", "Sign in"], ["register", "Create account"]], "data-auth-tab", "login", "Sign in or create account")}
+
+            <div class="acx-panel" data-auth-panel="login">
                 <form class="ac-stack" data-form="login">
                     <label><span>Email</span><input name="email" type="email" class="br-input" autocomplete="email" required></label>
                     <label><span>Password</span><input name="password" type="password" class="br-input" autocomplete="current-password" required></label>
                     <p class="br-field-help ac-error" data-error="login" hidden></p>
                     <button type="submit" class="br-button br-button-primary">Sign in</button>
                 </form>
-            </section>
+            </div>
 
-            <section class="br-card">
-                <div class="br-card-heading"><h3>Create account</h3></div>
+            <div class="acx-panel" data-auth-panel="register" hidden>
                 <form class="ac-stack" data-form="register">
                     <label><span>Full name</span><input name="name" type="text" class="br-input" autocomplete="name" required></label>
                     <label><span>Email</span><input name="email" type="email" class="br-input" autocomplete="email" required></label>
@@ -95,16 +149,15 @@ function renderSignedOut(page) {
                     <p class="br-field-help ac-error" data-error="register" hidden></p>
                     <button type="submit" class="br-button br-button-primary">Create account</button>
                 </form>
-            </section>
-        </div>
+            </div>
 
-        <section class="br-card" style="margin-top:20px;">
-            <div class="br-card-heading"><h3>Just looking around?</h3></div>
-            <button type="button" class="br-button" data-action="guest">Continue as guest</button>
-        </section>
+            <p class="acx-alt">Just looking around? <button type="button" class="acx-link" data-action="guest">Continue as guest</button></p>
+        </div>
 
         <div class="br-toast" data-toast></div>
     `;
+
+    bindTabs(page, "data-auth-tab", "data-auth-panel", () => {});
 
     bindForm(page, "login", async (data) => {
         await login(data.email, data.password);
@@ -128,16 +181,13 @@ function renderSignedOut(page) {
 
 function renderGuest(page) {
     page.innerHTML = `
-        ${HEADING}
-
-        <section class="br-card">
-            <div class="br-card-heading"><h3>Guest session</h3></div>
-            <p class="br-muted">
-                Guest sessions can't manage an account. Sign in or create an
-                account to save your data, change your password and more.
-            </p>
+        <div class="acx acx-narrow">
+            <div class="acx-title">
+                <h2>Guest session</h2>
+                <p>Guest sessions can't manage an account. Sign in or create one to save your data and change your password.</p>
+            </div>
             <button type="button" class="br-button br-button-primary" data-action="leave-guest">Sign in / create account</button>
-        </section>
+        </div>
     `;
 
     page.querySelector('[data-action="leave-guest"]').addEventListener("click", async () => {
@@ -147,10 +197,6 @@ function renderGuest(page) {
 }
 
 /* ---------------- signed in ---------------- */
-
-function initials(name) {
-    return (name || "G").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-}
 
 function memberSince(iso) {
     if (!iso) return "—";
@@ -182,127 +228,107 @@ function nowLocalInput() {
 }
 
 async function renderProfile(page, user) {
-    const dataUpdated = await loadDataUpdated();
-    const savedAvatar = await loadAvatarUrl();
+    /* both reads are independent: run them together */
+    const [dataUpdated, savedAvatar] = await Promise.all([loadDataUpdated(), loadAvatarUrl()]);
     const avatarSeed = user.email || user.name;
+    const panel = (key, inner) =>
+        `<div class="acx-panel" data-account-panel="${key}" ${currentAccountTab === key ? "" : "hidden"}>${inner}</div>`;
 
     page.innerHTML = `
-        ${HEADING}
+        <div class="acx">
+            <header class="acx-head">
+                <div class="ac-avatar acx-avatar" data-avatar>${avatarMarkup(savedAvatar, avatarSeed)}</div>
+                <div class="acx-who">
+                    <h2 data-name>${escapeHTML(user.name || "BlackRoad User")}</h2>
+                    <p>${escapeHTML(user.email)}</p>
+                </div>
+                <span class="acx-plan" data-plan>${escapeHTML(user.plan)}</span>
+            </header>
 
-        <div class="ac-account-grid">
-            <div class="ac-side">
-                <section class="br-card">
-                    <div class="ac-head">
-                        <div class="ac-avatar" data-avatar>${avatarMarkup(savedAvatar, avatarSeed)}</div>
-                        <div>
-                            <h3 data-name>${escapeHTML(user.name || "BlackRoad User")}</h3>
-                            <p class="br-muted">${escapeHTML(user.email)}</p>
-                        </div>
-                        <span class="br-badge br-badge-info" data-plan>${escapeHTML(user.plan)}</span>
+            ${tabsHTML(ACCOUNT_TABS, "data-account-tab", currentAccountTab, "Settings sections")}
+
+            ${panel("profile", `
+                <form class="ac-stack" data-form="profile">
+                    <label><span>Full name</span><input name="name" type="text" class="br-input" value="${escapeAttr(user.name)}"></label>
+                    <dl class="acx-meta">
+                        <div><dt>Email</dt><dd>${escapeHTML(user.email)}</dd></div>
+                        <div><dt>Member since</dt><dd>${memberSince(user.createdAt)}</dd></div>
+                    </dl>
+                    <p class="br-field-help ac-error" data-error="profile" hidden></p>
+                    <button type="submit" class="br-button br-button-primary">Save changes</button>
+                </form>
+
+                <form class="ac-stack acx-section" data-form="dataUpdated">
+                    <h3>Data last updated</h3>
+                    <label><span>Date &amp; time your data is up to date as of</span><input name="updated" type="datetime-local" step="1" class="br-input" value="${escapeAttr(dataUpdated)}"></label>
+                    <p class="br-field-help ac-error" data-error="dataUpdated" hidden></p>
+                    <div class="acx-actions">
+                        <button type="submit" class="br-button br-button-primary">Save</button>
+                        <button type="button" class="br-button" data-action="updated-now">Set to now</button>
                     </div>
-                </section>
+                </form>
+            `)}
 
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Avatar</h3></div>
-                    <form class="ac-stack" data-form="avatar">
-                        <div class="ac-av-preview" data-av-preview></div>
+            ${panel("avatar", `<div data-avatar-mount></div>`)}
 
-                        <div>
-                            <span class="ac-av-label">Style</span>
-                            <div class="ac-av-styles" data-av-styles></div>
-                        </div>
+            ${panel("security", `
+                <form class="ac-stack" data-form="password">
+                    <label><span>Current password</span><input name="current" type="password" class="br-input" autocomplete="current-password"></label>
+                    <label><span>New password</span><input name="next" type="password" class="br-input" autocomplete="new-password"></label>
+                    <label><span>Confirm new password</span><input name="confirm" type="password" class="br-input" autocomplete="new-password"></label>
+                    <p class="br-field-help ac-error" data-error="password" hidden></p>
+                    <button type="submit" class="br-button br-button-primary">Update password</button>
+                </form>
 
-                        <div>
-                            <span class="ac-av-label">Looks in this style — tap one</span>
-                            <div class="ac-av-looks" data-av-looks></div>
-                            <button type="button" class="br-button ac-av-more" data-action="av-more">Show more looks</button>
-                        </div>
-
-                        <label>
-                            <span>Seed (any text — changes the look)</span>
-                            <div class="ac-av-seed">
-                                <input name="seed" type="text" class="br-input" maxlength="60" autocomplete="off" data-av-seed>
-                            </div>
-                        </label>
-
-                        <div>
-                            <span class="ac-av-label">Background</span>
-                            <div class="ac-av-swatches" data-av-swatches></div>
-                        </div>
-
-                        <label class="ac-switch-label">
-                            <input type="checkbox" data-av-flip>
-                            Flip horizontally
-                        </label>
-
-                        <p class="br-field-help ac-error" data-error="avatar" hidden></p>
-
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button type="submit" class="br-button br-button-primary">Save avatar</button>
-                            <button type="button" class="br-button" data-action="av-reset">Use default</button>
-                        </div>
-                    </form>
-                </section>
-
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Session</h3></div>
-                    <p class="br-muted">Signed in as ${escapeHTML(user.email)}</p>
+                <div class="acx-section acx-session">
+                    <div>
+                        <h3>Session</h3>
+                        <p>Signed in as ${escapeHTML(user.email)}</p>
+                    </div>
                     <button type="button" class="br-button br-button-danger" data-action="logout">Log out</button>
-                </section>
-            </div>
+                </div>
+            `)}
 
-            <div class="ac-side">
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Profile</h3></div>
-                    <form class="ac-stack" data-form="profile">
-                        <label><span>Full name</span><input name="name" type="text" class="br-input" value="${escapeAttr(user.name)}"></label>
-                        <label><span>Email address</span><input type="email" class="br-input" value="${escapeAttr(user.email)}" disabled></label>
-                        <label><span>Member since</span><input type="text" class="br-input" value="${memberSince(user.createdAt)}" disabled></label>
-                        <p class="br-field-help ac-error" data-error="profile" hidden></p>
-                        <button type="submit" class="br-button br-button-primary">Save changes</button>
-                    </form>
-                </section>
-
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Data last updated</h3></div>
-                    <form class="ac-stack" data-form="dataUpdated">
-                        <label><span>Date &amp; time your BlackRoad data is up to date as of</span><input name="updated" type="datetime-local" step="1" class="br-input" value="${escapeAttr(dataUpdated)}"></label>
-                        <p class="br-field-help ac-error" data-error="dataUpdated" hidden></p>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button type="submit" class="br-button br-button-primary">Save</button>
-                            <button type="button" class="br-button" data-action="updated-now">Set to now</button>
-                        </div>
-                    </form>
-                </section>
-
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Security</h3></div>
-                    <form class="ac-stack" data-form="password">
-                        <label><span>Current password</span><input name="current" type="password" class="br-input" autocomplete="current-password"></label>
-                        <label><span>New password</span><input name="next" type="password" class="br-input" autocomplete="new-password"></label>
-                        <label><span>Confirm new password</span><input name="confirm" type="password" class="br-input" autocomplete="new-password"></label>
-                        <p class="br-field-help ac-error" data-error="password" hidden></p>
-                        <button type="submit" class="br-button">Update password</button>
-                    </form>
-                </section>
-
-                <section class="br-card">
-                    <div class="br-card-heading"><h3>Plan</h3></div>
-                    <div class="ac-plan-row">
-                        <div>
-                            <b>Premium plan (demo toggle)</b>
-                        </div>
-                        <label class="ac-switch-label">
-                            <input type="checkbox" data-premium ${user.plan === "Premium" ? "checked" : ""}>
-                            Premium
-                        </label>
+            ${panel("plan", `
+                <div class="acx-row">
+                    <div>
+                        <b>Premium plan</b>
+                        <p>Demo toggle. Switch it on to try Premium features.</p>
                     </div>
-                </section>
-            </div>
+                    <label class="ac-switch-label">
+                        <input type="checkbox" data-premium ${user.plan === "Premium" ? "checked" : ""} aria-label="Premium plan">
+                    </label>
+                </div>
+            `)}
+
+            ${panel("appearance", `<div data-appearance-mount></div>`)}
         </div>
 
         <div class="br-toast" data-toast></div>
     `;
+
+    /* panels that cost something are built only when first opened */
+    const built = new Set();
+    const build = (key) => {
+        if (built.has(key)) return;
+        built.add(key);
+
+        if (key === "avatar") {
+            page.querySelector("[data-avatar-mount]").innerHTML = avatarEditorHTML();
+            bindAvatarEditor(page, savedAvatar, avatarSeed);
+        } else if (key === "appearance") {
+            const card = AppearanceCard();
+            card.classList.add("acx-appearance");
+            page.querySelector("[data-appearance-mount]").appendChild(card);
+        }
+    };
+
+    bindTabs(page, "data-account-tab", "data-account-panel", (key) => {
+        currentAccountTab = key;
+        build(key);
+    });
+
+    build(currentAccountTab);
 
     bindForm(page, "profile", async (data) => {
         const updated = await updateProfile({ name: data.name });
@@ -341,11 +367,59 @@ async function renderProfile(page, user) {
         }
     });
 
-    bindAvatarEditor(page, savedAvatar, avatarSeed);
-
     page.querySelector('[data-action="logout"]').addEventListener("click", async () => {
         if (await confirmLogout()) reloadApp();
     });
+}
+
+/* Avatar tab markup. Only the preview loads an image up front; the style
+   list, looks gallery and fine-tune options open on demand. */
+function avatarEditorHTML() {
+    return `
+        <form class="ac-stack" data-form="avatar">
+            <div class="acx-av-top">
+                <div class="ac-av-preview" data-av-preview></div>
+                <div class="acx-chips" role="group" aria-label="Customise avatar">
+                    <button type="button" class="acx-chip" data-av-open="styles" aria-expanded="false">Style</button>
+                    <button type="button" class="acx-chip" data-av-open="looks" aria-expanded="false">Looks</button>
+                    <button type="button" class="acx-chip" data-av-open="tune" aria-expanded="false">Fine-tune</button>
+                </div>
+            </div>
+
+            <div class="acx-drawer" data-av-drawer="styles" hidden>
+                <div class="ac-av-styles" data-av-styles></div>
+            </div>
+
+            <div class="acx-drawer" data-av-drawer="looks" hidden>
+                <div class="ac-av-looks" data-av-looks></div>
+                <button type="button" class="br-button ac-av-more" data-action="av-more">Show more looks</button>
+            </div>
+
+            <div class="acx-drawer ac-stack" data-av-drawer="tune" hidden>
+                <label>
+                    <span>Seed (any text changes the look)</span>
+                    <input name="seed" type="text" class="br-input" maxlength="60" autocomplete="off" data-av-seed>
+                </label>
+
+                <div>
+                    <span class="ac-av-label">Background</span>
+                    <div class="ac-av-swatches" data-av-swatches></div>
+                </div>
+
+                <label class="ac-switch-label">
+                    <input type="checkbox" data-av-flip>
+                    Flip horizontally
+                </label>
+            </div>
+
+            <p class="br-field-help ac-error" data-error="avatar" hidden></p>
+
+            <div class="acx-actions">
+                <button type="submit" class="br-button br-button-primary">Save avatar</button>
+                <button type="button" class="br-button" data-action="av-reset">Use default</button>
+            </div>
+        </form>
+    `;
 }
 
 /* ---------------- avatar editor (DiceBear) ---------------- */
@@ -369,6 +443,7 @@ function bindAvatarEditor(page, savedUrl, avatarSeed) {
     flipInput.checked = state.flip;
 
     let thumbTimer = null;
+    let open = "";                              /* which drawer is open: styles | looks | tune | "" */
 
     // Looks gallery: the same style with seeds 1, 2, 3 ... (24 more per tap).
     const LOOKS_STEP = 24;
@@ -388,7 +463,6 @@ function bindAvatarEditor(page, savedUrl, avatarSeed) {
             return `<button type="button" class="ac-av-style${st.id === state.style ? " is-active" : ""}" data-style="${st.id}" title="${st.label}" aria-label="${st.label}" aria-pressed="${st.id === state.style}">${avatarMarkup(url, state.seed)}<small>${st.label}</small></button>`;
         }).join("");
 
-        // 30 thumbnails: only fetch the ones scrolled into view.
         stylesBox.querySelectorAll("img").forEach((img) => { img.loading = "lazy"; });
     }
 
@@ -417,16 +491,38 @@ function bindAvatarEditor(page, savedUrl, avatarSeed) {
         }).join("");
     }
 
+    /* Only draw what is on screen: the galleries fetch many images. */
     function redraw() {
         drawPreview();
-        drawStyles();
-        drawLooks();
-        drawSwatches();
+        if (open === "styles") drawStyles();
+        if (open === "looks") drawLooks();
+        if (open === "tune") drawSwatches();
     }
 
     function setHead(url) {
         headAvatar.innerHTML = avatarMarkup(url, avatarSeed);
     }
+
+    function toggleDrawer(name) {
+        open = open === name ? "" : name;
+
+        page.querySelectorAll("[data-av-drawer]").forEach((d) => {
+            d.hidden = d.dataset.avDrawer !== open;
+        });
+
+        page.querySelectorAll("[data-av-open]").forEach((c) => {
+            const on = c.dataset.avOpen === open;
+            c.classList.toggle("is-on", on);
+            c.setAttribute("aria-expanded", String(on));
+        });
+
+        redraw();
+    }
+
+    page.querySelector(".acx-chips").addEventListener("click", (event) => {
+        const chip = event.target.closest("[data-av-open]");
+        if (chip) toggleDrawer(chip.dataset.avOpen);
+    });
 
     stylesBox.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-style]");
@@ -465,9 +561,9 @@ function bindAvatarEditor(page, savedUrl, avatarSeed) {
         state.seed = seedInput.value.trim() || "blackroad";
         drawPreview();
 
-        // Style thumbnails each fetch an image: wait until typing pauses.
+        // Gallery thumbnails each fetch an image: wait until typing pauses.
         clearTimeout(thumbTimer);
-        thumbTimer = setTimeout(() => { drawStyles(); drawLooks(); }, 450);
+        thumbTimer = setTimeout(redraw, 450);
     });
 
     flipInput.addEventListener("change", () => {
@@ -509,7 +605,7 @@ function bindAvatarEditor(page, savedUrl, avatarSeed) {
         }
     });
 
-    redraw();
+    drawPreview();
 }
 
 /* ---------------- helpers ---------------- */

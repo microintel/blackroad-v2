@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v193";
+const CACHE_VERSION = "v200";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -31,6 +31,12 @@ const SHELL = [
     "./assets/icons/android-icon-192x192.png",
     "./assets/icons/icon512_maskable.png",
     "./assets/icons/icon512_rounded.png",
+    "./assets/icons/apple-touch-icon.png",
+    "./assets/icons/favicon-64.png",
+    "./blackroad.png",
+    "./src/styles/brand.css",
+    "./src/styles/account.css",
+    "./src/services/brand.js",
     "./src/app/app.js",
     "./src/app/navigation.js",
     "./src/app/router.js",

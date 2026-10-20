@@ -154,7 +154,7 @@ export function AuthScreen(mode) {
         <div class="br-auth-shell">
         <aside class="br-auth-aside" aria-hidden="false">
             <div class="br-auth-aside-brand">
-                <div class="br-brand-logo">BR</div>
+                <div class="br-brand-logo" role="img" aria-label="BlackRoad logo"></div>
                 <div class="br-brand-name">BlackRoad</div>
             </div>
             <h1>${copy.title}</h1>
@@ -166,7 +166,7 @@ export function AuthScreen(mode) {
         <div class="br-auth-card">
             <button type="button" class="br-auth-back" data-l-back-form aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
             <div class="br-auth-brand">
-                <div class="br-brand-logo">BR</div>
+                <div class="br-brand-logo" role="img" aria-label="BlackRoad logo"></div>
                 <div>
                     <div class="br-brand-name">BlackRoad</div>
                     <div class="br-brand-subtitle">Finance</div>

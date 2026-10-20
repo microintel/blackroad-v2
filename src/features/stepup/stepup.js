@@ -20,7 +20,10 @@ import {
     summarizeSip,
     periodGrowth,
     ALLOC_STATUS_LABEL,
-    projectGoalScenarios
+    projectGoalScenarios,
+    isClosedProfile,
+    analyzeFund,
+    summarizeJourney
 } from "./stepup-service.js";
 
 import {
@@ -74,6 +77,21 @@ let editingEntryId = null;
 let allocTarget = null;
 let toastTimer = null;
 
+/* Withdrawn / switched funds */
+let journey = null;            // per-fund lifetime stats for the "All funds" tab
+let journeyLoading = false;
+let withdrawId = null;         // profile being withdrawn / having its exit edited
+let pendingSwitchFrom = null;  // old fund id while the "new fund" form is open after a withdrawal
+const isClosed = () => isClosedProfile(profile);
+const WRITE_ACTIONS = new Set([
+    "edit-entry", "delete-entry", "remove-step", "restore-skip", "sync-fund",
+    "unlink-fund", "clear-goal", "edit-alloc"
+]);
+const WRITE_FORMS = new Set([
+    "add-entry", "fund-import", "entry", "alloc", "base", "step", "skip", "goal"
+]);
+const CLOSED_MSG = "This fund is withdrawn (read-only). Reopen it to make changes.";
+
 const STATUS_BADGE = {
     allocated: "br-badge-success",
     paid: "br-badge-info",
@@ -94,6 +112,9 @@ export async function StepUp() {
     store = await dataService.getStepUpStore();
 
     tab = "overview";
+    journey = null;
+    journeyLoading = false;
+    pendingSwitchFrom = null;
     lastViewKey = "";
     historyLimit = 30;
     historyDate = "";
@@ -111,6 +132,7 @@ export async function StepUp() {
             <button type="button" class="br-income-tab" data-su-tab="history">History</button>
             <button type="button" class="br-income-tab" data-su-tab="ledger">SIP ledger</button>
             <button type="button" class="br-income-tab" data-su-tab="fund">Fund</button>
+            <button type="button" class="br-income-tab" data-su-tab="journey">All funds</button>
             <button type="button" class="br-income-tab" data-su-tab="settings">Settings</button>
         </div>
 
@@ -210,6 +232,36 @@ function modalsHTML() {
             </div>
         </div>
 
+        <!-- WITHDRAW / EXIT FUND -->
+        <div class="br-modal-layer" data-modal="withdraw" hidden>
+            <div class="br-modal" role="dialog" aria-modal="true">
+                <div class="br-modal-header">
+                    <h3 data-withdraw-title>Withdraw fund</h3>
+                    <button type="button" class="br-button" data-action="close-modal">×</button>
+                </div>
+                <form data-form="withdraw">
+                    <div class="br-modal-body">
+                        <p class="br-field-help" data-error style="display:none;color:var(--br-danger);"></p>
+                        <p class="br-muted" data-withdraw-hint style="margin:0 0 12px;"></p>
+                        <div class="br-form-grid">
+                            <label><span>Withdrawal date</span>
+                                <input name="date" type="date" class="br-input" required></label>
+                            <label><span>Amount received (₹)</span>
+                                <input name="amount" type="number" step="0.01" min="0" class="br-input" required></label>
+                        </div>
+                        <label class="su-check" data-withdraw-switch>
+                            <input name="switchNew" type="checkbox" checked>
+                            <span>Switch to a new fund next</span>
+                        </label>
+                    </div>
+                    <div class="br-modal-footer">
+                        <button type="button" class="br-button" data-action="close-modal">Cancel</button>
+                        <button type="submit" class="br-button br-button-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- NEW / RENAME SIP -->
         <div class="br-modal-layer" data-modal="profile" hidden>
             <div class="br-modal" role="dialog" aria-modal="true">
@@ -269,7 +321,10 @@ async function loadProfiles() {
     const saved = Number(localStorage.getItem(ACTIVE_PROFILE_KEY));
 
     profile =
-        profiles.find((p) => p.id === saved) || profiles[0] || null;
+        profiles.find((p) => p.id === saved) ||
+        profiles.find((p) => !isClosedProfile(p)) ||
+        profiles[0] ||
+        null;
 }
 
 async function loadProfileData() {
@@ -280,6 +335,10 @@ async function loadProfileData() {
 
     settings = (await store.getProfileSettings(profile.id)) || null;
     entries = await store.getProfileEntries(profile.id);
+
+    if (isClosedProfile(profile) && profile.closedDate) {
+        entries = entries.filter((e) => e.date <= profile.closedDate);
+    }
 
     if (settings) {
         normalizeSettings(settings);
@@ -388,7 +447,10 @@ function render(page) {
     const viewChanged = viewKey !== lastViewKey;
     lastViewKey = viewKey;
 
-    if (tab === "settings") content.innerHTML = settingsHTML();
+    if (tab === "journey") {
+        content.innerHTML = journeyHTML();
+        if (!journey && !journeyLoading) loadJourney(page);
+    } else if (tab === "settings") content.innerHTML = settingsHTML();
     else if (!settings) content.innerHTML = needSettingsHTML();
     else if (tab === "overview") content.innerHTML = overviewHTML();
     else if (tab === "history") content.innerHTML = historyHTML();
@@ -419,7 +481,7 @@ function renderProfileBar(page) {
             <button type="button" class="su-switch-btn" data-su-switch-btn aria-haspopup="listbox" aria-expanded="false">
                 ${mfLogoHTML(cur.name, mfFunds, "sm")}
                 <span class="su-switch-text">
-                    <small>${profiles.length > 1 ? "Switch fund" : "Your fund"}</small>
+                    <small>${isClosedProfile(cur) ? "Withdrawn fund" : profiles.length > 1 ? "Switch fund" : "Your fund"}</small>
                     <strong>${escapeHTML(cur.name)}</strong>
                 </span>
                 ${profiles.length > 1 ? icon("chevron-down", { size: 18 }) : ""}
@@ -427,11 +489,18 @@ function renderProfileBar(page) {
             ${
                 profiles.length > 1
                     ? `<div class="su-switch-menu" role="listbox" hidden>
-                ${profiles
+                ${[
+                    ...profiles.filter((p) => !isClosedProfile(p)),
+                    ...profiles.filter((p) => isClosedProfile(p))
+                ]
                     .map(
-                        (p) => `<button type="button" role="option" class="su-switch-item ${p.id === cur.id ? "is-active" : ""}" data-su-pick="${p.id}" aria-selected="${p.id === cur.id}">
+                        (p, i, all) => `${
+                            isClosedProfile(p) && (i === 0 || !isClosedProfile(all[i - 1]))
+                                ? `<div class="su-switch-group">Past funds</div>`
+                                : ""
+                        }<button type="button" role="option" class="su-switch-item ${p.id === cur.id ? "is-active" : ""}" data-su-pick="${p.id}" aria-selected="${p.id === cur.id}">
                     ${mfLogoHTML(p.name, mfFunds, "xs")}
-                    <span>${escapeHTML(p.name)}</span>
+                    <span>${escapeHTML(p.name)}${isClosedProfile(p) ? ` <small class="br-muted">· withdrawn ${escapeHTML(p.closedDate || "")}</small>` : ""}</span>
                     ${p.id === cur.id ? icon("check", { size: 16 }) : ""}
                 </button>`
                     )
@@ -483,7 +552,7 @@ function heldUnits(calc) {
         fundCache.data && settings.linkedFund && fundCache.schemeCode === settings.linkedFund.schemeCode
             ? fundCache.data.series
             : null;
-    const ledger = buildSipLedger(calc, settings, series);
+    const ledger = buildSipLedger(calc, settings, series, isClosed() ? profile.closedDate : null);
     return ledger.length ? ledger[ledger.length - 1].unitsRunningTotal : 0;
 }
 
@@ -510,6 +579,7 @@ function overviewHTML() {
     const calc = recalcAll(entries, settings);
     const s = summarizeSip(calc, settings);
     if (s) s.unitsHeld = heldUnits(calc);
+    if (s && isClosed()) s.nextSip = null;
 
     let cards;
 
@@ -541,7 +611,7 @@ function overviewHTML() {
             <section class="su-hero ${s.pnl >= 0 ? "is-up" : "is-down"}">
                 <div class="su-hero-top">
                     <div class="su-hero-main">
-                        <span class="su-label">Portfolio value</span>
+                        <span class="su-label">${isClosed() ? "Value on exit date" : "Portfolio value"}</span>
                         <span class="su-hero-value">${fmtK(s.value)}</span>
                         <span class="su-pill ${posNeg(s.pnl)}">${icon(s.pnl >= 0 ? "trending-up" : "trending-down", { size: 14 })}${pnlTxt} · ${fmtPct(s.ret)}</span>
                     </div>
@@ -584,6 +654,8 @@ function overviewHTML() {
             ${growthHTML(calc)}
         `;
     }
+
+    if (isClosed()) return `${closedBannerHTML()}${cards}`;
 
     return `
         ${cards}
@@ -736,7 +808,6 @@ function fundHTML() {
                 <img class="su-howto-logo" src="https://raw.githubusercontent.com/microintel/endgram/main/photo/invisible-home.png" alt="Invisible House" data-mf-howto>
                 <div>
                     <h3 class="su-howto-title">How to link a fund</h3>
-                    <p class="su-howto-lead">Four quick steps. Takes about a minute.</p>
                 </div>
             </header>
             <ol class="su-howto-steps">
@@ -819,7 +890,6 @@ function fundHTML() {
         history = `
             <section class="br-card" style="margin-top:20px;">
                 <h3 style="margin-bottom:4px;">Fund performance history</h3>
-                <p class="br-muted" style="margin:0 0 12px;">Growth of ₹100 invested on day one — ${escapeHTML(lf.schemeName || lf.schemeCode)}</p>
                 <div class="br-grid br-grid-3" style="margin-bottom:12px;">
                     ${stat("History", years.toFixed(1) + " yrs")}
                     ${stat("Total growth", (totalGrowthPct >= 0 ? "+" : "") + totalGrowthPct.toFixed(1) + "%", posNeg(totalGrowthPct))}
@@ -1090,6 +1160,7 @@ async function importFund(page, form) {
 }
 
 async function syncLinkedFund(page, { silent = false } = {}) {
+    if (isClosed()) return; // withdrawn funds are frozen at their exit date
     if (!profile || !settings || !settings.linkedFund || !entries.length) return;
 
     try {
@@ -1247,9 +1318,9 @@ function historyHTML() {
                         <td class="${posNeg(r.dailyReturnAmount)}">${r.dailyReturnAmount >= 0 ? "+" : ""}${fmt(r.dailyReturnAmount)}</td>
                         <td>${r.navValue.toFixed(2)}</td>
                         <td>${r.unitsHeld.toFixed(4)}</td>
-                        <td style="text-align:right;white-space:nowrap;">
+                        <td style="text-align:right;white-space:nowrap;">${isClosed() ? "" : `
                             <button type="button" class="br-button" data-action="edit-entry" data-id="${r.id}">Edit</button>
-                            <button type="button" class="br-button br-button-danger" data-action="delete-entry" data-id="${r.id}">${icon("trash-2", { size: 16 })}Delete</button>
+                            <button type="button" class="br-button br-button-danger" data-action="delete-entry" data-id="${r.id}">${icon("trash-2", { size: 16 })}Delete</button>`}
                         </td>
                     </tr>`
                         )
@@ -1274,14 +1345,15 @@ function ledgerHTML() {
         settings,
         fundCache.data && settings.linkedFund && fundCache.schemeCode === settings.linkedFund.schemeCode
             ? fundCache.data.series
-            : null
+            : null,
+        isClosed() ? profile.closedDate : null
     ).slice().reverse();
 
     if (!ledger.length) {
         return `<section class="br-card"><div class="br-empty-state">No SIP instalments yet.</div></section>`;
     }
 
-    const pending = ledger.filter((r) => PENDING_STATUSES.includes(r.status));
+    const pending = isClosed() ? [] : ledger.filter((r) => PENDING_STATUSES.includes(r.status));
 
     const pendingBox = pending.length
         ? `<section class="br-card" style="margin-bottom:20px;">
@@ -1329,7 +1401,7 @@ function ledgerHTML() {
                         <td>${r.units ? Number(r.units).toFixed(4) : "—"}</td>
                         <td>${Number(r.unitsRunningTotal).toFixed(4)}</td>
                         <td style="text-align:right;">${
-                            r.status === "skipped"
+                            r.status === "skipped" || isClosed()
                                 ? ""
                                 : `<button type="button" class="br-button" data-action="edit-alloc" data-date="${r.date}">Edit</button>`
                         }</td>
@@ -1474,13 +1546,19 @@ function settingsHTML() {
                     : ""
             }
 
-            ${secOpen("manage", "Manage SIPs", profiles.length + (profiles.length === 1 ? " SIP" : " SIPs"), "3", "Advanced")}
+            ${secOpen("manage", "Manage SIPs", profiles.length + (profiles.length === 1 ? " SIP" : " SIPs") + (profiles.some(isClosedProfile) ? " · " + profiles.filter(isClosedProfile).length + " withdrawn" : ""), "3", "Advanced")}
                 <div class="su-list">
                     ${profiles
                         .map(
                             (p) => `<div class="su-row">
-                        <span class="su-mf-name">${mfLogoHTML(p.name, mfFunds, "md")}<span>${escapeHTML(p.name)}${profile && p.id === profile.id ? ` <span class="br-badge br-badge-success">Active</span>` : ""}</span></span>
-                        <span style="display:flex;gap:8px;">
+                        <span class="su-mf-name">${mfLogoHTML(p.name, mfFunds, "md")}<span>${escapeHTML(p.name)}${profile && p.id === profile.id ? ` <span class="br-badge br-badge-success">Viewing</span>` : ""}${isClosedProfile(p) ? ` <span class="br-badge br-badge-warning">Withdrawn ${escapeHTML(p.closedDate || "")}</span>` : ""}</span></span>
+                        <span style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                            ${
+                                isClosedProfile(p)
+                                    ? `<button type="button" class="br-button" data-action="edit-exit" data-id="${p.id}">Edit exit</button>
+                            <button type="button" class="br-button" data-action="reopen-profile" data-id="${p.id}">Reopen</button>`
+                                    : `<button type="button" class="br-button" data-action="withdraw-profile" data-id="${p.id}">Withdraw / switch</button>`
+                            }
                             <button type="button" class="br-button" data-action="rename-profile" data-id="${p.id}">Rename</button>
                             <button type="button" class="br-button br-button-danger" data-action="delete-profile" data-id="${p.id}">Delete</button>
                         </span>
@@ -1515,6 +1593,7 @@ function openModal(page, name) {
 }
 
 function closeModals(page) {
+    pendingSwitchFrom = null;
     page.querySelectorAll("[data-modal]").forEach((l) => (l.hidden = true));
 }
 
@@ -1866,6 +1945,288 @@ async function saveAlloc(page) {
     }
 }
 
+/* =========================================
+   WITHDRAWN / SWITCHED FUNDS
+   A fund that was fully withdrawn stays in the app as a "past fund":
+   every entry, SIP allocation and setting is kept (read-only), it stops
+   counting in active totals, and it is analysed in the "All funds" tab.
+========================================= */
+
+const shortDate = (iso) =>
+    iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+
+function spanTxt(days) {
+    if (days < 60) return days + " day" + (days === 1 ? "" : "s");
+    const m = Math.round(days / 30.44);
+    if (m < 24) return m + " months";
+    const y = Math.floor(m / 12);
+    const r = m % 12;
+    return y + " yr" + (y > 1 ? "s" : "") + (r ? " " + r + " mo" : "");
+}
+
+const sgnK = (n) => (n >= 0 ? "+" : "") + fmtK(n);
+
+/* Lifetime stats of one fund from raw store rows (same migration rule as loadProfileData). */
+function fundStat(p, cfg0, own, asActive = false) {
+    if (!cfg0 || !own.length) return null;
+
+    const cfg = normalizeSettings({ ...cfg0 });
+
+    if (!cfg.sipAllocationsMigrated) {
+        cfg.sipAllocations = { ...buildLegacyAllocations(own, cfg), ...(cfg.sipAllocations || {}) };
+    }
+
+    return analyzeFund(asActive ? { ...p, status: "active" } : p, cfg, own);
+}
+
+async function loadJourney(page) {
+    journeyLoading = true;
+
+    try {
+        const [allSettings, allEntries] = await Promise.all([store.getSettings(), store.getEntries()]);
+        const stats = [];
+
+        for (const p of profiles) {
+            const own = allEntries
+                .filter((e) => e.profileId === p.id)
+                .sort((a, b) => a.date.localeCompare(b.date));
+            const st = fundStat(p, allSettings.find((x) => x.id === p.id), own);
+            if (st) stats.push(st);
+        }
+
+        journey = { stats };
+    } catch (_) {
+        journey = { stats: [] };
+    }
+
+    journeyLoading = false;
+    if (page.isConnected && tab === "journey") render(page);
+}
+
+function closedBannerHTML() {
+    const a = analyzeFund(profile, settings, entries);
+    const next = profile.switchedToId ? profiles.find((x) => x.id === profile.switchedToId) : null;
+    const prev = profile.switchedFromId ? profiles.find((x) => x.id === profile.switchedFromId) : null;
+
+    return `
+        <section class="br-card su-closed">
+            <div class="su-closed-head">
+                <span class="br-badge br-badge-warning">Withdrawn</span>
+                <strong>Exited ${escapeHTML(shortDate(profile.closedDate))}</strong>
+                ${next ? `<span class="br-muted">· switched to <button type="button" class="su-link" data-su-open="${next.id}">${escapeHTML(next.name)}</button></span>` : ""}
+                ${prev ? `<span class="br-muted">· switched from <button type="button" class="su-link" data-su-open="${prev.id}">${escapeHTML(prev.name)}</button></span>` : ""}
+            </div>
+            ${
+                a
+                    ? `<dl class="su-facts-grid">
+                ${factItem("Invested", fmtK(a.invested))}
+                ${factItem("Amount received", fmtK(a.endValue), a.redeemed == null ? "not entered — using exit-day value" : "")}
+                ${factItem("Realised P/L", sgnK(a.pnl), fmtPct(a.retPct), posNeg(a.pnl))}
+                ${factItem("XIRR", a.xirr !== null ? (a.xirr >= 0 ? "+" : "") + a.xirr.toFixed(1) + "%" : "—", "", a.xirr !== null ? posNeg(a.xirr) : "")}
+                ${factItem("Held for", spanTxt(a.days), shortDate(a.startDate) + " → " + shortDate(a.endDate))}
+            </dl>`
+                    : `<p class="br-muted">No entries were recorded for this fund.</p>`
+            }
+            <div class="su-closed-actions">
+                <button type="button" class="br-button" data-action="edit-exit" data-id="${profile.id}">Edit exit details</button>
+                <button type="button" class="br-button" data-action="reopen-profile" data-id="${profile.id}">Reopen fund</button>
+            </div>
+        </section>
+    `;
+}
+
+/* "All funds" tab: every fund you've held, active and withdrawn, in order. */
+function journeyHTML() {
+    if (!journey) {
+        return `<section class="br-card"><div class="br-empty-state">Loading your funds…</div></section>`;
+    }
+
+    if (!journey.stats.length) {
+        return `<section class="br-card"><div class="br-empty-state">
+            <strong>No fund history yet</strong>
+            <p>Once a fund has entries, its lifetime numbers show up here.</p>
+        </div></section>`;
+    }
+
+    const J = summarizeJourney(journey.stats);
+    const list = [...journey.stats].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    const maxAbs = Math.max(1, ...list.map((f) => Math.abs(f.retPct)));
+
+    const hero = `
+        <section class="su-hero ${J.pnl >= 0 ? "is-up" : "is-down"}">
+            <div class="su-hero-top">
+                <div class="su-hero-main">
+                    <span class="su-label">Lifetime profit / loss · all funds</span>
+                    <span class="su-hero-value">${sgnK(J.pnl)}</span>
+                    <span class="su-pill ${posNeg(J.pnl)}">${icon(J.pnl >= 0 ? "trending-up" : "trending-down", { size: 14 })}${fmtPct(J.retPct)} on ${fmtK(J.invested)} invested</span>
+                </div>
+            </div>
+            <div class="su-kpis">
+                <div class="su-kpi"><span class="su-label">Realised</span><strong class="${posNeg(J.realizedPnl)}">${J.closedCount ? sgnK(J.realizedPnl) : "—"}</strong><em>${J.closedCount} withdrawn</em></div>
+                <div class="su-kpi"><span class="su-label">Unrealised</span><strong class="${posNeg(J.unrealizedPnl)}">${J.activeCount ? sgnK(J.unrealizedPnl) : "—"}</strong><em>${J.activeCount} active</em></div>
+                <div class="su-kpi"><span class="su-label">Overall XIRR</span><strong class="${J.xirr !== null ? posNeg(J.xirr) : ""}">${J.xirr !== null ? (J.xirr >= 0 ? "+" : "") + J.xirr.toFixed(1) + "%" : "—"}</strong></div>
+            </div>
+        </section>
+    `;
+
+    const insights =
+        list.length > 1
+            ? `<section class="su-facts">
+            <h3 class="su-section-title">Insights</h3>
+            <dl class="su-facts-grid">
+                ${factItem("Best return", escapeHTML(J.best.name), fmtPct(J.best.retPct), posNeg(J.best.retPct))}
+                ${factItem("Weakest return", escapeHTML(J.worst.name), fmtPct(J.worst.retPct), posNeg(J.worst.retPct))}
+                ${factItem("Held longest", escapeHTML(J.longest.name), spanTxt(J.longest.days))}
+                ${factItem("Switches", String(J.closedCount), J.closedCount === 1 ? "fund withdrawn" : "funds withdrawn")}
+            </dl>
+        </section>`
+            : "";
+
+    const items = list
+        .map((f, i) => {
+            const prev = i > 0 ? list[i - 1] : null;
+            const link =
+                prev && prev.closed
+                    ? `<div class="su-jr-link">${icon("arrow-down-right", { size: 14 })} Switched ${escapeHTML(shortDate(prev.endDate))}</div>`
+                    : "";
+            const w = Math.max(3, (Math.abs(f.retPct) / maxAbs) * 100);
+
+            return `${link}
+            <button type="button" class="br-card su-jr-item ${f.closed ? "is-closed" : ""}" data-su-open="${f.id}">
+                <div class="su-jr-top">
+                    ${mfLogoHTML(f.name, mfFunds, "sm")}
+                    <span class="su-jr-name">
+                        <strong>${escapeHTML(f.name)}</strong>
+                        <small class="br-muted">${escapeHTML(shortDate(f.startDate))} → ${f.closed ? escapeHTML(shortDate(f.endDate)) : "Today"} · ${spanTxt(f.days)}</small>
+                    </span>
+                    <span class="br-badge ${f.closed ? "br-badge-warning" : "br-badge-success"}">${f.closed ? "Withdrawn" : "Active"}</span>
+                </div>
+                <dl class="su-jr-grid">
+                    <div><dt>Invested</dt><dd>${fmtK(f.invested)}</dd></div>
+                    <div><dt>${f.closed ? "Received" : "Value now"}</dt><dd>${fmtK(f.endValue)}</dd></div>
+                    <div><dt>${f.closed ? "Realised P/L" : "P/L"}</dt><dd class="${posNeg(f.pnl)}">${sgnK(f.pnl)} <small>${fmtPct(f.retPct)}</small></dd></div>
+                    <div><dt>XIRR</dt><dd class="${f.xirr !== null ? posNeg(f.xirr) : ""}">${f.xirr !== null ? (f.xirr >= 0 ? "+" : "") + f.xirr.toFixed(1) + "%" : "—"}</dd></div>
+                </dl>
+                <div class="su-jr-bar" aria-hidden="true"><i class="${f.retPct >= 0 ? "is-up" : "is-down"}" style="width:${w.toFixed(1)}%"></i></div>
+            </button>`;
+        })
+        .join("");
+
+    return `
+        ${hero}
+        ${insights}
+        <h3 class="su-section-title" style="margin-top:20px;">Your funds, in order</h3>
+        <div class="su-jr-list">${items}</div>
+    `;
+}
+
+/* Withdraw a fund (or edit the exit of an already-withdrawn one). */
+async function openWithdrawModal(page, id) {
+    const p = profiles.find((x) => x.id === id);
+    if (!p) return;
+
+    withdrawId = id;
+
+    const closed = isClosedProfile(p);
+    const layer = modal(page, "withdraw");
+    const form = layer.querySelector("form");
+
+    layer.querySelector("[data-withdraw-title]").textContent = (closed ? "Edit exit · " : "Withdraw · ") + p.name;
+    layer.querySelector("[data-withdraw-switch]").hidden = closed;
+    form.switchNew.checked = true;
+
+    let snap = null;
+
+    try {
+        const cfg = await store.getProfileSettings(id);
+        const own = await store.getProfileEntries(id);
+        snap = fundStat(p, cfg, own, true);
+    } catch (_) {
+        /* prefill is best-effort */
+    }
+
+    form.date.value = closed && p.closedDate ? p.closedDate : todayStr();
+    form.amount.value =
+        closed && p.redeemedAmount != null
+            ? p.redeemedAmount
+            : snap
+            ? snap.marketValue.toFixed(2)
+            : "";
+
+    layer.querySelector("[data-withdraw-hint]").textContent = snap
+        ? `Latest tracked value: ${fmtK(snap.marketValue)} (as of ${shortDate(snap.endDate)}). Enter what actually reached your bank.`
+        : "Enter the amount that reached your bank.";
+
+    openModal(page, "withdraw");
+}
+
+async function saveWithdraw(page) {
+    const p = profiles.find((x) => x.id === withdrawId);
+    if (!p) return;
+
+    const form = modal(page, "withdraw").querySelector("form");
+    const date = form.date.value;
+    const amount = parseFloat(form.amount.value);
+
+    if (!date) return showError(page, "withdraw", "Pick the withdrawal date.");
+    if (date > todayStr()) return showError(page, "withdraw", "The withdrawal date can't be in the future.");
+    if (isNaN(amount) || amount < 0) return showError(page, "withdraw", "Enter the amount you received.");
+
+    try {
+        const cfg = await store.getProfileSettings(p.id);
+
+        if (cfg && cfg.startDate && date < cfg.startDate) {
+            return showError(page, "withdraw", `That is before this fund's start date (${cfg.startDate}).`);
+        }
+
+        const wasClosed = isClosedProfile(p);
+        const switchNew = !wasClosed && form.switchNew.checked;
+
+        await store.saveProfile({
+            ...p,
+            status: "closed",
+            closedDate: date,
+            redeemedAmount: +amount.toFixed(2)
+        });
+
+        profiles = await store.getProfiles();
+        profile = profiles.find((x) => profile && x.id === profile.id) || profiles.find((x) => x.id === p.id) || profile;
+        journey = null;
+        await loadProfileData();
+        closeModals(page);
+        render(page);
+        toast(page, wasClosed ? "Exit details updated ✓" : `"${p.name}" withdrawn — history kept ✓`);
+
+        if (switchNew) {
+            pendingSwitchFrom = p.id;
+            openProfileModal(page, null);
+        }
+    } catch (e) {
+        showError(page, "withdraw", "Couldn't save — " + errMsg(e));
+    }
+}
+
+function askReopen(page, id) {
+    const p = profiles.find((x) => x.id === id);
+    if (!p) return;
+
+    askConfirm(
+        page,
+        "Reopen this fund?",
+        `"${p.name}" will count in your active totals again and you can add entries and SIP allocations to it.`,
+        async () => {
+            const { status, closedDate, redeemedAmount, ...rest } = p;
+            await store.saveProfile(rest);
+            profiles = await store.getProfiles();
+            profile = profiles.find((x) => profile && x.id === profile.id) || profile;
+            journey = null;
+            await loadProfileData();
+            render(page);
+            toast(page, "Fund reopened ✓");
+        }
+    );
+}
+
 /* -- profiles -- */
 
 let profileEditId = null;
@@ -1876,7 +2237,12 @@ function openProfileModal(page, id) {
     const layer = modal(page, "profile");
     const p = id ? profiles.find((x) => x.id === id) : null;
 
-    layer.querySelector("[data-profile-title]").textContent = p ? "Rename SIP" : "New SIP";
+    const from = !p && pendingSwitchFrom ? profiles.find((x) => x.id === pendingSwitchFrom) : null;
+    layer.querySelector("[data-profile-title]").textContent = p
+        ? "Rename SIP"
+        : from
+        ? "New fund · switching from " + from.name
+        : "New SIP";
     layer.querySelector("form").name.value = p ? p.name : "";
     updateMfPicker(page);
     hideMfSuggest(page);
@@ -1974,7 +2340,14 @@ async function saveProfileForm(page) {
             render(page);
             toast(page, "SIP renamed ✓");
         } else {
-            const pid = await store.saveProfile({ name });
+            const fromId = pendingSwitchFrom;
+            const pid = await store.saveProfile({ name, ...(fromId ? { switchedFromId: fromId } : {}) });
+            if (fromId) {
+                const old = (await store.getProfiles()).find((x) => x.id === fromId);
+                if (old) await store.saveProfile({ ...old, switchedToId: pid });
+            }
+            pendingSwitchFrom = null;
+            journey = null;
             profiles = await store.getProfiles();
             closeModals(page);
             await switchProfile(page, pid);
@@ -2160,7 +2533,18 @@ function attachEvents(page) {
 
         if (tabBtn) {
             tab = tabBtn.dataset.suTab;
+            if (tab === "journey") journey = null; // always recompute when opened
             render(page);
+            return;
+        }
+
+        const openFund = event.target.closest("[data-su-open]");
+
+        if (openFund) {
+            const fid = Number(openFund.dataset.suOpen);
+            tab = "overview";
+            if (profile && profile.id === fid) render(page);
+            else await switchProfile(page, fid);
             return;
         }
 
@@ -2185,6 +2569,8 @@ function attachEvents(page) {
 
         const id = el.dataset.id ? Number(el.dataset.id) : null;
 
+        if (isClosed() && WRITE_ACTIONS.has(el.dataset.action)) return toast(page, CLOSED_MSG);
+
         switch (el.dataset.action) {
             case "close-modal":
                 closeModals(page);
@@ -2201,6 +2587,13 @@ function attachEvents(page) {
                 break;
             case "reset-profile":
                 askResetProfile(page);
+                break;
+            case "withdraw-profile":
+            case "edit-exit":
+                await openWithdrawModal(page, id);
+                break;
+            case "reopen-profile":
+                askReopen(page, id);
                 break;
 
             case "sort-history":
@@ -2267,7 +2660,12 @@ function attachEvents(page) {
 
         event.preventDefault();
 
+        if (isClosed() && WRITE_FORMS.has(form.dataset.form)) return toast(page, CLOSED_MSG);
+
         switch (form.dataset.form) {
+            case "withdraw":
+                await saveWithdraw(page);
+                break;
             case "add-entry":
                 await addEntry(page, form);
                 break;
@@ -2316,6 +2714,7 @@ function attachEvents(page) {
         } else if (t.matches('[data-form="alloc"] [name="allocationDate"]')) {
             await autoFillAllocationNav(page, t.form);
         } else if (t.matches("[data-su-status]")) {
+            if (isClosed()) return toast(page, CLOSED_MSG);
             await setAllocationStatus(page, t.dataset.date, t.value);
         }
     });

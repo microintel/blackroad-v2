@@ -62,9 +62,6 @@ export async function FinancialIntelligence(data) {
         <div class="br-page-heading br-fi-heading">
             <div>
                 <h2 id="br-fi-title">Financial intelligence</h2>
-                <p>${isLive
-                    ? "Calculated from your income, loans, deposits and holdings, using your last full months."
-                    : "Not enough of your data yet, so these cards show an example household. Add at least one full month of income entries to see your own numbers."}</p>
             </div>
             <span class="br-badge ${isLive ? "br-badge-success" : "br-badge-info"}">${isLive ? "Your data" : "Example data"}</span>
         </div>

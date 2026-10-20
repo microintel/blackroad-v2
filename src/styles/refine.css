@@ -783,3 +783,26 @@
 /* Bigger profile picture on the Account page (cartoon avatar) */
 :root .br-account.br-page .ac-avatar { width: 88px; height: 88px; flex: none; overflow: hidden; padding: 0; background: transparent; border: 0; }
 :root .br-account.br-page .ac-avatar .br-avatar-img { display: block; width: 100%; height: 100%; }
+
+
+/* ---------- Account: tabbed sections ---------- */
+:root .br-account.br-page .ac-account-grid > .ac-identity {
+    display: block;
+    padding: 4px 0 20px;
+    border-bottom: 0;
+}
+
+:root .br-account.br-page .ac-account-tabs { margin-bottom: 4px; }
+
+:root .br-account.br-page .ac-tabpanel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+:root .br-account.br-page .ac-tabpanel[hidden] { display: none; }
+
+:root .br-account.br-page .ac-tabpanel > .br-card:last-child { border-bottom: 0; }
+
+/* Appearance tab: its card is not part of the settings grid */
+:root .br-account.br-page .ac-tabpanel > .br-appearance-card { margin-top: 0; padding-top: 24px; }

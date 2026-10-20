@@ -29,7 +29,7 @@ export const navigation = [
             { label: "Brokerage Report Readers", path: "/brokers", icon: "file-chart-column", color: "#6366F1" },
             { label: "Data Management", path: "/data", icon: "database", color: "#0EA5E9" },
             { label: "Notifications", path: "/notifications", icon: "bell", color: "#F43F5E" },
-            { label: "Account", path: "/account", icon: "user-round", color: "#A855F7" }
+            { label: "Settings", path: "/account", icon: "settings", color: "#A855F7" }
         ]
     }
 

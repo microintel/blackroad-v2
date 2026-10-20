@@ -385,3 +385,51 @@ button.su-mf-item:hover, button.su-mf-item:focus-visible { background: var(--br-
 .su-howto-steps li > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .su-howto-steps p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
 .su-howto-btn { align-self: flex-start; margin-top: 8px; text-decoration: none; }
+
+/* ---------- Withdrawn funds / All funds ---------- */
+.su-switch-group {
+    padding: 10px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text-secondary);
+}
+.su-switch-item small { font-weight: 400; }
+
+.br-modal .su-check { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 10px; margin-top: 14px; cursor: pointer; font-size: 14px; text-align: left; }
+.su-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent, var(--br-info)); }
+
+.su-link {
+    border: 0; padding: 0; background: none; color: var(--accent, var(--br-info));
+    font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+
+.su-closed { margin-bottom: 20px; }
+.su-closed-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
+.su-closed .su-facts-grid { margin: 0; }
+.su-closed-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.su-jr-list { display: flex; flex-direction: column; gap: 0; }
+.su-jr-item {
+    display: flex; flex-direction: column; gap: 14px; width: 100%; text-align: left; font: inherit;
+    color: inherit; cursor: pointer; padding: 16px; margin: 0;
+}
+.su-jr-item.is-closed { opacity: .92; }
+.su-jr-item:focus-visible { outline: 2px solid var(--accent, var(--br-info)); outline-offset: 2px; }
+@media (hover: hover) { .su-jr-item:hover { background: var(--su-tile, var(--br-surface-active)); } }
+.su-jr-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.su-jr-name { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.su-jr-name strong { overflow-wrap: anywhere; line-height: 1.3; }
+.su-jr-name small { font-size: 12px; }
+.su-jr-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.su-jr-grid dt { font-size: 12px; color: var(--text-secondary); }
+.su-jr-grid dd { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.su-jr-grid dd small { font-weight: 500; font-size: 12px; }
+.su-jr-bar { height: 6px; border-radius: 999px; background: var(--su-tile, var(--br-surface-active)); overflow: hidden; }
+.su-jr-bar i { display: block; height: 100%; border-radius: inherit; }
+.su-jr-bar i.is-up { background: var(--br-success, #16845b); }
+.su-jr-bar i.is-down { background: var(--br-danger, #d64545); }
+.su-jr-link {
+    display: flex; align-items: center; gap: 6px; padding: 8px 0 8px 18px; font-size: 12px;
+    color: var(--text-secondary); border-left: 2px dashed var(--border, currentColor); margin-left: 24px;
+}
+@media (max-width: 560px) {
+    .su-jr-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

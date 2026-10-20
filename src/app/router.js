@@ -77,7 +77,7 @@ const routes = {
     },
 
     "/account": {
-        title: "Account",
+        title: "Settings",
         module: "account"
     },
 

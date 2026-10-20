@@ -364,10 +364,18 @@ export async function getMutualFundSummary() {
     const { profiles, entries, settings } = await loadStepUp();
 
     const sips = [];
+    const closedSips = [];
 
     for (const profile of profiles) {
+        const isClosed = profile.status === "closed";
+
+        // A withdrawn fund stops at its exit date and is reported separately.
         const profileEntries = entries
-            .filter((entry) => entry.profileId === profile.id)
+            .filter(
+                (entry) =>
+                    entry.profileId === profile.id &&
+                    (!isClosed || !profile.closedDate || entry.date <= profile.closedDate)
+            )
             .sort((a, b) => a.date.localeCompare(b.date));
 
         if (!profileEntries.length) {
@@ -381,6 +389,25 @@ export async function getMutualFundSummary() {
             null;
 
         const invested = latest.investedAmount || 0;
+
+        if (isClosed) {
+            const received =
+                profile.redeemedAmount != null && profile.redeemedAmount !== ""
+                    ? Number(profile.redeemedAmount)
+                    : latest.portfolioValue || 0;
+
+            closedSips.push({
+                id: profile.id,
+                name: profileSettings?.linkedFund?.schemeName || profile.name || "SIP",
+                invested,
+                received,
+                pnl: received - invested,
+                closedDate: profile.closedDate || ""
+            });
+
+            continue;
+        }
+
         const currentValue = latest.portfolioValue || 0;
         const pnl = currentValue - invested;
 
@@ -414,7 +441,9 @@ export async function getMutualFundSummary() {
         currentValue,
         pnl,
         pnlPct: invested ? (pnl / invested) * 100 : 0,
-        sips
+        sips,
+        closedSips,
+        realizedPnl: closedSips.reduce((s, x) => s + x.pnl, 0)
     };
 }
 
@@ -423,7 +452,11 @@ export async function getMutualFundSeries() {
 
     const lists = profiles.map((profile) =>
         entries
-            .filter((entry) => entry.profileId === profile.id)
+            .filter(
+                (entry) =>
+                    entry.profileId === profile.id &&
+                    (profile.status !== "closed" || !profile.closedDate || entry.date <= profile.closedDate)
+            )
             .sort((a, b) => a.date.localeCompare(b.date))
     );
 
@@ -435,7 +468,7 @@ export async function getMutualFundSeries() {
         let invested = 0;
         let value = 0;
 
-        lists.forEach((list) => {
+        lists.forEach((list, i) => {
             let latest = null;
 
             for (const entry of list) {
@@ -447,8 +480,17 @@ export async function getMutualFundSeries() {
             }
 
             if (latest) {
+                const p = profiles[i];
+                const exited = p.status === "closed" && p.closedDate && date >= p.closedDate;
+
                 invested += latest.investedAmount || 0;
-                value += latest.portfolioValue || 0;
+
+                // After the exit date the profit is realised: it is locked at the
+                // amount actually received, so lifetime P/L stays continuous.
+                value +=
+                    exited && p.redeemedAmount != null && p.redeemedAmount !== ""
+                        ? Number(p.redeemedAmount)
+                        : latest.portfolioValue || 0;
             }
         });
 

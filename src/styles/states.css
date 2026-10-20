@@ -531,3 +531,103 @@ td > .br-empty-state.br-st-upgraded { min-height: 0; padding: var(--br-space-5) 
 @media (prefers-reduced-motion: reduce) {
     .br-swal-in-top, .br-swal-out-top, .br-swal-in-bottom, .br-swal-out-bottom { animation-duration: 0.01ms; }
 }
+
+
+/* =========================================================
+   TOAST v2: compact card, top of the screen, tone accent,
+   slower slide so it can be noticed, longer on-screen time.
+   ========================================================= */
+
+:root:root:root .swal2-container.swal2-top,
+:root:root:root .swal2-container.swal2-top-end {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+}
+
+@media (min-width: 769px) {
+    :root:root:root .swal2-container.swal2-top-end {
+        padding-top: calc(var(--br-header-height, 64px) + 12px);
+        padding-right: 20px;
+    }
+}
+
+:root:root:root .swal2-popup.br-swal-toast {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: max-content;
+    min-width: 260px;
+    max-width: min(92vw, 400px);
+    padding: 14px 18px 17px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--br-border, rgba(255, 255, 255, .1));
+    border-left: 4px solid var(--st-c);
+    background: var(--br-swal-bg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .28), 0 2px 6px rgba(0, 0, 0, .16);
+}
+
+:root[data-theme="light"] .swal2-popup.br-swal-toast {
+    box-shadow: 0 12px 32px rgba(20, 20, 20, .14), 0 2px 6px rgba(20, 20, 20, .08);
+}
+
+:root:root:root .br-swal-toast .swal2-title.br-swal-title {
+    margin: 0 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: .005em;
+}
+
+:root:root:root .br-swal-toast .swal2-timer-progress-bar-container {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    border-radius: 0;
+    background: transparent;
+}
+
+:root:root:root .br-swal-toast .swal2-timer-progress-bar {
+    background: var(--st-c);
+    opacity: .75;
+}
+
+@media (max-width: 768px) {
+    :root:root:root .swal2-popup.br-swal-toast {
+        width: calc(100vw - 24px);
+        max-width: 440px;
+        min-width: 0;
+        min-height: 58px;
+    }
+
+    :root:root:root .br-swal-toast .swal2-title.br-swal-title { font-size: 14.5px; }
+}
+
+@keyframes br-swal-in-right { from { opacity: 0; transform: translateX(36px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes br-swal-out-right { to { opacity: 0; transform: translateX(28px) scale(.98); } }
+
+.br-swal-in-top { animation: br-swal-in-top 560ms var(--st-ease) both; }
+.br-swal-out-top { animation: br-swal-out-top 320ms ease both; }
+.br-swal-in-right { animation: br-swal-in-right 560ms var(--st-ease) both; }
+.br-swal-out-right { animation: br-swal-out-right 320ms ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .br-swal-in-right, .br-swal-out-right { animation-duration: .01ms; }
+}
+
+/* Built-in fallback toast (only used if SweetAlert could not load): same place, same look */
+:root:root:root:root .br-toast {
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    bottom: auto;
+    left: 50%;
+    border-left: 4px solid var(--st-c);
+    transform: translate(-50%, -20px);
+}
+:root:root:root:root .br-toast.show { transform: translate(-50%, 0); }
+@media (max-width: 768px) {
+    :root:root:root:root .br-toast { bottom: auto; }
+}
+@keyframes br-st-toast {
+    from { transform: translate(-50%, -24px) scale(.96); opacity: 0; }
+    to { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}

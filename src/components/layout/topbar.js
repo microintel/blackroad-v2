@@ -113,7 +113,7 @@ export function Topbar(title) {
                         aria-haspopup="menu"
                         aria-expanded="false"
                         aria-label="Account menu"
-                        title="Account"
+                        title="Settings"
                     >
                         <span class="br-account-avatar" data-account-avatar>${icon("user-round", { size: 18 })}</span>
                     </button>
@@ -127,7 +127,7 @@ export function Topbar(title) {
                             </div>
                         </div>
                         <button type="button" role="menuitem" class="br-account-item" data-account-go>
-                            ${icon("user-round", { size: 18 })}<span>Account</span>
+                            ${icon("settings", { size: 18 })}<span>Settings</span>
                         </button>
                         <button type="button" role="menuitem" class="br-account-item br-account-item--phone" data-account-notify>
                             ${icon("bell", { size: 18 })}<span>Notifications</span>

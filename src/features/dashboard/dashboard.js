@@ -344,7 +344,7 @@ function firstName(user) {
     return name ? name.split(/\s+/)[0] : "";
 }
 
-/* "Data last updated" is the date set in Account (saved with the data). */
+/* "Data last updated" is the date set in Settings (saved with the data). */
 async function loadDataUpdated() {
     try {
         const store = await dataService.getIncomeStore();
@@ -611,7 +611,7 @@ export async function Dashboard() {
             <div data-pnl-chart>${buildPnlChart(data.series)}</div>
         </div>` : ""}
 
-        ${updatedText ? `<p class="br-dash-updated" title="Change this in Account">Data updated: ${escapeText(updatedText)}</p>` : ""}
+        ${updatedText ? `<p class="br-dash-updated" title="Change this in Settings">Data updated: ${escapeText(updatedText)}</p>` : ""}
     `;
 
     /* Open a section */

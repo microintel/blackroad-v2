@@ -21,7 +21,6 @@ export function fiCard({
             <div class="br-card-heading">
                 <div>
                     <h3 id="${id}">${title}</h3>
-                    <p>${subtitle}</p>
                 </div>
                 <span class="br-fi-icon" aria-hidden="true">${icon(iconName, { size: 18 })}</span>
             </div>

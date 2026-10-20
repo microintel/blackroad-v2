@@ -55,7 +55,6 @@ function listView() {
                     ${logoHTML(b)}
                     <span class="bk-body">
                         <strong class="bk-name">${esc(b.name)}</strong>
-                        <span class="br-muted bk-note">${esc(b.note)}</span>
                     </span>
                     <span class="bk-cta">View reports ${icon("chevron-right", { size: 16 })}</span>
                 </button>`

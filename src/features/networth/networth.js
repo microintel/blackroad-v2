@@ -264,13 +264,11 @@ export async function NetWorth() {
             </div>
 
             <div data-chart></div>
-            <p class="br-field-help nw-note" data-note></p>
         </div>
     `;
 
     const summaryEl = page.querySelector("[data-summary]");
     const chartEl = page.querySelector("[data-chart]");
-    const noteEl = page.querySelector("[data-note]");
     const titleEl = page.querySelector("[data-title]");
     const yearEl = page.querySelector("[data-year]");
 
@@ -296,19 +294,12 @@ export async function NetWorth() {
         if (!summary) {
             summaryEl.innerHTML = "";
             chartEl.innerHTML = emptyState();
-            noteEl.textContent = "";
             return;
         }
 
         summaryEl.innerHTML = buildSummary(summary, state.view, state.year, today);
 
         chartEl.innerHTML = buildChart(series, chartEl.clientWidth || 640);
-
-        const hidden = series.filter((p) => !p.available).length;
-
-        noteEl.textContent =
-            (hidden ? `${hidden} earlier ${state.view === "yearly" ? "year" : "month"}${hidden > 1 ? "s" : ""} not shown: no dated records existed yet. ` : "") +
-            "Past stock values use the last traded price in your transactions; only the current period uses today’s prices.";
     };
 
     page.querySelectorAll("[data-view]").forEach((button) => {

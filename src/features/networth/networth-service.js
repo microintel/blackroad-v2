@@ -241,6 +241,12 @@ function mutualFundsAt(source, asOf) {
     (source.sipProfiles || []).forEach((profile) => {
         let latest = null;
 
+        // Withdrawn funds no longer hold money from their exit date onward.
+        if (profile.status === "closed" && profile.closedDate) {
+            const exit = dateOf(profile.closedDate);
+            if (exit && exit <= asOf) return;
+        }
+
         (source.sipEntries || []).forEach((entry) => {
             const d = dateOf(entry.date);
 

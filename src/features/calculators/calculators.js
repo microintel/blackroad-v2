@@ -225,7 +225,6 @@ function renderTab(page, animate) {
             <section class="br-card cl-inputs">
                 <div class="cl-inputs-head">
                     <h3>${tab.title}</h3>
-                    <p class="br-muted">${tab.text}</p>
                 </div>
                 ${tab.fields.map(fieldHTML).join("")}
             </section>
@@ -392,11 +391,7 @@ function renderGoal(box, v, animate) {
             ${chartHTML(r.yearly, width, animate)}
         </section>
 
-        ${breakdownCard(tableHTML(r.yearly, true))}
-
-        <p class="br-field-help cl-note">
-            Estimates only: real returns vary and are not guaranteed. SIPs are assumed at the start of each month, compounded monthly; money already invested grows once a year.
-        </p>`;
+        ${breakdownCard(tableHTML(r.yearly, true))}`;
 
     const from = animate ? 0 : lastTotal.goal ?? 0;
 
@@ -454,11 +449,7 @@ function renderSwp(box, v, animate) {
             <div class="br-table-wrap cl-table"><table class="br-table">
                 <thead><tr><th>Year</th><th class="cl-r">Withdrawn</th><th class="cl-r">Interest</th><th class="cl-r">Balance</th></tr></thead>
                 <tbody>${r.yearly.map((d) => `<tr><td>${d.year}</td><td class="cl-r">${inr(d.withdrawn)}</td><td class="cl-r">${inr(d.interest)}</td><td class="cl-r"><strong>${inr(d.balance)}</strong></td></tr>`).join("")}</tbody>
-            </table></div>`)}
-
-        <p class="br-field-help cl-note">
-            Estimates only: real returns vary and are not guaranteed. Withdrawals are taken at the start of each month and the rest earns returns compounded monthly.
-        </p>`;
+            </table></div>`)}`;
 
     if (r.depleted) {
         lastTotal.swp = 0;
@@ -579,13 +570,6 @@ function renderResultsNow(page, animate = false) {
                 ${tableHTML(r.yearly, currentTab === "stepup")}
             </details>
         </section>
-
-        <p class="br-field-help cl-note">
-            Estimates only: real returns vary and are not guaranteed.
-            ${currentTab === "lumpsum"
-                ? "Lumpsum growth is compounded once a year."
-                : "SIPs are assumed to be paid at the start of each month, with returns compounded monthly."}
-        </p>
     `;
 
     const from = animate ? 0 : lastTotal[currentTab] ?? 0;

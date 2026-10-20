@@ -4,6 +4,7 @@ import {
 } from "./stocks-service.js";
 import { startReportProgress } from "../../components/report-progress.js";
 import { stockLogoUrl } from "./stocks-live.js";
+import { brandLogoPNG, BRAND_LOGO_SRC } from "../../services/brand.js";
 
 /* Print / Save-as-PDF report (same approach as the old app):
    build a hidden #br-print-report, hand it to window.print().
@@ -22,7 +23,8 @@ export async function printStocksReport(ym, transactions, prices) {
         doneText: "Opening the print dialog…"
     });
     try {
-        buildReport(ym, transactions, prices);
+        const logo = await brandLogoPNG({ size: 160, tile: true });
+        buildReport(ym, transactions, prices, logo ? logo.dataUrl : BRAND_LOGO_SRC);
         await Promise.all([progress.ready(), waitForLogos()]);   // bar at 100% + logos loaded
     } catch (err) {
         console.error("Stocks report failed:", err);
@@ -34,7 +36,7 @@ export async function printStocksReport(ym, transactions, prices) {
     setTimeout(openPrint, 800);
 }
 
-function buildReport(ym, transactions, prices) {
+function buildReport(ym, transactions, prices, logoSrc) {
     const isAll = ym === "all";
     const s = isAll
         ? calculateAllTimeSummary(transactions, prices)
@@ -84,9 +86,12 @@ function buildReport(ym, transactions, prices) {
 
     host.innerHTML = `
         <div class="pr-header">
-            <div class="pr-brand">BlackRoad's Equity Report</div>
-            <div class="pr-title">${label}</div>
-            <div class="pr-sub">Generated ${generated}</div>
+            <img class="pr-logo-mark" src="${esc(logoSrc)}" alt="BlackRoad" data-pr-logo>
+            <div class="pr-header-text">
+                <div class="pr-brand">BlackRoad's Equity Report</div>
+                <div class="pr-title">${label}</div>
+                <div class="pr-sub">Generated ${generated}</div>
+            </div>
         </div>
         <div class="pr-grid">
             <div><span>Invested</span><b>${fmtMoney(s.invested, true)}</b></div>

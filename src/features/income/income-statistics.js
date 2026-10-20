@@ -349,14 +349,14 @@ function breakdownCard(title, sub, map, total, emptyText, palette = SERIES) {
     if (!rows.length || total <= 0) {
         return `
             <div class="br-card">
-                <div class="br-card-heading"><div><h3>${title}</h3><p class="br-muted">${sub}</p></div></div>
+                <div class="br-card-heading"><div><h3>${title}</h3></div></div>
                 <div class="br-empty-state"><p class="br-muted">${emptyText}</p></div>
             </div>`;
     }
     const max = rows[0][1].total || 1;
     return `
         <div class="br-card">
-            <div class="br-card-heading"><div><h3>${title}</h3><p class="br-muted">${sub}</p></div></div>
+            <div class="br-card-heading"><div><h3>${title}</h3></div></div>
             <div class="br-bars">
                 ${rows.map(([name, c], i) => {
                     const color = palette[i % palette.length];
@@ -589,10 +589,6 @@ export function renderIncomeStatistics(entries = []) {
                 <div class="br-card-heading">
                     <div>
                         <h3>Investment Activity</h3>
-                        <p class="br-muted">
-                            Summary of investment purchases,
-                            sales and realized gains or losses.
-                        </p>
                     </div>
                 </div>
 
@@ -641,9 +637,6 @@ export function renderIncomeStatistics(entries = []) {
                     <div class="br-card-heading">
                         <div>
                             <h3>Monthly Overview</h3>
-                            <p class="br-muted">
-                                Income and spending by month.
-                            </p>
                         </div>
                     </div>
 

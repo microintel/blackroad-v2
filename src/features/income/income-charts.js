@@ -134,7 +134,6 @@ function card(title, hint, slices, centerTitle, centerValue, emptyText, extra = 
             <div class="inc-pie-head">
                 <div>
                     <h4>${esc(title)}</h4>
-                    <p class="inc-pie-hint">${esc(hint)}</p>
                 </div>
                 ${sw}
             </div>
@@ -203,7 +202,7 @@ function barsSection(expense, invested) {
             <div class="inc-section-head">
                 <div>
                     <h3 id="inc-bar-title">Total invested vs total expenses</h3>
-                    <p>${esc(ratio) || "Money put to work compared with money spent."}</p>
+                    ${ratio ? `<p>${esc(ratio)}</p>` : ""}
                 </div>
             </div>
             <div class="inc-pie-card inc-bar-card" role="img" aria-label="Total invested versus total expenses">
@@ -236,7 +235,6 @@ export function renderLedgerCharts(entries) {
             <div class="inc-section-head">
                 <div>
                     <h3 id="inc-pie-title">Income, expenses and invested</h3>
-                    <p>Tap or hover a slice or a row to focus it.</p>
                 </div>
             </div>
             <div class="inc-pie-grid">

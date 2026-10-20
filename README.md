@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/icons/icon512_rounded.png" alt="BlackRoad logo" width="140" />
+<img src="blackroad.png" alt="BlackRoad logo" width="140" />
 
 # BlackRoad
 

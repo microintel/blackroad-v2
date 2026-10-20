@@ -41,7 +41,7 @@ export function AngelPnl() {
                     <p class="br-muted">${
                         loaded
                             ? `${n} financial year${n > 1 ? "s" : ""} loaded`
-                            : "Upload your Angel One P&amp;L file to see the report."
+                            : ""
                     }</p>
                 </div>
                 ${
@@ -59,7 +59,6 @@ export function AngelPnl() {
             <section class="br-card ap-drop ${loaded ? "is-compact" : ""}" data-ap-drop>
                 <span class="ap-drop-icon">${icon("upload", { size: 24 })}</span>
                 <h3>${loaded ? "Add another year" : "Upload Angel One P&amp;L file(s)"}</h3>
-                <p class="br-muted">Drop the broker P&amp;L export (.xlsx). Only the <b>Equity P&amp;L</b> sheet is read — any F&amp;O sheet in the same file is ignored. Add one file per financial year to get a combined summary.</p>
                 <button type="button" class="br-button br-button-primary" data-ap="pick" ${state.busy ? "disabled" : ""}>${state.busy ? "Reading…" : "Choose Excel file(s)"}</button>
                 <input type="file" data-ap-file multiple hidden
                     accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">

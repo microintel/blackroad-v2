@@ -46,6 +46,7 @@ export function startReportProgress({
     root.setAttribute("aria-label", title);
     root.innerHTML = `
         <div class="br-rp-card">
+            <span class="br-logo br-rp-logo" aria-hidden="true"></span>
             <div class="br-rp-ring" aria-hidden="true">
                 <svg viewBox="0 0 120 120">
                     <circle class="br-rp-track" cx="60" cy="60" r="${RING_R}"/>
@@ -146,7 +147,7 @@ export function startReportProgress({
         },
 
         /* Success state, then auto-close. */
-        complete(text = doneText, { autoClose = 1500 } = {}) {
+        complete(text = doneText, { autoClose = 2400 } = {}) {
             stopped = true;
             cancelAnimationFrame(raf);
             paint(100);

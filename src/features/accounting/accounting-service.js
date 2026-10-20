@@ -10,6 +10,7 @@ import { isUSD, usd } from "../../services/currency.js";
 import { dataService } from "../../data/data-service.js";
 import { loadLogoDataURL } from "../../services/bank-logos.js";
 import { iconSvg } from "../../components/icons.js";
+import { brandLogoPNG } from "../../services/brand.js";
 
 import {
     getMutualFundSummary,
@@ -237,6 +238,9 @@ export async function exportPDF(result, extras = {}) {
 
     const userName = String(extras.userName || "").trim();
 
+    /* BlackRoad logo for the header band (null if it cannot be read: no logo is drawn). */
+    const brandLogo = await brandLogoPNG({ size: 256, tile: false });
+
     const now = new Date();
     const dateText = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     const timeText = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
@@ -278,15 +282,25 @@ export async function exportPDF(result, extras = {}) {
     fill(GOLD);
     doc.rect(0, 38, PAGE_W, 1.4, "F");
 
+    /* logo at the left of the band; the title moves right to make room */
+    let HX = L;
+    if (brandLogo) {
+        const lh = 24;
+        const lw = lh * (brandLogo.width / brandLogo.height);
+        doc.addImage(brandLogo.dataUrl, "PNG", L, 7, lw, lh);
+        HX = L + lw + 5;
+    }
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(23);
     doc.setTextColor(255, 255, 255);
-    doc.text("BlackRoad Accounting", L, 19);
+    doc.text("BlackRoad Accounting", HX, 19);
+    const titleW = doc.getTextWidth("BlackRoad Accounting");
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
     doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
-    doc.text("NET WORTH STATEMENT", L, 27);
+    doc.text("NET WORTH STATEMENT", HX, 27);
 
     if (userName) {
         doc.setFont("helvetica", "bold");
@@ -296,7 +310,7 @@ export async function exportPDF(result, extras = {}) {
 
         doc.setFontSize(12);
         doc.setTextColor(255, 255, 255);
-        doc.text(fit(userName, 72), R, 19, { align: "right" });
+        doc.text(fit(userName, Math.max(40, Math.min(72, R - HX - titleW - 6))), R, 19, { align: "right" });
     }
 
     doc.setFont("helvetica", "normal");

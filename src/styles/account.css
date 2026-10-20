@@ -1,0 +1,304 @@
+/* =========================================================
+   SETTINGS  (the old Account page)
+   A compact, phone-shaped column that stays narrow on desktop:
+   profile hero, segmented tabs, and soft grouped cards.
+   Colours come from theme variables, so every theme works.
+   Loaded after refine.css.
+   ========================================================= */
+
+.br-account {
+    --acx-w: 430px;
+    --acx-card: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    --acx-card-strong: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    --acx-tint: color-mix(in srgb, var(--accent) 16%, transparent);
+    --acx-r: 16px;
+}
+
+:root .br-account .acx {
+    max-width: var(--acx-w);
+    margin: 0 auto;
+    padding: 4px 0 40px;
+}
+
+:root .br-account .acx-narrow { max-width: var(--acx-w); padding-top: 4px; }
+
+/* ---------- page title ---------- */
+
+:root .br-account.br-page .acx-heading {
+    max-width: var(--acx-w);
+    margin: 0 auto 14px;
+}
+
+:root .br-account.br-page .acx-heading h2 {
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -.02em;
+}
+
+/* ---------- profile hero ---------- */
+
+.acx-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--acx-r);
+    background:
+        radial-gradient(120% 140% at 0% 0%, var(--acx-tint), transparent 60%),
+        var(--acx-card);
+    overflow: hidden;
+}
+
+:root:root .br-account.br-page .acx-avatar {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px var(--acx-tint);
+    background: var(--hover-background);
+    overflow: hidden;
+}
+
+.acx-who { flex: 1 1 auto; min-width: 0; }
+
+.acx-who h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -.01em;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.acx-who p {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.acx-plan {
+    flex: none;
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--acx-tint);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.acx-title { padding: 4px 0 18px; text-align: center; }
+.acx-title h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; color: var(--text-primary); }
+.acx-title p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); }
+
+/* ---------- segmented tabs ---------- */
+
+:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat {
+    display: flex;
+    gap: 2px;
+    width: 100%;
+    margin: 0 0 14px;
+    padding: 4px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--acx-card);
+    box-shadow: inset 0 0 0 1px var(--border);
+}
+
+:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab {
+    flex: 1 1 auto;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab:hover { color: var(--text-primary); background: transparent; }
+
+:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab.active {
+    color: var(--text-primary);
+    font-weight: 600;
+    background: var(--acx-card-strong);
+}
+
+/* the sliding block behind the active tab */
+:root .br-account .acx-tabs.br-income-tabs.br-tabs-ink-on > .br-tab-ink {
+    background: var(--acx-card-strong);
+    box-shadow: inset 0 0 0 1px var(--border);
+    border-radius: 9px;
+}
+
+:root .br-account .acx-tabs.br-income-tabs.br-tabs-ink-on[data-ink-ready] > .br-income-tab.active { background: transparent; }
+
+/* ---------- panels: each form / row becomes a soft card ---------- */
+
+.acx-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    animation: acx-fade .16s ease-out both;
+}
+
+.acx-panel[hidden] { display: none; }
+
+@keyframes acx-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.acx-panel > form,
+.acx-panel > .acx-row,
+.acx-panel > .acx-session,
+.acx-panel > [data-avatar-mount],
+.acx-panel > [data-appearance-mount] {
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--acx-r);
+    background: var(--acx-card);
+}
+
+.acx .ac-stack { gap: 14px; }
+.acx .ac-stack > label > span { font-size: 12.5px; font-weight: 500; color: var(--text-secondary); }
+
+.acx-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.acx-actions .br-button { flex: 1 1 0; }
+.acx .ac-stack > .br-button { align-self: stretch; }
+
+:root .br-account.br-page .acx .br-input {
+    min-height: 40px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+:root .br-account.br-page .acx .br-button {
+    min-height: 40px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+/* section inside a panel (Data last updated, Session) */
+.acx-section { margin: 0; padding: 0; border: 0; }
+.acx-panel > form.acx-section { padding: 16px; border: 1px solid var(--border); }
+.acx-section h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.acx-section p { margin: 2px 0 0; font-size: 12.5px; color: var(--text-secondary); }
+
+/* read-only facts */
+.acx-meta { display: grid; gap: 0; margin: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.acx-meta > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 12px; font-size: 13.5px; }
+.acx-meta > div + div { border-top: 1px solid var(--border); }
+.acx-meta dt { color: var(--text-secondary); }
+.acx-meta dd { margin: 0; color: var(--text-primary); text-align: right; overflow-wrap: anywhere; }
+
+/* log out row */
+.acx-session { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.acx-session .br-button { flex: none; }
+
+/* settings row (plan) */
+.acx-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.acx-row b { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.acx-row p { margin: 3px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); }
+
+/* text link button */
+.acx-alt { margin: 18px 0 0; font-size: 13px; color: var(--text-secondary); text-align: center; }
+.acx-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+}
+.acx-link:hover { text-decoration: underline; }
+
+/* guest state: the single button fills the column */
+.acx-narrow > .br-button { width: 100%; }
+
+/* ---------- avatar tab ---------- */
+
+.acx-av-top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+:root .br-account .acx .ac-av-preview { width: 84px; height: 84px; margin: 0; flex: none; }
+
+.acx-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.acx-chip {
+    min-height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+}
+
+.acx-chip:hover { color: var(--text-primary); border-color: var(--border-strong, var(--border)); }
+.acx-chip.is-on { color: var(--text-primary); border-color: var(--accent); background: var(--acx-tint); }
+.acx-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.acx-drawer { padding: 4px 0; }
+.acx .ac-av-styles, .acx .ac-av-looks { max-height: 280px; }
+.acx-drawer[hidden] { display: none; }
+.acx-drawer.ac-stack { display: flex; }
+.acx-drawer.ac-stack[hidden] { display: none; }
+
+/* ---------- appearance tab: the old card, flattened ---------- */
+
+:root:root .br-account .acx-appearance,
+:root:root .br-account .acx-appearance-out {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+
+:root .br-account .acx-appearance > .br-card-heading { display: none; }
+:root .br-account .acx-appearance .lk-row { margin-bottom: 16px; }
+
+/* Appearance shown on its own (signed out / guest) becomes a card too */
+:root:root .br-account .acx-appearance-out {
+    max-width: var(--acx-w);
+    margin: 14px auto 0 !important;
+    padding: 16px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--acx-r) !important;
+    background: var(--acx-card) !important;
+}
+
+/* ---------- phone ---------- */
+
+@media (max-width: 640px) {
+    :root .br-account .acx { padding-bottom: 28px; }
+    .acx-head { padding: 14px; gap: 12px; }
+    .acx-who h2 { font-size: 16px; }
+    .acx-session, .acx-row { gap: 12px; }
+    .acx .br-input { font-size: 16px; }            /* no iOS zoom on focus */
+    :root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab { padding: 0 8px; font-size: 12.5px; min-height: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .acx-panel { animation: none; }
+    .acx-chip { transition: none; }
+}

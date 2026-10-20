@@ -25,7 +25,7 @@ const PAGE = {
     stocks: GO("Open Stocks", "/stocks"),
     deposits: GO("Open Fixed Deposits", "/deposits"),
     income: GO("Open Income Statement", "/income"),
-    account: GO("Open Account", "/account"),
+    account: GO("Open Settings", "/account"),
     accounting: GO("Open Accounting", "/accounting")
 };
 

@@ -220,19 +220,25 @@ function fireSwal(text, tone) {
     lastFire = { key, at: now };
 
     const phone = isPhone();
-    const top = phone;                         /* top on phones: clear of the bottom nav and the thumb */
+
+    /* Top of the screen everywhere: top-centre on phones, top-right on larger screens. */
+    const inCls = phone ? "br-swal-in-top" : "br-swal-in-right";
+    const outCls = phone ? "br-swal-out-top" : "br-swal-out-right";
+
+    /* Stay long enough to actually read: base time + time per character (errors stay longer). */
+    const readMs = Math.min(9000, Math.max(3600, 2400 + text.length * 65)) + (tone === "error" ? 1800 : 0);
 
     Swal.fire({
         toast: true,
-        position: top ? "top" : "bottom",
+        position: phone ? "top" : "top-end",
         icon: tone,
         title: text,
         showConfirmButton: false,
         showCloseButton: false,
-        timer: tone === "error" ? 4500 : 2600,
+        timer: readMs,
         timerProgressBar: true,
-        showClass: { popup: top ? "br-swal-in-top" : "br-swal-in-bottom" },
-        hideClass: { popup: top ? "br-swal-out-top" : "br-swal-out-bottom" },
+        showClass: { popup: inCls },
+        hideClass: { popup: outCls },
         customClass: { popup: "br-swal-toast br-swal-" + tone, title: "br-swal-title", timerProgressBar: "br-swal-bar" },
         didOpen: (popup) => {
             popup.addEventListener("mouseenter", Swal.stopTimer);
