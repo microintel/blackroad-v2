@@ -12,8 +12,9 @@ Angel One Profit & Loss reader (Brokerage Report Readers) also uses these, optio
   jspdf.plugin.autotable.min.js  from https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js
   (jspdf.umd.min.js is shared with the other PDF exports)
 
-Toast messages use SweetAlert2 (optional local copy for offline use):
+Toast messages use Notyf (optional local copies for offline use):
 
-  sweetalert2.all.min.js         from https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js
+  notyf.min.js    from https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js
+  notyf.min.css   from https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css
 
-The .all.min.js build already contains its own CSS. Without it (and without internet) the app falls back to its built-in toast.
+Without them (and without internet) the app falls back to its built-in toast.

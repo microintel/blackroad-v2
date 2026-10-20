@@ -416,206 +416,7 @@ td > .br-empty-state.br-st-upgraded { min-height: 0; padding: var(--br-space-5) 
     .br-net { transition: none; }
 }
 
-/* =========================================================
-   SWEETALERT2 TOASTS
-   states.js shows every app toast through SweetAlert2 (top of the
-   screen on phones, bottom on larger screens). The built-in toast
-   above stays as the fallback if the library could not load.
-   ========================================================= */
-
-.br-toast.br-st-swal {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    animation: none !important;
-}
-
-:root:root .swal2-container { z-index: 3000; }
-:root:root .swal2-container.swal2-top { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
-:root:root .swal2-container.swal2-bottom { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
-
-:root:root .swal2-popup.br-swal-toast {
-    --br-swal-bg: var(--br-surface-hover, #1c1c1c);
-    --st-c: var(--st-info);
-    --swal2-background: var(--br-swal-bg);
-    --swal2-color: var(--br-text);
-    box-sizing: border-box;
-    width: max-content;
-    min-width: 0;
-    max-width: min(92vw, 440px);
-    padding: 12px 16px 14px 12px;
-    border-radius: 16px;
-    border: 1px solid color-mix(in srgb, var(--st-c) 40%, var(--br-border, transparent));
-    background: var(--br-swal-bg);
-    color: var(--br-text);
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
-    font-family: var(--br-font, inherit);
-    cursor: pointer;
-    touch-action: pan-x;
-}
-
-:root:root .swal2-popup.br-swal-success { --st-c: var(--st-success); }
-:root:root .swal2-popup.br-swal-error { --st-c: var(--st-danger); }
-:root:root .swal2-popup.br-swal-warning { --st-c: var(--st-warning); }
-:root:root .swal2-popup.br-swal-info { --st-c: var(--st-info); }
-
-:root[data-theme="light"] .swal2-popup.br-swal-toast { box-shadow: 0 14px 36px rgba(20, 20, 20, 0.16); }
-
-:root:root .br-swal-toast .swal2-title.br-swal-title {
-    margin: 0 0 0 10px;
-    padding: 0;
-    font-size: var(--br-font-size-md, 14px);
-    font-weight: 550;
-    line-height: 1.4;
-    color: var(--br-text);
-    text-align: left;
-    overflow-wrap: anywhere;
-}
-
-/* icon: keep SweetAlert's own animated icons, tinted by tone */
-:root:root .br-swal-toast .swal2-icon {
-    flex: none;
-    width: 28px;
-    height: 28px;
-    min-width: 0;
-    margin: 0;
-    border-color: var(--st-c);
-    color: var(--st-c);
-}
-
-:root:root .br-swal-toast .swal2-icon .swal2-icon-content { font-size: 1.15rem; }
-:root:root .br-swal-toast .swal2-icon.swal2-success .swal2-success-ring { border-color: color-mix(in srgb, var(--st-c) 30%, transparent); }
-:root:root .br-swal-toast .swal2-icon.swal2-success [class^="swal2-success-line"] { background-color: var(--st-c); }
-:root:root .br-swal-toast .swal2-icon.swal2-success [class^="swal2-success-circular-line"],
-:root:root .br-swal-toast .swal2-icon.swal2-success .swal2-success-fix { background: var(--br-swal-bg); }
-:root:root .br-swal-toast .swal2-icon.swal2-error [class^="swal2-x-mark-line"] { background-color: var(--st-c); }
-
-/* timer bar */
-:root:root .br-swal-toast .swal2-timer-progress-bar-container {
-    left: 14px;
-    right: 14px;
-    bottom: 5px;
-    width: auto;
-    height: 3px;
-    border-radius: 3px;
-    overflow: hidden;
-    background: color-mix(in srgb, var(--st-c) 16%, transparent);
-}
-
-:root:root .br-swal-toast .swal2-timer-progress-bar { background: var(--st-c); }
-
-/* slide in / out */
-@keyframes br-swal-in-top { from { opacity: 0; transform: translateY(-26px) scale(0.97); } to { opacity: 1; transform: none; } }
-@keyframes br-swal-out-top { to { opacity: 0; transform: translateY(-20px) scale(0.97); } }
-@keyframes br-swal-in-bottom { from { opacity: 0; transform: translateY(26px) scale(0.97); } to { opacity: 1; transform: none; } }
-@keyframes br-swal-out-bottom { to { opacity: 0; transform: translateY(20px) scale(0.97); } }
-
-.br-swal-in-top { animation: br-swal-in-top 380ms var(--st-ease) both; }
-.br-swal-out-top { animation: br-swal-out-top 220ms ease both; }
-.br-swal-in-bottom { animation: br-swal-in-bottom 380ms var(--st-ease) both; }
-.br-swal-out-bottom { animation: br-swal-out-bottom 220ms ease both; }
-
-/* phones: a full-width, thumb-sized banner you can flick away */
-@media (max-width: 768px) {
-    :root:root .swal2-popup.br-swal-toast {
-        width: calc(100vw - 24px);
-        max-width: 480px;
-        min-height: 56px;
-        padding: 12px 14px 15px 12px;
-        align-items: center;
-    }
-
-    :root:root .br-swal-toast .swal2-title.br-swal-title { font-size: 15px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .br-swal-in-top, .br-swal-out-top, .br-swal-in-bottom, .br-swal-out-bottom { animation-duration: 0.01ms; }
-}
-
-
-/* =========================================================
-   TOAST v2: compact card, top of the screen, tone accent,
-   slower slide so it can be noticed, longer on-screen time.
-   ========================================================= */
-
-:root:root:root .swal2-container.swal2-top,
-:root:root:root .swal2-container.swal2-top-end {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
-}
-
-@media (min-width: 769px) {
-    :root:root:root .swal2-container.swal2-top-end {
-        padding-top: calc(var(--br-header-height, 64px) + 12px);
-        padding-right: 20px;
-    }
-}
-
-:root:root:root .swal2-popup.br-swal-toast {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    width: max-content;
-    min-width: 260px;
-    max-width: min(92vw, 400px);
-    padding: 14px 18px 17px 14px;
-    border-radius: 14px;
-    border: 1px solid var(--br-border, rgba(255, 255, 255, .1));
-    border-left: 4px solid var(--st-c);
-    background: var(--br-swal-bg);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, .28), 0 2px 6px rgba(0, 0, 0, .16);
-}
-
-:root[data-theme="light"] .swal2-popup.br-swal-toast {
-    box-shadow: 0 12px 32px rgba(20, 20, 20, .14), 0 2px 6px rgba(20, 20, 20, .08);
-}
-
-:root:root:root .br-swal-toast .swal2-title.br-swal-title {
-    margin: 0 0 0 12px;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.45;
-    letter-spacing: .005em;
-}
-
-:root:root:root .br-swal-toast .swal2-timer-progress-bar-container {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 3px;
-    border-radius: 0;
-    background: transparent;
-}
-
-:root:root:root .br-swal-toast .swal2-timer-progress-bar {
-    background: var(--st-c);
-    opacity: .75;
-}
-
-@media (max-width: 768px) {
-    :root:root:root .swal2-popup.br-swal-toast {
-        width: calc(100vw - 24px);
-        max-width: 440px;
-        min-width: 0;
-        min-height: 58px;
-    }
-
-    :root:root:root .br-swal-toast .swal2-title.br-swal-title { font-size: 14.5px; }
-}
-
-@keyframes br-swal-in-right { from { opacity: 0; transform: translateX(36px) scale(.98); } to { opacity: 1; transform: none; } }
-@keyframes br-swal-out-right { to { opacity: 0; transform: translateX(28px) scale(.98); } }
-
-.br-swal-in-top { animation: br-swal-in-top 560ms var(--st-ease) both; }
-.br-swal-out-top { animation: br-swal-out-top 320ms ease both; }
-.br-swal-in-right { animation: br-swal-in-right 560ms var(--st-ease) both; }
-.br-swal-out-right { animation: br-swal-out-right 320ms ease both; }
-
-@media (prefers-reduced-motion: reduce) {
-    .br-swal-in-right, .br-swal-out-right { animation-duration: .01ms; }
-}
-
-/* Built-in fallback toast (only used if SweetAlert could not load): same place, same look */
+/* Built-in fallback toast (only used if the toast library could not load): same place, same look */
 :root:root:root:root .br-toast {
     top: calc(env(safe-area-inset-top, 0px) + 12px);
     bottom: auto;
@@ -635,126 +436,7 @@ td > .br-empty-state.br-st-upgraded { min-height: 0; padding: var(--br-space-5) 
 /* An empty toast has nothing to say: never draw its icon (stops the info icon flashing on page load). */
 :root:root:root:root .br-toast:empty { display: none; }
 
-
-/* =========================================================
-   TOAST v3: one clean, quiet card.
-   Flat tinted icon badge, no side bar, no animated ring,
-   hairline timer along the bottom edge. Visual only: the
-   position, timing, swipe and tone logic are unchanged.
-   ========================================================= */
-
-:root:root:root:root .swal2-popup.br-swal-toast {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: max-content;
-    min-width: 0;
-    max-width: min(92vw, 380px);
-    min-height: 0;
-    margin: 0;
-    padding: 12px 16px 12px 12px;
-    border: 1px solid var(--br-border, var(--border));
-    border-left: 1px solid var(--br-border, var(--border));
-    border-radius: 12px;
-    background: var(--br-swal-bg);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
-    overflow: hidden;
-}
-
-:root[data-theme="light"] .swal2-popup.br-swal-toast { box-shadow: 0 8px 24px rgba(20, 20, 20, .12); }
-
-/* icon: a small flat badge; SweetAlert's animated parts are hidden */
-:root:root:root:root .br-swal-toast .swal2-icon {
-    position: relative;
-    flex: none;
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    margin: 0;
-    border: 0;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--st-c) 16%, transparent);
-    color: var(--st-c);
-    overflow: hidden;
-    animation: none;
-}
-
-:root:root:root:root .br-swal-toast .swal2-icon > * { display: none !important; }
-
-:root:root:root:root .br-swal-toast .swal2-icon::after { display: none !important; }
-
-:root:root:root:root .br-swal-toast .swal2-icon::before {
-    content: "";
-    display: block !important;
-    position: absolute;
-    inset: 4px;
-    width: auto;
-    height: auto;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    background: var(--st-c);
-    transform: none;
-    animation: none;
-    -webkit-mask: var(--st-ico) center / contain no-repeat;
-    mask: var(--st-ico) center / contain no-repeat;
-    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 11v6M12 7.5h.01'/%3E%3C/svg%3E");
-}
-
-:root:root:root:root .br-swal-toast .swal2-icon.swal2-success::before {
-    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E");
-}
-
-:root:root:root:root .br-swal-toast .swal2-icon.swal2-error::before {
-    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7l10 10M17 7 7 17'/%3E%3C/svg%3E");
-}
-
-:root:root:root:root .br-swal-toast .swal2-icon.swal2-warning::before {
-    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5v7M12 17.5h.01'/%3E%3C/svg%3E");
-}
-
-/* text */
-:root:root:root:root .br-swal-toast .swal2-title.br-swal-title {
-    flex: 1 1 auto;
-    margin: 0;
-    padding: 0;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.4;
-    letter-spacing: 0;
-    color: var(--br-text, var(--text-primary));
-    text-align: left;
-}
-
-/* timer: a hairline that runs along the bottom edge, clipped by the card */
-:root:root:root:root .br-swal-toast .swal2-timer-progress-bar-container {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    height: 2px;
-    border-radius: 0;
-    background: transparent;
-}
-
-:root:root:root:root .br-swal-toast .swal2-timer-progress-bar {
-    background: var(--st-c);
-    opacity: .6;
-}
-
-@media (max-width: 768px) {
-    :root:root:root:root .swal2-popup.br-swal-toast {
-        width: calc(100vw - 24px);
-        max-width: 420px;
-        min-height: 52px;
-        margin-inline: auto;
-    }
-
-    :root:root:root:root .br-swal-toast .swal2-title.br-swal-title { font-size: 14px; }
-}
-
-/* the built-in fallback toast (if SweetAlert can't load) matches */
+/* the built-in fallback toast (if the toast library can't load) matches */
 :root:root:root:root .br-toast {
     gap: 10px;
     padding: 11px 16px 11px 12px;
@@ -766,3 +448,125 @@ td > .br-empty-state.br-st-upgraded { min-height: 0; padding: var(--br-space-5) 
 }
 
 :root:root:root:root .br-toast::before { width: 20px; height: 20px; }
+
+/* =========================================================
+   NOTYF TOASTS
+   states.js shows every app toast through Notyf, top-centre on
+   phones and desktop alike (where the eye lands first). Each
+   state has its own solid colour: green / red / amber / blue.
+   The built-in toast above stays as the fallback if the library
+   could not load.
+   ========================================================= */
+
+.br-toast.br-st-ext {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    animation: none !important;
+}
+
+:root:root .notyf {
+    z-index: 3000;
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 14px 14px;
+    pointer-events: none;
+    align-items: center;
+}
+
+:root:root .notyf__toast.br-notyf {
+    --n-bg: #2563eb;
+    position: relative;
+    display: block;
+    width: max-content;
+    max-width: min(92vw, 440px);
+    min-width: min(92vw, 280px);
+    margin: 0 auto 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 14px;
+    background: var(--n-bg) !important;
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .32), 0 0 0 1px rgba(255, 255, 255, .12) inset;
+    overflow: hidden;
+    pointer-events: auto;
+    cursor: pointer;
+    animation: br-notyf-in 460ms var(--st-ease) both;
+}
+
+:root:root .notyf__toast.br-notyf.notyf__toast--disappear { animation: br-notyf-out 240ms ease both; }
+
+:root[data-theme="light"] .notyf__toast.br-notyf { box-shadow: 0 12px 28px rgba(20, 20, 20, .22); }
+
+.notyf__toast.br-notyf-success { --n-bg: #16a34a; --br-n-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E"); }
+.notyf__toast.br-notyf-error { --n-bg: #dc2626; --br-n-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7l10 10M17 7 7 17'/%3E%3C/svg%3E"); }
+.notyf__toast.br-notyf-warning { --n-bg: #d97706; --br-n-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5v7M12 17.5h.01'/%3E%3C/svg%3E"); }
+.notyf__toast.br-notyf-info { --n-bg: #2563eb; --br-n-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 11v6M12 7h.01'/%3E%3C/svg%3E"); }
+
+:root:root .br-notyf .notyf__wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px 14px 14px;
+}
+
+/* white glyph on a soft white disc */
+:root:root .br-notyf .notyf__wrapper::before {
+    content: "";
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--br-n-glyph) center / 15px no-repeat, rgba(255, 255, 255, .22);
+}
+
+:root:root .br-notyf .notyf__message {
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0;
+    color: #fff;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+:root:root .br-notyf .notyf__icon,
+:root:root .br-notyf .notyf__ripple,
+:root:root .br-notyf .notyf__dismiss { display: none; }
+
+/* timer: a white hairline along the bottom edge */
+.br-notyf::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, .6);
+    transform-origin: left center;
+    animation: br-notyf-bar var(--br-n-dur, 4s) linear forwards;
+}
+.br-notyf.is-paused::after { animation-play-state: paused; }
+
+@keyframes br-notyf-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes br-notyf-in {
+    0% { opacity: 0; transform: translateY(-28px) scale(.96); }
+    60% { opacity: 1; transform: translateY(4px) scale(1.01); }
+    100% { opacity: 1; transform: none; }
+}
+@keyframes br-notyf-out { to { opacity: 0; transform: translateY(-18px) scale(.97); } }
+
+@media (max-width: 768px) {
+    :root:root .notyf__toast.br-notyf {
+        width: calc(100vw - 28px);
+        max-width: 440px;
+        min-height: 54px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root:root .notyf__toast.br-notyf,
+    :root:root .notyf__toast.br-notyf.notyf__toast--disappear { animation-duration: .01ms; }
+    .br-notyf::after { animation: none; }
+}

@@ -142,49 +142,74 @@ function toneOf(text) {
     return "info";
 }
 
-/* ---------- SweetAlert2 toasts ----------
+/* ---------- Notyf toasts ----------
    Same loading pattern as the PDF / Excel libraries: a local copy in
    assets/vendor first (works offline), then a pinned CDN. If it cannot
-   load, the app's own toast (styled below in states.css) is used. */
+   load, the app's own toast (styled in states.css) is used. */
 
-const SWAL_VERSION = "11.14.5";
-const swalSources = [
-    new URL("../../assets/vendor/sweetalert2.all.min.js", import.meta.url).href,
-    `https://cdn.jsdelivr.net/npm/sweetalert2@${SWAL_VERSION}/dist/sweetalert2.all.min.js`,
-    `https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/${SWAL_VERSION}/sweetalert2.all.min.js`
+const NOTYF_VERSION = "3.10.0";
+const notyfJs = [
+    new URL("../../assets/vendor/notyf.min.js", import.meta.url).href,
+    `https://cdn.jsdelivr.net/npm/notyf@${NOTYF_VERSION}/notyf.min.js`,
+    `https://cdnjs.cloudflare.com/ajax/libs/notyf/${NOTYF_VERSION}/notyf.min.js`
+];
+const notyfCss = [
+    new URL("../../assets/vendor/notyf.min.css", import.meta.url).href,
+    `https://cdn.jsdelivr.net/npm/notyf@${NOTYF_VERSION}/notyf.min.css`,
+    `https://cdnjs.cloudflare.com/ajax/libs/notyf/${NOTYF_VERSION}/notyf.min.css`
 ];
 
-let swalPromise = null;
-
-function loadSwal() {
-    if (window.Swal) return Promise.resolve(window.Swal);
-    if (swalPromise) return swalPromise;
-
-    swalPromise = (async () => {
-        for (const src of swalSources) {
+function loadTag(make, sources, ready) {
+    return (async () => {
+        for (const src of sources) {
             try {
                 await new Promise((ok, fail) => {
-                    const el = document.createElement("script");
-                    el.src = src;
-                    el.async = true;
+                    const el = make(src);
                     el.onload = ok;
                     el.onerror = () => { el.remove(); fail(new Error("load")); };
                     document.head.appendChild(el);
                 });
-                if (window.Swal) return window.Swal;
+                if (ready()) return true;
             } catch (e) { /* try the next source */ }
         }
-        swalPromise = null;           /* allow a later retry */
+        return false;
+    })();
+}
+
+let notyfPromise = null;
+
+function loadNotyf() {
+    if (window.Notyf) return Promise.resolve(window.Notyf);
+    if (notyfPromise) return notyfPromise;
+
+    notyfPromise = (async () => {
+        const [js] = await Promise.all([
+            loadTag((src) => {
+                const el = document.createElement("script");
+                el.src = src;
+                el.async = true;
+                return el;
+            }, notyfJs, () => !!window.Notyf),
+            loadTag((href) => {
+                const el = document.createElement("link");
+                el.rel = "stylesheet";
+                el.href = href;
+                return el;
+            }, notyfCss, () => true)
+        ]);
+        if (js && window.Notyf) return window.Notyf;
+        notyfPromise = null;           /* allow a later retry */
         return null;
     })();
 
-    return swalPromise;
+    return notyfPromise;
 }
 
 const isPhone = () => window.matchMedia("(max-width: 768px)").matches;
 const cleanText = (t) => String(t || "").replace(/\s*[✓✔]\s*$/u, "").replace(/\s+/g, " ").trim();
+const escapeHtml = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-/* Let a finger flick the toast away (up on phones, down on desktop's bottom toast). */
+/* Let a finger flick the toast away (up on phones). */
 function enableSwipe(popup, close, dir) {
     let y0 = null;
     popup.addEventListener("touchstart", (e) => { y0 = e.touches[0].clientY; }, { passive: true });
@@ -193,6 +218,7 @@ function enableSwipe(popup, close, dir) {
         const dy = (e.touches[0].clientY - y0) * dir;      /* dir -1 = up */
         if (dy < 0) return;
         popup.style.transition = "none";
+        popup.style.animation = "none";
         popup.style.transform = `translateY(${dy * dir}px)`;
         popup.style.opacity = String(Math.max(0.3, 1 - dy / 120));
     }, { passive: true });
@@ -206,12 +232,29 @@ function enableSwipe(popup, close, dir) {
     }, { passive: true });
 }
 
-/* Show one SweetAlert toast. Returns false if the library is not ready. */
-let lastFire = { key: "", at: 0 };
+/* One Notyf instance per screen position (top-centre on every screen). */
+const notyfs = {};
+const TONES = ["success", "error", "warning", "info"];
 
-function fireSwal(text, tone) {
-    const Swal = window.Swal;
-    if (!Swal || !text) return false;
+function getNotyf(phone) {
+    const key = phone ? "phone" : "wide";
+    if (notyfs[key]) return notyfs[key];
+    notyfs[key] = new window.Notyf({
+        duration: 0,                       /* timing is handled below so hover can pause it */
+        ripple: false,
+        dismissable: false,
+        position: { x: "center", y: "top" },
+        types: TONES.map((t) => ({ type: t, className: "br-notyf br-notyf-" + t, background: "transparent", icon: false }))
+    });
+    return notyfs[key];
+}
+
+/* Show one Notyf toast. Returns false if the library is not ready. */
+let lastFire = { key: "", at: 0 };
+let toastSeq = 0;
+
+function fireToast(text, tone) {
+    if (!window.Notyf || !text) return false;
 
     /* the class change and the text change can both report the same toast */
     const key = tone + "|" + text;
@@ -220,33 +263,35 @@ function fireSwal(text, tone) {
     lastFire = { key, at: now };
 
     const phone = isPhone();
-
-    /* Top of the screen everywhere: top-centre on phones, top-right on larger screens. */
-    const inCls = phone ? "br-swal-in-top" : "br-swal-in-right";
-    const outCls = phone ? "br-swal-out-top" : "br-swal-out-right";
+    const notyf = getNotyf(phone);
+    const type = TONES.includes(tone) ? tone : "info";
+    const id = "brt" + (++toastSeq);
 
     /* Stay long enough to actually read: base time + time per character (errors stay longer). */
     const readMs = Math.min(9000, Math.max(3600, 2400 + text.length * 65)) + (tone === "error" ? 1800 : 0);
 
-    Swal.fire({
-        toast: true,
-        position: phone ? "top" : "top-end",
-        icon: tone,
-        title: text,
-        showConfirmButton: false,
-        showCloseButton: false,
-        timer: readMs,
-        timerProgressBar: true,
-        showClass: { popup: inCls },
-        hideClass: { popup: outCls },
-        customClass: { popup: "br-swal-toast br-swal-" + tone, title: "br-swal-title", timerProgressBar: "br-swal-bar" },
-        didOpen: (popup) => {
-            popup.addEventListener("mouseenter", Swal.stopTimer);
-            popup.addEventListener("mouseleave", Swal.resumeTimer);
-            popup.addEventListener("click", () => Swal.close());
-            if (phone) enableSwipe(popup, () => Swal.close(), -1);
-        }
-    });
+    const note = notyf.open({ type, message: `<span data-brt="${id}">${escapeHtml(text)}</span>` });
+
+    let closed = false;
+    const close = () => { if (closed) return; closed = true; clearTimeout(timer); notyf.dismiss(note); };
+
+    /* auto-close timer that hover / touch can pause */
+    let left = readMs;
+    let startedAt = Date.now();
+    let timer = setTimeout(close, left);
+    const pause = () => { clearTimeout(timer); left -= Date.now() - startedAt; node?.classList.add("is-paused"); };
+    const resume = () => { if (closed) return; startedAt = Date.now(); timer = setTimeout(close, Math.max(600, left)); node?.classList.remove("is-paused"); };
+
+    const mark = document.querySelector(`[data-brt="${id}"]`);
+    const node = mark ? mark.closest(".notyf__toast") : null;
+    if (node) {
+        node.style.setProperty("--br-n-dur", readMs + "ms");
+        node.setAttribute("role", tone === "error" ? "alert" : "status");
+        node.addEventListener("mouseenter", pause);
+        node.addEventListener("mouseleave", resume);
+        node.addEventListener("click", close);
+        if (phone) enableSwipe(node, close, -1);
+    }
     return true;
 }
 
@@ -264,9 +309,9 @@ function tuneToast(el) {
     setTone(el);
 
     const show = () => {
-        const ok = fireSwal(cleanText(el.textContent), el.dataset.tone);
-        /* hide the built-in toast only when SweetAlert really took over */
-        el.classList.toggle("br-st-swal", ok);
+        const ok = fireToast(cleanText(el.textContent), el.dataset.tone);
+        /* hide the built-in toast only when the library really took over */
+        el.classList.toggle("br-st-ext", ok);
         return ok;
     };
 
@@ -276,21 +321,21 @@ function tuneToast(el) {
         new MutationObserver(() => {
             if (!el.classList.contains("show")) return;
             setTone(el);
-            if (window.Swal) show();
+            if (window.Notyf) show();
         }).observe(el, { childList: true, characterData: true, subtree: true });
     }
 
-    if (window.Swal) {
+    if (window.Notyf) {
         show();
         return;
     }
 
     /* Not loaded yet: the built-in toast shows now; load the library for next time. */
-    el.classList.remove("br-st-swal");
+    el.classList.remove("br-st-ext");
     el.classList.remove("br-st-pop");
     void el.offsetWidth;
     el.classList.add("br-st-pop");
-    loadSwal();
+    loadNotyf();
 }
 
 /* ---------- Offline / back online ---------- */
@@ -359,8 +404,8 @@ export function initStates() {
         }
     });
 
-    /* Warm SweetAlert in the background so the first toast already uses it. */
-    (window.requestIdleCallback || ((f) => setTimeout(f, 1200)))(() => loadSwal());
+    /* Warm Notyf in the background so the first toast already uses it. */
+    (window.requestIdleCallback || ((f) => setTimeout(f, 1200)))(() => loadNotyf());
 
     window.addEventListener("offline", () => netBanner(false));
     window.addEventListener("online", () => netBanner(true));
