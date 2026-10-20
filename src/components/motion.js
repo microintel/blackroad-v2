@@ -87,6 +87,7 @@ function staggerTargets(page) {
     const out = [];
 
     for (const el of page.children) {
+        if (el.classList.contains("br-toast")) continue;   /* the toast is not page content */
         if (!isShown(el)) continue;
 
         if (el.matches("[data-income-view-container], [data-stocks-view], .inc-view")) {
@@ -154,7 +155,9 @@ const TAB_ATTRS = [
     "data-su-tab",
     "data-ll-tab",
     "data-calc-tab",
-    "data-fi-tab"
+    "data-fi-tab",
+    "data-account-tab",
+    "data-auth-tab"
 ];
 
 const PANEL_FOR = [

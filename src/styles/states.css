@@ -631,3 +631,138 @@ td > .br-empty-state.br-st-upgraded { min-height: 0; padding: var(--br-space-5) 
     from { transform: translate(-50%, -24px) scale(.96); opacity: 0; }
     to { transform: translate(-50%, 0) scale(1); opacity: 1; }
 }
+
+/* An empty toast has nothing to say: never draw its icon (stops the info icon flashing on page load). */
+:root:root:root:root .br-toast:empty { display: none; }
+
+
+/* =========================================================
+   TOAST v3: one clean, quiet card.
+   Flat tinted icon badge, no side bar, no animated ring,
+   hairline timer along the bottom edge. Visual only: the
+   position, timing, swipe and tone logic are unchanged.
+   ========================================================= */
+
+:root:root:root:root .swal2-popup.br-swal-toast {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    min-width: 0;
+    max-width: min(92vw, 380px);
+    min-height: 0;
+    margin: 0;
+    padding: 12px 16px 12px 12px;
+    border: 1px solid var(--br-border, var(--border));
+    border-left: 1px solid var(--br-border, var(--border));
+    border-radius: 12px;
+    background: var(--br-swal-bg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+    overflow: hidden;
+}
+
+:root[data-theme="light"] .swal2-popup.br-swal-toast { box-shadow: 0 8px 24px rgba(20, 20, 20, .12); }
+
+/* icon: a small flat badge; SweetAlert's animated parts are hidden */
+:root:root:root:root .br-swal-toast .swal2-icon {
+    position: relative;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    margin: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--st-c) 16%, transparent);
+    color: var(--st-c);
+    overflow: hidden;
+    animation: none;
+}
+
+:root:root:root:root .br-swal-toast .swal2-icon > * { display: none !important; }
+
+:root:root:root:root .br-swal-toast .swal2-icon::after { display: none !important; }
+
+:root:root:root:root .br-swal-toast .swal2-icon::before {
+    content: "";
+    display: block !important;
+    position: absolute;
+    inset: 4px;
+    width: auto;
+    height: auto;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--st-c);
+    transform: none;
+    animation: none;
+    -webkit-mask: var(--st-ico) center / contain no-repeat;
+    mask: var(--st-ico) center / contain no-repeat;
+    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 11v6M12 7.5h.01'/%3E%3C/svg%3E");
+}
+
+:root:root:root:root .br-swal-toast .swal2-icon.swal2-success::before {
+    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+
+:root:root:root:root .br-swal-toast .swal2-icon.swal2-error::before {
+    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7l10 10M17 7 7 17'/%3E%3C/svg%3E");
+}
+
+:root:root:root:root .br-swal-toast .swal2-icon.swal2-warning::before {
+    --st-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5v7M12 17.5h.01'/%3E%3C/svg%3E");
+}
+
+/* text */
+:root:root:root:root .br-swal-toast .swal2-title.br-swal-title {
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0;
+    color: var(--br-text, var(--text-primary));
+    text-align: left;
+}
+
+/* timer: a hairline that runs along the bottom edge, clipped by the card */
+:root:root:root:root .br-swal-toast .swal2-timer-progress-bar-container {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 2px;
+    border-radius: 0;
+    background: transparent;
+}
+
+:root:root:root:root .br-swal-toast .swal2-timer-progress-bar {
+    background: var(--st-c);
+    opacity: .6;
+}
+
+@media (max-width: 768px) {
+    :root:root:root:root .swal2-popup.br-swal-toast {
+        width: calc(100vw - 24px);
+        max-width: 420px;
+        min-height: 52px;
+        margin-inline: auto;
+    }
+
+    :root:root:root:root .br-swal-toast .swal2-title.br-swal-title { font-size: 14px; }
+}
+
+/* the built-in fallback toast (if SweetAlert can't load) matches */
+:root:root:root:root .br-toast {
+    gap: 10px;
+    padding: 11px 16px 11px 12px;
+    border: 1px solid var(--br-border, var(--border));
+    border-left: 1px solid var(--br-border, var(--border));
+    border-radius: 12px;
+    background: var(--br-surface-hover, var(--surface));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+}
+
+:root:root:root:root .br-toast::before { width: 20px; height: 20px; }

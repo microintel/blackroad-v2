@@ -136,6 +136,13 @@ export async function Accounting() {
     const saved = await loadManual().catch(() => null);
     live = await loadLive();
 
+    /* Know the bank names before the rows are drawn, so each logo is decided
+       once instead of popping in / out when the list arrives. Never waits long. */
+    try {
+        const idx = await Promise.race([loadBankIndex(), new Promise((r) => setTimeout(() => r(null), 700))]);
+        if (idx) bankIndex = idx;
+    } catch { /* names only */ }
+
     fillForm(page, saved || EMPTY_MANUAL);
     bindEvents(page);
     render(page);
@@ -346,8 +353,14 @@ function showBankLogo(row) {
     const slug = findSlug(row.querySelector("[data-bank-name]").value, bankIndex);
 
     if (!slug) {
-        box.hidden = true;
-        box.textContent = "";
+        /* A logo that is already showing for this row stays until the name is really changed. */
+        if (!box.hidden && box.dataset.slug && !row.querySelector("[data-bank-name]").value.trim()) {
+            box.hidden = true;
+            box.textContent = "";
+            delete box.dataset.slug;
+        } else if (box.hidden) {
+            box.textContent = "";
+        }
         return;
     }
 

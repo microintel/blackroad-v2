@@ -1,55 +1,51 @@
 /* =========================================================
    SETTINGS  (the old Account page)
-   A compact, phone-shaped column that stays narrow on desktop:
-   profile hero, segmented tabs, and soft grouped cards.
+   Same look as Income / Stocks / Mutual Fund: a left-aligned
+   page, flat underline tabs, and clean cards underneath.
    Colours come from theme variables, so every theme works.
    Loaded after refine.css.
    ========================================================= */
 
 .br-account {
-    --acx-w: 430px;
-    --acx-card: color-mix(in srgb, var(--text-primary) 4%, transparent);
-    --acx-card-strong: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    --acx-w: 1120px;          /* page width, same as Income */
+    --acx-panel-w: 720px;     /* readable width for forms */
+    --acx-card: var(--br-surface, var(--surface-secondary));
     --acx-tint: color-mix(in srgb, var(--accent) 16%, transparent);
-    --acx-r: 16px;
+    --acx-r: var(--br-radius-lg, 14px);
+
+    width: 100%;
+    max-width: var(--acx-w);
+    margin-inline: auto;
+    gap: var(--br-space-5, 20px);
 }
 
 :root .br-account .acx {
-    max-width: var(--acx-w);
+    display: flex;
+    flex-direction: column;
+    gap: var(--br-space-4, 16px);
+    width: 100%;
+    padding: 0 0 40px;
+}
+
+/* signed-out / guest: a single small centred card */
+:root .br-account .acx-narrow {
+    max-width: 440px;
     margin: 0 auto;
-    padding: 4px 0 40px;
+    padding-top: 4px;
 }
 
-:root .br-account .acx-narrow { max-width: var(--acx-w); padding-top: 4px; }
+/* ---------- page title (same as the other pages) ---------- */
 
-/* ---------- page title ---------- */
+:root .br-account.br-page .acx-heading { max-width: none; margin: 0; }
 
-:root .br-account.br-page .acx-heading {
-    max-width: var(--acx-w);
-    margin: 0 auto 14px;
-}
-
-:root .br-account.br-page .acx-heading h2 {
-    font-size: 22px;
-    font-weight: 650;
-    letter-spacing: -.02em;
-}
-
-/* ---------- profile hero ---------- */
+/* ---------- profile header: flat row, no gradient box ---------- */
 
 .acx-head {
-    position: relative;
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 14px;
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--acx-r);
-    background:
-        radial-gradient(120% 140% at 0% 0%, var(--acx-tint), transparent 60%),
-        var(--acx-card);
-    overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 :root:root .br-account.br-page .acx-avatar {
@@ -58,7 +54,6 @@
     height: 56px;
     border-radius: 50%;
     border: 2px solid var(--accent);
-    box-shadow: 0 0 0 3px var(--acx-tint);
     background: var(--hover-background);
     overflow: hidden;
 }
@@ -67,7 +62,7 @@
 
 .acx-who h2 {
     margin: 0;
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 650;
     letter-spacing: -.01em;
     color: var(--text-primary);
@@ -78,7 +73,7 @@
 
 .acx-who p {
     margin: 2px 0 0;
-    font-size: 12.5px;
+    font-size: 13px;
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -87,7 +82,6 @@
 
 .acx-plan {
     flex: none;
-    align-self: flex-start;
     padding: 3px 10px;
     border-radius: 999px;
     background: var(--acx-tint);
@@ -98,61 +92,26 @@
     text-transform: uppercase;
 }
 
-.acx-title { padding: 4px 0 18px; text-align: center; }
+.acx-title { padding: 4px 0 8px; text-align: center; }
 .acx-title h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.01em; color: var(--text-primary); }
 .acx-title p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); }
 
-/* ---------- segmented tabs ---------- */
+/* ---------- tabs: the shared flat underline tabs (Income / Stocks / MF) ----------
+   Nothing is overridden here on purpose - .br-income-tabs.br-tabs-flat from
+   components.css already gives the underline, the scrolling row on phones and
+   the sliding line from motion.js. */
 
-:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat {
-    display: flex;
-    gap: 2px;
-    width: 100%;
-    margin: 0 0 14px;
-    padding: 4px;
-    border: 0;
-    border-radius: 13px;
-    background: var(--acx-card);
-    box-shadow: inset 0 0 0 1px var(--border);
-}
-
-:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab {
-    flex: 1 1 auto;
-    min-height: 34px;
-    margin: 0;
-    padding: 0 10px;
-    border: 0;
-    border-radius: 9px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 500;
-}
-
-:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab:hover { color: var(--text-primary); background: transparent; }
-
-:root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab.active {
-    color: var(--text-primary);
-    font-weight: 600;
-    background: var(--acx-card-strong);
-}
-
-/* the sliding block behind the active tab */
-:root .br-account .acx-tabs.br-income-tabs.br-tabs-ink-on > .br-tab-ink {
-    background: var(--acx-card-strong);
-    box-shadow: inset 0 0 0 1px var(--border);
-    border-radius: 9px;
-}
-
-:root .br-account .acx-tabs.br-income-tabs.br-tabs-ink-on[data-ink-ready] > .br-income-tab.active { background: transparent; }
+.acx-tabs { margin: 0; }
 
 /* ---------- panels: each form / row becomes a soft card ---------- */
 
 .acx-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 0;
+    gap: var(--br-space-4, 16px);
+    width: 100%;
+    max-width: var(--acx-panel-w);
+    padding: var(--br-space-2, 8px) 0 0;
     animation: acx-fade .16s ease-out both;
 }
 
@@ -166,8 +125,8 @@
 .acx-panel > [data-avatar-mount],
 .acx-panel > [data-appearance-mount] {
     margin: 0;
-    padding: 16px;
-    border: 1px solid var(--border);
+    padding: var(--br-space-5, 20px);
+    border: 0;
     border-radius: var(--acx-r);
     background: var(--acx-card);
 }
@@ -176,8 +135,8 @@
 .acx .ac-stack > label > span { font-size: 12.5px; font-weight: 500; color: var(--text-secondary); }
 
 .acx-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.acx-actions .br-button { flex: 1 1 0; }
-.acx .ac-stack > .br-button { align-self: stretch; }
+.acx-actions .br-button { flex: 0 1 auto; }
+.acx .ac-stack > .br-button { align-self: flex-start; }
 
 :root .br-account.br-page .acx .br-input {
     min-height: 40px;
@@ -193,12 +152,12 @@
 
 /* section inside a panel (Data last updated, Session) */
 .acx-section { margin: 0; padding: 0; border: 0; }
-.acx-panel > form.acx-section { padding: 16px; border: 1px solid var(--border); }
-.acx-section h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.acx-panel > form.acx-section { padding: var(--br-space-5, 20px); border: 0; }
+.acx-section h3 { margin: 0 0 2px; font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .acx-section p { margin: 2px 0 0; font-size: 12.5px; color: var(--text-secondary); }
 
 /* read-only facts */
-.acx-meta { display: grid; gap: 0; margin: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.acx-meta { display: grid; gap: 0; margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .acx-meta > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 12px; font-size: 13.5px; }
 .acx-meta > div + div { border-top: 1px solid var(--border); }
 .acx-meta dt { color: var(--text-secondary); }
@@ -279,10 +238,10 @@
 
 /* Appearance shown on its own (signed out / guest) becomes a card too */
 :root:root .br-account .acx-appearance-out {
-    max-width: var(--acx-w);
+    max-width: var(--acx-panel-w);
     margin: 14px auto 0 !important;
-    padding: 16px !important;
-    border: 1px solid var(--border) !important;
+    padding: var(--br-space-5, 20px) !important;
+    border: 0 !important;
     border-radius: var(--acx-r) !important;
     background: var(--acx-card) !important;
 }
@@ -291,11 +250,18 @@
 
 @media (max-width: 640px) {
     :root .br-account .acx { padding-bottom: 28px; }
-    .acx-head { padding: 14px; gap: 12px; }
     .acx-who h2 { font-size: 16px; }
+    .acx-panel > form,
+    .acx-panel > .acx-row,
+    .acx-panel > .acx-session,
+    .acx-panel > [data-avatar-mount],
+    .acx-panel > [data-appearance-mount],
+    .acx-panel > form.acx-section { padding: var(--br-space-4, 16px); }
     .acx-session, .acx-row { gap: 12px; }
     .acx .br-input { font-size: 16px; }            /* no iOS zoom on focus */
-    :root .br-account .acx-tabs.br-income-tabs.br-tabs-flat .br-income-tab { padding: 0 8px; font-size: 12.5px; min-height: 38px; }
+    .acx-actions .br-button { flex: 1 1 0; }       /* buttons share the row */
+    .acx .ac-stack > .br-button { align-self: stretch; }
+    .acx-narrow > .br-button { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -181,3 +181,187 @@ a.br-card:active, .br-dash-tile:active, .br-button:active { transform: scale(.98
 @media (max-width: 960px) {
     .ac-layout { column-count: 1; }
 }
+
+
+/* =========================================================
+   ACCOUNTING POLISH
+   - no double border on focus (border + outline), no stray borders
+   - input boxes sized to their content instead of stretching
+   - bank / custom-asset rows become clean flat tiles
+   Flat solid colours only, no gradients.
+   ========================================================= */
+
+/* Inputs: one gold border on focus, no extra outline ring */
+.br-page .ac-tabpanel .br-input,
+.br-page .ac-bank-row .br-input,
+.br-page .ac-row .br-input {
+    outline: none !important;
+    box-shadow: none !important;
+    min-height: 42px;
+    border-radius: var(--br-radius-md);
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.ac-tabpanel .br-input::-webkit-outer-spin-button,
+.ac-tabpanel .br-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.br-page .ac-tabpanel .br-input:focus,
+.br-page .ac-row .br-input:focus { border-color: var(--br-gold); }
+
+/* Assets form: tidy 2-column grid, every box the same size */
+.ac-tabpanel .br-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--br-space-4) var(--br-space-5); }
+.ac-tabpanel .br-form-grid > label { gap: 8px; }
+.ac-tabpanel .br-form-grid .br-input { width: 100%; max-width: none; }
+.ac-ico { width: 26px; height: 26px; border-radius: 8px; }
+
+/* Bank + custom rows: flat tile, inputs capped so they don't run long */
+.ac-row {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--br-space-3);
+    margin-bottom: var(--br-space-3);
+    padding: var(--br-space-3);
+    border: 0;
+    border-radius: var(--br-radius-lg, 14px);
+    background: var(--br-surface-soft);
+    transition: background var(--br-transition-fast);
+}
+.ac-row:hover { background: var(--br-surface-hover); }
+.ac-row > label { flex: 1 1 0; min-width: 0; }
+.ac-row > label:has([data-bank]),
+.ac-row > label:has([data-custom-amt]) { flex: 0 1 190px; }
+.ac-row > .br-button { flex: 0 0 auto; min-height: 42px; }
+.ac-bank-row > .ac-bank-name { flex: 1 1 0; min-width: 0; }
+.ac-bank-logo { border: 0; width: 48px; height: 48px; padding: 6px; }
+.ac-bank-logo img { width: 36px; height: 36px; }
+.ac-bank-field { gap: 12px; }
+.ac-dlg-preview .ac-bank-logo { width: 72px; height: 72px; }
+.ac-dlg-preview .ac-bank-logo img { width: 56px; height: 56px; }
+
+/* Cards: spacing between add buttons and rows */
+.ac-tabpanel .br-card > .br-button[data-action^="add"] { margin-top: var(--br-space-2); }
+
+/* Soft dividers only between rows, none after the last */
+.ac-live-row, .ac-line { border-bottom-color: var(--br-hairline); }
+.ac-live-row:last-child, .ac-breakdown > .ac-line:last-child, .ac-line.ac-net { border-bottom: 0; }
+
+/* Save bar: floating flat bar, no outline */
+.ac-savebar { border: 0; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); }
+
+@media (max-width: 600px) {
+    .ac-tabpanel .br-form-grid { grid-template-columns: 1fr; }
+    .ac-row { flex-wrap: wrap; }
+    .ac-row > label,
+    .ac-row > label:has([data-bank]),
+    .ac-row > label:has([data-custom-amt]) { flex: 1 1 100%; }
+    .ac-bank-row > .ac-bank-name { flex: 1 1 100%; }
+    .ac-row > .br-button { flex: 1 1 0; }
+}
+
+
+/* =========================================================
+   TOPBAR AVATAR: no placeholder icon flash.
+   The header used to draw a generic user icon, then swap it for the
+   real avatar once it loaded. Now the circle starts empty and the
+   avatar fades in once, in place.
+   ========================================================= */
+.br-account-avatar > * { animation: br-avatar-in .22s ease both; }
+@keyframes br-avatar-in { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* =========================================================
+   SMOOTH IMAGE ARRIVAL (Accounting bank logos, Account avatar)
+   Images fade in once when they appear, instead of popping in.
+   ========================================================= */
+.ac-bank-logo:not([hidden]) img,
+.br-avatar-img { animation: br-img-in .2s ease both; }
+@keyframes br-img-in { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* =========================================================
+   SETTINGS: use the desktop screen properly.
+   Phones keep the compact single column. Tablets get a wider column.
+   Desktop gets a side menu on the left and two-column cards on the right.
+   Signed-out / guest screens stay narrow on purpose.
+   ========================================================= */
+
+/* Tablet: wider than a phone, still one column */
+@media (min-width: 700px) {
+    .br-account { --acx-w: 720px; }
+}
+
+/* Desktop: side menu + content */
+@media (min-width: 1000px) {
+    .br-account { --acx-w: 1120px; }
+
+    :root .br-account .acx:not(.acx-narrow) {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        column-gap: var(--br-space-5);
+        align-items: start;
+        padding-bottom: var(--br-space-7);
+    }
+
+    /* Profile header spans the full width */
+    .acx:not(.acx-narrow) > .acx-head {
+        grid-column: 1 / -1;
+        margin-bottom: var(--br-space-5);
+        padding: 20px 24px;
+        gap: 18px;
+    }
+    .acx:not(.acx-narrow) .acx-who h2 { font-size: 20px; }
+    .acx:not(.acx-narrow) .acx-who p { font-size: 13.5px; }
+    :root .br-account.br-page .acx:not(.acx-narrow) .acx-avatar { width: 68px; height: 68px; }
+
+    /* Tabs become a vertical menu */
+    :root .br-account .acx:not(.acx-narrow) > .acx-tabs.br-income-tabs.br-tabs-flat {
+        grid-column: 1;
+        flex-direction: column;
+        gap: 4px;
+        width: auto;
+        margin: 0;
+        padding: 8px;
+        border-radius: var(--acx-r);
+        position: sticky;
+        top: calc(var(--br-header-height, 64px) + var(--br-space-4));
+    }
+    :root .br-account .acx:not(.acx-narrow) > .acx-tabs .br-income-tab {
+        flex: none;
+        width: 100%;
+        min-height: 42px;
+        padding: 0 14px;
+        text-align: left;
+        justify-content: flex-start;
+        font-size: 14px;
+    }
+    /* the sliding block is built for a horizontal row: use a plain active background here */
+    :root .br-account .acx:not(.acx-narrow) > .acx-tabs > .br-tab-ink { display: none; }
+    :root .br-account .acx:not(.acx-narrow) > .acx-tabs.br-tabs-ink-on[data-ink-ready] > .br-income-tab.active,
+    :root .br-account .acx:not(.acx-narrow) > .acx-tabs .br-income-tab.active { background: var(--acx-card-strong); }
+
+    /* Panels: two cards per row, big ones span both */
+    .acx:not(.acx-narrow) > .acx-panel { grid-column: 2; }
+    .acx:not(.acx-narrow) > .acx-panel:not([hidden]) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--br-space-5);
+        align-items: start;
+    }
+    .acx:not(.acx-narrow) > .acx-panel > form,
+    .acx:not(.acx-narrow) > .acx-panel > .acx-row,
+    .acx:not(.acx-narrow) > .acx-panel > .acx-session,
+    .acx:not(.acx-narrow) > .acx-panel > [data-avatar-mount],
+    .acx:not(.acx-narrow) > .acx-panel > [data-appearance-mount] { padding: 22px; }
+    .acx:not(.acx-narrow) > .acx-panel > [data-avatar-mount],
+    .acx:not(.acx-narrow) > .acx-panel > [data-appearance-mount],
+    .acx:not(.acx-narrow) > .acx-panel > .acx-row { grid-column: 1 / -1; }
+
+    /* A little more room inside the cards */
+    .acx:not(.acx-narrow) .ac-stack { gap: 16px; }
+    .acx:not(.acx-narrow) .acx-section h3 { font-size: 15px; }
+    .acx:not(.acx-narrow) .ac-av-styles,
+    .acx:not(.acx-narrow) .ac-av-looks { max-height: 340px; }
+
+    /* Page title lines up with the wider column */
+    :root .br-account.br-page .acx-heading h2 { font-size: 26px; }
+}

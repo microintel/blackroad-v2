@@ -115,7 +115,7 @@ export function Topbar(title) {
                         aria-label="Account menu"
                         title="Settings"
                     >
-                        <span class="br-account-avatar" data-account-avatar>${icon("user-round", { size: 18 })}</span>
+                        <span class="br-account-avatar" data-account-avatar></span>
                     </button>
 
                     <div class="br-account-pop" role="menu" hidden>

@@ -74,8 +74,8 @@ export function mountAccountMenu(header) {
         if (sig === shown) return;
         shown = sig;
 
-        small.innerHTML = me.html;
-        large.innerHTML = me.html;
+        if (small.innerHTML !== me.html) small.innerHTML = me.html;
+        if (large.innerHTML !== me.html) large.innerHTML = me.html;
         nameEl.textContent = me.name;
         subEl.textContent = me.sub;
         subEl.hidden = !me.sub;
