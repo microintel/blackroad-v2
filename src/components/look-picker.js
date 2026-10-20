@@ -1,7 +1,7 @@
 import { icon } from "./icons.js";
 import { VARIANTS, getVariant, setVariant } from "../services/preferences.js";
 
-/* "Themes" popup: Light, Dark, Crimson and Teal.
+/* "Themes" popup: the two original modes and two additional palettes.
    A tap applies at once, so the popup itself shows the result live. Opens from
    the account menu and from Account > Appearance. */
 

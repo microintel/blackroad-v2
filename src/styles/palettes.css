@@ -1,104 +1,92 @@
 /* =========================================================
-   THEMES
-   Light and Dark live in theme.css. This file adds two more, each built from a
-   colour palette:
-
-     Crimson    (light)  reds #990000 #CC3333 #FF6666 #FF9999 #FFCCCC
-     Teal       (light)  #FBFCFC #E0E5E9 #B2C9C5 #1BD488 #45828B #055B65
-
-   They build on light / dark, so data-theme stays "light" / "dark" and every
-   existing rule keeps working. html[data-variant] says which one is chosen.
-   Loaded last.
+   ADDITIONAL THEMES
+   Original Light and Dark definitions remain unchanged in theme.css.
+   New variants use solid colours and the existing semantic/legacy tokens.
    ========================================================= */
 
-
-/* ---------- CRIMSON (light) ---------- */
-:root:root[data-theme="light"][data-variant="crimson"] {
-    --background: #FFE9E9;
-    --foreground: #3A0A0A;
-    --surface: #FFF6F6;
-    --surface-secondary: #FFF6F6;
-
-    --text-primary: #3A0A0A;
-    --text-secondary: #7A2323;
-    --text-muted: #8F4A4A;
-
-    --border: #F5C2C2;
-
-    --accent: #CC3333;
-    --accent-hover: #990000;
-    --accent-contrast: #FFFFFF;
-
-    --input-background: #FFF6F6;
-    --input-border: #EBA9A9;
-    --hover-background: #FFDADA;
-    --active-background: #FFCCCC;
-    --overlay: rgba(58, 10, 10, 0.4);
-
-    --br-surface-soft: #FFEFEF;
-    --br-surface-hover: #FFDADA;
-    --br-surface-active: #FFCCCC;
-    --br-surface-muted: #FFCCCC;
-    --br-text-disabled: #D9A0A0;
-    --br-border-strong: #EBA9A9;
-    --br-hairline: #FAD4D4;
-
-    --br-gold: var(--accent);
-    --br-gold-bright: var(--accent-hover);
-    --br-gold-muted: #FF9999;
-    --br-gold-surface: #FFCCCC;
-    --br-gold-text: var(--accent-hover);
-
-    --br-series-1: #CC3333;
-    --br-series-2: #990000;
-    --br-series-4: #FF6666;
-    --br-series-7: #FF9999;
+/* ---------- SOFT IVORY + DEEP FOREST (light) ---------- */
+:root:root[data-theme="light"][data-variant="ivory-forest"] {
+    color-scheme: light;
+    --background: #F5F4EF; --foreground: #202A25;
+    --surface: #FFFFFF; --surface-secondary: #FFFFFF;
+    --text-primary: #202A25; --text-secondary: #626B64; --text-muted: #626B64;
+    --border: #E1E3DB; --accent: #356B4B; --accent-hover: #2D5B40; --accent-contrast: #FFFFFF;
+    --success: #287448; --danger: #B42332;
+    --input-background: #FFFFFF; --input-border: #E1E3DB;
+    --hover-background: #EAECE5; --active-background: #EAECE5;
+    --overlay: rgba(32, 42, 37, 0.4);
+    --br-bg: #F5F4EF; --br-surface: #FFFFFF; --br-surface-soft: #EAECE5;
+    --br-surface-hover: #EAECE5; --br-surface-active: #EAECE5; --br-surface-muted: #EAECE5;
+    --br-text: #202A25; --br-text-secondary: #626B64; --br-text-muted: #626B64;
+    --br-text-disabled: #8A918B; --br-text-inverse: #FFFFFF;
+    --br-border: #E1E3DB; --br-border-strong: #C9CEC4; --br-hairline: #E1E3DB;
+    --br-gold: #356B4B; --br-gold-bright: #356B4B; --br-gold-muted: #626B64;
+    --br-gold-surface: #EAECE5; --br-gold-text: #356B4B;
+    --br-primary: #356B4B; --br-primary-hover: #2D5B40; --br-primary-soft: #EAECE5;
+    --br-success: #287448; --br-success-strong: #287448; --br-success-soft: #EAECE5;
+    --br-danger: #B42332; --br-danger-strong: #B42332; --br-danger-soft: #F8E8E9;
+    --br-info: #356B4B; --br-info-strong: #356B4B; --br-info-soft: #EAECE5;
+    --br-warning: #9A6B2F; --br-warning-soft: #F4EDE2;
+    --br-series-1: #356B4B; --br-series-2: #287448; --br-series-3: #626B64;
+    --br-series-4: #9A6B2F; --br-series-5: #7C9A86; --br-series-6: #A6ADA5; --br-series-7: #B42332;
+    --br-overlay: var(--overlay); --line-soft: #E1E3DB;
 }
 
-/* ---------- TEAL (light) ---------- */
-:root:root[data-theme="light"][data-variant="teal"] {
-    --background: #E0E5E9;
-    --foreground: #0B2E33;
-    --surface: #FBFCFC;
-    --surface-secondary: #FBFCFC;
-
-    --text-primary: #0B2E33;
-    --text-secondary: #2F6168;
-    --text-muted: #356C75;
-
-    --border: #CBD5DA;
-
-    --accent: #055B65;
-    --accent-hover: #034750;
-    --accent-contrast: #FBFCFC;
-
-    --input-background: #FBFCFC;
-    --input-border: #B2C9C5;
-    --hover-background: #D3DBE0;
-    --active-background: #C6D0D6;
-    --overlay: rgba(11, 46, 51, 0.4);
-
-    --br-surface-soft: #F1F4F5;
-    --br-surface-hover: #D3DBE0;
-    --br-surface-active: #C6D0D6;
-    --br-surface-muted: #C6D0D6;
-    --br-text-disabled: #8FA8AB;
-    --br-border-strong: #B2C9C5;
-    --br-hairline: #E3E9EC;
-
-    --br-gold: var(--accent);
-    --br-gold-bright: #1BD488;
-    --br-gold-muted: #45828B;
-    --br-gold-surface: #D6EEE6;
-    --br-gold-text: var(--accent);
-
-    --br-series-1: #055B65;
-    --br-series-2: #1BD488;
-    --br-series-4: #45828B;
-    --br-series-7: #B2C9C5;
+/* ---------- SLATE + CHAMPAGNE (dark) ---------- */
+:root:root[data-theme="dark"][data-variant="slate-champagne"] {
+    color-scheme: dark;
+    --background: #171A1F; --foreground: #F1F0EC;
+    --surface: #20242A; --surface-secondary: #20242A;
+    --text-primary: #F1F0EC; --text-secondary: #B6B8BB; --text-muted: #B6B8BB;
+    --border: #353A42; --accent: #D1B98B; --accent-hover: #D1B98B; --accent-contrast: #171A1F;
+    --success: #8DB79B; --danger: #D7A09B;
+    --input-background: #20242A; --input-border: #353A42;
+    --hover-background: #30353C; --active-background: #292D33; --overlay: rgba(0, 0, 0, 0.72);
+    --br-bg: #171A1F; --br-surface: #20242A; --br-surface-soft: #292D33;
+    --br-surface-hover: #30353C; --br-surface-active: #292D33; --br-surface-muted: #292D33;
+    --br-text: #F1F0EC; --br-text-secondary: #B6B8BB; --br-text-muted: #B6B8BB;
+    --br-text-disabled: #777D85; --br-text-inverse: #171A1F;
+    --br-border: #353A42; --br-border-strong: #4A5059; --br-hairline: #353A42;
+    --br-gold: #D1B98B; --br-gold-bright: #D1B98B; --br-gold-muted: #B6B8BB;
+    --br-gold-surface: #292D33; --br-gold-text: #D1B98B;
+    --br-primary: #D1B98B; --br-primary-hover: #D1B98B; --br-primary-soft: #292D33;
+    --br-success: #8DB79B; --br-success-strong: #8DB79B; --br-success-soft: #293831;
+    --br-danger: #D7A09B; --br-danger-strong: #D7A09B; --br-danger-soft: #3B2B2D;
+    --br-info: #B6B8BB; --br-info-strong: #B6B8BB; --br-info-soft: #292D33;
+    --br-warning: #D1B98B; --br-warning-soft: #393328;
+    --br-series-1: #D1B98B; --br-series-2: #8DB79B; --br-series-3: #B6B8BB;
+    --br-series-4: #D7A09B; --br-series-5: #8A9DAF; --br-series-6: #777D85; --br-series-7: #E2D3B5;
+    --br-overlay: var(--overlay); --line-soft: #353A42;
 }
 
-/* Sidebar icons take the theme's accent in the two palette themes. */
+/* Shared details for the additional palettes only. */
+:root:root[data-variant] .br-nav-icon { color: var(--accent); }
+:root:root[data-theme="light"][data-variant] .br-button-primary,
+:root:root[data-theme="light"][data-variant] .br-brand-logo,
+:root:root[data-theme="light"][data-variant] .br-brand-mark {
+    background: var(--accent); color: var(--accent-contrast);
+}
+:root:root[data-theme="light"][data-variant] .br-button-primary:hover,
+:root:root[data-theme="light"][data-variant] .br-button-primary:active {
+    background: var(--accent-hover); color: var(--accent-contrast);
+}
+:root:root[data-theme="light"][data-variant] .br-button-primary .br-icon { color: var(--accent-contrast); }
+:root:root[data-theme="dark"][data-variant] .br-button-primary,
+:root:root[data-theme="dark"][data-variant] .br-button-primary .br-icon,
+:root:root[data-theme="dark"][data-variant] .br-brand-logo,
+:root:root[data-theme="dark"][data-variant] .br-brand-mark { color: var(--accent-contrast); }
+:root:root[data-variant] ::selection { background: var(--accent); color: var(--accent-contrast); }
+
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-nav-item.is-active,
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-nav-item.active,
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-nav-item[aria-current="page"],
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-bottom-item.is-active { color: #D1B98B; }
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-nav-item:hover,
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-sidebar nav a:hover { background: #30353C; }
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-button-primary { background: #D1B98B; color: #171A1F; }
+:root[data-theme="dark"][data-variant="slate-champagne"] .br-button-primary:hover { background: #D1B98B; color: #171A1F; }
+
+/* Sidebar icons take the theme accent in the additional palettes. */
 :root:root[data-variant] .br-nav-icon { color: var(--accent); }
 
 
@@ -219,4 +207,33 @@
     height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 10px;
     background: transparent; color: var(--text-primary); font: inherit; font-size: 13.5px; font-weight: 600;
     cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+
+
+/* Strict solid-surface guarantee for the two added palettes. */
+:root[data-variant="ivory-forest"] .br-card,
+:root[data-variant="slate-champagne"] .br-card,
+:root[data-variant="ivory-forest"] .br-dashboard-hero,
+:root[data-variant="slate-champagne"] .br-dashboard-hero,
+:root[data-variant="ivory-forest"] .br-summary-card,
+:root[data-variant="slate-champagne"] .br-summary-card,
+:root[data-variant="ivory-forest"] .br-button,
+:root[data-variant="slate-champagne"] .br-button,
+:root[data-variant="ivory-forest"] .br-button-primary,
+:root[data-variant="slate-champagne"] .br-button-primary,
+:root[data-variant="ivory-forest"] .br-nav-item,
+:root[data-variant="slate-champagne"] .br-nav-item,
+:root[data-variant="ivory-forest"] .br-sidebar,
+:root[data-variant="slate-champagne"] .br-sidebar,
+:root[data-variant="ivory-forest"] .br-header,
+:root[data-variant="slate-champagne"] .br-header,
+:root[data-variant="ivory-forest"] .br-chart,
+:root[data-variant="slate-champagne"] .br-chart,
+:root[data-variant="ivory-forest"] .br-dashboard-hero::before,
+:root[data-variant="slate-champagne"] .br-dashboard-hero::before,
+:root[data-variant="ivory-forest"] .br-skeleton,
+:root[data-variant="slate-champagne"] .br-skeleton,
+:root[data-variant="ivory-forest"] .stk-sold-line,
+:root[data-variant="slate-champagne"] .stk-sold-line {
+    background-image: none !important;
 }

@@ -1,7 +1,7 @@
 import { isSoundOn, setSound, VARIANTS, getVariant } from "../../services/preferences.js";
 import { openLookPicker } from "../../components/look-picker.js";
 
-/* Appearance card: theme (Light, Dark, Crimson, Teal) and click sound. */
+/* Appearance card: theme selection and click sound. */
 export function AppearanceCard() {
     const card = document.createElement("section");
     card.className = "br-card br-appearance-card";

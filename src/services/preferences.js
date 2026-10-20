@@ -31,15 +31,15 @@ const K = {
 
 /* Themes the person can pick. `base` is the light / dark mode it builds on, so
    every rule that targets data-theme="light" or "dark" keeps working.
-   Light and Dark are the originals; Crimson and Teal are built
-   from two colour palettes. */
+   Light and Dark are the original themes; the additional palettes use
+   the same base-mode compatibility mechanism. */
 export const VARIANTS = [
-    { id: "light",   base: "light", label: "Light",           bg: "#EEECE7", surface: "#F6F5F1", text: "#2B2A27", accent: "#16A34A" },
-    { id: "dark",    base: "dark",  label: "Dark",            bg: "#000000", surface: "#0B0B0B", text: "#FFFFFF", accent: "#22C55E" },
-    { id: "crimson", base: "light", label: "Crimson", bg: "#FFE9E9", surface: "#FFF6F6", text: "#3A0A0A", accent: "#CC3333",
-      swatches: ["#990000", "#CC3333", "#FF6666", "#FF9999", "#FFCCCC"] },
-    { id: "teal",    base: "light", label: "Teal",    bg: "#E0E5E9", surface: "#FBFCFC", text: "#0B2E33", accent: "#055B65",
-      swatches: ["#FBFCFC", "#E0E5E9", "#B2C9C5", "#1BD488", "#45828B", "#055B65"] }
+    { id: "light", base: "light", label: "White Mode", bg: "#EEECE7", surface: "#F6F5F1", text: "#2B2A27", accent: "#16A34A" },
+    { id: "dark", base: "dark", label: "Dark Mode", bg: "#000000", surface: "#0B0B0B", text: "#FFFFFF", accent: "#22C55E" },
+    { id: "ivory-forest", base: "light", label: "Soft Ivory + Deep Forest", bg: "#F5F4EF", surface: "#FFFFFF", text: "#202A25", accent: "#356B4B",
+      swatches: ["#F5F4EF", "#FFFFFF", "#EAECE5", "#356B4B", "#287448"] },
+    { id: "slate-champagne", base: "dark", label: "Slate + Champagne", bg: "#171A1F", surface: "#20242A", text: "#F1F0EC", accent: "#D1B98B",
+      swatches: ["#171A1F", "#20242A", "#292D33", "#D1B98B", "#8DB79B"] }
 ];
 
 
