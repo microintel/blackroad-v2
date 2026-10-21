@@ -4,6 +4,7 @@ import { confirmLogout } from "../components/confirm-dialog.js";
 import { getRoute, routeFor, initRouter, hardNavigate, replaceRoute, currentPath } from "./router.js";
 import { renderView, prefetchView, warmViews } from "./views.js";
 import { pageLeave, pageEnter, initTabs } from "../components/motion.js";
+import { initRangeMotion } from "../components/range-motion.js";
 import { navigate } from "./router.js";
 import { getSession, currentUser, logout, isGuestSync } from "../services/auth.js";
 import { seedGuestData } from "../services/guest-seed.js";
@@ -299,6 +300,7 @@ async function renderApp() {
     // Soft entrance for the new page, then the sliding tab indicators.
     pageEnter(content);
     initTabs(content);
+    initRangeMotion(content);
 
     // Once the first page is up, load the other pages' code in the background.
     if (!warmed) {

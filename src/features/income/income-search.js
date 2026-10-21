@@ -138,8 +138,8 @@ function csv(items) {
 
 const PICKER_NOUN = { sources: "sources", expenseCategories: "expenses", incomeCategories: "income categories" };
 
-function pickerLabel(key, selected) {
-    if (!selected.size) return `All ${PICKER_NOUN[key]}`;
+function pickerLabel(key, selected, total) {
+    if (!selected.size || (total && selected.size >= total)) return `All ${PICKER_NOUN[key]}`;
     if (selected.size === 1) return [...selected][0];
     return `${selected.size} selected`;
 }
@@ -149,7 +149,7 @@ function picker(key, values, selected) {
     return `
         <div class="br-multi" data-multi="${key}">
             <button type="button" class="br-select br-multi-btn" data-multi-toggle="${key}" aria-expanded="false">
-                <span data-multi-label>${esc(pickerLabel(key, selected))}</span>
+                <span data-multi-label>${esc(pickerLabel(key, selected, values.length))}</span>
                 <span aria-hidden="true">▾</span>
             </button>
             <div class="br-multi-panel" data-multi-panel hidden>
@@ -159,6 +159,7 @@ function picker(key, values, selected) {
                         <span>${esc(v)}</span>
                     </label>`).join("") : `<span class="br-muted" style="padding:8px 4px;">None yet</span>`}
                 <div class="br-multi-foot">
+                    <button type="button" class="br-button" data-multi-all="${key}">Select all</button>
                     <button type="button" class="br-button" data-multi-clear="${key}">Clear</button>
                     <button type="button" class="br-button br-button-primary" data-multi-close>Done</button>
                 </div>
@@ -177,45 +178,70 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
 
     container.innerHTML = `
         <div class="br-card">
-            <div class="br-toolbar">
+            <div class="br-toolbar br-s-top">
                 <div class="br-search-box">
                     <span class="br-search-icon">${icon("search", { size: 16 })}</span>
                     <input type="search" data-s="term" placeholder="Search description, source or category..." value="${esc(filters.term)}">
                 </div>
-                <select class="br-select" data-s="sort">
-                    <option value="newest">Newest first</option>
-                    <option value="oldest">Oldest first</option>
-                    <option value="amount_desc">Amount: high to low</option>
-                    <option value="amount_asc">Amount: low to high</option>
-                </select>
+                <button type="button" class="br-button br-s-filter-btn" data-s-action="open-filters" aria-label="Filters" aria-haspopup="dialog">
+                    ${icon("sliders-horizontal", { size: 18 })}<span class="br-s-badge" data-s="badge" hidden></span>
+                </button>
             </div>
 
-            <div class="br-search-filters">
-                <div class="br-field"><label>Type</label>
-                    <div class="br-chip-row inc-wrap-row" data-s="types">
-                        ${["all", "income", "expense"].map((t) => `<button type="button" class="br-chip ${filters.type === t ? "active" : ""}" data-s-type="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}
-                    </div></div>
-                <div class="br-field"><label>Date range</label>
-                    <div class="br-chip-row">
-                        <input type="date" class="br-input" data-s="from" value="${esc(filters.from)}">
-                        <input type="date" class="br-input" data-s="to" value="${esc(filters.to)}">
-                    </div></div>
-                <div class="br-field"><label>Income source</label>
-                    ${picker("sources", sources, filters.sources)}</div>
-                <div class="br-field"><label>Expenses</label>
-                    ${picker("expenseCategories", expenseCats, filters.expenseCategories)}</div>
-                <div class="br-field"><label>Income category</label>
-                    ${picker("incomeCategories", incomeCats, filters.incomeCategories)}</div>
-            </div>
-
-            <div class="br-toolbar" style="margin-top:12px;">
-                <input class="br-input" data-s="preset-name" placeholder="Preset name">
-                <button type="button" class="br-button" data-s-action="save-preset">Save filters</button>
-                <button type="button" class="br-button" data-s-action="clear">Clear</button>
+            <div class="br-toolbar br-s-actions" style="margin-top:12px;">
                 <button type="button" class="br-button" data-s-action="csv" hidden>Download CSV</button>
                 <button type="button" class="br-button br-button-primary" data-s-action="pdf" hidden>Download PDF</button>
             </div>
-            <div class="br-chip-row inc-wrap-row" data-s="presets" style="margin-top:8px;"></div>
+
+            <div class="br-s-sheet" data-s="sheet">
+                <div class="br-s-backdrop" data-s-action="close-filters"></div>
+                <div class="br-s-panel" role="dialog" aria-modal="true" aria-label="Filters">
+                    <div class="br-s-head">
+                        <h3>Filters</h3>
+                        <button type="button" class="br-modal-close" data-s-action="close-filters" aria-label="Close">&times;</button>
+                    </div>
+
+                    <div class="br-s-body">
+                        <div class="br-field br-s-sort"><label>Sort</label>
+                            <select class="br-select" data-s="sort">
+                                <option value="newest">Newest first</option>
+                                <option value="oldest">Oldest first</option>
+                                <option value="amount_desc">Amount: high to low</option>
+                                <option value="amount_asc">Amount: low to high</option>
+                            </select></div>
+
+                        <div class="br-search-filters">
+                            <div class="br-field"><label>Type</label>
+                                <div class="br-chip-row inc-wrap-row" data-s="types">
+                                    ${["all", "income", "expense"].map((t) => `<button type="button" class="br-chip ${filters.type === t ? "active" : ""}" data-s-type="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}
+                                </div></div>
+                            <div class="br-field"><label>Date range</label>
+                                <div class="br-chip-row">
+                                    <input type="date" class="br-input" data-s="from" value="${esc(filters.from)}">
+                                    <input type="date" class="br-input" data-s="to" value="${esc(filters.to)}">
+                                </div></div>
+                            <div class="br-field"><label>Income source</label>
+                                ${picker("sources", sources, filters.sources)}</div>
+                            <div class="br-field"><label>Expenses</label>
+                                ${picker("expenseCategories", expenseCats, filters.expenseCategories)}</div>
+                            <div class="br-field"><label>Income category</label>
+                                ${picker("incomeCategories", incomeCats, filters.incomeCategories)}</div>
+                        </div>
+
+                        <div class="br-toolbar" style="margin-top:12px;">
+                            <input class="br-input" data-s="preset-name" placeholder="Preset name">
+                            <button type="button" class="br-button" data-s-action="save-preset">Save filters</button>
+                            <button type="button" class="br-button br-s-clear-inline" data-s-action="clear">Clear</button>
+                        </div>
+                        <div class="br-chip-row inc-wrap-row" data-s="presets" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div class="br-s-foot">
+                        <button type="button" class="br-button" data-s-action="clear">Clear all</button>
+                        <button type="button" class="br-button br-button-primary" data-s-action="close-filters">Show results</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div data-s="summary" style="margin:16px 0;"></div>
@@ -233,7 +259,27 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
             : `<span class="br-muted">No saved filters yet.</span>`;
     }
 
+    function updateBadge() {
+        const n = (filters.type !== "all" ? 1 : 0) + (filters.from ? 1 : 0) + (filters.to ? 1 : 0) +
+            filters.sources.size + filters.expenseCategories.size + filters.incomeCategories.size +
+            (filters.sort !== "newest" ? 1 : 0);
+        const badge = $("badge");
+        badge.hidden = n === 0;
+        badge.textContent = String(n);
+    }
+
+    const sheet = () => $("sheet");
+
+    function setSheet(open) {
+        sheet().classList.toggle("is-open", open);
+        if (window.matchMedia("(max-width: 720px)").matches) {
+            document.body.classList.toggle("br-no-scroll", open);
+        }
+        if (!open) closePickers();
+    }
+
     function renderResults() {
+        updateBadge();
         const csvBtn = container.querySelector('[data-s-action="csv"]');
         const pdfBtn = container.querySelector('[data-s-action="pdf"]');
         if (!hasFilters()) {
@@ -283,7 +329,7 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
             const box = container.querySelector(`[data-multi="${key}"]`);
             if (!box) return;
             box.querySelectorAll("[data-multi-opt]").forEach((cb) => { cb.checked = selected.has(cb.value); });
-            box.querySelector("[data-multi-label]").textContent = pickerLabel(key, selected);
+            box.querySelector("[data-multi-label]").textContent = pickerLabel(key, selected, optionLists[key].length);
         });
     }
 
@@ -339,6 +385,14 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
             return;
         }
 
+        const pickAll = t.closest("[data-multi-all]");
+        if (pickAll) {
+            const key = pickAll.dataset.multiAll;
+            filters[key] = new Set(optionLists[key]);
+            syncPickers();
+            return renderResults();
+        }
+
         const pickClear = t.closest("[data-multi-clear]");
         if (pickClear) {
             filters[pickClear.dataset.multiClear].clear();
@@ -381,7 +435,10 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
         }
 
         const action = t.closest("[data-s-action]")?.dataset.sAction;
+        if (action === "open-filters") return setSheet(true);
+        if (action === "close-filters") return setSheet(false);
         if (action === "clear") {
+            setSheet(false);
             Object.assign(filters, { term: "", from: "", to: "", type: "all", sort: "newest",
                 sources: new Set(), expenseCategories: new Set(), incomeCategories: new Set() });
             mountIncomeSearch(container, entries, { onOpenEntry });
@@ -448,6 +505,10 @@ export function mountIncomeSearch(container, entries, { onOpenEntry } = {}) {
 
         const row = t.closest("[data-s-open]");
         if (row && onOpenEntry) onOpenEntry(current[Number(row.dataset.sOpen)].entryId);
+    });
+
+    container.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && sheet().classList.contains("is-open")) setSheet(false);
     });
 
     renderPresets();

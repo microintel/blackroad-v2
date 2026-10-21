@@ -1617,12 +1617,12 @@
 
     /* new fund arrives: sections slide in from the side, one after another */
     .br-stepup.su-switched [data-su-content].su-enter > * {
-        animation: su-slide-in .5s cubic-bezier(.2, .8, .2, 1) both;
+        animation: br-su-fade .5s cubic-bezier(.22, .61, .36, 1) both;
     }
-    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(2) { animation-delay: .06s; }
-    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(3) { animation-delay: .12s; }
-    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(4) { animation-delay: .18s; }
-    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(n+5) { animation-delay: .24s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(2) { animation-delay: 0s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(3) { animation-delay: 0s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(4) { animation-delay: 0s; }
+    .br-stepup.su-switched [data-su-content].su-enter > *:nth-child(n+5) { animation-delay: 0s; }
 
     /* switcher card: logo pops, name slides */
     .br-stepup.su-switched .su-switch-btn .mf-logo { animation: su-logo-pop .5s cubic-bezier(.3, 1.4, .5, 1) both; }

@@ -31,15 +31,13 @@ const K = {
 
 /* Themes the person can pick. `base` is the light / dark mode it builds on, so
    every rule that targets data-theme="light" or "dark" keeps working.
-   Light and Dark are the original themes; the additional palettes use
+   Light and Dark are the original themes; the additional palette uses
    the same base-mode compatibility mechanism. */
 export const VARIANTS = [
     { id: "light", base: "light", label: "White Mode", bg: "#EEECE7", surface: "#F6F5F1", text: "#2B2A27", accent: "#16A34A" },
     { id: "dark", base: "dark", label: "Dark Mode", bg: "#000000", surface: "#0B0B0B", text: "#FFFFFF", accent: "#22C55E" },
-    { id: "ivory-forest", base: "light", label: "Soft Ivory + Deep Forest", bg: "#F5F4EF", surface: "#FFFFFF", text: "#202A25", accent: "#356B4B",
-      swatches: ["#F5F4EF", "#FFFFFF", "#EAECE5", "#356B4B", "#287448"] },
-    { id: "slate-champagne", base: "dark", label: "Slate + Champagne", bg: "#171A1F", surface: "#20242A", text: "#F1F0EC", accent: "#D1B98B",
-      swatches: ["#171A1F", "#20242A", "#292D33", "#D1B98B", "#8DB79B"] }
+    { id: "ivory-forest", base: "light", label: "Forest Mode", bg: "#F5F4EF", surface: "#FFFFFF", text: "#202A25", accent: "#356B4B",
+      swatches: ["#F5F4EF", "#FFFFFF", "#EAECE5", "#356B4B", "#287448"] }
 ];
 
 

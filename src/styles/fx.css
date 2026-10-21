@@ -1,0 +1,198 @@
+/* =========================================================
+   FX  (presentation only, loaded last)
+   1. Asset allocation donut: gradient slices, gaps, glow
+   2. Sliding pill under range selectors (see range-motion.js)
+   3. Softer tab indicator
+   ========================================================= */
+
+
+/* ---------- 1. Asset allocation donut ---------- */
+
+.br-dash-c-stocks  { --seg: var(--br-series-1); }
+.br-dash-c-mf      { --seg: var(--br-series-2); }
+.br-dash-c-fd      { --seg: var(--br-series-3); }
+.br-dash-c-lending { --seg: var(--br-series-6); }
+
+.br-dash-grad stop:first-child { stop-color: color-mix(in srgb, var(--seg) 62%, #fff); }
+.br-dash-grad stop:last-child  { stop-color: var(--seg); }
+
+:root:root .br-page.br-dash .br-dash-donut { width: 184px; height: 184px; }
+
+:root:root .br-page.br-dash .br-dash-donut svg { overflow: visible; }
+
+:root:root .br-page.br-dash .br-dash-donut .br-dash-seg {
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: opacity .25s ease, stroke-width .25s var(--br-ease-out, ease), filter .25s ease;
+    cursor: pointer;
+}
+
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-stocks  { stroke: url(#brdg-stocks)  var(--br-series-1); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-1) 55%, transparent)); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-mf      { stroke: url(#brdg-mf)      var(--br-series-2); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-2) 55%, transparent)); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-fd      { stroke: url(#brdg-fd)      var(--br-series-3); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-3) 45%, transparent)); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-lending { stroke: url(#brdg-lending) var(--br-series-6); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-6) 45%, transparent)); }
+
+/* track behind the slices */
+:root:root .br-page.br-dash .br-dash-donut .br-dash-ring-empty {
+    stroke-width: 12;
+    stroke: color-mix(in srgb, var(--br-text) 7%, transparent);
+}
+
+/* dotted outer ring that turns slowly */
+:root:root .br-page.br-dash .br-dash-donut .br-dash-deco {
+    fill: none;
+    stroke: color-mix(in srgb, var(--br-text) 30%, transparent);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    stroke-dasharray: 0.1 4.1;
+    transform-origin: 66px 66px;
+    opacity: .7;
+}
+
+/* hover: the slice swells and the rest step back */
+:root:root .br-page.br-dash .br-dash-alloc[data-hover] .br-dash-seg { opacity: .28; }
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="stocks"] .br-dash-c-stocks,
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="mf"] .br-dash-c-mf,
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="fd"] .br-dash-c-fd,
+:root:root .br-page.br-dash .br-dash-alloc[data-hover="lending"] .br-dash-c-lending { opacity: 1; stroke-width: 15; }
+
+/* centre: soft disc with a hairline */
+.br-dash-donut-center::before {
+    content: "";
+    position: absolute;
+    inset: 23%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%,
+        color-mix(in srgb, var(--br-text) 8%, transparent),
+        color-mix(in srgb, var(--br-text) 2%, transparent) 70%);
+    border: 1px solid color-mix(in srgb, var(--br-text) 10%, transparent);
+    z-index: -1;
+}
+
+.br-dash-donut-center { z-index: 0; }
+.br-dash-donut-center small,
+.br-dash-donut-center b { max-width: 70%; overflow-wrap: anywhere; }
+
+.br-dash-donut-center.is-swap small,
+.br-dash-donut-center.is-swap b { animation: br-center-pop .32s cubic-bezier(.16, 1, .3, 1); }
+
+@keyframes br-center-pop {
+    from { opacity: 0; transform: translateY(5px) scale(.94); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* the ring sweeps in clockwise, slice after slice, while the whole donut un-tilts */
+    :root:root .br-page.br-dash .br-dash-donut .br-dash-seg {
+        animation: dash-draw .95s cubic-bezier(.2, .7, .2, 1) calc(var(--i, 0) * 110ms + 80ms) both;
+    }
+
+    .br-dash-donut { animation: br-donut-in .9s cubic-bezier(.16, 1, .3, 1) both; }
+
+    :root:root .br-page.br-dash .br-dash-donut .br-dash-deco { animation: br-spin 60s linear infinite; }
+}
+
+@keyframes br-donut-in {
+    from { opacity: 0; transform: rotate(-35deg) scale(.88); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes br-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1099px) {
+    :root:root .br-page.br-dash .br-dash-donut { width: 172px; height: 172px; }
+}
+
+
+/* ---------- 2. Range selector pill ---------- */
+
+.br-range-ink-on { position: relative; }
+
+.br-range-ink-on > :not(.br-range-ink) { position: relative; z-index: 1; }
+
+.br-range-ink {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    will-change: transform, width;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--br-text) 9%, transparent);
+}
+
+.br-range-ink-on[data-rink-ready] > .br-range-ink { opacity: 1; }
+.br-range-ink-on[data-rink-ready][data-rink-go] > .br-range-ink {
+    transition: transform .45s cubic-bezier(.22, .61, .36, 1), width .45s cubic-bezier(.22, .61, .36, 1);
+}
+
+/* the pill replaces the active button's own background */
+.br-range-ink-on[data-rink-ready] > .active,
+:root:root .br-page.br-dash .br-range-ink-on[data-rink-ready] > .br-dash-pill.active,
+.su-range.br-range-ink-on[data-rink-ready] > .su-range-btn.active,
+.br-income .br-chip-row.br-range-ink-on[data-rink-ready] > .br-chip.active,
+.br-chip-row.br-range-ink-on[data-rink-ready] > .br-chip.active {
+    background: transparent;
+    box-shadow: none;
+}
+
+.br-dash-pills.br-range-ink-on > .br-range-ink {
+    background: color-mix(in srgb, var(--br-text) 9%, transparent);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .18);
+}
+
+.su-range.br-range-ink-on > .br-range-ink {
+    background: var(--su-tile-2);
+    border-radius: 9px;
+}
+
+.br-chip-row.br-range-ink-on > .br-range-ink {
+    background: var(--br-gold-surface);
+}
+
+.br-income-tabs.br-range-ink-on > .br-range-ink {
+    background: var(--br-surface-active, color-mix(in srgb, var(--br-text) 9%, transparent));
+    border-radius: var(--br-radius-sm, 8px);
+}
+
+.br-income-tabs.br-range-ink-on[data-rink-ready] > .br-income-tab.active { background: transparent; }
+
+/* labels ease colour and spring a little when picked */
+.br-dash-pill, .su-range-btn, .stk-pnl-bar .br-chip {
+    transition: color .22s ease, transform .15s ease;
+}
+
+.br-dash-pill:active, .su-range-btn:active, .stk-pnl-bar .br-chip:active { transform: scale(.94); }
+
+
+/* ---------- 3. Tab indicator ---------- */
+
+/* the stretch is animated from JS, so the plain CSS slide steps aside */
+
+.br-income-tabs.br-tabs-ink-on[data-ink="line"] > .br-tab-ink {
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent, var(--br-gold)) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .br-dash-donut,
+    .br-dash-seg,
+    .br-dash-deco { animation: none !important; }
+}
+
+/* Mutual Fund tab switch: same calm fade as the other tabs */
+@keyframes br-su-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* slower, softer underline slide for the main tabs */
+.br-income-tabs.br-tabs-ink-on[data-ink-animate] > .br-tab-ink {
+    transition:
+        transform 460ms cubic-bezier(0.22, 0.61, 0.36, 1),
+        width 460ms cubic-bezier(0.22, 0.61, 0.36, 1),
+        height 460ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}

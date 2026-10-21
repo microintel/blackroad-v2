@@ -75,14 +75,14 @@
             d.setAttribute("data-theme", theme);
             try {
                 var v = localStorage.getItem("br-variant");
-                var okV = (theme === "light" && v === "ivory-forest") || (theme === "dark" && v === "slate-champagne");
+                var okV = (theme === "light" && v === "ivory-forest");
                 if (okV) d.setAttribute("data-variant", v);
                 var tc = okV ? v : null;
             } catch (e) { /* ignore */ }
             d.setAttribute("data-style", "flat");
             d.setAttribute("data-accent", "gold");
             var m = document.querySelector('meta[name="theme-color"]');
-            var C = {"light": "#EEECE7", "dark": "#000000", "ivory-forest": "#F5F4EF", "slate-champagne": "#171A1F"}; if (m) m.setAttribute("content", C[tc || theme]);
+            var C = {"light": "#EEECE7", "dark": "#000000", "ivory-forest": "#F5F4EF"}; if (m) m.setAttribute("content", C[tc || theme]);
         })();
     </script>
 
@@ -118,6 +118,7 @@
     <link rel="modulepreload" href="./src/data/db-registry.js">
     <link rel="modulepreload" href="./src/app/views.js">
     <link rel="modulepreload" href="./src/components/motion.js">
+    <link rel="modulepreload" href="./src/components/range-motion.js">
     <link rel="modulepreload" href="./src/services/guest-seed.js">
     <link rel="modulepreload" href="./src/data/data-service.js">
     <link rel="modulepreload" href="./src/data/database.js">
@@ -320,6 +321,11 @@
     <link
         rel="stylesheet"
         href="./src/styles/account.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./src/styles/fx.css"
     >
 
 

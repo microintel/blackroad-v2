@@ -134,22 +134,34 @@ function buildDonut(data) {
 
     let offset = 0;
 
+    /* Small gap between slices (round caps eat ~one stroke width of it). */
+    const GAP = data.chartItems.length > 1 ? 14 : 0;
+
     const segments = data.chartItems
-        .map((item) => {
+        .map((item, i) => {
             const length = (item.pct / 100) * CIRCUMFERENCE;
+            const dash = Math.max(0.5, length - GAP);
 
             const segment = `
-                <circle class="br-dash-seg br-dash-c-${item.key} br-tip-seg" data-seg="${item.key}"
+                <circle class="br-dash-seg br-dash-c-${item.key} br-tip-seg" data-seg="${item.key}" style="--i:${i}"
                     ${tipAttr(item.label, [["Share", item.pct + "%"], ["Value", formatINR(item.amount)]])}
                     cx="66" cy="66" r="52"
-                    stroke-dasharray="${length} ${CIRCUMFERENCE - length}"
-                    stroke-dashoffset="${-offset}"></circle>
+                    stroke-dasharray="${dash.toFixed(2)} ${(CIRCUMFERENCE - dash).toFixed(2)}"
+                    stroke-dashoffset="${(-(offset + GAP / 2)).toFixed(2)}"></circle>
             `;
 
             offset += length;
 
             return segment;
         })
+        .join("");
+
+    const gradients = data.chartItems
+        .map(
+            (item) => `<linearGradient id="brdg-${item.key}" class="br-dash-grad br-dash-c-${item.key}" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0"></stop><stop offset="1"></stop>
+                </linearGradient>`
+        )
         .join("");
 
     const legend = data.chartItems
@@ -167,6 +179,8 @@ function buildDonut(data) {
     return `
         <div class="br-dash-donut">
             <svg viewBox="0 0 132 132" aria-hidden="true">
+                <defs>${gradients}</defs>
+                <circle class="br-dash-deco" cx="66" cy="66" r="63"></circle>
                 <circle class="br-dash-ring-empty"
                     cx="66" cy="66" r="52"></circle>
                 ${segments}
@@ -624,9 +638,28 @@ export async function Dashboard() {
     /* Legend <-> donut highlight */
     const alloc = page.querySelector("[data-alloc]");
 
+    /* The donut centre shows the hovered slice (name + share), then goes back to the total. */
+    const centerLabel = alloc.querySelector(".br-dash-donut-center small");
+    const centerValue = alloc.querySelector(".br-dash-donut-center b");
+    const centerBase = centerLabel && centerValue
+        ? { label: centerLabel.textContent, value: centerValue.textContent }
+        : null;
+
     const highlight = (key) => {
         if (key) alloc.dataset.hover = key;
         else delete alloc.dataset.hover;
+
+        if (!centerBase) return;
+
+        const item = key ? data.chartItems.find((it) => it.key === key) : null;
+
+        centerLabel.textContent = item ? item.label : centerBase.label;
+        centerValue.textContent = item ? item.pct + "%" : centerBase.value;
+
+        const center = centerValue.parentElement;
+        center.classList.remove("is-swap");
+        void center.offsetWidth;
+        center.classList.add("is-swap");
     };
 
     alloc.querySelectorAll("li[data-seg]").forEach((li) => {

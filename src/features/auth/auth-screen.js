@@ -1,7 +1,7 @@
 import { login, register, loginGuest, GUEST_PROFILES } from "../../services/auth.js";
 import { randomPortraitSet, saveGuestAvatar } from "../../services/guest-avatar.js";
 import { navigate, hardNavigate } from "../../app/router.js";
-import { authBackground, startParticles } from "./auth-background.js";
+import { authBackground, authShowcase, startShowcase } from "./auth-background.js";
 
 /* Full-screen sign-in / register (rendered without the app shell).
    Scope changes on sign-in, and the data layer caches databases per
@@ -38,6 +38,8 @@ const GOOGLE_ICON = `<svg class="br-auth-google-icon" viewBox="0 0 48 48" width=
     <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
     <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
 </svg>`;
+
+const GUEST_ICON = `<svg class="br-auth-guest-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>`;
 
 /* Small "coming soon" popup (self-contained, closes on OK, Escape or outside click). */
 function comingSoon(feature) {
@@ -162,6 +164,7 @@ export function AuthScreen(mode) {
             <ul class="br-auth-points">
                 ${copy.points.map((t) => `<li>${t}</li>`).join("")}
             </ul>
+            ${authShowcase()}
         </aside>
         <div class="br-auth-card">
             <button type="button" class="br-auth-back" data-l-back-form aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
@@ -200,7 +203,7 @@ export function AuthScreen(mode) {
                        <a href="#/register" data-go="/register" class="br-button">Create an account</a>`
                     : `<span>Already have an account?</span>
                        <a href="#/login" data-go="/login" class="br-button">Sign in</a>`}
-                <button type="button" class="br-button br-auth-guest" data-guest>Continue as guest<span class="br-auth-long"> (read-only)</span></button>
+                <button type="button" class="br-button br-auth-guest" data-guest aria-label="Continue as guest (read-only)">${GUEST_ICON}<span>Guest</span></button>
             </div>
 
             <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
@@ -218,13 +221,13 @@ export function AuthScreen(mode) {
         </div>
     `;
 
-    // The animated chart is desktop / tablet only; phones stay pure black.
+    // The feature showcase is desktop only (it lives in the left panel); phones stay pure black.
     const phone = window.matchMedia("(max-width: 640px)");
     let bgStarted = false;
     const maybeStartBackground = () => {
         if (bgStarted || phone.matches) return;
         bgStarted = true;
-        startParticles(el);
+        startShowcase(el);
     };
     maybeStartBackground();
     if (phone.addEventListener) phone.addEventListener("change", maybeStartBackground);

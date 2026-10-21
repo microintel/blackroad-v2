@@ -1,20 +1,27 @@
 /* =========================================================
    TAB ARROW KEYS
-   Income, Stocks, Mutual Fund (StepUp) and Lending.
+   Income, Stocks, Mutual Fund (StepUp), Lending, Calculators,
+   Accounting and Settings.
 
    Desktop: Left / Right arrow keys move to the previous / next tab.
    It only clicks the same tab buttons the user would click, so every
    module keeps working exactly as before. Mobile swipe was removed.
    ========================================================= */
 
-const TAB_ATTRS = ["data-income-tab", "data-stocks-tab", "data-su-tab", "data-ll-tab"];
+const TAB_ATTRS = [
+    "data-income-tab", "data-stocks-tab", "data-su-tab", "data-ll-tab",
+    "data-calc-tab", "data-ac-tab", "data-account-tab"
+];
 
 /* Same panels motion.js knows about (the one that holds the open tab). */
 const PANEL_FOR = [
     ["incomeTab", (page, v) => page.querySelector(`[data-income-view-container="${v}"]`)],
     ["stocksTab", (page, v) => page.querySelector(`[data-stocks-view="${v}"]`)],
     ["suTab", (page) => page.querySelector("[data-su-content]")],
-    ["llTab", (page) => page.querySelector("[data-ll-content]")]
+    ["llTab", (page) => page.querySelector("[data-ll-content]")],
+    ["calcTab", (page) => page.querySelector("[data-calc-content]")],
+    ["acTab", (page, v) => page.querySelector(`[data-ac-panel="${v}"]`)],
+    ["accountTab", (page, v) => page.querySelector(`[data-account-panel="${v}"]`)]
 ];
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";

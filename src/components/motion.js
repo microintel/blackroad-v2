@@ -182,20 +182,22 @@ function panelOf(button) {
     return null;
 }
 
-function slidePanel(panel, dir) {
+function slidePanel(panel) {
     if (!panel || !isShown(panel)) return;
 
+    /* Calm, gradual fade-in with a tiny rise, so the new tab eases in instead of popping. */
     play(
         panel,
         [
-            { opacity: 0, transform: `translateX(${dir * SHIFT}px)` },
-            { opacity: 1, transform: "none" }
+            { opacity: 0, transform: "translateY(6px)", offset: 0 },
+            { opacity: 0.55, transform: "translateY(3px)", offset: 0.35 },
+            { opacity: 1, transform: "none", offset: 1 }
         ],
-        { duration: 280 }
+        { duration: 520, easing: "cubic-bezier(0.22, 0.61, 0.36, 1)" }
     );
 }
 
-function placeInk(group, ink) {
+function placeInk(group, ink, moved) {
     const button = group.querySelector(".br-income-tab.active");
 
     if (!button || !button.offsetWidth) {
@@ -214,6 +216,10 @@ function placeInk(group, ink) {
         y += h - border;
         h = border;
     }
+
+    /* The indicator stretches toward the new tab, then shrinks onto it. */
+    const prev = ink._pos;
+    ink._pos = { x, y, w, h };
 
     ink.style.width = w + "px";
     ink.style.height = h + "px";
@@ -275,8 +281,8 @@ function setupGroup(group) {
 
         current = next;
 
-        sync();
-        slidePanel(panelOf(next), dir);
+        placeInk(group, ink, true);
+        slidePanel(panelOf(next));
 
         /* Keep the new tab centred in a scrolling tab strip (narrow
            screens). Scrolls the strip only, never the page. */
