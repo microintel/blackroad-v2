@@ -1,0 +1,127 @@
+/* =========================================================
+   BlackRoad splash screen (embedded, works offline).
+   Markup lives at the top of <body> in index.html; behaviour in
+   src/app/splash.js. Everything is scoped under #br-splash so it
+   cannot affect the app's own styles.
+   ========================================================= */
+
+#br-splash {
+    --sp-bg: #000000;
+    --sp-green: #14E096;
+    --sp-white: #FFFFFF;
+    --sp-muted: #8A8F98;
+    --sp-ease: cubic-bezier(.2, .8, .2, 1);
+
+    position: fixed;
+    inset: 0;
+    z-index: 2147483600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+    background: var(--sp-bg);
+    color: var(--sp-white);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity .45s ease;
+}
+
+#br-splash.is-leaving { opacity: 0; pointer-events: none; }
+
+/* Already shown this session (or removed): never flash it again. */
+html.br-splash-skip #br-splash,
+#br-splash[hidden] { display: none !important; }
+
+#br-splash * { box-sizing: border-box; }
+
+#br-splash .mark { width: min(46vw, 190px); height: auto; overflow: visible; display: block; }
+
+#br-splash .stroke {
+    fill: none;
+    stroke: var(--sp-white);
+    stroke-width: 6;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+        brsp-draw 1.25s cubic-bezier(.45, .05, .25, 1) var(--d, .15s) forwards,
+        brsp-strokeout .55s ease 1.85s forwards;
+}
+#br-splash .stroke.hole { --d: .6s; animation-duration: 1s, .55s; }
+#br-splash .stroke.bar  { stroke: var(--sp-green); stroke-width: 5; animation-duration: .7s, .55s; }
+
+#br-splash .art { opacity: 0; animation: brsp-fade .6s ease 1.75s forwards; }
+
+#br-splash .name {
+    margin-top: 22px;
+    font-size: clamp(26px, 6.5vw, 34px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: brsp-rise .6s var(--sp-ease) 2.2s forwards;
+}
+
+#br-splash .tag {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--sp-muted);
+    opacity: 0;
+    animation: brsp-rise .6s var(--sp-ease) 2.4s forwards;
+}
+
+#br-splash .bar-load {
+    position: absolute;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 64px);
+    width: 120px;
+    height: 3px;
+    margin-left: -60px;
+    border-radius: 3px;
+    background: #1C1C1C;
+    overflow: hidden;
+    opacity: 0;
+    animation: brsp-fade .4s ease 2.5s forwards;
+}
+
+#br-splash .bar-load::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: 3px;
+    background: var(--sp-green);
+    transform: translateX(-100%);
+    animation: brsp-load 1.4s var(--sp-ease) 2.6s forwards;
+}
+
+#br-splash .credit {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom) + 22px);
+    text-align: center;
+    font-size: 12px;
+    color: var(--sp-muted);
+    opacity: 0;
+    animation: brsp-fade .6s ease 2.5s forwards;
+}
+
+#br-splash .credit strong { color: var(--sp-white); font-weight: 600; }
+
+@keyframes brsp-draw      { to { stroke-dashoffset: 0; } }
+@keyframes brsp-strokeout { to { stroke-opacity: 0; } }
+@keyframes brsp-rise      { to { opacity: 1; transform: none; } }
+@keyframes brsp-fade      { to { opacity: 1; } }
+@keyframes brsp-load      { to { transform: translateX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+    #br-splash .stroke { display: none; }
+    #br-splash .art, #br-splash .name, #br-splash .tag,
+    #br-splash .bar-load, #br-splash .credit,
+    #br-splash .bar-load::after { animation-duration: .01s; animation-delay: 0s; }
+    #br-splash { transition-duration: .01s; }
+}

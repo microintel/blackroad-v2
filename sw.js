@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v225";
+const CACHE_VERSION = "v226";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -34,6 +34,9 @@ const SHELL = [
     "./assets/icons/apple-touch-icon.png",
     "./assets/icons/favicon-64.png",
     "./blackroad.png",
+    "./assets/images/splash-logo.png",
+    "./src/styles/splash.css",
+    "./src/app/splash.js",
     "./src/styles/brand.css",
     "./src/styles/account.css",
     "./src/styles/fx.css",
