@@ -6,7 +6,8 @@ export const navigation = [
         items: [
             { label: "Dashboard", path: "/dashboard", icon: "layout-dashboard", color: "#3B82F6" },
             { label: "Net Worth", path: "/networth", icon: "trending-up", color: "#10B981" },
-            { label: "Connect Broker", path: "/connect-broker", icon: "plug", color: "#F59E0B" }
+            { label: "Connect Broker", path: "/connect-broker", icon: "plug", color: "#F59E0B" },
+            { label: "RoadSync", path: "/roadsync", icon: "brain-circuit", color: "#D4AF37" }
         ]
     },
 

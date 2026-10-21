@@ -1,0 +1,300 @@
+/* =========================================================
+   ROADSYNC  (Overview card + workflow sheet)
+   Everything is scoped to .rs-* so no existing style changes.
+   Uses the app's own tokens, so every theme works.
+   ========================================================= */
+
+/* ---------- Overview card ---------- */
+
+.rs-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+        "badge text chev"
+        "strip strip strip";
+    align-items: center;
+    gap: 12px 16px;
+    width: 100%;
+    margin: 0 0 var(--br-space-5);
+    padding: var(--br-space-5);
+    text-align: left;
+    cursor: pointer;
+    color: var(--br-text);
+    border: 1px solid color-mix(in srgb, var(--br-gold) 32%, var(--br-border));
+    background:
+        radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--br-gold) 14%, transparent), transparent 60%),
+        var(--br-surface-soft);
+    transition: border-color .15s ease, transform .15s ease;
+}
+
+.rs-card:hover { border-color: var(--br-gold); }
+.rs-card:active { transform: scale(.995); }
+.rs-card:focus-visible { outline: 2px solid var(--br-gold); outline-offset: 2px; }
+
+.rs-ai-badge {
+    grid-area: badge;
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--br-gold);
+    color: #000;
+    flex: none;
+}
+
+.rs-ai-badge i {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    padding: 1px 5px;
+    border-radius: 999px;
+    font: 800 9px/1.4 var(--br-font, system-ui);
+    font-style: normal;
+    letter-spacing: .04em;
+    color: var(--br-gold-text);
+    background: #000;
+    border: 1px solid var(--br-gold);
+}
+
+.rs-ai-badge--sm { width: 36px; height: 36px; border-radius: 11px; }
+.rs-ai-badge--sm i { font-size: 8px; padding: 0 4px; right: -5px; bottom: -5px; }
+
+.rs-card-text { grid-area: text; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rs-card-text b { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.rs-card-text small { color: var(--br-text-secondary); font-size: var(--br-font-size-sm); line-height: 1.4; }
+
+.rs-card-chev { grid-area: chev; color: var(--br-text-muted); display: inline-grid; }
+.rs-card:hover .rs-card-chev { color: var(--br-gold-text); transform: translateX(2px); }
+.rs-card-chev { transition: transform .15s ease, color .15s ease; }
+
+.rs-card-strip {
+    grid-area: strip;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.rs-mini {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    color: var(--br-gold-text);
+    background: var(--br-gold-surface);
+    flex: none;
+}
+
+.rs-mini-dot {
+    flex: 1 1 6px;
+    min-width: 6px;
+    max-width: 22px;
+    height: 0;
+    border-top: 1.5px dashed var(--br-border-strong);
+}
+
+/* ---------- Sheet ---------- */
+
+html.rs-lock, html.rs-lock body { overflow: hidden; }
+
+.rs-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--br-space-5);
+    background: var(--br-overlay, rgba(0, 0, 0, .7));
+    animation: rs-fade .2s ease both;
+}
+
+.rs-layer.is-leaving { opacity: 0; transition: opacity .2s ease; }
+
+.rs-sheet {
+    width: min(640px, 100%);
+    max-height: min(820px, 100%);
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--br-radius-lg);
+    background: var(--br-surface-soft);
+    border: 1px solid var(--br-border);
+    color: var(--br-text);
+    overflow: hidden;
+    animation: rs-rise .28s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.rs-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px 12px;
+}
+
+.rs-head-text { flex: 1; min-width: 0; }
+.rs-head-text h3 { margin: 0; font-size: 18px; }
+.rs-head-text p { margin: 0; color: var(--br-text-secondary); font-size: var(--br-font-size-sm); }
+
+.rs-close {
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    border: 0; border-radius: var(--br-radius-sm);
+    background: transparent; color: var(--br-text-secondary);
+    cursor: pointer;
+}
+.rs-close:hover { background: var(--br-surface-hover); color: var(--br-text); }
+
+.rs-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 18px 18px;
+    overscroll-behavior: contain;
+}
+
+.rs-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 18px calc(14px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--br-border);
+}
+.rs-foot[hidden] { display: none; }
+.rs-foot .br-button { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Workflow overview (opening screen) ---------- */
+
+.rs-flow { list-style: none; margin: 0; padding: 0; position: relative; }
+
+.rs-flow-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    opacity: 0;
+    animation: rs-item .4s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 60ms + 80ms) forwards;
+}
+
+/* the line that connects the icons */
+.rs-flow-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 19px; top: 50px; bottom: -8px;
+    border-left: 2px dashed var(--br-border-strong);
+}
+
+.rs-flow-icon {
+    display: inline-grid; place-items: center;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    color: var(--br-text-secondary);
+    background: var(--br-surface);
+    flex: none;
+}
+.rs-flow-item.who-ai .rs-flow-icon { background: var(--br-gold); color: #000; }
+.rs-flow-item.who-br .rs-flow-icon { background: color-mix(in srgb, var(--br-success) 16%, transparent); color: var(--br-success); }
+.rs-flow-item.who-you .rs-flow-icon { background: var(--br-surface-active); color: var(--br-text); }
+
+.rs-flow-text { display: flex; flex-direction: column; min-width: 0; }
+.rs-flow-text b { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.rs-flow-text b em {
+    font-style: normal; font-size: 11px; font-weight: 700;
+    min-width: 18px; height: 18px; display: inline-grid; place-items: center;
+    border-radius: 50%; background: var(--br-surface-active); color: var(--br-text-secondary);
+}
+.rs-flow-text small { color: var(--br-text-secondary); font-size: 12.5px; line-height: 1.4; }
+
+.rs-who {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    color: var(--br-text-secondary); background: var(--br-surface);
+}
+.rs-who.who-ai { color: var(--br-gold-text); background: var(--br-gold-surface); }
+.rs-who.who-br { color: var(--br-success); background: color-mix(in srgb, var(--br-success) 14%, transparent); }
+
+
+/* ---------- Motion + small screens ---------- */
+
+@keyframes rs-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rs-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes rs-item { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 640px) {
+    .rs-layer { padding: 0; align-items: flex-end; }
+    .rs-sheet { width: 100%; max-height: 94dvh; border-radius: 16px 16px 0 0; animation-name: rs-sheet-up; }
+    .rs-card { padding: var(--br-space-4); }
+    .rs-flow-item { grid-template-columns: 40px 1fr; }
+    .rs-flow-item .rs-who { display: none; }
+    .rs-foot .br-button { flex: 1; justify-content: center; }
+}
+
+@keyframes rs-sheet-up { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .rs-layer, .rs-sheet, .rs-flow-item { animation-duration: .01s; animation-delay: 0s; }
+}
+
+/* ---------- RoadSync page ---------- */
+.rs-page-card { padding: 0; overflow: hidden; }
+.rs-page-card .rs-head { padding: 18px 20px 12px; }
+.rs-page-card .rs-body { overflow: visible; padding: 4px 20px 20px; }
+
+/* ---------- Roadmap ---------- */
+.rs-road { position: relative; height: calc(var(--rows) * var(--row)); margin-top: 8px; }
+.rs-road-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.rs-road-svg path { fill: none; stroke-linecap: round; }
+.rs-road-bed { stroke: var(--br-surface-active); stroke-width: 22; }
+.rs-road-line {
+    stroke: var(--br-border-strong); stroke-width: 2.5; stroke-dasharray: 0.006 0.012;
+    animation: rs-road-in 1.6s ease both;
+}
+@keyframes rs-road-in { from { stroke-dashoffset: 1; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
+
+.rs-stops { list-style: none; margin: 0; padding: 0; }
+.rs-stop {
+    position: absolute; left: 0; right: 0; height: var(--row);
+    top: calc(var(--i) * var(--row));
+    opacity: 0; animation: rs-item .5s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 90ms + 100ms) forwards;
+}
+.rs-node {
+    position: absolute; left: var(--x); top: 50%;
+    width: 84px; height: 84px; transform: translate(-50%, -50%);
+    display: grid; place-items: center; border-radius: 50%;
+    background: var(--br-surface); color: var(--br-text);
+    border: 3px solid var(--br-bg, var(--br-surface-soft));
+    box-shadow: 0 0 0 2px var(--br-border-strong);
+}
+.rs-stop.who-ai .rs-node { background: var(--br-gold); color: #000; box-shadow: 0 0 0 2px var(--br-gold); }
+.rs-stop.who-br .rs-node { background: color-mix(in srgb, var(--br-success) 18%, var(--br-surface)); color: var(--br-success); box-shadow: 0 0 0 2px var(--br-success); }
+.rs-node em {
+    position: absolute; top: -4px; right: -4px; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 700;
+    background: var(--br-text); color: var(--br-surface-soft);
+}
+.rs-stop-text {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: calc(100% - var(--x) - 70px); display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+}
+.rs-stop.is-left .rs-stop-text { left: calc(var(--x) + 56px); }
+.rs-stop.is-right .rs-stop-text { right: calc(100% - var(--x) + 56px); width: calc(var(--x) - 70px); align-items: flex-end; text-align: right; }
+.rs-stop-text b { font-size: 16px; font-weight: 700; }
+.rs-stop-text small { color: var(--br-text-secondary); font-size: 13px; line-height: 1.4; }
+
+@media (max-width: 640px) {
+    .rs-node { width: 64px; height: 64px; }
+    .rs-node svg { width: 28px; height: 28px; }
+    .rs-road-bed { stroke-width: 16; }
+    .rs-stop-text { width: calc(100% - var(--x) - 50px); }
+    .rs-stop.is-left .rs-stop-text { left: calc(var(--x) + 44px); }
+    .rs-stop.is-right .rs-stop-text { right: calc(100% - var(--x) + 44px); width: calc(var(--x) - 50px); }
+    .rs-stop-text b { font-size: 14px; }
+    .rs-stop-text small { font-size: 12px; }
+    .rs-page-card .rs-body { padding: 4px 8px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .rs-stop, .rs-road-line { animation-duration: .01s; animation-delay: 0s; } }

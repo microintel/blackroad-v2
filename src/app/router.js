@@ -61,6 +61,11 @@ const routes = {
         module: "connectbroker"
     },
 
+    "/roadsync": {
+        title: "RoadSync",
+        module: "roadsync"
+    },
+
     "/brokers": {
         title: "Brokerage Report Readers",
         module: "brokers"

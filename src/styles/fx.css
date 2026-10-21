@@ -1,6 +1,6 @@
 /* =========================================================
    FX  (presentation only, loaded last)
-   1. Asset allocation donut: gradient slices, gaps, glow
+   1. Asset allocation donut: gradient slices, gaps
    2. Sliding pill under range selectors (see range-motion.js)
    3. Softer tab indicator
    ========================================================= */
@@ -27,10 +27,10 @@
     cursor: pointer;
 }
 
-:root:root .br-page.br-dash .br-dash-donut .br-dash-c-stocks  { stroke: url(#brdg-stocks)  var(--br-series-1); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-1) 55%, transparent)); }
-:root:root .br-page.br-dash .br-dash-donut .br-dash-c-mf      { stroke: url(#brdg-mf)      var(--br-series-2); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-2) 55%, transparent)); }
-:root:root .br-page.br-dash .br-dash-donut .br-dash-c-fd      { stroke: url(#brdg-fd)      var(--br-series-3); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-3) 45%, transparent)); }
-:root:root .br-page.br-dash .br-dash-donut .br-dash-c-lending { stroke: url(#brdg-lending) var(--br-series-6); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--br-series-6) 45%, transparent)); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-stocks  { stroke: url(#brdg-stocks)  var(--br-series-1); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-mf      { stroke: url(#brdg-mf)      var(--br-series-2); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-fd      { stroke: url(#brdg-fd)      var(--br-series-3); }
+:root:root .br-page.br-dash .br-dash-donut .br-dash-c-lending { stroke: url(#brdg-lending) var(--br-series-6); }
 
 /* track behind the slices */
 :root:root .br-page.br-dash .br-dash-donut .br-dash-ring-empty {
