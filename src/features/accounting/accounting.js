@@ -1,3 +1,4 @@
+import { bindAddShortcut, clickFirstVisible } from "../../app/add-shortcut.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import {
     EMPTY_MANUAL,
@@ -145,6 +146,7 @@ export async function Accounting() {
 
     fillForm(page, saved || EMPTY_MANUAL);
     bindEvents(page);
+    bindAddShortcut(page, (p) => clickFirstVisible(p, '[data-action="add-bank"], [data-action="add-custom"]'));
     render(page);
     prepareBankNames(page);
 

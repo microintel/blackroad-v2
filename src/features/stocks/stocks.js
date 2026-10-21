@@ -1,3 +1,4 @@
+import { bindAddShortcut, clickFirstVisible } from "../../app/add-shortcut.js";
 import { icon } from "../../components/icons.js";
 import { SERIES } from "../../components/chart-colors.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
@@ -429,6 +430,7 @@ export async function Stocks() {
 
     enhanceTimeInputs(page);
     attachEvents(page);
+    bindAddShortcut(page, (p) => clickFirstVisible(p, '[data-action="add-txn"]'));
     realizedChart = createPnlChart(page.querySelector("[data-an-realized-chart]"), { kind: "realized" });
     await loadState(page);
 

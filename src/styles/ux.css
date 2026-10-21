@@ -290,14 +290,13 @@ a.br-card:active, .br-dash-tile:active, .br-button:active { transform: scale(.98
     .br-account { --acx-w: 720px; }
 }
 
-/* Desktop: side menu + content */
+/* Desktop: wider column, tabs on top */
 @media (min-width: 1000px) {
     .br-account { --acx-w: 1120px; }
 
     :root .br-account .acx:not(.acx-narrow) {
         display: grid;
-        grid-template-columns: 240px minmax(0, 1fr);
-        column-gap: var(--br-space-5);
+        grid-template-columns: minmax(0, 1fr);
         align-items: start;
         padding-bottom: var(--br-space-7);
     }
@@ -313,34 +312,14 @@ a.br-card:active, .br-dash-tile:active, .br-button:active { transform: scale(.98
     .acx:not(.acx-narrow) .acx-who p { font-size: 13.5px; }
     :root .br-account.br-page .acx:not(.acx-narrow) .acx-avatar { width: 68px; height: 68px; }
 
-    /* Tabs become a vertical menu */
+    /* Tabs stay a horizontal row (same flat tabs as Income / Accounting / Mutual Fund) */
     :root .br-account .acx:not(.acx-narrow) > .acx-tabs.br-income-tabs.br-tabs-flat {
-        grid-column: 1;
-        flex-direction: column;
-        gap: 4px;
-        width: auto;
-        margin: 0;
-        padding: 8px;
-        border-radius: var(--acx-r);
-        position: sticky;
-        top: calc(var(--br-header-height, 64px) + var(--br-space-4));
+        grid-column: 1 / -1;
+        margin: 0 0 var(--br-space-4);
     }
-    :root .br-account .acx:not(.acx-narrow) > .acx-tabs .br-income-tab {
-        flex: none;
-        width: 100%;
-        min-height: 42px;
-        padding: 0 14px;
-        text-align: left;
-        justify-content: flex-start;
-        font-size: 14px;
-    }
-    /* the sliding block is built for a horizontal row: use a plain active background here */
-    :root .br-account .acx:not(.acx-narrow) > .acx-tabs > .br-tab-ink { display: none; }
-    :root .br-account .acx:not(.acx-narrow) > .acx-tabs.br-tabs-ink-on[data-ink-ready] > .br-income-tab.active,
-    :root .br-account .acx:not(.acx-narrow) > .acx-tabs .br-income-tab.active { background: var(--acx-card-strong); }
 
     /* Panels: two cards per row, big ones span both */
-    .acx:not(.acx-narrow) > .acx-panel { grid-column: 2; }
+    .acx:not(.acx-narrow) > .acx-panel { grid-column: 1 / -1; }
     .acx:not(.acx-narrow) > .acx-panel:not([hidden]) {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));

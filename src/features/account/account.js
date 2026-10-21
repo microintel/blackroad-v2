@@ -1,3 +1,4 @@
+import { shortcutsHTML } from "./shortcuts.js";
 import { confirmLogout } from "../../components/confirm-dialog.js";
 import { hardNavigate } from "../../app/router.js";
 import { AppearanceCard } from "./appearance.js";
@@ -33,7 +34,8 @@ const ACCOUNT_TABS = [
     ["avatar", "Avatar"],
     ["security", "Security"],
     ["plan", "Plan"],
-    ["appearance", "Appearance"]
+    ["appearance", "Appearance"],
+    ["shortcuts", "Shortcuts"]
 ];
 
 let currentAccountTab = "profile";
@@ -187,6 +189,7 @@ function renderGuest(page) {
                 <p>Guest sessions can't manage an account. Sign in or create one to save your data and change your password.</p>
             </div>
             <button type="button" class="br-button br-button-primary" data-action="leave-guest">Sign in / create account</button>
+            <div class="acx-section"><h3>Keyboard shortcuts</h3>${shortcutsHTML()}</div>
         </div>
     `;
 
@@ -302,6 +305,8 @@ async function renderProfile(page, user) {
             `)}
 
             ${panel("appearance", `<div data-appearance-mount></div>`)}
+
+            ${panel("shortcuts", shortcutsHTML())}
         </div>
 
         <div class="br-toast" data-toast></div>

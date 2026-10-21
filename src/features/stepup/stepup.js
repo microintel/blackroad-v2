@@ -1,3 +1,4 @@
+import { bindAddShortcut, clickFirstVisible } from "../../app/add-shortcut.js";
 import { isUSD, usd } from "../../services/currency.js";
 import { icon } from "../../components/icons.js";
 import { runTask } from "../../components/task-loader.js";
@@ -144,6 +145,16 @@ export async function StepUp() {
     `;
 
     attachEvents(page);
+    bindAddShortcut(page, (p) => {
+        /* Add the next daily entry if the fund is open, else start a new SIP */
+        const pct = p.querySelector('[data-form="add-entry"] [name="pct"]');
+        if (pct && pct.offsetParent !== null) {
+            pct.scrollIntoView({ block: "center", behavior: "smooth" });
+            pct.focus({ preventScroll: true });
+        } else {
+            clickFirstVisible(p, '[data-action="new-profile"]');
+        }
+    });
 
     await loadProfiles();
     await loadProfileData();

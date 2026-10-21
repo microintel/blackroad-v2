@@ -470,6 +470,31 @@ function fieldHTML(
 
 function attachEvents(page) {
 
+    /* Alt+N opens the Add income popup, same as the + button. (Ctrl+N also works
+       where the browser allows it, e.g. the installed app; a normal tab keeps it for "new window".) */
+    const onShortcut = (event) => {
+        if (!page.isConnected) {
+            document.removeEventListener("keydown", onShortcut);
+            return;
+        }
+
+        const isN = event.code === "KeyN" || String(event.key).toLowerCase() === "n";
+        const viaAlt = event.altKey && !event.ctrlKey && !event.metaKey;
+        const viaCtrl = (event.ctrlKey || event.metaKey) && !event.altKey;
+
+        if (!isN || event.shiftKey || !(viaAlt || viaCtrl)) return;
+
+        const modal = page.querySelector("[data-income-modal]");
+
+        event.preventDefault();
+
+        if (modal && !modal.hidden) return;
+
+        page.querySelector('[data-action="add-income"]')?.click();
+    };
+
+    document.addEventListener("keydown", onShortcut);
+
     /* Statement period rows are keyboard-reachable: Enter / Space opens them. */
     page.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;

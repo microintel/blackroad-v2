@@ -1,3 +1,4 @@
+import { bindAddShortcut, clickFirstVisible } from "../../app/add-shortcut.js";
 import { icon } from "../../components/icons.js";
 import { dataService } from "../../data/data-service.js";
 
@@ -162,6 +163,7 @@ export async function Deposits() {
     `;
 
     attachEvents(page);
+    bindAddShortcut(page, (p) => clickFirstVisible(p, '[data-action="add-fd"]'));
     await refresh(page);
 
     return page;
