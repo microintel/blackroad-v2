@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Statement Reader</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#000;--ink:#f2f2f2;--muted:#8a8a8a;--line:#222;--cr:#4ade80;--dr:#f87171;--warn:#fbbf24;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:#000}
+body{margin:0;background:#000;color:var(--ink);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+.brand{font-weight:700;font-size:16px;letter-spacing:.02em}
+.logo{display:none}
+button{font:inherit;cursor:pointer;border:1px solid #fff;border-radius:8px;padding:8px 16px;font-weight:600;background:#fff;color:#000}
+button.ghost{background:#000;color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover{border-color:#555}
+button:focus-visible,input:focus-visible,select:focus-visible,.drop:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.drop{background:#000;border:1px dashed #333;border-radius:14px;padding:72px 20px;text-align:center;cursor:pointer}
+.drop.over,.drop:hover{border-color:#fff}
+.drop .ic{display:none}.drop h1{margin:0 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em}.drop p{margin:0;color:var(--muted)}
+.status{margin:14px 2px;color:var(--muted)}.err{color:var(--dr)}
+.hero{background:#000;border:1px solid var(--line);border-radius:14px;padding:24px}
+.hero small{color:var(--muted);display:block;font-size:13px}
+.hr{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hero h2{margin:2px 0 0;font-size:17px;font-weight:600}
+.bal{font-size:clamp(30px,6vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-top:2px}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0;margin-top:22px;border-top:1px solid var(--line)}
+.chip{padding:14px 14px 0 0}
+.chip b{font-size:17px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:#000;border-radius:14px;padding:20px;border:1px solid var(--line)}
+.card h3{margin:0 0 14px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.donut{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.donut svg{width:150px;height:150px;flex:none}
+.leg{flex:1;min-width:170px;display:grid;gap:2px}
+.leg button{all:unset;display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 6px;border-radius:6px}
+.leg button:hover,.leg button:focus-visible{background:#111}
+.leg i{width:8px;height:8px;border-radius:50%;flex:none}.leg span{flex:1}.leg em{font-style:normal;font-weight:600}
+.rep{display:grid;gap:0}
+.rep div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:8px 0}
+.rep div:last-child{border-bottom:0}
+.ok{color:var(--cr);font-weight:600}.bad{color:var(--warn);font-weight:600}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600;color:var(--warn)}
+.rv{margin:8px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;max-height:220px;overflow:auto;color:var(--muted)}
+.rv p{margin:0 0 6px;word-break:break-word}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tools input,.tools select{font:inherit;color:inherit;background:#000;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.tools input{flex:1;min-width:160px}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{background:#000;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;user-select:none}
+tr:last-child td{border-bottom:0}
+.r{text-align:right;white-space:nowrap}
+.dr{color:var(--dr);font-weight:600}.cr{color:var(--cr);font-weight:600}
+.ds{display:block}.ci{display:none}
+.sub{color:var(--muted);font-size:13px}
+.flag{display:inline-block;border:1px solid var(--warn);color:var(--warn);border-radius:6px;padding:0 6px;font-size:11px;font-weight:600;margin-left:8px;cursor:help}
+tr.w td:first-child{box-shadow:inset 2px 0 var(--warn)}
+.hide{display:none}
+.brand{background:linear-gradient(90deg,#38bdf8,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:18px}
+.hero{position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,#38bdf8,#a78bfa,#f472b6,#fb923c)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.tile{border:1px solid var(--line);border-top:2px solid var(--c);border-radius:12px;padding:12px 14px}
+.tile small{display:block;color:var(--muted);font-size:12px}.tile b{font-size:18px;color:var(--c);font-weight:700}
+.br{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center;padding:4px 0;font-size:13px}
+.br span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br i{display:block;height:8px;background:#111;border-radius:4px;overflow:hidden}.br b{display:block;height:100%;border-radius:4px}
+.br em{font-style:normal;color:var(--muted);font-size:12px;white-space:nowrap}
+.mo{padding:7px 0;border-bottom:1px solid var(--line)}.mo:last-child{border-bottom:0}.ml{font-weight:700;font-size:13px;margin-bottom:2px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.list div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.list div:last-child{border-bottom:0}
+button:not(.ghost):not(.leg button):not(.g-btn):not(.g-pill):not(.g-ic):not(.tabs button):not(.g-sheet button){background:linear-gradient(90deg,#38bdf8,#a78bfa);border-color:transparent;color:#000}
+.sk{background:linear-gradient(90deg,#0d0d0d 25%,#1b1b1b 50%,#0d0d0d 75%);background-size:200% 100%;animation:sh 1.4s infinite linear;border-radius:8px;height:14px;margin:10px 0}
+.sk.w40{width:40%}.sk.w60{width:60%}.sk.big{height:34px}.sk.line{height:36px}.sk.circ{width:150px;height:150px;border-radius:50%;margin:16px 0}
+.sk-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}.sk-row .sk{height:44px}
+.tile-sk{height:64px;border-radius:12px;margin:0}
+#skel .tiles{margin:16px 0}
+@keyframes sh{to{background-position:-200% 0}}
+#result>*{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+#result>*.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}#result>*{transition:none;transform:none}}
+.masonry{column-count:2;column-gap:16px;margin:16px 0}
+.masonry>.card{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:16px;display:block;width:100%}
+@media(max-width:760px){.masonry{column-count:1}}
+#months{max-height:340px;overflow-y:auto;padding-right:4px}
+#result>*:not(.masonry),.masonry>.card{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+#result>*:not(.masonry).in,.masonry>.card.in{opacity:1;transform:none}
+#result>.masonry{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.masonry>.card{transition:none;transform:none}}
+/* ===== BlackRoad data generator (scoped to #view-gen, uses BlackRoad's dark tokens) ===== */
+.tabs{display:flex;gap:4px;margin:-8px 0 22px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:10px 14px;font-weight:600;margin-bottom:-1px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:#E7C65A;border-bottom-color:#D4AF37}
+.tabs b{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:#211B0B;color:#E7C65A;font-size:12px;text-align:center}
+body.gen #reset{display:none}
+#view-gen,.g-layer{--gold:#D4AF37;--gold-b:#F0CC65;--gold-s:#211B0B;--gold-t:#E7C65A;--bd:#262626;--hov:#141414;--act:#1C1C1C;--tm:#A3A3A3;--tmu:#737373;--ok:#22C55E;--dg:#F87171;--wn:#fbbf24;font-family:Inter,Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
+#view-gen h2{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+#view-gen .g-lead{margin:4px 0 20px;color:var(--tm)}
+#view-gen .g-card{background:#000;border:1px solid var(--bd);border-radius:12px;padding:20px;margin-bottom:16px}
+#view-gen .g-h{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:16px;font-weight:600}
+#view-gen .g-h i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--gold-s);color:var(--gold-t);font-size:13px;font-weight:700;flex:none}
+#view-gen .g-h small{margin-left:auto;color:var(--tmu);font-weight:500;font-size:13px}
+#view-gen .g-sub{color:var(--tm);font-size:13px}
+.g-btn{font:inherit;font-weight:600;cursor:pointer;background:#000;color:var(--ink);border:1px solid var(--bd);border-radius:8px;padding:9px 16px;min-height:40px}
+.g-btn:hover{border-color:#555;background:var(--hov)}
+.g-btn.pri{background:var(--gold);border-color:var(--gold);color:#000}
+.g-btn.pri:hover{background:var(--gold-b);border-color:var(--gold-b)}
+.g-btn.sm{padding:5px 10px;min-height:32px;font-size:13px}
+.g-btn[disabled]{opacity:.45;cursor:not-allowed}
+#view-gen input[type=text],#view-gen input[type=search],#view-gen select{font:inherit;color:var(--ink);background:#000;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;min-height:40px;min-width:0}
+#view-gen input:focus-visible,#view-gen select:focus-visible,#view-gen button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.g-drop{border:1px dashed #333;border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;color:var(--tm)}
+.g-drop:hover,.g-drop.over{border-color:var(--gold);color:var(--ink)}
+.g-drop b{display:block;color:var(--ink);font-size:15px;margin-bottom:2px}
+.g-stmts{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:12px}
+.g-st{display:flex;align-items:center;gap:12px;border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
+.g-st .nm{font-weight:600}
+.g-st .mt{flex:1;min-width:0}
+.g-st .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.g-st .g-sub{word-break:break-word}
+.g-warn{color:var(--wn)}
+.g-learn{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--bd)}
+.g-learn .tx{flex:1;min-width:200px}
+.g-learn .tx b{display:block;font-weight:600}
+.g-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.g-tile{border:1px solid var(--bd);border-radius:12px;padding:12px 14px}
+.g-tile small{display:block;color:var(--tm);font-size:12px}
+.g-tile b{font-size:18px;font-weight:700}
+.g-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.g-tools input{flex:1;min-width:160px}
+.g-list{border-top:1px solid var(--bd)}
+.g-row{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--bd)}
+.g-row.off{opacity:.5}
+.g-row .g-ic{grid-row:span 2;all:unset;grid-row:span 2;cursor:pointer;border-radius:12px;display:grid}
+.g-row .g-ic:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.g-row .g-desc{width:100%;background:transparent;border:1px solid transparent;min-height:34px;padding:4px 8px;margin-left:-8px;border-radius:8px;font-weight:600;text-overflow:ellipsis}
+.g-row .g-desc:hover{border-color:var(--bd)}
+.g-row .g-amt{text-align:right;font-weight:700;white-space:nowrap}
+.g-row .g-amt.cr{color:var(--ok)}.g-row .g-amt.dr{color:var(--dg)}
+.g-row .g-meta{grid-column:2;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;color:var(--tm);font-size:12.5px}
+.g-row .g-inc{grid-column:3;justify-self:end;display:flex;align-items:center;gap:6px;color:var(--tm);font-size:12.5px;cursor:pointer}
+.g-row .g-inc input{accent-color:var(--gold);width:17px;height:17px}
+.g-pill{display:inline-block;font-weight:400;border:1px solid var(--bd);border-radius:999px;padding:0 8px;font-size:11.5px;line-height:18px;color:var(--tm)}
+button.g-pill{background:none;cursor:pointer;font:inherit;font-size:11.5px;font-weight:400}
+.g-pill.gold{border-color:#5b4a14;color:var(--gold-t);background:var(--gold-s)}
+.g-pill.ok{border-color:#14532d;color:var(--ok)}
+.g-pill.wn{border-color:#78560a;color:var(--wn)}
+.g-more{display:block;margin:14px auto 0}
+.g-ent{border:1px solid var(--bd);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.g-ent>header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 14px;background:#0a0a0a;border-bottom:1px solid var(--bd)}
+.g-ent>header h4{margin:0;font-size:15px}
+.g-ent>header .sp{flex:1}
+.g-ent>header label{display:flex;align-items:center;gap:8px;color:var(--tm);font-size:13px}
+.g-ent>header select{max-width:260px;min-height:34px;padding:4px 8px}
+.g-e{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--bd)}
+.g-e:last-child{border-bottom:0}
+.g-e .ic{grid-row:span 2}
+.g-e .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-e .a{text-align:right;font-weight:700}
+.g-e .m{grid-column:2/4;color:var(--tm);font-size:12.5px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.g-chk{display:grid;gap:0}
+.g-chk div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.g-chk div:last-child{border-bottom:0}
+.g-actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.g-note{margin:10px 0 0;color:var(--tm);font-size:13px}
+.g-note code{background:var(--act);padding:1px 6px;border-radius:5px;color:var(--ink)}
+#view-gen details{margin-top:14px}
+#view-gen summary{color:var(--tm);font-weight:600}
+.g-json{margin:10px 0 0;padding:12px;border:1px solid var(--bd);border-radius:8px;max-height:320px;overflow:auto;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--tm);white-space:pre}
+.g-empty{padding:26px 8px;text-align:center;color:var(--tmu)}
+.g-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#1C1C1C;border:1px solid #333;color:var(--ink);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:90vw}
+.g-toast.on{opacity:1;transform:translate(-50%,0)}
+/* BlackRoad category tile (same look as the app) */
+.cat-ico{--cat-hue:220;flex:none;display:inline-grid;place-items:center;border-radius:12px;background:hsl(var(--cat-hue) 75% 52% / .16);box-shadow:inset 0 0 0 1px hsl(var(--cat-hue) 75% 52% / .32);line-height:1;user-select:none;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.cat-ico-sm{width:32px;height:32px;font-size:17px;border-radius:9px}
+.cat-ico-md{width:42px;height:42px;font-size:23px}
+.cat-ico-lg{width:56px;height:56px;font-size:29px;border-radius:15px}
+.cat-ico-xl{width:76px;height:76px;font-size:40px;border-radius:20px}
+.cat-ico-empty{background:transparent;box-shadow:none;border:1.5px dashed var(--bd);color:var(--tm);font-family:inherit}
+/* category picker sheet */
+.g-layer{position:fixed;inset:0;background:rgba(0,0,0,.8);display:grid;place-items:center;z-index:50;padding:12px}
+.g-sheet{background:#000;border:1px solid var(--bd);border-radius:14px;width:min(680px,100%);max-height:88vh;overflow:auto;padding:18px;font-family:Inter,Manrope,system-ui,sans-serif;color:var(--ink)}
+.g-sheet .hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.g-sheet .hd h3{margin:0;flex:1;font-size:17px}
+.g-sheet .x{all:unset;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:8px;color:var(--tm)}
+.g-sheet .x:hover{background:var(--hov);color:var(--ink)}
+.g-sheet input[type=search],.g-sheet input[type=text]{width:100%;font:inherit;color:var(--ink);background:#000;border:1px solid var(--bd);border-radius:8px;padding:9px 12px;margin-bottom:12px}
+.g-sheet input:focus-visible,.g-sheet .x:focus-visible,.g-sheet .tl:focus-visible,.g-sheet .pk:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.g-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.g-sheet .tl{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:12px;border:1px solid transparent;text-align:center;font-size:12px;color:var(--ink)}
+.g-sheet .tl:hover{background:var(--hov)}
+.g-sheet .tl.sel{border-color:var(--gold);background:var(--gold-s)}
+.g-sheet .tl span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+.g-sheet .pk{all:unset;cursor:pointer;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;font-size:21px;border:1px solid transparent;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.g-sheet .pk:hover{background:var(--hov)}
+.g-sheet .pk.sel{border-color:var(--gold);background:var(--gold-s)}
+.g-sheet .lbl{display:block;margin:14px 0 8px;color:var(--tm);font-size:13px;font-weight:600}
+.g-sheet .pv{display:flex;align-items:center;gap:12px;margin-top:6px}
+.g-hues{display:flex;flex-wrap:wrap;gap:8px}
+.g-hues .pk{width:30px;height:30px;border-radius:50%;background:hsl(var(--h) 75% 52%)}
+.g-hues .pk.sel{outline:2px solid var(--ink);outline-offset:2px;border-color:transparent}
+@media(max-width:560px){#view-gen .g-card{padding:16px}.g-ent>header select{max-width:100%;width:100%}}
+@media (prefers-reduced-motion:reduce){.g-toast{transition:none}}
+
+.tabs b.hide{display:none}
+.g-ctl{grid-column:2/4;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-top:6px}
+.g-seg{display:inline-flex;gap:4px}
+.g-pill.sg{cursor:pointer;background:none;font:inherit;font-size:11.5px;padding:0 10px}
+.g-pill.sg.on.cr{border-color:#14532d;color:var(--ok);background:rgba(34,197,94,.12)}
+.g-pill.sg.on.dr{border-color:#7f1d1d;color:var(--dg);background:rgba(239,68,68,.12)}
+.g-pill.sg.on.xf,.g-pill.xf{border-color:#0c4a6e;color:#38bdf8;background:rgba(56,189,248,.1)}
+.g-ctl select{min-height:28px;padding:2px 6px;font-size:12px;max-width:170px}
+.g-opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px;border:1px solid var(--bd);border-radius:10px;background:none;color:var(--ink);margin-bottom:6px;cursor:pointer;font:inherit}
+.g-opt:hover,.g-opt.sel{border-color:var(--gold)}
+/* ===== Minimal refresh: one accent, soft surfaces, roomy spacing ===== */
+:root{--line:#1f1f23;--muted:#8b8b93;--acc:#D4AF37}
+html,body{background:#0a0a0b}
+main{max-width:920px;padding:28px 16px 80px}
+.brand{background:none;color:var(--ink);-webkit-text-fill-color:currentColor;font-size:17px;letter-spacing:-.01em}
+.brand::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--acc);margin-right:9px}
+.card,.hero,#view-gen .g-card,.g-ent{background:#0f0f11;border-color:#1f1f23;border-radius:18px}
+.card,#view-gen .g-card{padding:22px}
+.hero::before{height:2px;background:var(--acc);opacity:.7}
+.tile{border:1px solid #1f1f23;border-top-width:1px;background:#0f0f11;border-radius:14px}
+button:not(.ghost):not(.leg button):not(.g-btn):not(.g-pill):not(.g-ic):not(.tabs button):not(.g-sheet button){background:var(--acc);border-color:var(--acc);color:#111;border-radius:10px;transition:filter .15s,transform .15s}
+button:not(.ghost):not(.leg button):not(.g-btn):not(.g-pill):not(.g-ic):not(.tabs button):not(.g-sheet button):hover{filter:brightness(1.08)}
+button:active,.g-btn:active{transform:scale(.98)}
+.drop{background:radial-gradient(120% 120% at 50% 0,#17140a 0,#0f0f11 60%);border:1.5px dashed #2c2c32;border-radius:22px;padding:64px 20px;transition:border-color .2s,transform .2s}
+.drop:hover,.drop.over{border-color:var(--acc);transform:translateY(-1px)}
+.drop .ic{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 14px;border-radius:16px;background:#1a160a;font-size:26px}
+.tabs{display:inline-flex;gap:4px;padding:4px;margin:-6px 0 24px;border:1px solid #1f1f23;border-radius:999px;background:#0f0f11}
+.tabs button{border:0;border-radius:999px;padding:8px 18px;margin:0;transition:background .2s,color .2s}
+.tabs button[aria-selected="true"]{background:var(--acc);color:#111}
+.tabs button[aria-selected="true"] b{background:#111;color:var(--acc)}
+.g-btn,.tools input,.tools select,#view-gen input,#view-gen select{border-radius:10px;background:#0a0a0b}
+.g-btn.pri{border-radius:10px}
+.g-row{border-radius:12px;padding:14px 10px;transition:background .15s}
+.g-row:hover{background:#121215}
+.g-tile{background:#0a0a0b;border-radius:14px;padding:14px 16px}
+.g-pill{background:#0a0a0b}
+.g-ctl{padding-top:2px}
+.g-lead{font-size:14px}
+#view-gen>.g-card,#view-gen .g-ent{animation:up .4s ease both}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
+.gsk-row{display:grid;grid-template-columns:42px 1fr 84px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #1f1f23}
+.gsk-row:last-child{border-bottom:0}
+.gsk-row .sk{margin:4px 0}.gsk-ic{width:42px;height:42px;border-radius:12px;grid-row:span 2}
+#gSkel .g-tiles{margin-bottom:10px}
+@media(max-width:560px){main{padding:18px 12px 64px}.card,#view-gen .g-card{padding:16px}.g-row{grid-template-columns:42px minmax(0,1fr) auto}.tabs{display:flex}.tabs button{flex:1}}
+@media(prefers-reduced-motion:reduce){#view-gen>.g-card,#view-gen .g-ent{animation:none}}
+/* ===== Laptop layout: centred, wider, multi-column ===== */
+body{background:radial-gradient(900px 380px at 50% -140px,#1b170a 0,#0a0a0b 72%) no-repeat #0a0a0b;min-height:100vh}
+.top{position:relative;justify-content:center;margin-bottom:18px}
+.top #reset{position:absolute;right:0}
+.tabs{display:flex;width:fit-content;margin:0 auto 30px}
+#view-gen>h2,#view-gen>.g-lead{text-align:center}
+#view-gen>.g-lead{max-width:620px;margin:6px auto 26px}
+.drop{max-width:760px;margin:8px auto 0}
+.status{text-align:center}
+#gDrop{max-width:none}
+#gMore{display:block;margin:16px auto 0}
+#gOut .g-actions{justify-content:center}
+#gOut .g-note{text-align:center;max-width:640px;margin:14px auto 0}
+.g-stmts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+@media(min-width:900px){
+  main{max-width:1180px;padding:36px 32px 90px}
+  #view-gen .g-card{padding:26px 28px}
+  .g-list{display:grid;grid-template-columns:1fr 1fr;column-gap:36px}
+  #gEnt{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  #gEnt .g-ent{margin:0}
+  .g-tiles{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .g-tools{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));gap:10px}
+  .g-tools>*{min-width:0;width:100%}
+  .g-chk{max-width:680px;margin:14px auto 0}
+  .masonry{column-count:3;column-gap:18px}
+  .masonry>.card{margin-bottom:18px}
+  .hero{padding:30px 34px}
+  .tiles{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+}
+@media(min-width:900px) and (max-width:1100px){.masonry{column-count:2}}
+@media(min-width:1500px){main{max-width:1320px}}
+/* ===== Bigger, friendlier sizing + polished popups ===== */
+body{font-size:16px}
+.card h3{font-size:14px}
+th{font-size:13px}th,td{padding:14px 12px}
+.g-help{margin:-4px 0 14px;font-size:14px}
+#view-gen .g-h{font-size:19px}
+#view-gen .g-h i{width:28px;height:28px;font-size:14px}
+#view-gen .g-sub,.g-lead{font-size:14.5px}
+.tabs button{font-size:15px;padding:10px 22px}
+.g-btn{min-height:44px;font-size:15px;padding:10px 18px}
+.g-btn.sm{min-height:36px;font-size:14px}
+.g-tile small{font-size:13.5px}.g-tile b{font-size:23px}
+.g-row{grid-template-columns:48px minmax(0,1fr) auto;padding:16px 10px}
+.g-row .g-desc{font-size:16px;min-height:40px}
+.g-row .g-amt{font-size:18px}
+.g-row .g-meta,.g-row .g-inc{font-size:13.5px}
+.g-row .g-inc input{width:20px;height:20px}
+.g-pill{font-size:12.5px;line-height:22px;padding:0 10px}
+.g-pill.sg{font-size:13px;line-height:26px;padding:0 13px}
+.g-ctl{gap:8px 10px}.g-ctl select{min-height:36px;font-size:14px;max-width:190px}
+.g-e .t{font-size:16.5px}.g-e .a{font-size:17px}.g-e .m{font-size:13.5px}
+.g-ent>header h4{font-size:17px}
+.g-ent>header select,.g-tools input,.g-tools select{min-height:42px;font-size:15px}
+.g-stmts .nm{font-size:16px}
+.g-layer{background:rgba(5,5,7,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fade .18s ease}
+.g-sheet{width:min(760px,100%);max-height:90vh;padding:26px;border-radius:22px;background:#0f0f11;border-color:#2a2a30;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pop .22s ease}
+.g-sheet .hd{margin-bottom:16px}.g-sheet .hd h3{font-size:20px}
+.g-sheet .x{width:40px;height:40px;font-size:18px}
+.g-sheet input:not([type=checkbox]):not([type=radio]),.g-sheet select{display:block;width:100%;min-height:46px;font:inherit;font-size:16px;color:var(--ink);background:#0a0a0b;border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-bottom:6px}
+.g-sheet input:focus,.g-sheet select:focus{border-color:var(--gold);outline:0}
+.g-sheet input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold);flex:none}
+.g-sheet .lbl{font-size:14px;margin:16px 0 8px}
+.g-sheet .tl{font-size:13.5px;padding:12px 6px}
+.g-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.g-opt{padding:14px 16px;font-size:15.5px;border-radius:14px;margin-bottom:8px;min-height:56px}
+.g-opt b{font-weight:600}
+.g-opt.sel{background:var(--gold-s)}
+body:has(.g-layer){overflow:hidden}
+.g-toast{font-size:15px;padding:12px 20px}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}}
+@media(max-width:560px){.g-layer{place-items:end center;padding:0}.g-sheet{width:100%;max-height:92vh;border-radius:22px 22px 0 0;padding:20px}.g-row{grid-template-columns:44px minmax(0,1fr) auto}}
+@media(prefers-reduced-motion:reduce){.g-layer,.g-sheet{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div class="brand">Statement Reader</div><button class="ghost hide" id="reset">Open another PDF</button></div>
+  <div class="tabs" id="tabs" role="tablist"><button type="button" role="tab" data-tab="reader" aria-selected="true">Reader</button><button type="button" role="tab" data-tab="gen" aria-selected="false">BlackRoad generator<b class="hide">0</b></button></div>
+  <div id="view-reader">
+  <div id="drop" class="drop" tabindex="0" role="button" aria-label="Choose a PDF statement">
+    <div class="ic">📄</div><h1>Drop your bank statement PDF</h1><p>HDFC, SBI, ICICI, Axis, Kotak, PNB and other Indian banks. Read on your device, never uploaded.</p>
+    <input id="file" type="file" accept="application/pdf" hidden>
+  </div>
+  <div id="status" class="status" role="status"></div>
+
+  <section id="skel" class="hide" aria-hidden="true">
+    <div class="card sk-hero"><div class="sk w40"></div><div class="sk w60 big"></div><div class="sk-row"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
+    <div class="tiles"><div class="sk tile-sk"></div><div class="sk tile-sk"></div><div class="sk tile-sk"></div><div class="sk tile-sk"></div></div>
+    <div class="grid"><div class="card"><div class="sk w40"></div><div class="sk circ"></div></div><div class="card"><div class="sk w40"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></div>
+    <div class="card"><div class="sk w40"></div><div class="sk line"></div><div class="sk line"></div><div class="sk line"></div><div class="sk line"></div><div class="sk line"></div></div>
+  </section>
+  <section id="result" class="hide">
+    <div class="hero" id="hero"></div>
+    <div id="tiles" class="tiles"></div>
+    <div class="masonry">
+      <div class="card"><h3>Spending by category</h3><div class="donut" id="donut"></div></div>
+      <div class="card"><h3>Reading report</h3><div class="rep" id="rep"></div><div id="rv"></div></div>
+      <div class="card"><h3>Monthly cash flow</h3><div id="months"></div></div>
+      <div class="card"><h3>Payment modes (spent)</h3><div id="modes"></div></div>
+      <div class="card"><h3>Top payees</h3><div id="payees"></div></div>
+      <div class="card"><h3>Recurring payments</h3><div class="list" id="recur"></div><h3 style="margin-top:18px">Biggest expenses</h3><div class="list" id="topx"></div></div>
+    </div>
+    <div class="card">
+      <h3>Transactions</h3>
+      <div class="tools">
+        <input id="q" type="search" placeholder="Search descriptions or amounts" aria-label="Search">
+        <select id="type" aria-label="Type"><option value="">All types</option><option value="d">Money out</option><option value="c">Money in</option></select>
+        <select id="catSel" aria-label="Category"></select>
+        <button class="ghost" id="csv">Download CSV</button>
+        <button id="toBR">Generate BlackRoad data →</button>
+      </div>
+      <div class="wrap"><table>
+        <thead><tr><th data-k="idx">#</th><th data-k="ts">Date</th><th data-k="desc">Description</th><th class="r" data-k="amt">Amount</th><th class="r" data-k="bal">Balance</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <p class="sub" id="count"></p>
+    </div>
+  </section>
+  </div>
+<div id="view-gen" class="hide">
+  <h2>BlackRoad data generator</h2>
+  <p class="g-lead">Turn bank statements into income entries in BlackRoad's own structure, categories and icons. Everything stays on your device.</p>
+
+  <section class="g-card">
+    <h3 class="g-h"><i>1</i>Statements<small id="gCount"></small></h3>
+    <div id="gStmts" class="g-stmts"></div>
+    <div id="gDrop" class="g-drop" tabindex="0" role="button" aria-label="Add bank statement PDFs"><b>Add bank statement PDFs</b>Add every bank for the month. You can select several files at once.</div>
+    <input id="gFile" type="file" accept="application/pdf" multiple hidden>
+    <p id="gMsg" class="g-sub" role="status" style="margin:10px 0 0"></p>
+    <div class="g-learn">
+      <div class="tx"><b>Learn from your BlackRoad data <span class="g-pill">optional</span></b><span class="g-sub" id="gLearnTx">Choose a BlackRoad backup or income export so suggestions follow your own categories and habits.</span></div>
+      <button class="g-btn" id="gLearnBtn" type="button">Choose file</button>
+      <input id="gLearnFile" type="file" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <section class="g-card hide" id="gSkel" aria-busy="true" aria-label="Reading statements"><div class="sk w40"></div><div class="g-tiles"><div class="sk tile-sk"></div><div class="sk tile-sk"></div><div class="sk tile-sk"></div></div><div class="gsk-row"><div class="sk gsk-ic"></div><div class="sk w60"></div><div class="sk"></div><div class="sk w40"></div></div><div class="gsk-row"><div class="sk gsk-ic"></div><div class="sk w60"></div><div class="sk"></div><div class="sk w40"></div></div><div class="gsk-row"><div class="sk gsk-ic"></div><div class="sk w60"></div><div class="sk"></div><div class="sk w40"></div></div><div class="gsk-row"><div class="sk gsk-ic"></div><div class="sk w60"></div><div class="sk"></div><div class="sk w40"></div></div><div class="gsk-row"><div class="sk gsk-ic"></div><div class="sk w60"></div><div class="sk"></div><div class="sk w40"></div></div></section>
+  <section class="g-card hide" id="gReview">
+    <h3 class="g-h"><i>2</i>Review transactions<small id="gRevCount"></small></h3>
+    <div class="g-tiles" id="gTiles"></div>
+    <p class="g-sub g-help">Tap <b>Income / Expense / Transfer</b> to relabel a row, <b>→</b> to choose which income an expense is added to, and the icon to change its category.</p>
+    <div class="g-tools">
+      <input type="search" id="gQ" placeholder="Search description, category or amount" aria-label="Search">
+      <select id="gSt" aria-label="Show"><option value="">All</option><option value="review">Needs review</option><option value="in">Income</option><option value="out">Expenses</option><option value="inv">Investments</option><option value="xfer">Transfers</option><option value="skip">Skipped</option></select>
+      <select id="gBank" aria-label="Statement"></select>
+      <select id="gMon" aria-label="Month"></select>
+    </div>
+    <div class="g-list" id="gRows"></div>
+    <button class="g-btn g-more hide" id="gMore" type="button">Show more</button>
+  </section>
+
+  <section class="g-card hide" id="gEntries">
+    <h3 class="g-h"><i>3</i>BlackRoad entries<small id="gEntCount"></small></h3>
+    <p class="g-sub" style="margin:-6px 0 14px">BlackRoad stores each income with the transactions linked to it. Each month's expenses and investments are attached to one income entry; change which one below.</p>
+    <div id="gEnt"></div>
+    <div class="g-chk" id="gChk" style="margin-top:6px"></div>
+  </section>
+
+  <section class="g-card hide" id="gOut">
+    <h3 class="g-h"><i>4</i>Export</h3>
+    <div class="g-actions">
+      <button class="g-btn pri" id="gJson" type="button">Download BlackRoad JSON</button>
+      <button class="g-btn" id="gCopy" type="button">Copy JSON</button>
+      <button class="g-btn" id="gCsv" type="button">Download CSV</button>
+    </div>
+    <p class="g-note">Use it today: BlackRoad → <b>Data Management</b> → <b>Restore</b> → choose this file. BlackRoad reads it as an <code>Income &amp; Expenses export</code>, adds the entries and skips any already stored. Nothing is replaced.</p>
+    <details id="gDet"><summary>Preview JSON</summary><pre class="g-json" id="gPre"></pre></details>
+  </section>
+  <div class="g-toast" id="gToast" role="status"></div>
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const MONS = "jan feb mar apr may jun jul aug sep oct nov dec".split(" ");
+const MR = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?";
+const DATE_RX = new RegExp("^(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/\\-.]\\d{1,2}[\\/\\-.]\\d{2,4}|\\d{1,2}[\\/]\\d{1,2}(?=\\s)|\\d{1,2}[ -]" + MR + "(?:,?[ -]\\d{2,4})?(?=\\s|$)|" + MR + " \\d{1,2}(?:,? \\d{4})?(?=\\s|$))(?:\\s+|$)", "i");
+const AMT_US = /^\(?-?[$€£₹]?-?(?:\d{1,3}(?:,\d{2,3})+|\d+)\.\d{2}\)?-?(?:\(?(?:CR|DR)\.?\)?)?$/i;
+const AMT_EU = /^\(?-?[$€£₹]?-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\)?-?(?:\(?(?:CR|DR)\.?\)?)?$/i;
+const HK = {debit: /^(debit|withdraw|dr\.?$)/i, credit: /^(credit|deposit|cr\.?$)/i, balance: /^bal/i, amount: /^(amount|amt)/i, ref: /^(chq|cheque|ref(erence)?(\.|\/|$|no))/i, desc: /^(narration|particulars|description|remarks|details)/i};
+const DTK = /^\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}$/;
+const SUMMARY = /total|brought forward|carried forward|b\/f|c\/f|opening balance|closing balance|balance forward|statement summary|available balance|credit limit|minimum amount/i;
+const OPENING = /brought forward|b\/f|opening balance|balance forward|previous balance/i;
+const CATS = [
+  ["ATM & Cash", /\batm\b|nwd|cash w(?:dl|ithdrawal)|cash wd|self withdrawal/i],
+  ["Charges", /charges?|chrg|sms alert|\bamc\b|annual fee|\bgst\b|min(?:imum)? bal|penal|processing fee|\bfees?\b/i],
+  ["EMI & Loans", /\bemi\b|loan|\bach d\b|\bnach\b|\becs\b|bajaj fin|home fin/i],
+  ["Investments", /mutual fund|\bsip\b|zerodha|groww|upstox|\bnps\b|\bppf\b|angel one|\bsgb\b|kuvera/i],
+  ["Insurance", /insurance|\blic\b|policy|premium|star health|hdfc life|icici pru/i],
+  ["Food", /swiggy|zomato|restaurant|cafe|dominos|pizza|kfc|mcdonald|bakery|blinkit|zepto|bigbasket|dmart|grocer|instamart|milk|hotel|biryani/i],
+  ["Shopping", /amazon|flipkart|myntra|ajio|meesho|nykaa|reliance|decathlon|\bmall\b|store|shop|lifestyle|croma|tata cliq/i],
+  ["Travel", /irctc|makemytrip|redbus|\buber\b|\bola\b|rapido|indigo|air india|flight|metro|fastag|petrol|fuel|hpcl|bpcl|iocl|indian oil|shell|goibibo|yatra|toll/i],
+  ["Bills & Recharge", /electric|bescom|tneb|\bpower\b|water|\bgas\b|broadband|airtel|\bjio\b|vodafone|\bvi\b|bsnl|recharge|\bdth\b|tata play|postpaid|\bbill|rent|maintenance|society|municipal/i],
+  ["Entertainment", /netflix|spotify|hotstar|prime video|bookmyshow|youtube|google play|apple\.com|itunes|sonyliv|zee5/i],
+  ["Health", /hospital|pharmacy|apollo|medplus|clinic|1mg|pharmeasy|diagnostic|\blab\b|dental|medical/i],
+  ["Education", /school|college|tuition|udemy|coursera|course|university|byju|unacademy/i],
+  ["Tax", /income tax|\btds\b|challan|\bcbdt\b/i],
+  ["Transfers", /neft|imps|rtgs|\bupi\b|transfer|\btrf\b|cheque|\bchq\b|\bclg\b|\bself\b/i]
+];
+const CRC = [["Salary", /salary|payroll|\bsal\b/i], ["Interest", /interest|int\.? ?pd|\bint\b/i], ["Refund", /refund|reversal|cashback|chargeback/i], ["Investment return", /dividend|redemption|maturity/i]];
+const MODES = [["UPI", /\bupi\b/i], ["NEFT", /neft/i], ["IMPS", /imps/i], ["RTGS", /rtgs/i], ["ATM", /\batm\b|nwd|cash w/i], ["Cheque", /chq|cheque|clg|clearing/i], ["Card/POS", /\bpos\b|debit card|\bcard\b|ecom|visa|mastercard|rupay/i], ["Auto-debit", /\bach\b|nach|\becs\b|\bsi\b|standing/i]];
+const CATCOL = {"ATM & Cash": "#f59e0b", "Charges": "#f43f5e", "EMI & Loans": "#a78bfa", "Investments": "#22d3ee", "Insurance": "#818cf8", "Food": "#fb923c", "Shopping": "#f472b6", "Travel": "#38bdf8", "Bills & Recharge": "#facc15", "Entertainment": "#c084fc", "Health": "#34d399", "Education": "#2dd4bf", "Tax": "#ef4444", "Transfers": "#60a5fa", "Other": "#94a3b8", "Salary": "#4ade80", "Interest": "#a3e635", "Refund": "#2dd4bf", "Investment return": "#22d3ee", "Money in": "#4ade80"};
+const MODECOL = {UPI: "#38bdf8", NEFT: "#a78bfa", IMPS: "#f472b6", RTGS: "#fb923c", ATM: "#f59e0b", Cheque: "#facc15", "Card/POS": "#34d399", "Auto-debit": "#f43f5e", Other: "#94a3b8"};
+const COLORS = ["#38bdf8", "#a78bfa", "#f472b6", "#fb923c", "#facc15", "#34d399", "#2dd4bf", "#f87171"];
+const STOP = new Set("upi dr cr neft imps rtgs payment pay to from transfer trf by atm pos ach nach ecs ref no txn id bank ltd limited pvt india the for and mob mobile banking internet inb ibl ybl okhdfcbank okaxis oksbi okicici paytm hdfc icici sbi axis kotak yes yesb wdl salary sal".split(" "));
+function who(d) { for (let s of d.split(/[\/\-:,|]+/)) { s = s.replace(/@.*/, "").replace(/[^A-Za-z .&']/g, " ").replace(/\s+/g, " ").trim(); const w = s.toLowerCase().split(" ").filter(x => x && !STOP.has(x)); if (s.length >= 3 && w.join("").length >= 3) return w.slice(0, 3).map(x => x[0].toUpperCase() + x.slice(1)).join(" "); } return d.slice(0, 24) || "Unknown"; }
+let EU = false, S = {sort: {k: "idx", dir: 1}};
+
+const isAmt = s => (EU ? AMT_EU : AMT_US).test(s);
+function pAmt(s) {
+  const cr = /\(?CR\.?\)?$/i.test(s), dr = /\(?DR\.?\)?$/i.test(s), b = s.replace(/\(?(?:CR|DR)\.?\)?$/i, "");
+  const neg = /^\(.*\)$|^-|-$|^[^\d]*-/.test(b);
+  let n = b.replace(/[^\d.,]/g, ""); n = EU ? n.replace(/\./g, "").replace(",", ".") : n.replace(/,/g, "");
+  return {v: parseFloat(n), neg, cr, dr};
+}
+const money = (v, c = "") => (v < 0 ? "−" : "") + c + Math.abs(v).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+function parseDate(s, year, fmt) {
+  let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})(?:[\/\-.](\d{2,4}))?$/))) {
+    let y = m[3] ? +m[3] : year; if (y < 100) y += 2000;
+    return fmt === "mdy" ? new Date(y, +m[1] - 1, +m[2]) : new Date(y, +m[2] - 1, +m[1]);
+  }
+  if ((m = s.match(new RegExp("^(\\d{1,2})[ -](" + MR + ")(?:,?[ -](\\d{2,4}))?$", "i")))) {
+    let y = m[3] ? +m[3] : year; if (y < 100) y += 2000;
+    return new Date(y, MONS.indexOf(m[2].slice(0, 3).toLowerCase()), +m[1]);
+  }
+  if ((m = s.match(new RegExp("^(" + MR + ") (\\d{1,2})(?:,? (\\d{4}))?$", "i")))) return new Date(m[3] ? +m[3] : year, MONS.indexOf(m[1].slice(0, 3).toLowerCase()), +m[2]);
+  return null;
+}
+
+async function extract(pdf) {
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const tc = await (await pdf.getPage(p)).getTextContent(), toks = [];
+    for (const it of tc.items) {
+      const len = it.str.length || 1;
+      for (const m of it.str.matchAll(/\S+/g)) toks.push({s: m[0], x: it.transform[4] + it.width * m.index / len, x2: it.transform[4] + it.width * (m.index + m[0].length) / len, y: it.transform[5]});
+    }
+    toks.sort((a, b) => b.y - a.y || a.x - b.x);
+    const lines = []; let cur = null;
+    for (const t of toks) { if (cur && Math.abs(cur.y - t.y) < 3) cur.t.push(t); else { cur = {y: t.y, t: [t], page: p}; lines.push(cur); } }
+    lines.forEach(l => l.t.sort((a, b) => a.x - b.x));
+    pages.push(lines);
+  }
+  const all = pages.flat(), flat = all.flatMap(l => l.t);
+  const us = flat.filter(t => AMT_US.test(t.s)).length, eu = flat.filter(t => AMT_EU.test(t.s)).length;
+  EU = eu > us;
+  for (const l of all) {
+    const t = [];
+    for (const k of l.t) { const pv = t[t.length - 1]; if (pv && /^\(?(CR|DR)\.?\)?$/i.test(k.s) && isAmt(pv.s)) { pv.s += k.s; pv.x2 = k.x2; } else t.push({...k}); }
+    if (t.length > 2 && /^\d{1,5}$/.test(t[0].s) && DATE_RX.test(t.slice(1).map(k => k.s).join(" ") + " ")) t.shift();
+    let o = 0; t.forEach(k => { k.o = o; o += k.s.length + 1; });
+    l.t = t; l.text = t.map(k => k.s).join(" ");
+  }
+  return all;
+}
+
+function findMeta(text) {
+  const g = rx => { const m = text.match(rx); return m ? m[1].trim() : ""; };
+  const amt = "([\\-\\(]?[$€£₹]?\\s?[\\d.,]+[.,]\\d{2}\\)?(?:\\s?\\(?(?:CR|DR)\\.?\\)?)?)";
+  const D = "\\d{1,2}[\\/\\-. ][A-Za-z0-9]{2,9}[\\/\\-. ]\\d{2,4}";
+  const pm = text.match(new RegExp("(" + D + ")\\s*(?:to|-|–|through)\\s*(" + D + ")", "i"));
+  const bm = text.match(/HDFC|ICICI|STATE BANK|\bSBI\b|AXIS|KOTAK|PUNJAB NATIONAL|\bPNB\b|BANK OF BARODA|CANARA|UNION BANK|YES BANK|IDFC|INDUSIND|IDBI|FEDERAL|BANDHAN|INDIAN BANK|\bUCO\b|CENTRAL BANK|BANK OF INDIA|\bAU SMALL|\bRBL\b|SOUTH INDIAN|KARNATAKA BANK|PAYTM|EQUITAS|\bDBS\b/i);
+  const meta = {
+    bank: bm ? bm[0].toUpperCase() : "",
+    ifsc: g(/IFS[C]?(?: code)?\s*[:\-]?\s*([A-Z]{4}0[A-Z0-9]{6})/i),
+    holder: g(/(?:account (?:holder|name)|customer name|a\/c name|statement for)\s*[:\-]?\s*([A-Za-z.' ]{3,40})/i) || g(/(?:^|\n)\s*name\s*[:\-]\s*([A-Za-z.' ]{3,40})/i),
+    account: g(/(?:account (?:number|no\.?)|a\/c(?: no\.?)?)\s*[:#\-]?\s*([\dXx*\- ]{4,24})/i),
+    period: pm ? pm[1] + " to " + pm[2] : g(/(?:statement period|period)\s*[:\-]?\s*([^\n]{8,60})/i),
+    opening: g(new RegExp("(?:opening|beginning|previous) balance\\s*[:\\-]?\\s*" + amt, "i")),
+    closing: g(new RegExp("(?:closing|ending|new) balance\\s*[:\\-]?\\s*" + amt, "i"))
+  };
+  meta.cur = /₹|\bINR\b|\bRs\b/.test(text) || meta.bank ? "₹" : (text.match(/[$€£]/) || [""])[0];
+  const y = text.match(/\b(20\d{2})\b/); meta.year = y ? +y[1] : new Date().getFullYear();
+  return meta;
+}
+
+const SHORT = k => k && /^(dr|cr)\.?$/i.test(k.s);
+const hkeys = l => {
+  if (l.t.length > 14 || l.t.some(k => isAmt(k.s) || /\d{3,}/.test(k.s)) || DATE_RX.test(l.text)) return null;
+  const c = {};
+  l.t.forEach(k => { for (const n in HK) if (!c[n] && HK[n].test(k.s)) { c[n] = k; break; } });
+  return Object.keys(c).length ? c : null;
+};
+const stripLead = d => { const m = d.map(k => k.s).join(" ").match(DATE_RX); if (!m) return d; let c = 0, i = 0; while (i < d.length && c < m[1].length) { c += d[i].s.length + 1; i++; } return d.slice(i); };
+
+function parse(lines, meta) {
+  const rows = [], review = [], notes = [];
+  let cols = null, acc = {}, pending = null, lastDate = "", last = null;
+  const AC = ["debit", "credit", "balance", "amount"];
+  const colOf = k => { let best = null, bd = 1e9; for (const n of AC) { const c = cols[n]; if (!c) continue; const d = Math.min(Math.abs((k.x + k.x2) / 2 - (c.x + c.x2) / 2), Math.abs(k.x2 - c.x2), Math.abs(k.x - c.x)); if (d < bd) { bd = d; best = n; } } return bd < 80 ? best : null; };
+  const refT = k => cols && cols.ref && k.x >= cols.ref.x - 6 && k.x < (cols.desc && cols.desc.x > cols.ref.x ? cols.desc.x - 2 : 1e9);
+
+  const push = (ds, dt, at, text, inh, rt) => {
+    const r = {dateStr: ds, inherited: inh, ref: rt.map(k => k.s).join(" "), desc: dt.map(k => k.s).join(" ").replace(/\s+/g, " ").trim(), descX: dt.length ? dt[0].x : (cols && cols.desc ? cols.desc.x : last ? last.descX : 0), d: null, c: null, a: null, bal: null, hint: 0, raw: text};
+    if (cols) {
+      for (const k of at) { const n = colOf(k), v = pAmt(k.s); if (n === "debit") r.d = v.v; else if (n === "credit") r.c = v.v; else if (n === "balance") r.bal = v.neg || v.dr ? -v.v : v.v; else if (n === "amount") { r.a = v.v; r.hint = v.neg || v.dr ? -1 : v.cr ? 1 : 0; } else r.desc += " " + k.s; }
+      if (r.d === 0 && r.c > 0) r.d = null; if (r.c === 0 && r.d > 0) r.c = null;
+      if (r.d != null && r.c == null) r.hint = -1; else if (r.c != null && r.d == null) r.hint = 1;
+      if (r.d != null && r.c != null) { r.amt = Math.abs(r.c - r.d); r.hint = r.c >= r.d ? 1 : -1; } else r.amt = r.d != null ? r.d : r.c != null ? r.c : r.a;
+    } else {
+      const vs = at.map(k => pAmt(k.s));
+      if (vs.length >= 2) { const b = vs[vs.length - 1]; r.bal = b.neg || b.dr ? -b.v : b.v; const cand = vs.slice(0, -1), nz = cand.filter(v => v.v > 0), a = nz.length ? nz[nz.length - 1] : cand[cand.length - 1]; r.amt = a.v; r.hint = a.neg || a.dr ? -1 : a.cr ? 1 : 0; }
+      else { r.amt = vs[0].v; r.hint = vs[0].neg || vs[0].dr ? -1 : vs[0].cr ? 1 : 0; }
+    }
+    if (r.amt == null || isNaN(r.amt)) { review.push(text); return; }
+    r.desc = r.desc || "(no description)"; rows.push(r); last = r;
+  };
+
+  for (const l of lines) {
+    const t = l.text; if (!t) continue;
+    const hk = hkeys(l);
+    if (hk && (Object.keys(hk).length >= 2 || Object.keys(acc).length)) {
+      acc = {...hk, ...acc};
+      const c = {...acc};
+      if (c.amount && (SHORT(c.debit) || SHORT(c.credit))) { delete c.debit; delete c.credit; } else if (c.debit || c.credit) delete c.amount;
+      if (c.balance && (c.debit || c.credit || c.amount)) { cols = c; acc = {}; }
+      continue;
+    }
+    acc = {};
+    if (/^page\s*\d|^continued|page \d+ of \d+/i.test(t)) continue;
+    const dm = t.match(DATE_RX), dEnd = dm ? dm[0].length : 0;
+    const body = l.t.filter(k => k.o >= dEnd);
+    const amts = body.filter(k => isAmt(k.s) && (!cols || colOf(k)));
+    let desc = body.filter(k => !amts.includes(k) && !/^[-–]+$/.test(k.s) && !DTK.test(k.s)), ref = [];
+    if (dm) { ref = desc.filter(refT); desc = desc.filter(k => !ref.includes(k)); }
+    if (amts.length && SUMMARY.test(t)) {
+      if (OPENING.test(t) && !meta.openRow) meta.openRow = pAmt(amts[amts.length - 1].s);
+      notes.push(t); continue;
+    }
+    if (dm) {
+      lastDate = dm[1]; desc = stripLead(desc);
+      if (amts.length) { pending = null; push(dm[1], desc, amts, t, false, ref); }
+      else pending = {ds: dm[1], toks: desc, ref, text: t};
+    } else if (amts.length) {
+      if (pending) { const p = pending; pending = null; push(p.ds, p.toks.concat(desc), amts, p.text + " | " + t, false, p.ref); }
+      else if (lastDate && rows.length) push(lastDate, desc, amts, t, true, []);
+      else if (rows.length) review.push(t);
+    } else if (rows.length || pending) {
+      if (pending) pending.toks = pending.toks.concat(desc);
+      else if (last && l.t.length && Math.abs(l.t[0].x - last.descX) < 25 && t.length < 120) last.desc = (last.desc + " " + desc.map(k => k.s).join(" ")).trim();
+      else if (/[A-Za-z]/.test(t) && !/^page|statement|www\.|@|customer|thank|registered|this is|computer|generated|end of/i.test(t)) review.push("Other text: " + t);
+    }
+  }
+  if (pending) review.push("Date line without amount: " + pending.text);
+  return {rows, review, notes, fmt: "dmy"};
+}
+
+function resolve(rows, meta, fmt, openRow) {
+  const eq = (a, b) => Math.abs(a - b) < 0.02;
+  let f = 0, r = 0;
+  rows.forEach((x, i) => { if (x.bal == null) return; const p = rows[i - 1], n = rows[i + 1]; if (p && p.bal != null && eq(Math.abs(x.bal - p.bal), x.amt)) f++; if (n && n.bal != null && eq(Math.abs(x.bal - n.bal), x.amt)) r++; });
+  const rev = r > f;
+  let opening = meta.opening ? pAmt(meta.opening).v * (pAmt(meta.opening).neg ? -1 : 1) : openRow ? openRow.v * (openRow.neg ? -1 : 1) : null;
+  rows.forEach((x, i) => {
+    const pb = rev ? (rows[i + 1] ? rows[i + 1].bal : null) : (i ? rows[i - 1].bal : opening);
+    let sign = x.hint || 0, ok = null;
+    if (x.bal != null && pb != null) {
+      const diff = x.bal - pb;
+      if (eq(Math.abs(diff), x.amt)) { const s = diff >= 0 ? 1 : -1; if (sign && s !== sign) x.fixed = true; sign = s; ok = true; } else ok = false;
+    }
+    if (!sign) sign = /salary|payroll|deposit|refund|interest|cashback|credit|received|transfer from|inward|by transfer|int\.? ?pd/i.test(x.desc) ? 1 : -1;
+    x.amt = sign * x.amt; x.ok = ok;
+  });
+  rows.forEach((x, i) => {
+    x.idx = i + 1; x.ts = (parseDate(x.dateStr, meta.year, fmt) || {getTime: () => i}).getTime();
+    x.date = parseDate(x.dateStr, meta.year, fmt);
+    x.cat = x.amt > 0 ? (CRC.find(c => c[1].test(x.desc)) || ["Money in"])[0] : (CATS.find(c => c[1].test(x.desc)) || ["Other"])[0];
+    x.mode = (MODES.find(m => m[1].test(x.desc)) || ["Other"])[0]; x.who = who(x.desc);
+  });
+  return {rev, opening};
+}
+
+async function parseStatement(file, password, onOpen) {
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await file.arrayBuffer()), password}).promise;
+  if (onOpen) onOpen();
+  const lines = await extract(pdf), text = lines.map(l => l.text).join("\n");
+  if (!text.trim()) { const e = new Error("This PDF has no selectable text (it may be a scan), so it can’t be read."); e.noText = true; throw e; }
+  const meta = findMeta(text); meta.file = file.name; meta.pages = pdf.numPages;
+  const res = parse(lines, meta), info = resolve(res.rows, meta, res.fmt, meta.openRow);
+  return {res, info, meta, text, nLines: lines.filter(l => l.text).length};
+}
+
+async function load(file, password) {
+  const st = $("status"); st.className = "status"; st.textContent = "Reading " + file.name + "…";
+  let t0 = Date.now();
+  try {
+    const p = await parseStatement(file, password, () => {
+      t0 = Date.now(); st.textContent = "";
+      $("drop").classList.add("hide"); $("result").classList.add("hide"); $("reset").classList.add("hide"); $("skel").classList.remove("hide");
+    });
+    const {res, info, meta} = p;
+    S = {...S, rows: res.rows, review: res.review, notes: res.notes, meta, info, raw: p.text, nLines: p.nLines, sort: {k: "idx", dir: 1}};
+    st.textContent = res.rows.length ? "" : "No transaction rows were recognised. Its layout may not be supported.";
+    if (res.rows.length && window.genAdd) window.genAdd(p, file);   // also available to the BlackRoad generator tab
+    const wait = 3500 - (Date.now() - t0); if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    $("result").querySelectorAll(".in").forEach(el => el.classList.remove("in"));
+    $("skel").classList.add("hide");
+    render();
+    [...$("result").children].flatMap(el => el.classList.contains("masonry") ? [...el.children] : [el]).forEach((el, i) => setTimeout(() => el.classList.add("in"), 120 + i * 450));
+  } catch (e) {
+    $("skel").classList.add("hide"); if ($("result").classList.contains("hide")) drop.classList.remove("hide");
+    st.className = "status err";
+    if (e && e.noText) st.textContent = e.message;
+    else if (e && e.name === "PasswordException") {
+      const pw = prompt(e.code === 2 ? "Wrong password. Try again:" : "This PDF is password protected. Enter the password:");
+      if (pw) return load(file, pw);
+      st.textContent = "A password is needed to open this PDF.";
+    } else st.textContent = "Could not read this file: " + (e.message || e);
+  }
+}
+
+const sum = a => a.reduce((t, r) => t + Math.abs(r.amt), 0);
+const group = (arr, fn) => { const m = {}; arr.forEach(r => (m[fn(r)] = m[fn(r)] || []).push(r)); return m; };
+const bar = (l, v, mx, col, right) => `<div class="br"><span title="${esc(l)}">${esc(l)}</span><i><b style="width:${Math.max(2, v / mx * 100)}%;background:${col}"></b></i><em>${right}</em></div>`;
+const NONE = '<p class="sub">Nothing to show.</p>';
+
+function render() {
+  const {rows, meta, info, review} = S, c = meta.cur;
+  $("drop").classList.add("hide"); $("reset").classList.remove("hide"); $("result").classList.remove("hide");
+  const dr = rows.filter(r => r.amt < 0), cr = rows.filter(r => r.amt > 0), inn = sum(cr), out = sum(dr);
+  const wb = rows.filter(r => r.bal != null), tail = info.rev ? wb[0] : wb[wb.length - 1], head = info.rev ? wb[wb.length - 1] : wb[0];
+  const closing = meta.closing ? pAmt(meta.closing).v : tail ? tail.bal : null;
+  const opening = info.opening != null ? info.opening : head ? head.bal - head.amt : null;
+  $("hero").innerHTML = `<div class="hr"><div><small>${esc([meta.bank, meta.holder].filter(Boolean).join(" · ") || meta.file)}</small><h2>${esc(meta.account ? "A/c " + meta.account : "Bank statement")}</h2><small>${esc([meta.period, meta.ifsc && "IFSC " + meta.ifsc].filter(Boolean).join(" · ") || meta.pages + " pages")}</small></div><div style="text-align:right"><small>Closing balance</small><div class="bal">${closing != null ? money(closing, c) : "—"}</div></div></div>
+  <div class="chips"><div class="chip"><small>Opening</small><b>${opening != null ? money(opening, c) : "—"}</b></div><div class="chip"><small>Money in</small><b style="color:#4ade80">${money(inn, c)}</b></div><div class="chip"><small>Money out</small><b style="color:#f87171">${money(out, c)}</b></div><div class="chip"><small>Net</small><b style="color:#38bdf8">${money(inn - out, c)}</b></div><div class="chip"><small>Transactions</small><b style="color:#a78bfa">${rows.length}</b></div></div>`;
+
+  const ds = rows.filter(r => r.date).map(r => r.date.getTime()), span = ds.length ? Math.max(1, Math.round((Math.max(...ds) - Math.min(...ds)) / 864e5) + 1) : null;
+  const big = dr.slice().sort((a, b) => a.amt - b.amt)[0], bigIn = cr.slice().sort((a, b) => b.amt - a.amt)[0], bals = wb.map(r => r.bal);
+  const tiles = [["Savings rate", inn ? Math.round((inn - out) / inn * 100) + "%" : "—", "#4ade80"], ["Avg daily spend", span ? money(out / span, c) : "—", "#fb923c"], ["Largest expense", big ? money(Math.abs(big.amt), c) : "—", "#f87171"], ["Largest income", bigIn ? money(bigIn.amt, c) : "—", "#34d399"], ["Lowest balance", bals.length ? money(Math.min(...bals), c) : "—", "#facc15"], ["Highest balance", bals.length ? money(Math.max(...bals), c) : "—", "#38bdf8"], ["Debits / credits", dr.length + " / " + cr.length, "#a78bfa"], ["Avg expense", dr.length ? money(out / dr.length, c) : "—", "#f472b6"]];
+  $("tiles").innerHTML = tiles.map(t => `<div class="tile" style="--c:${t[2]}"><small>${t[0]}</small><b>${t[1]}</b></div>`).join("");
+
+  const ents = Object.entries(group(dr, r => r.cat)).map(([k, a]) => [k, sum(a)]).sort((a, b) => b[1] - a[1]), tot = out || 1;
+  let acc = 0; const R = 54, C = 2 * Math.PI * R;
+  const arcs = ents.map(([k, v]) => { const len = v / tot * C, a = `<circle r="${R}" cx="75" cy="75" fill="none" stroke="${CATCOL[k] || "#94a3b8"}" stroke-width="22" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 75 75)"/>`; acc += len; return a; }).join("");
+  $("donut").innerHTML = ents.length ? `<svg viewBox="0 0 150 150" role="img" aria-label="Spending by category"><circle r="${R}" cx="75" cy="75" fill="none" stroke="#111" stroke-width="22"/>${arcs}<text x="75" y="72" text-anchor="middle" font-size="11" fill="#8a8a8a" font-family="Manrope">Spent</text><text x="75" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#f2f2f2" font-family="Manrope">${money(out, c)}</text></svg><div class="leg">${ents.map(([k, v]) => `<button data-cat="${esc(k)}"><i style="background:${CATCOL[k] || "#94a3b8"}"></i><span>${esc(k)}</span><em>${Math.round(v / tot * 100)}%</em></button>`).join("")}</div>` : NONE;
+
+  const mg = group(rows.filter(r => r.date), r => r.date.getFullYear() * 100 + r.date.getMonth()), mk = Object.keys(mg).sort();
+  const mx = Math.max(1, ...mk.map(k => Math.max(sum(mg[k].filter(r => r.amt > 0)), sum(mg[k].filter(r => r.amt < 0)))));
+  $("months").innerHTML = mk.map(k => { const a = mg[k], i = sum(a.filter(r => r.amt > 0)), o = sum(a.filter(r => r.amt < 0)); return `<div class="mo"><div class="ml">${a[0].date.toLocaleDateString("en-IN", {month: "short", year: "2-digit"})}</div>${bar("In", i, mx, "#4ade80", money(i, c))}${bar("Out", o, mx, "#f87171", money(o, c))}</div>`; }).join("") || NONE;
+
+  const me = Object.entries(group(dr, r => r.mode)).map(([k, a]) => [k, sum(a), a.length]).sort((a, b) => b[1] - a[1]);
+  $("modes").innerHTML = me.map(e => bar(e[0], e[1], me[0][1], MODECOL[e[0]] || "#94a3b8", money(e[1], c) + " · " + e[2] + "×")).join("") || NONE;
+  const pg = Object.entries(group(dr, r => r.who)).map(([k, a]) => [k, sum(a), a.length]).sort((a, b) => b[1] - a[1]);
+  $("payees").innerHTML = pg.slice(0, 8).map((e, i) => bar(e[0], e[1], pg[0][1], COLORS[i], money(e[1], c) + " · " + e[2] + "×")).join("") || NONE;
+  const rec = pg.filter(e => e[2] >= 3).slice(0, 6);
+  $("recur").innerHTML = rec.map(e => `<div><span>${esc(e[0])}</span><span class="sub">${e[2]}× · avg ${money(e[1] / e[2], c)}</span></div>`).join("") || '<p class="sub">No repeated payees found.</p>';
+  $("topx").innerHTML = dr.slice().sort((a, b) => a.amt - b.amt).slice(0, 5).map(r => `<div><span>${esc(r.desc.slice(0, 34))}</span><b class="dr">${money(Math.abs(r.amt), c)}</b></div>`).join("") || NONE;
+
+  const bad = rows.filter(r => r.ok === false).length, chk = rows.filter(r => r.ok != null).length, fixed = rows.filter(r => r.fixed).length;
+  const calc = opening != null && closing != null ? Math.abs(opening + inn - out - closing) < 0.02 : null;
+  $("rep").innerHTML = `<div><span>Text lines scanned</span><b>${S.nLines}</b></div><div><span>Transactions captured</span><b>${rows.length}</b></div>
+  <div><span>Running-balance check</span>${chk ? (bad ? `<b class="bad">${bad} of ${chk} need review</b>` : `<b class="ok">All ${chk} match ✓</b>`) : "<b>No balance column</b>"}</div>
+  <div><span>Opening + net = closing</span>${calc === null ? "<b>Not available</b>" : calc ? '<b class="ok">Matches ✓</b>' : '<b class="bad">Does not match</b>'}</div>
+  ${info.rev ? "<div><span>Order</span><b>Newest first</b></div>" : ""}${fixed ? `<div><span>Direction fixed from balance</span><b>${fixed}</b></div>` : ""}`;
+  $("rv").innerHTML = review.length ? `<details open><summary>${review.length} line${review.length > 1 ? "s" : ""} to check, not counted as transactions</summary><div class="rv">${review.map(x => `<p>${esc(x)}</p>`).join("")}</div></details>` : "";
+  const cats = [...new Set(rows.map(r => r.cat))].sort();
+  $("catSel").innerHTML = '<option value="">All categories</option>' + cats.map(k => `<option>${esc(k)}</option>`).join("");
+  list();
+}
+
+function list() {
+  const c = S.meta.cur, q = $("q").value.toLowerCase().trim(), ty = $("type").value, ct = $("catSel").value, {k, dir} = S.sort;
+  const out = S.rows.filter(r => (!q || r.desc.toLowerCase().includes(q) || String(Math.abs(r.amt)).includes(q)) && (!ty || (ty === "d") === (r.amt < 0)) && (!ct || r.cat === ct));
+  out.sort((a, b) => (a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : a.idx - b.idx) * dir);
+  $("rows").innerHTML = out.map(r => `<tr class="${r.ok === false ? "w" : ""}"><td class="sub">${r.idx}</td><td>${esc(r.date ? r.date.toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"}) : r.dateStr)}</td><td><div class="ds">${esc(r.desc)}${r.ok === false ? '<span class="flag" title="Balance does not reconcile with the neighbouring row. Check this row against the PDF.">check</span>' : ""}<div class="sub"><span class="dot" style="background:${CATCOL[r.cat] || "#94a3b8"}"></span>${esc(r.cat)} · ${esc(r.mode)}${r.ref ? " · Ref " + esc(r.ref.slice(0, 22)) : ""}</div></div></td><td class="r ${r.amt < 0 ? "dr" : "cr"}">${money(r.amt, c)}</td><td class="r">${r.bal == null ? "" : money(r.bal, c)}</td></tr>`).join("") || '<tr><td colspan="5">No transactions match.</td></tr>';
+  $("count").textContent = `Showing ${out.length} of ${S.rows.length} transactions.`;
+}
+
+function pick(f) { if (f && (f.type === "application/pdf" || /\.pdf$/i.test(f.name))) load(f); else { $("status").className = "status err"; $("status").textContent = "Please choose a PDF file."; } }
+const drop = $("drop");
+drop.onclick = () => $("file").click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } };
+$("file").onchange = e => pick(e.target.files[0]);
+["dragover", "dragenter"].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+$("reset").onclick = () => { $("result").classList.add("hide"); $("result").querySelectorAll(".in").forEach(el => el.classList.remove("in")); drop.classList.remove("hide"); $("reset").classList.add("hide"); $("file").value = ""; $("status").textContent = ""; $("q").value = ""; $("type").value = ""; };
+$("toBR").onclick = () => window.showTab && window.showTab("gen");
+["q", "type", "catSel"].forEach(i => $(i).addEventListener("input", list));
+document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => { const k = th.dataset.k; S.sort = {k, dir: S.sort.k === k ? -S.sort.dir : 1}; list(); });
+$("donut").onclick = e => { const b = e.target.closest("[data-cat]"); if (b) { $("catSel").value = b.dataset.cat; list(); } };
+$("csv").onclick = () => {
+  const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+  const csv = ["No,Date,Description,Category,Mode,Payee,Ref,Amount,Balance", ...S.rows.map(r => [r.idx, q(r.dateStr), q(r.desc), q(r.cat), q(r.mode), q(r.who), q(r.ref), r.amt, r.bal == null ? "" : r.bal].join(","))].join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"})); a.download = "transactions.csv"; a.click();
+};
+</script>
+<script>
+const BR_DATA = {"expense":["Apparel","Baby","Bakery / Pups","Bank","Beauty","Borrow","Bigbasket","Biscuit","Blinkit","Brother / Sister","Car","Clothing","Donate","Dividend","Drink / Juices","Education","Egg","Electronics","Entertainment","Family","FD","Food","Friends","Gift","Health","Help","Home","Housing","Little Heart","Milk / Bread / Curd","Mobile","Mother / Dad","Movie","Mutual Fund","Official Documents","Party","Personal Care","Pet","Penalty","Recharges","Receivable","Repair","Samosa / Outside Food","Self","Service","Shopping","Snacks","SIP","Stock","Social","Sport","Style / Fashion","Swiggy","Tax","Telephone","Tiffin / Lunch / Parlour","Tour","Transportation","Travel","Vehicle","Wine / Cigarette","Zomato","Zepto","Others"],"income":["Salary","Stock Return","MF Return","FD Return","Return","Interest","Profit","Bonus","Business","Freelance","Gift","Investment","Rent","Others"],"expIcons":{"Apparel":["👕",210],"Baby":["🍼",330],"Bakery / Pups":["🥐",32],"Bank":["🏦",215],"Beauty":["💄",335],"Borrow":["🤝",25],"Bigbasket":["🧺",140],"Biscuit":["🍪",30],"Blinkit":["⚡",52],"Brother / Sister":["👫",280],"Car":["🚗",8],"Clothing":["👚",300],"Donate":["🎗️",350],"Dividend":["💹",150],"Drink / Juices":["🧃",28],"Education":["🎓",240],"Egg":["🥚",45],"Electronics":["🔌",200],"Entertainment":["🎭",270],"Family":["👪",20],"FD":["🏛️",45],"Food":["🍽️",18],"Friends":["🧑‍🤝‍🧑",190],"Gift":["🎁",345],"Health":["🩺",165],"Help":["🙌",35],"Home":["🏠",38],"Housing":["🏢",220],"Little Heart":["💖",340],"Milk / Bread / Curd":["🥛",200],"Mobile":["📱",230],"Mother / Dad":["👪",310],"Movie":["🎬",0],"Mutual Fund":["📊",160],"Official Documents":["📄",215],"Party":["🎉",320],"Personal Care":["🧴",175],"Pet":["🐾",28],"Penalty":["⚠️",5],"Recharges":["🔋",120],"Receivable":["🧾",195],"Repair":["🔧",215],"Samosa / Outside Food":["🥟",22],"Self":["🙂",50],"Service":["🛠️",205],"Shopping":["🛍️",325],"Snacks":["🍿",40],"SIP":["🔁",155],"Stock":["📈",145],"Social":["💬",205],"Sport":["⚽",130],"Style / Fashion":["👗",295],"Swiggy":["🛵",24],"Tax":["🧮",10],"Telephone":["☎️",235],"Tiffin / Lunch / Parlour":["🍱",15],"Tour":["🧳",185],"Transportation":["🚌",210],"Travel":["✈️",200],"Vehicle":["🏍️",12],"Wine / Cigarette":["🍷",345],"Zomato":["🍕",4],"Zepto":["🛒",275],"Others":["📦",35]},"incIcons":{"Salary":["💼",150],"Stock Return":["📈",145],"MF Return":["📊",160],"FD Return":["🏛️",45],"Return":["🔁",155],"Interest":["🏦",215],"Profit":["💹",150],"Bonus":["🎯",35],"Business":["🏪",25],"Freelance":["💻",220],"Gift":["🎁",345],"Investment":["📈",145],"Rent":["🏠",38],"Others":["💰",140]},"icons":["🛒","🍽️","☕","🍔","🍕","🍜","🍰","🍎","🥦","🍷","🚗","🏍️","🚌","🚆","✈️","⛽","🚕","🛵","🚲","🧳","🏠","🛋️","💡","🚿","🔧","🧹","📱","💻","🎧","📷","👕","👟","👜","💄","💍","🧴","💊","🩺","🏋️","🧘","🎓","📚","✏️","🎬","🎮","🎵","🎨","🎉","🎁","🐶","🐱","🌱","👶","👪","❤️","💳","🏦","💰","📈","🧾","📄","⚖️","🛡️","🔒","🌐","📦","⭐","🔥","🌍","🏷️"],"hues":[0,20,40,75,145,175,200,225,260,290,320,345]};
+"use strict";
+/* =====================================================================
+   BLACKROAD DATA GENERATOR
+   Turns the statements read above into BlackRoad income entries.
+
+   Output = BlackRoad's "Income & Expenses export":
+     { entries: [ { date, from, category, income,
+                    transactions: [ { id, amount, date, description, category, type } ],
+                    expense, investment, investmentSale, realizedGainLoss, balance } ] }
+   BlackRoad's global Restore already accepts this shape: it ADDS the
+   entries and skips ones it already has. Nothing is replaced.
+
+   WHEN THIS PAGE IS EMBEDDED INTO BLACKROAD, only the "BlackRoad adapter"
+   block below changes:
+     - category lists / icons  -> import from income-service.js and expense-categories.js
+     - BR.learn (history)      -> build from dataService.getIncomeStore().getEntries()
+     - BR.custom               -> store.getCustomExpenseCategories()
+     - exportJSON()            -> store.saveEntry(entry) for each entry
+   ===================================================================== */
+(function () {
+const D = BR_DATA;
+const $$ = (s, r = document) => r.querySelector(s);
+
+/* ---------------------------------------------------------------
+   BlackRoad adapter  (copied from BlackRoad's own source)
+   --------------------------------------------------------------- */
+const BR = {
+  EXP: D.expense, INC: D.income, EXP_ICON: D.expIcons, INC_ICON: D.incIcons, ICONS: D.icons, HUES: D.hues,
+  INVEST: ["Mutual Fund", "SIP", "Stock", "FD"],
+  RETURNS: ["Stock Return", "MF Return", "FD Return", "Mutual Fund Return"],
+  SALE_RX: /\b(sell|sold|sale|redeem|redemption|withdraw|withdrawal|matur(?:e|ity))\b/,
+  custom: [],                                   // [{ name, icon, hue }] same shape BlackRoad stores
+  learn: {dr: new Map(), cr: new Map(), file: "", entries: 0, txns: 0, sigs: new Set()}
+};
+const FALLBACK = {emoji: "🏷️", hue: 220};
+const low = v => String(v || "").trim().toLowerCase();
+const isInv = c => BR.INVEST.includes(String(c || "").trim());
+const isRet = c => BR.RETURNS.includes(String(c || "").trim());
+
+function catMeta(name, kind) {
+  const key = String(name || "").trim();
+  if (!key) return {...FALLBACK};
+  const cu = BR.custom.find(c => low(c.name) === low(key));
+  if (cu) return {emoji: cu.icon || FALLBACK.emoji, hue: Number(cu.hue) || FALLBACK.hue};
+  const h = (kind === "cr" ? BR.INC_ICON : BR.EXP_ICON)[key] || BR.EXP_ICON[key] || BR.INC_ICON[key];
+  return h ? {emoji: h[0], hue: h[1]} : {...FALLBACK};
+}
+function iconHTML(name, size, kind) {
+  const m = catMeta(name, kind);
+  return `<span class="cat-ico cat-ico-${size}" style="--cat-hue:${m.hue}" aria-hidden="true">${esc(m.emoji)}</span>`;
+}
+function catList(kind) {
+  if (kind === "cr") return BR.INC.slice();
+  const custom = BR.custom.map(c => c.name), base = BR.EXP.filter(c => !custom.includes(c)), at = base.indexOf("Others");
+  return at < 0 ? [...base, ...custom] : [...base.slice(0, at), ...custom, ...base.slice(at)];
+}
+
+/* Same arithmetic as BlackRoad's recalcEntry() / isInvestmentSaleIncomeEntry() */
+const RET_LOW = ["stock return", "mf return", "mutual fund return", "fd return"];
+const isSaleEntry = e => BR.SALE_RX.test(low(e.from)) && RET_LOW.includes(low(e.category));
+function recalc(e) {
+  let ex = 0, inv = 0;
+  for (const t of e.transactions) {
+    const a = Math.max(0, Number(t.amount) || 0);
+    if (isInv(t.category)) { inv += a; t.type = "investment"; } else { ex += a; t.type = "expense"; }
+  }
+  const sale = isSaleEntry(e), amount = Math.max(0, Number(e.income) || 0);
+  e.expense = ex; e.investment = inv; e.investmentSale = sale ? amount : 0; e.realizedGainLoss = 0;
+  e.balance = (sale ? 0 : amount) - ex - inv + (sale ? amount : 0);
+  return e;
+}
+const sigOf = e => {
+  const c = recalc({...e, transactions: (e.transactions || []).map(t => ({...t}))});
+  return JSON.stringify([Number(c.income) || 0, c.date || "", c.from || "", c.category || "",
+    c.transactions.map(t => [Number(t.amount) || 0, t.date || "", t.description || "", t.category || "", t.type || ""])]);
+};
+
+/* ---------------------------------------------------------------
+   Suggestion rules  (statement text -> BlackRoad category)
+   First match wins, so specific rules come first.
+   --------------------------------------------------------------- */
+const RULES_DR = [
+  ["SIP", /\bsip\b|systematic invest/i],
+  ["Mutual Fund", /mutual fund|\bmf\b|bse star|\bmfu\b|nippon|kuvera|\bcoin\b|groww|parag parikh|ppfas|\bamc\b.*fund/i],
+  ["Stock", /zerodha|upstox|angel|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|\bnse\b|\bbse\b|ccil|clearing corp|broking|dhan\b/i],
+  ["FD", /fixed deposit|\bfd\b|\brd\b|recurring deposit|term deposit/i],
+  ["Penalty", /penal|late fee|late payment|dishonou?r|cheque return|chq return|bounce/i],
+  ["Tax", /income tax|\btds\b|challan|\bcbdt\b|advance tax|professional tax/i],
+  ["Bank", /\bemi\b|loan|\bach d\b|\bnach\b|\becs\b|\bcharges?\b|\bchrg\b|sms alert|\bamc\b|annual fee|min(?:imum)? bal|processing fee|credit card|\bcred\b|card payment|interest debit|\bgst\b/i],
+  ["Swiggy", /swiggy|instamart/i],
+  ["Zomato", /zomato/i],
+  ["Blinkit", /blinkit|grofers/i],
+  ["Zepto", /zepto/i],
+  ["Bigbasket", /bigbasket|big basket|dmart|avenue supermarts|grocer|supermarket|jiomart|more retail|nature'?s basket|ratnadeep|spencer/i],
+  ["Milk / Bread / Curd", /milk|dairy|curd|amul|nandini|aavin|mother dairy|\bbread\b/i],
+  ["Egg", /\beggs?\b/i],
+  ["Bakery / Pups", /bakery|\bpups?\b|\bbaker\b|\bcakes?\b|sweets/i],
+  ["Biscuit", /biscuit|parle|britannia|cookies?/i],
+  ["Snacks", /snacks?|chips|namkeen|haldiram|popcorn/i],
+  ["Wine / Cigarette", /wine|liquor|\bbeer\b|\bbar\b|cigarette|tobacco|\bitc\b|paan|vape|spirits/i],
+  ["Drink / Juices", /juice|\btea\b|chai|coffee|starbucks|smoothie|lassi|sugarcane/i],
+  ["Samosa / Outside Food", /samosa|chaat|dhaba|pani ?puri|\bvada\b|\bdosa\b/i],
+  ["Tiffin / Lunch / Parlour", /tiffin|lunch|\bmess\b|canteen|ice ?cream/i],
+  ["Food", /restaurant|cafe|biryani|kfc|mcdonald|burger|pizza|dominos|subway|food court|eatery|kitchen|\bhotel\b|\bfood\b|dining/i],
+  ["Recharges", /recharge|\bjio\b|airtel|vodafone|\bvi\b|bsnl|\bdth\b|tata ?play|tatasky|dish ?tv|\bd2h\b|broadband|fibernet|hathway|postpaid|prepaid/i],
+  ["Telephone", /telephone|landline/i],
+  ["Mobile", /mobile phone|smartphone|handset|oneplus|realme|redmi|xiaomi|iphone/i],
+  ["Housing", /\brent\b|landlord|house rent|\bpg\b|hostel|rental|society|maintenance/i],
+  ["Home", /electric|bescom|tneb|tangedco|msedcl|\bpower\b|\bwater\b|\bgas\b|indane|bharatgas|cylinder|municipal|property tax|plumb|carpenter|furniture|ikea|pepperfry|hardware|paint/i],
+  ["Health", /hospital|pharmacy|apollo|medplus|clinic|1mg|pharmeasy|netmeds|diagnostic|\blab\b|dental|medical|doctor|practo|lenskart|optical|\bhealth\b/i],
+  ["Education", /school|college|tuition|udemy|coursera|course|university|byju|unacademy|\bexam\b|vedantu|physics ?wallah|upgrad|\bbooks?\b|stationery/i],
+  ["Movie", /bookmyshow|\bpvr\b|\binox\b|cinema|movie|theatre|theater|cinepolis/i],
+  ["Entertainment", /netflix|spotify|hotstar|prime video|amazon prime|youtube|google play|apple\.com|itunes|sonyliv|zee5|jiocinema|gaana|wynk|steam|playstation|dream11|\bmpl\b|concert/i],
+  ["Transportation", /\buber\b|\bola\b|rapido|metro|bmtc|ksrtc|tsrtc|\bbus\b|\bauto\b|\bcab\b|namma yatri|blusmart|fastag|\btoll\b|parking/i],
+  ["Travel", /irctc|makemytrip|\bmmt\b|redbus|indigo|air india|vistara|spicejet|akasa|flight|goibibo|yatra|cleartrip|ixigo|abhibus|railway|\btrain\b|airline/i],
+  ["Vehicle", /petrol|fuel|hpcl|bpcl|iocl|indian oil|\bshell\b|bunk|two wheeler|\bbike\b|\bpuc\b/i],
+  ["Car", /\bcar\b|car ?wash|maruti|hyundai|tata motors|mahindra|toyota/i],
+  ["Repair", /repair|mechanic|garage|workshop|urban ?company|urbanclap/i],
+  ["Service", /laundry|dry ?clean|\bmaid\b|courier|dtdc|delhivery|bluedart/i],
+  ["Beauty", /nykaa|sephora|beauty|cosmetic|lakme|purplle/i],
+  ["Personal Care", /salon|barber|\bspa\b|grooming|haircut|parlou?r/i],
+  ["Style / Fashion", /fashion|boutique|tailor|stitch/i],
+  ["Apparel", /myntra|ajio|zudio|trends|lifestyle|pantaloons|max fashion|h&m|zara|uniqlo|westside|shoppers stop|fabindia|clothing|garment|apparel|footwear|\bbata\b|puma|nike|adidas/i],
+  ["Electronics", /croma|vijay sales|reliance digital|electronics|\bboat\b|laptop|charger|earphone|headphone/i],
+  ["Sport", /decathlon|\bgym\b|fitness|cult\.?fit|cricket|football|badminton|\bturf\b|sports|playo|swimming/i],
+  ["Pet", /\bpets?\b|\bvet\b|supertails|heads up for tails|pedigree|whiskas/i],
+  ["Baby", /\bbaby\b|firstcry|diaper|pampers|hopscotch/i],
+  ["Gift", /gift|bouquet|florist|ferns|archies|\bigp\b|\bfnp\b/i],
+  ["Donate", /donat|charity|\bngo\b|temple|mandir|church|mosque|foundation|ketto|milaap|give ?india/i],
+  ["Party", /party|\bclub\b|\bpub\b|lounge|brewery|nightlife/i],
+  ["Tour", /resort|\btrip\b|\btour\b|holiday|trek|airbnb|\boyo\b|booking\.com|agoda|homestay|thrillophilia/i],
+  ["Official Documents", /passport|stamp duty|registration|notary|aadhaar|aadhar|e-?stamp|court fee|licen[cs]e|affidavit|xerox|photocopy/i],
+  ["Borrow", /borrow|loan repay|hand loan|udhar/i],
+  ["Shopping", /amazon|flipkart|meesho|snapdeal|reliance retail|\bmall\b|\bstore\b|\bshop\b|\bmart\b|bazaar|tata cliq|paytm mall/i]
+];
+const RULES_CR = [   // [category, pattern, sale-proceeds?]
+  ["Salary", /salary|payroll|\bsal\b|wages|stipend/i],
+  ["Bonus", /bonus|incentive|ex[- ]?gratia/i],
+  ["Stock Return", /dividend|\bdiv\b/i, false],
+  ["Interest", /interest|int\.? ?pd|\bint\b|int\.? ?cr/i],
+  ["FD Return", /maturity|premature|fixed deposit|\bfd\b|term deposit/i, true],
+  ["MF Return", /redemption|redeem|mutual fund|bse star|\bmfu\b|kuvera|\bcoin\b/i, true],
+  ["Stock Return", /zerodha|upstox|angel|groww|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|\bnse\b|\bbse\b|ccil|broking|dhan\b/i, true],
+  ["Rent", /\brent\b|rental/i],
+  ["Freelance", /freelance|invoice|consult|professional fee/i],
+  ["Business", /business|customer|sales/i],
+  ["Gift", /gift/i]
+];
+const BROKER_RX = /zerodha|upstox|angel|groww|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|ccil|broking|redemption|redeem|maturity|premature/i;
+const defaultSale = r => isRet(r.cat) && (BROKER_RX.test(r.raw) || BR.SALE_RX.test(low(r.desc))) && !/dividend/i.test(r.raw);
+
+const norm = s => String(s || "").toLowerCase().replace(/\d+/g, " ").replace(/[^a-z& ]+/g, " ").replace(/\s+/g, " ").trim();
+function payee(d) {
+  for (let s of String(d).split(/[\/\-:,|]+/)) {
+    s = s.replace(/@.*/, "").split(/\s+/).filter(w => !/\d{4,}/.test(w)).join(" ");
+    s = s.replace(/[^A-Za-z .&']/g, " ").replace(/\s+/g, " ").trim();
+    const w = s.toLowerCase().split(" ").filter(x => x && !STOP.has(x));
+    if (w.join("").length >= 3) return w.slice(0, 3).map(x => x[0].toUpperCase() + x.slice(1)).join(" ");
+  }
+  return String(d).slice(0, 24).trim() || "Unknown";
+}
+function cleanDesc(r) {
+  const p = payee(r.desc);
+  if (["UPI", "NEFT", "IMPS", "RTGS"].includes(r.mode) && p !== "Unknown") return r.mode + " – " + p;
+  const d = r.desc.replace(/\b\d{6,}\b/g, " ").replace(/(?<=\D)[\/|]+(?=\D)|\|/g, " ").replace(/\s+/g, " ").trim();
+  return d.slice(0, 70) || "(no description)";
+}
+/* Credits are named after what BlackRoad shows as the income source; debits keep the cleaned narration. */
+function syncDesc(r) {
+  if (r.edited) return;
+  if (r.kind === "dr") { r.desc = r.base; return; }
+  const p = payee(r.raw);
+  if (r.cat === "Salary") r.desc = "Salary – " + p;
+  else if (r.cat === "Interest") r.desc = "Interest – " + r.bank.replace(/ ?••.*$| #\d+$/, "");
+  else if (isRet(r.cat) && r.sale) r.desc = "Sale – " + p;
+  else r.desc = r.base;
+}
+function suggest(r) {
+  const L = BR.learn[r.kind], list = catList(r.kind);
+  const hit = (norm(r.desc) && L.get(norm(r.desc))) || (r.key.length >= 3 && L.get(r.key));
+  if (hit && list.includes(hit.cat)) return {cat: hit.cat, src: "learned"};
+  const text = r.raw + " " + r.desc;
+  const rule = (r.kind === "cr" ? RULES_CR : RULES_DR).find(x => x[1].test(text));
+  if (rule) return {cat: rule[0], src: "rule", sale: rule[2]};
+  return {cat: "Others", src: "default"};
+}
+
+/* ---------------------------------------------------------------
+   State
+   --------------------------------------------------------------- */
+const G = {pool: [], rows: [], host: {}, seq: 0, shown: 150, f: {q: "", st: "", bank: "", mon: ""}, B: null};
+const pad = n => String(n).padStart(2, "0");
+const isoOf = d => d ? d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) : "";
+const monthName = k => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString("en-IN", {month: "long", year: "numeric"});
+const dayLabel = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"});
+const inr = v => "₹" + Math.abs(v).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const needs = r => r.src === "default" && r.cat === "Others";
+const ACR = new Set("HDFC ICICI SBI PNB IDFC IDBI UCO RBL DBS AU".split(" "));
+const bankName = s => s.split(" ").map(w => ACR.has(w) ? w : w[0] + w.slice(1).toLowerCase()).join(" ");
+let toastT = null;
+function toast(t) { const el = $("gToast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2600); }
+function msg(t, err) { const m = $("gMsg"); m.textContent = t; m.className = "g-sub" + (err ? " g-warn" : ""); }
+
+/* ---------------------------------------------------------------
+   Statements -> rows
+   --------------------------------------------------------------- */
+function rowsFrom(p) {
+  return p.rows.map(r => {
+    const row = {id: p.id + ":" + r.idx, sid: p.id, bank: p.label, dateISO: isoOf(r.date), raw: r.desc, desc: "", base: cleanDesc(r), edited: false, mode: r.mode, ref: r.ref || "",
+      kind: r.amt > 0 ? "cr" : "dr", type: r.amt > 0 ? "income" : "expense", xk: "", link: "", amt: Math.abs(r.amt), cat: "Others", src: "default", sale: false, skip: false, why: "", locked: false, warn: r.ok === false, key: payee(r.desc).toLowerCase()};
+    if (!row.dateISO) { row.skip = true; row.locked = true; row.why = "No date found"; }
+    else if (!(row.amt > 0)) { row.skip = true; row.locked = true; row.why = "Zero amount"; }
+    applySuggest(row);
+    return row;
+  });
+}
+function applySuggest(r) {
+  if (r.src === "manual" || r.src === "similar") return;
+  const s = suggest(r);
+  r.cat = s.cat; r.src = s.src;
+  r.sale = r.kind === "cr" && isRet(r.cat) ? (s.sale !== undefined ? s.sale : defaultSale(r)) : false;
+  syncDesc(r);
+}
+/* A debit in one statement that matches a credit in another (same amount, within 3 days) is the user's own money moving. */
+function markTransfers() {
+  G.rows.forEach(r => { if (!r.locked && r.why.startsWith("Own transfer")) { r.skip = false; r.why = ""; r.type = r.kind === "cr" ? "income" : "expense"; r.xk = ""; } });
+  const free = G.rows.filter(r => !r.locked && !r.skip && r.dateISO), used = new Set(), day = r => Date.parse(r.dateISO) / 864e5;
+  const drs = free.filter(r => r.kind === "dr");
+  for (const c of free.filter(r => r.kind === "cr")) {
+    let best = null, bd = 9;
+    for (const d of drs) { if (used.has(d) || d.sid === c.sid || Math.abs(d.amt - c.amt) > 0.005) continue; const gap = Math.abs(day(d) - day(c)); if (gap <= 3 && gap < bd) { best = d; bd = gap; } }
+    if (best) { used.add(best); c.skip = best.skip = true; c.why = "Own transfer from " + best.bank; best.why = "Own transfer to " + c.bank; c.type = best.type = "transfer"; c.xk = best.xk = "bank"; }
+  }
+}
+function addStatement(p, file) {
+  const key = file.name + "|" + file.size;
+  const have = G.pool.find(x => x.key === key);
+  if (have) return {item: have, dup: true};
+  const acct = (p.meta.account || "").replace(/[^\dXx*]/g, "");
+  let label = [p.meta.bank && bankName(p.meta.bank), acct && "••" + acct.slice(-4)].filter(Boolean).join(" ") || file.name.replace(/\.pdf$/i, "");
+  if (G.pool.some(x => x.label === label)) label += " #" + (G.pool.filter(x => x.label.startsWith(label)).length + 1);
+  const item = {id: "s" + (++G.seq), key, label, file: file.name, meta: p.meta, rows: p.res.rows, bad: p.res.rows.filter(r => r.ok === false).length, review: p.res.review.length};
+  G.pool.push(item);
+  G.rows.push(...rowsFrom(item));
+  G.rows.sort((a, b) => (a.dateISO || "9999").localeCompare(b.dateISO || "9999") || a.id.localeCompare(b.id, undefined, {numeric: true}));
+  markTransfers();
+  return {item, dup: false};
+}
+function removeStatement(id) {
+  G.pool = G.pool.filter(x => x.id !== id);
+  G.rows = G.rows.filter(r => r.sid !== id);
+  markTransfers();
+  refresh();
+}
+window.genAdd = function (p, file) { const r = addStatement(p, file); refresh(); return r; };
+
+async function readOne(f, pw) {
+  try { return await parseStatement(f, pw); }
+  catch (e) {
+    if (e && e.name === "PasswordException") {
+      const x = prompt((e.code === 2 ? "Wrong password. Try again" : "This PDF is password protected. Enter the password") + " (" + f.name + "):");
+      if (x) return readOne(f, x);
+      throw new Error("a password is needed");
+    }
+    if (e && e.noText) throw new Error("no selectable text (it may be a scan)");
+    throw e;
+  }
+}
+const sk = on => { $("gSkel").classList.toggle("hide", !on); if (on) ["gReview", "gEntries", "gOut"].forEach(id => $(id).classList.add("hide")); };
+async function addFiles(files) {
+  const list = [...files].filter(f => f.type === "application/pdf" || /\.pdf$/i.test(f.name));
+  if (!list.length) { msg("Please choose PDF files.", true); return; }
+  const errs = []; let ok = 0; const t0 = Date.now(); sk(true);
+  for (let i = 0; i < list.length; i++) {
+    msg("Reading " + (i + 1) + " of " + list.length + ": " + list[i].name + "…");
+    try {
+      const p = await readOne(list[i]);
+      if (!p.res.rows.length) { errs.push(list[i].name + ": no transactions recognised"); continue; }
+      const r = addStatement(p, list[i]);
+      if (r.dup) errs.push(list[i].name + ": already added"); else ok++;
+    } catch (e) { errs.push(list[i].name + ": " + (e.message || e)); }
+  }
+  { const w = 3500 - (Date.now() - t0); if (w > 0) await new Promise(r => setTimeout(r, w)); sk(false); }
+  refresh();
+  msg(errs.length ? (ok ? ok + " added. " : "") + errs.join(" · ") : ok + (ok === 1 ? " statement" : " statements") + " added.", !!errs.length);
+}
+
+/* ---------------------------------------------------------------
+   Learn from the user's BlackRoad data
+   --------------------------------------------------------------- */
+function extractEntries(p) {
+  if (Array.isArray(p)) return {entries: p, custom: []};
+  if (p && Array.isArray(p.entries) && !p.databases) return {entries: p.entries, custom: Array.isArray(p.customExpenseCategories) ? p.customExpenseCategories : []};
+  if (p && p.databases) {
+    for (const [k, v] of Object.entries(p.databases)) {
+      if (k.split("::")[0] !== "BlackRoad2" || !v || !v.stores) continue;
+      const meta = (v.stores.meta || []).find(m => m && m.key === "customExpenseCategories");
+      return {entries: v.stores.entries || [], custom: meta && Array.isArray(meta.value) ? meta.value : []};
+    }
+  }
+  return null;
+}
+function learnFrom(payload, fileName) {
+  const x = extractEntries(payload);
+  if (!x || !x.entries.length) throw new Error("No BlackRoad income entries found in that file.");
+  const tally = {dr: new Map(), cr: new Map()}, sigs = new Set();
+  const bump = (kind, k, cat) => { if (!k || !cat) return; const m = tally[kind]; if (!m.has(k)) m.set(k, new Map()); const c = m.get(k); c.set(cat, (c.get(cat) || 0) + 1); };
+  const known = new Set([...BR.EXP, ...BR.INC].map(low));
+  let txns = 0;
+  for (const c of x.custom) if (c && c.name && !BR.custom.some(y => low(y.name) === low(c.name))) BR.custom.push({name: String(c.name).trim(), icon: c.icon || FALLBACK.emoji, hue: Number(c.hue) || FALLBACK.hue});
+  for (const e of x.entries) {
+    if (!e || typeof e !== "object") continue;
+    try { sigs.add(sigOf(e)); } catch { /* skip odd record */ }
+    bump("cr", norm(e.from), e.category); bump("cr", payee(e.from || "").toLowerCase(), e.category);
+    for (const t of e.transactions || []) {
+      txns++;
+      bump("dr", norm(t.description), t.category); bump("dr", payee(t.description || "").toLowerCase(), t.category);
+      const cn = String(t.category || "").trim();
+      if (cn && !known.has(low(cn)) && !BR.custom.some(y => low(y.name) === low(cn))) BR.custom.push({name: cn, icon: FALLBACK.emoji, hue: FALLBACK.hue});
+    }
+  }
+  for (const kind of ["dr", "cr"]) {
+    const out = new Map();
+    tally[kind].forEach((c, k) => { let best = null, n = 0, total = 0; c.forEach((v, cat) => { total += v; if (v > n) { n = v; best = cat; } }); out.set(k, {cat: best, n: total}); });
+    BR.learn[kind] = out;
+  }
+  BR.learn.file = fileName; BR.learn.entries = x.entries.length; BR.learn.txns = txns; BR.learn.sigs = sigs;
+  G.rows.forEach(applySuggest);
+  refresh();
+}
+
+/* ---------------------------------------------------------------
+   Rows -> BlackRoad entries
+   --------------------------------------------------------------- */
+const fromText = r => {
+  let f = (r.desc || "").trim() || "Income";
+  if (r.sale && isRet(r.cat) && !BR.SALE_RX.test(low(f))) f = "Sale – " + f;
+  return f;
+};
+const effectiveSale = r => r.kind === "cr" && isRet(r.cat) && BR.SALE_RX.test(low(fromText(r)));
+function build() {
+  const byMon = {}, ensure = k => byMon[k] || (byMon[k] = {key: k, incomes: [], txns: []});
+  for (const r of G.rows) {
+    if (r.skip || !r.dateISO || !(r.amt > 0)) continue;
+    const m = ensure(r.dateISO.slice(0, 7));
+    (r.kind === "cr" ? m.incomes : m.txns).push(r);
+  }
+  let n = 0;
+  const byId = {}, linkOf = {}, entries = [];
+  const months = Object.keys(byMon).sort().map(k => {
+    const m = byMon[k];
+    const list = m.incomes.map(r => (byId[r.id] = {row: r, e: {date: r.dateISO, from: fromText(r), category: r.cat, income: r.amt, transactions: []}}));
+    return {key: k, m, list, host: null, synthetic: false, txCount: m.txns.length, auto: 0};
+  });
+  for (const M of months) {
+    let def = null, syn = null;
+    for (const r of M.m.txns) {
+      let h = r.link && byId[r.link]; const auto = !h;
+      if (auto) {
+        M.auto++;
+        def = def || M.list.find(x => x.row && x.row.id === G.host[M.key]) || M.list.filter(x => x.row).sort((a, b) => (isSaleEntry(a.e) - isSaleEntry(b.e)) || b.row.amt - a.row.amt)[0];
+        if (!def && !syn) { syn = {row: null, e: {date: r.dateISO, from: "Expenses (no income in these statements)", category: "Others", income: 0, transactions: []}}; M.list.push(syn); M.synthetic = true; }
+        h = def || syn; M.host = h;
+      }
+      h.e.transactions.push({id: "g" + (++n).toString(36), amount: r.amt, date: r.dateISO, description: r.desc, category: r.cat, type: "expense"});
+      linkOf[r.id] = {label: h.row ? h.e.from : "No income", auto, none: !h.row};
+    }
+  }
+  months.forEach(M => M.list.forEach(x => { recalc(x.e); entries.push(x.e); }));
+  return {months, entries, linkOf, custom: BR.custom.filter(c => entries.some(e => e.transactions.some(t => low(t.category) === low(c.name))))};
+}
+function exportObject(B) {
+  return {
+    app: "BlackRoad", kind: "income-entries", generatedBy: "Statement Reader", generatedAt: new Date().toISOString(),
+    sources: G.pool.map(p => ({statement: p.label, file: p.file, account: p.meta.account || "", period: p.meta.period || "", transactions: p.rows.length})),
+    customExpenseCategories: B.custom.map(c => ({name: c.name, icon: c.icon, hue: c.hue})),
+    entries: B.entries
+  };
+}
+function fileStem(B) {
+  const k = B.months.map(m => m.key);
+  return "blackroad-income-" + (k.length ? (k.length > 1 ? k[0] + "_to_" + k[k.length - 1] : k[0]) : "empty");
+}
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------------------------------------------------------------
+   Render
+   --------------------------------------------------------------- */
+function renderStatements() {
+  $("gCount").textContent = G.pool.length ? G.pool.length + (G.pool.length === 1 ? " statement" : " statements") + " · " + G.rows.length + " transactions" : "";
+  $("gStmts").innerHTML = G.pool.map(p => `<div class="g-st"><div class="mt"><div class="nm">${esc(p.label)}</div><div class="g-sub">${esc([p.meta.period, p.rows.length + " transactions", p.file].filter(Boolean).join(" · "))}</div>${p.bad ? `<div class="g-sub g-warn">${p.bad} row${p.bad > 1 ? "s" : ""} did not match the running balance. Check them below.</div>` : ""}</div><button class="g-btn sm" type="button" data-rm="${p.id}" aria-label="Remove ${esc(p.label)}">Remove</button></div>`).join("");
+  const t = document.querySelector("#tabs [data-tab=gen] b");
+  t.textContent = G.pool.length; t.classList.toggle("hide", !G.pool.length);
+  const L = BR.learn;
+  $("gLearnTx").textContent = L.file ? `Learned from ${L.file}: ${L.entries} entries, ${L.txns} transactions, ${BR.custom.length} custom categor${BR.custom.length === 1 ? "y" : "ies"}.` : "Choose a BlackRoad backup or income export so suggestions follow your own categories and habits.";
+  $("gLearnBtn").textContent = L.file ? "Change file" : "Choose file";
+}
+function renderTiles(B) {
+  let inc = 0, sale = 0, ex = 0, inv = 0;
+  B.entries.forEach(e => { if (e.investmentSale) sale += e.investmentSale; else inc += e.income; ex += e.expense; inv += e.investment; });
+  const sk = G.rows.filter(r => r.skip).length, nr = G.rows.filter(r => !r.skip && needs(r)).length;
+  const T = [["Income", inr(inc), "var(--ok)"], ["Expenses", inr(ex), "var(--dg)"], ["Investments", inr(inv), "#22d3ee"]];
+  if (sale) T.splice(1, 0, ["Sale proceeds", inr(sale), "var(--gold-t)"]);
+  T.push(["Skipped", sk, "var(--tm)"], ["Needs review", nr, nr ? "var(--wn)" : "var(--ok)"]);
+  const xs = G.rows.filter(r => r.type === "transfer" && (r.kind === "dr" || r.xk === "from")).reduce((t, r) => t + r.amt, 0);
+  if (xs) T.splice(T.length - 2, 0, ["Transfers", inr(xs), "#38bdf8"]);
+  $("gTiles").innerHTML = T.map(t => `<div class="g-tile"><small>${t[0]}</small><b style="color:${t[2]}">${t[1]}</b></div>`).join("");
+}
+function fillFilters() {
+  const keep = (id, html) => { const el = $(id), v = el.value; el.innerHTML = html; if ([...el.options].some(o => o.value === v)) el.value = v; else { el.value = ""; } };
+  keep("gBank", '<option value="">All statements</option>' + G.pool.map(p => `<option value="${p.id}">${esc(p.label)}</option>`).join(""));
+  const ms = [...new Set(G.rows.filter(r => r.dateISO).map(r => r.dateISO.slice(0, 7)))].sort();
+  keep("gMon", '<option value="">All months</option>' + ms.map(k => `<option value="${k}">${monthName(k)}</option>`).join(""));
+  G.f.bank = $("gBank").value; G.f.mon = $("gMon").value;
+}
+function visible() {
+  const f = G.f, q = low(f.q);
+  return G.rows.filter(r => {
+    if (q && !(low(r.desc).includes(q) || low(r.raw).includes(q) || low(r.cat).includes(q) || String(r.amt).includes(q))) return false;
+    if (f.bank && r.sid !== f.bank) return false;
+    if (f.mon && r.dateISO.slice(0, 7) !== f.mon) return false;
+    switch (f.st) {
+      case "review": return !r.skip && needs(r);
+      case "in": return r.kind === "cr" && !r.skip;
+      case "out": return r.kind === "dr" && !r.skip && !isInv(r.cat);
+      case "inv": return r.kind === "dr" && !r.skip && isInv(r.cat);
+      case "xfer": return r.type === "transfer";
+      case "skip": return r.skip;
+    }
+    return true;
+  });
+}
+const SRC = {learned: ["Learned", "gold"], rule: ["Suggested", ""], similar: ["Same payee", "ok"], manual: ["Edited", "ok"], default: ["Review", "wn"]};
+function rowHTML(r) {
+  const [sl, sc] = SRC[r.src], es = effectiveSale(r);
+  const kindPill = r.kind === "dr" ? (isInv(r.cat) ? '<span class="g-pill gold">Investment</span>' : "") : (isRet(r.cat) ? `<button type="button" class="g-pill ${es ? "gold" : ""}" data-act="sale" title="Sale proceeds are not counted as income">${es ? "Sale proceeds" : "Return income"}</button>` : "");
+  return `<div class="g-row${r.skip ? " off" : ""}" data-id="${esc(r.id)}">
+    <button type="button" class="g-ic" data-act="cat" aria-label="Category ${esc(r.cat)}. Change" title="Change category">${iconHTML(r.cat, "md", r.kind)}</button>
+    <input class="g-desc" type="text" value="${esc(r.desc)}" data-act="desc" aria-label="${r.kind === "cr" ? "Income source" : "Description"}" title="${esc(r.raw)}">
+    <div class="g-amt ${r.kind}">${r.kind === "cr" ? "+" : "−"}${inr(r.amt)}</div>
+    <div class="g-meta"><span>${dayLabel(r.dateISO || "1970-01-01").replace("1 Jan 1970", "No date")}</span><span>${esc(r.bank)}</span><span>${esc(r.cat)}</span>${r.skip ? "" : `<span class="g-pill ${sc}">${sl}</span>`}${kindPill}${r.warn ? '<span class="g-pill wn" title="Running balance did not match. Check this row against the PDF.">check</span>' : ""}${r.skip && r.why ? `<span class="g-pill ${r.type === "transfer" ? "xf" : "wn"}">${esc(r.why)}</span>` : ""}</div>
+    <label class="g-inc"><input type="checkbox" data-act="inc" ${r.skip ? "" : "checked"} aria-label="Include in BlackRoad file"> Include</label>${ctl(r)}
+  </div>`;
+}
+function renderRows() {
+  const v = visible(), part = v.slice(0, G.shown);
+  $("gRows").innerHTML = part.map(rowHTML).join("") || '<div class="g-empty">No transactions match.</div>';
+  $("gMore").classList.toggle("hide", v.length <= G.shown);
+  $("gMore").textContent = "Show more (" + (v.length - G.shown) + " left)";
+  $("gRevCount").textContent = v.length === G.rows.length ? G.rows.length + " transactions" : v.length + " of " + G.rows.length;
+}
+function renderEntries(B) {
+  $("gEntCount").textContent = B.entries.length + (B.entries.length === 1 ? " entry" : " entries");
+  $("gEnt").innerHTML = B.months.map(m => {
+    const cands = m.list.filter(x => x.row).sort((a, b) => b.row.amt - a.row.amt);
+    const sel = cands.length > 1 && m.auto ? `<label>Attach expenses to <select data-mon="${m.key}">${cands.map(c => `<option value="${esc(c.row.id)}"${c === m.host ? " selected" : ""}>${esc(c.e.from)} · ${inr(c.row.amt)}</option>`).join("")}</select></label>` : "";
+    return `<section class="g-ent"><header><h4>${monthName(m.key)}</h4><span class="g-sub">${m.list.length} income ${m.list.length === 1 ? "entry" : "entries"} · ${m.txCount} transaction${m.txCount === 1 ? "" : "s"}</span><span class="sp"></span>${sel}<button type="button" class="g-btn sm" data-addinc="${m.key}">＋ Add income</button></header>
+      ${m.synthetic ? '<div class="g-e"><div class="m g-warn" style="grid-column:1/-1">No income found in the statements for this month, so its transactions sit under a ₹0 entry. Add the income statement or edit it after import.</div></div>' : ""}
+      ${m.list.map(x => { const e = x.e, sale = isSaleEntry(e); return `<div class="g-e"><span class="ic">${iconHTML(e.category, "md", "cr")}</span><div class="t" title="${esc(e.from)}">${esc(e.from)}</div><div class="a" style="color:${sale ? "var(--gold-t)" : "var(--ok)"}">${e.income ? "+" + inr(e.income) : inr(0)}</div>
+        <div class="m"><span>${dayLabel(e.date)}</span><span>${esc(e.category)}</span>${sale ? '<span class="g-pill gold">Sale proceeds</span>' : ""}${e.transactions.length ? `<span>Expenses ${inr(e.expense)}</span>${e.investment ? `<span>Investments ${inr(e.investment)}</span>` : ""}<span>${e.transactions.length} linked</span>` : ""}<span>Balance <b style="color:${e.balance < 0 ? "var(--dg)" : "var(--ink)"}">${e.balance < 0 ? "−" : ""}${inr(e.balance)}</b></span></div></div>`; }).join("")}
+    </section>`;
+  }).join("") || '<div class="g-empty">Nothing is included yet.</div>';
+}
+function renderChecks(B) {
+  const inAll = G.rows.filter(r => r.kind === "cr").reduce((t, r) => t + r.amt, 0), outAll = G.rows.filter(r => r.kind === "dr").reduce((t, r) => t + r.amt, 0);
+  const inEnt = B.entries.reduce((t, e) => t + e.income, 0) + G.rows.filter(r => r.kind === "cr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
+  const outEnt = B.entries.reduce((t, e) => t + e.expense + e.investment, 0) + G.rows.filter(r => r.kind === "dr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
+  const ok = (a, b) => Math.abs(a - b) < 0.02, tag = c => c ? '<b style="color:var(--ok)">Matches ✓</b>' : '<b class="g-warn">Does not match</b>';
+  const transfers = G.rows.filter(r => r.why.startsWith("Own transfer")).length / 2, bad = G.pool.reduce((t, p) => t + p.bad, 0);
+  const dup = B.entries.filter(e => BR.learn.sigs.has(sigOf(e))).length;
+  $("gChk").innerHTML = `<div><span>Money in: statements ${inr(inAll)}</span>${tag(ok(inAll, inEnt))}</div><div><span>Money out: statements ${inr(outAll)}</span>${tag(ok(outAll, outEnt))}</div>
+    <div><span>Own transfers between your banks, left out</span><b>${transfers}</b></div>
+    <div><span>Rows that failed the statement's balance check</span>${bad ? `<b class="g-warn">${bad}</b>` : '<b style="color:var(--ok)">None ✓</b>'}</div>
+    ${BR.learn.file ? `<div><span>Entries already in your BlackRoad data</span><b>${dup ? dup + " (BlackRoad will skip them)" : "None"}</b></div>` : ""}`;
+}
+function refresh() {
+  G.B = build();
+  renderStatements();
+  const has = G.rows.length > 0;
+  ["gReview", "gEntries", "gOut"].forEach(id => $(id).classList.toggle("hide", !has));
+  if (!has) return;
+  fillFilters(); renderTiles(G.B); renderRows(); renderEntries(G.B); renderChecks(G.B);
+  $("gPre").textContent = ""; $("gDet").open = false;
+}
+
+/* ---------------------------------------------------------------
+   Category picker  (same look and behaviour as BlackRoad's)
+   --------------------------------------------------------------- */
+function setCategory(row, name) {
+  row.cat = name; row.src = "manual";
+  if (row.kind === "cr") row.sale = isRet(name) && defaultSale(row);
+  syncDesc(row);
+  let n = 0;
+  if (row.key.length >= 3) {
+    G.rows.forEach(x => { if (x !== row && x.kind === row.kind && x.key === row.key && x.src !== "manual") { x.cat = name; x.src = "similar"; if (x.kind === "cr") x.sale = isRet(name) && defaultSale(x); syncDesc(x); n++; } });
+    BR.learn[row.kind].set(row.key, {cat: name, n: 99});
+  }
+  refresh();
+  if (n) toast("“" + name + "” applied to " + n + " similar transaction" + (n > 1 ? "s" : ""));
+}
+function openPicker(row) {
+  const prev = document.activeElement, kind = row.kind;
+  const layer = document.createElement("div");
+  layer.className = "g-layer";
+  layer.innerHTML = '<div class="g-sheet" role="dialog" aria-modal="true" aria-label="Choose category"></div>';
+  document.body.appendChild(layer);
+  const sheet = layer.firstChild; let draft = null;
+  const close = () => { document.removeEventListener("keydown", onKey, true); layer.remove(); if (prev && prev.focus) prev.focus(); };
+  const onKey = e => { if (e.key === "Escape") { e.stopPropagation(); if (draft) { draft = null; listView(); } else close(); } };
+  document.addEventListener("keydown", onKey, true);
+  layer.addEventListener("mousedown", e => { if (e.target === layer) close(); });
+  const choose = name => { close(); setCategory(row, name); };
+
+  function listView() {
+    sheet.innerHTML = `<div class="hd"><h3>${kind === "cr" ? "Income category" : "Choose category"}</h3><button type="button" class="x" data-x aria-label="Close">✕</button></div>
+      <input type="search" placeholder="Search categories" aria-label="Search categories" autocomplete="off"><div class="g-grid"></div>`;
+    const inp = sheet.querySelector("input"), grid = sheet.querySelector(".g-grid");
+    const paint = () => {
+      const q = low(inp.value), all = catList(kind).filter(c => !q || low(c).includes(q));
+      grid.innerHTML = (kind === "dr" && !q ? `<button type="button" class="tl" data-new><span class="cat-ico cat-ico-lg cat-ico-empty">＋</span><span>New category</span></button>` : "") +
+        all.map(c => `<button type="button" class="tl${c === row.cat ? " sel" : ""}" data-pick="${esc(c)}">${iconHTML(c, "lg", kind)}<span>${esc(c)}</span></button>`).join("") +
+        (all.length ? "" : `<p class="g-sub" style="grid-column:1/-1">No category matches “${esc(inp.value)}”.</p>`);
+    };
+    inp.oninput = paint; paint();
+    sheet.onclick = e => {
+      if (e.target.closest("[data-x]")) return close();
+      const p = e.target.closest("[data-pick]"); if (p) return choose(p.dataset.pick);
+      if (e.target.closest("[data-new]")) { draft = {name: "", icon: BR.ICONS[0], hue: BR.HUES[4]}; createView(); }
+    };
+    inp.focus();
+  }
+  function createView() {
+    sheet.innerHTML = `<div class="hd"><button type="button" class="x" data-back aria-label="Back">←</button><h3>New category</h3><button type="button" class="x" data-x aria-label="Close">✕</button></div>
+      <div class="pv"><span id="pvIc"></span><span class="g-sub">Saved in the file as a custom category.</span></div>
+      <span class="lbl">Name</span><input type="text" maxlength="30" placeholder="e.g. Insurance" value="${esc(draft.name)}" aria-label="Category name">
+      <span class="lbl">Icon</span><div class="g-grid" style="grid-template-columns:repeat(auto-fill,minmax(38px,1fr))">${BR.ICONS.map(i => `<button type="button" class="pk${i === draft.icon ? " sel" : ""}" data-icon="${i}">${i}</button>`).join("")}</div>
+      <span class="lbl">Colour</span><div class="g-hues">${BR.HUES.map(h => `<button type="button" class="pk${h === draft.hue ? " sel" : ""}" data-hue="${h}" style="--h:${h}" aria-label="Colour ${h}"></button>`).join("")}</div>
+      <p class="g-warn" id="pvErr" style="min-height:20px;margin:10px 0 0"></p>
+      <div class="g-actions" style="margin:6px 0 0"><button type="button" class="g-btn" data-back>Cancel</button><button type="button" class="g-btn pri" data-save>Save category</button></div>`;
+    const inp = sheet.querySelector("input[type=text]"), pv = () => { $$("#pvIc", sheet).innerHTML = `<span class="cat-ico cat-ico-lg" style="--cat-hue:${draft.hue}">${esc(draft.icon)}</span>`; };
+    pv(); inp.oninput = () => { draft.name = inp.value; };
+    sheet.onclick = e => {
+      if (e.target.closest("[data-x]")) return close();
+      if (e.target.closest("[data-back]")) { draft = null; return listView(); }
+      const i = e.target.closest("[data-icon]"); if (i) { draft.icon = i.dataset.icon; sheet.querySelectorAll("[data-icon]").forEach(b => b.classList.toggle("sel", b === i)); pv(); return; }
+      const h = e.target.closest("[data-hue]"); if (h) { draft.hue = +h.dataset.hue; sheet.querySelectorAll("[data-hue]").forEach(b => b.classList.toggle("sel", b === h)); pv(); return; }
+      if (e.target.closest("[data-save]")) {
+        const name = draft.name.trim();
+        if (!name) { $$("#pvErr", sheet).textContent = "Enter a name."; return; }
+        if (catList("dr").some(c => low(c) === low(name))) { $$("#pvErr", sheet).textContent = "That category already exists."; return; }
+        BR.custom.push({name, icon: draft.icon, hue: draft.hue}); choose(name);
+      }
+    };
+    inp.focus();
+  }
+  listView();
+}
+
+/* ---------------------------------------------------------------
+   Events
+   --------------------------------------------------------------- */
+const XK = {bank: "Bank → Bank", to: "Bank → Demat", from: "Demat → Bank"};
+const DEMAT_RX = /zerodha|upstox|angel|groww|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|ccil|clearing corp|broking|\bdhan\b|demat/i;
+const sortRows = () => G.rows.sort((a, b) => (a.dateISO || "9999").localeCompare(b.dateISO || "9999") || a.id.localeCompare(b.id, undefined, {numeric: true}));
+function ctl(r) {
+  if (r.manual) return '<div class="g-ctl"><span class="g-pill ok">Income added by you</span><button type="button" class="g-pill sg" data-act="delm">Delete</button></div>';
+  if (!r.dateISO || !(r.amt > 0)) return "";
+  const cr = r.kind === "cr", first = cr ? "income" : "expense", on = t => r.type === t ? " on " + (t === "transfer" ? "xf" : cr ? "cr" : "dr") : "";
+  let h = `<div class="g-ctl"><span class="g-seg"><button type="button" class="g-pill sg${on(first)}" data-act="type" data-t="${first}">${cr ? "Income" : "Expense"}</button><button type="button" class="g-pill sg${on("transfer")}" data-act="type" data-t="transfer">Transfer</button></span>`;
+  if (r.type === "transfer") h += `<select data-act="xk" aria-label="Transfer type">${Object.keys(XK).map(k => `<option value="${k}"${r.xk === k ? " selected" : ""}>${XK[k]}</option>`).join("")}</select>`;
+  else {
+    if (!cr && !r.skip) { const lk = G.B && G.B.linkOf[r.id]; h += `<button type="button" class="g-pill sg${lk && lk.none ? " wn" : ""}" data-act="link" title="Choose which income this is added to">${lk ? "→ " + esc(lk.label) + (lk.auto ? " (auto)" : "") : "Link to income"}</button>`; }
+    if (DEMAT_RX.test(r.raw)) h += '<button type="button" class="g-pill sg" data-act="demat" title="Marks it as money moved between your bank and demat account, left out of income and expenses">Demat transfer?</button>';
+  }
+  return h + "</div>";
+}
+function setType(r, t) {
+  const cr = r.kind === "cr"; r.locked = true;
+  if (t === "transfer") { r.type = "transfer"; r.skip = true; r.xk = r.xk || (DEMAT_RX.test(r.raw) ? (cr ? "from" : "to") : "bank"); r.why = "Transfer · " + XK[r.xk]; }
+  else { r.type = cr ? "income" : "expense"; r.skip = false; r.why = ""; r.xk = ""; }
+  refresh();
+}
+function modal(title) {
+  const prev = document.activeElement, layer = document.createElement("div");
+  layer.className = "g-layer";
+  layer.innerHTML = `<div class="g-sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="hd"><h3>${esc(title)}</h3><button type="button" class="x" data-x aria-label="Close">✕</button></div><div class="bd"></div></div>`;
+  document.body.appendChild(layer);
+  const close = () => { document.removeEventListener("keydown", onKey, true); layer.remove(); if (prev && prev.focus) prev.focus(); };
+  const onKey = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
+  document.addEventListener("keydown", onKey, true);
+  layer.addEventListener("mousedown", e => { if (e.target === layer) close(); });
+  layer.querySelector("[data-x]").onclick = close;
+  return {body: layer.querySelector(".bd"), close};
+}
+function openLink(r) {
+  const {body, close} = modal("Add this expense to which income?"), mk = r.dateISO.slice(0, 7), mi = k => +k.slice(0, 4) * 12 + +k.slice(5, 7);
+  const cands = G.rows.filter(x => x.kind === "cr" && !x.skip && x.dateISO && x.amt > 0).sort((a, b) => Math.abs(mi(a.dateISO) - mi(mk)) - Math.abs(mi(b.dateISO) - mi(mk)) || b.amt - a.amt).slice(0, 40);
+  body.innerHTML = `<button type="button" class="g-opt${r.link ? "" : " sel"}" data-l="">Automatic <span class="g-sub">main income of ${monthName(mk)}</span></button>` +
+    cands.map(x => `<button type="button" class="g-opt${x.id === r.link ? " sel" : ""}" data-l="${esc(x.id)}">${iconHTML(x.cat, "md", "cr")}<span style="flex:1;min-width:0"><b>${esc(x.desc)}</b><br><span class="g-sub">${dayLabel(x.dateISO)} · ${esc(x.bank)}</span></span><b style="color:var(--ok)">${inr(x.amt)}</b></button>`).join("") +
+    '<button type="button" class="g-opt" data-new>＋ Create new income</button>';
+  body.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-new")) { close(); return openIncome(r); }
+    if (b.dataset.l !== undefined) { r.link = b.dataset.l; close(); refresh(); }
+  };
+}
+function openIncome(row, month) {
+  const {body, close} = modal("New income"), mk = row ? row.dateISO.slice(0, 7) : month, err = t => { $$("#niE", body).textContent = t; };
+  body.innerHTML = `<span class="lbl">Income from</span><input type="text" id="niN" maxlength="60" placeholder="e.g. Salary – Acme">
+    <span class="lbl">Amount (₹)</span><input type="number" id="niA" min="0" step="0.01" inputmode="decimal">
+    <span class="lbl">Date</span><input type="date" id="niD" value="${row ? row.dateISO : mk + "-01"}">
+    <span class="lbl">Category</span><select id="niC">${BR.INC.map(c => `<option${c === "Others" ? " selected" : ""}>${esc(c)}</option>`).join("")}</select>
+    ${row ? '<label class="g-sub" style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="niAll"> Also use it for this month\'s other unlinked expenses</label>' : ""}
+    <p class="g-warn" id="niE" style="min-height:20px;margin:10px 0 0"></p>
+    <div class="g-actions" style="margin:6px 0 0"><button type="button" class="g-btn" data-c>Cancel</button><button type="button" class="g-btn pri" data-s>Add income</button></div>`;
+  body.onclick = e => {
+    if (e.target.closest("[data-c]")) return close();
+    if (!e.target.closest("[data-s]")) return;
+    const name = $$("#niN", body).value.trim(), amt = Math.round(parseFloat($$("#niA", body).value) * 100) / 100, d = $$("#niD", body).value;
+    if (!name) return err("Enter the income source.");
+    if (!(amt > 0)) return err("Enter an amount above 0.");
+    if (!d) return err("Choose a date.");
+    const id = "m" + (++G.seq), all = $$("#niAll", body);
+    G.rows.push({id, sid: "manual", bank: "Added by you", dateISO: d, raw: name, desc: name, base: name, edited: true, mode: "", ref: "", kind: "cr", type: "income", xk: "", link: "", amt, cat: $$("#niC", body).value, src: "manual", sale: false, skip: false, why: "", locked: true, warn: false, key: payee(name).toLowerCase(), manual: true});
+    sortRows();
+    if (row) row.link = id;
+    if (!row || (all && all.checked)) G.rows.forEach(x => { if (x.kind === "dr" && !x.skip && x.dateISO && x.dateISO.slice(0, 7) === mk && !x.link) x.link = id; });
+    close(); refresh(); toast("Income added");
+  };
+  $$("#niN", body).focus();
+}
+const gDrop = $("gDrop");
+gDrop.onclick = () => $("gFile").click();
+gDrop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("gFile").click(); } };
+$("gFile").onchange = e => { const f = [...e.target.files]; e.target.value = ""; addFiles(f); };
+["dragover", "dragenter"].forEach(n => gDrop.addEventListener(n, e => { e.preventDefault(); gDrop.classList.add("over"); }));
+["dragleave", "drop"].forEach(n => gDrop.addEventListener(n, e => { e.preventDefault(); gDrop.classList.remove("over"); }));
+gDrop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+$("gStmts").onclick = e => { const b = e.target.closest("[data-rm]"); if (b) removeStatement(b.dataset.rm); };
+$("gLearnBtn").onclick = () => $("gLearnFile").click();
+$("gLearnFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { learnFrom(JSON.parse(await f.text()), f.name); toast("Learned from " + f.name); }
+  catch (err) { $("gLearnTx").textContent = err instanceof SyntaxError ? "That file is not valid JSON." : err.message; }
+};
+$("gQ").oninput = e => { G.f.q = e.target.value; G.shown = 150; renderRows(); };
+[["gSt", "st"], ["gBank", "bank"], ["gMon", "mon"]].forEach(([id, k]) => $(id).onchange = e => { G.f[k] = e.target.value; G.shown = 150; renderRows(); });
+$("gMore").onclick = () => { G.shown += 150; renderRows(); };
+const rowOf = el => { const r = el.closest("[data-id]"); return r && G.rows.find(x => x.id === r.dataset.id); };
+$("gRows").onclick = e => {
+  const r = rowOf(e.target); if (!r) return;
+  if (e.target.closest("[data-act=cat]")) openPicker(r);
+  else if (e.target.closest("[data-act=type]")) setType(r, e.target.closest("[data-act=type]").dataset.t);
+  else if (e.target.closest("[data-act=demat]")) setType(r, "transfer");
+  else if (e.target.closest("[data-act=link]")) openLink(r);
+  else if (e.target.closest("[data-act=delm]")) { G.rows = G.rows.filter(x => x !== r); refresh(); }
+  else if (e.target.closest("[data-act=sale]")) {
+    if (effectiveSale(r)) { r.sale = false; syncDesc(r); if (BR.SALE_RX.test(low(fromText(r)))) toast("The description contains “sale / withdrawal” wording. Rename it for BlackRoad to count it as income."); }
+    else { r.sale = true; syncDesc(r); }
+    refresh();
+  }
+};
+$("gRows").onchange = e => {
+  const r = rowOf(e.target); if (!r) return;
+  if (e.target.dataset.act === "inc") { if (r.type === "transfer" && e.target.checked) return setType(r, r.kind === "cr" ? "income" : "expense"); r.skip = !e.target.checked; r.locked = true; r.why = r.skip ? "Skipped by you" : ""; refresh(); }
+  else if (e.target.dataset.act === "xk") { r.xk = e.target.value; r.locked = true; r.why = "Transfer · " + XK[r.xk]; refresh(); }
+  else if (e.target.dataset.act === "desc") { r.desc = e.target.value.trim() || r.desc; r.edited = true; G.B = build(); renderEntries(G.B); renderChecks(G.B); e.target.value = r.desc; }
+};
+$("gEnt").onchange = e => { const s = e.target.closest("[data-mon]"); if (s) { G.host[s.dataset.mon] = s.value; refresh(); } };
+$("gEnt").onclick = e => { const b = e.target.closest("[data-addinc]"); if (b) openIncome(null, b.dataset.addinc); };
+$("gJson").onclick = () => download(fileStem(G.B) + ".json", JSON.stringify(exportObject(G.B), null, 2), "application/json");
+$("gCopy").onclick = async () => {
+  const t = JSON.stringify(exportObject(G.B), null, 2);
+  try { await navigator.clipboard.writeText(t); toast("JSON copied"); }
+  catch { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); toast("JSON copied"); } catch { toast("Could not copy. Use Download."); } ta.remove(); }
+};
+$("gCsv").onclick = () => {
+  const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+  const out = ["Income date,Income from,Income category,Income amount,Transaction date,Description,Category,Type,Amount"];
+  G.B.entries.forEach(e => {
+    const h = [e.date, q(e.from), q(e.category), e.income];
+    if (!e.transactions.length) out.push([...h, "", "", "", "", ""].join(","));
+    else e.transactions.forEach(t => out.push([...h, t.date, q(t.description), q(t.category), t.type, t.amount].join(",")));
+  });
+  download(fileStem(G.B) + ".csv", out.join("\n"), "text/csv");
+};
+$("gDet").ontoggle = () => { if ($("gDet").open) $("gPre").textContent = JSON.stringify(exportObject(G.B), null, 2); };
+
+/* Tabs */
+function showTab(name) {
+  const gen = name === "gen";
+  $("view-reader").classList.toggle("hide", gen);
+  $("view-gen").classList.toggle("hide", !gen);
+  document.body.classList.toggle("gen", gen);
+  document.querySelectorAll("#tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  window.scrollTo(0, 0);
+}
+window.showTab = showTab;
+document.querySelectorAll("#tabs [data-tab]").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+refresh();
+})();
+</script>
+</body>
+</html>
