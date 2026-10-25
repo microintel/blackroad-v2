@@ -21,11 +21,11 @@
 --br-gold:#D4AF37;--br-gold-bright:#F0CC65;--br-gold-muted:#A88932;--br-gold-surface:#211B0B;--br-gold-text:#E7C65A;
 --br-success-soft:#0B1B11;--br-danger-soft:#200D0D;--br-info:#60A5FA;--br-info-soft:#0B1524;--br-warning:#F59E0B;--br-warning-soft:#211708}
 :root[data-theme="light"]{color-scheme:light;
---background:#EEECE7;--surface:#F6F5F1;--text-primary:#2B2A27;--text-secondary:#6A6862;--text-muted:#98958D;
---border:#DAD7CF;--success:#16A34A;--danger:#DC2626;--hover-background:#E8E6DF;--active-background:#DEDBD2;--overlay:rgba(0,0,0,.4);
---br-surface-soft:#F3F1EC;--br-surface-hover:#E8E6DF;--br-border-strong:#C9C5BB;--br-text-inverse:#FFF;
---br-gold:#B8901F;--br-gold-bright:#9A7514;--br-gold-muted:#8A6D18;--br-gold-surface:#F1E8CE;--br-gold-text:#8A6A0F;
---br-success-soft:#E0EEE3;--br-danger-soft:#F4E2DF;--br-info:#2563EB;--br-info-soft:#E1E9F4;--br-warning:#B45309;--br-warning-soft:#F3E8D2}
+--background:#D4DCE6;--surface:#E9EEF4;--text-primary:#1E2733;--text-secondary:#4F5B6B;--text-muted:#6B788A;
+--border:#BFC9D6;--success:#16A34A;--danger:#DC2626;--hover-background:#DCE3EC;--active-background:#CBD5E1;--overlay:rgba(15,23,42,.45);
+--br-surface-soft:#E2E8F0;--br-surface-hover:#D2DAE5;--br-border-strong:#AEBACA;--br-text-inverse:#FFF;
+--br-gold:#B8901F;--br-gold-bright:#9A7514;--br-gold-muted:#8A6D18;--br-gold-surface:#EBE2C6;--br-gold-text:#7F610C;
+--br-success-soft:#D9EADF;--br-danger-soft:#F0DCDA;--br-info:#2563EB;--br-info-soft:#D6E3F5;--br-warning:#B45309;--br-warning-soft:#EFE4CE}
 :root{
 --bg:var(--background);--s1:var(--surface);--s2:var(--br-surface-soft);--s3:var(--br-surface-hover);--bd:var(--border);--bd2:var(--br-border-strong);
 --ink:var(--text-primary);--tm:var(--text-secondary);--tmu:var(--text-muted);
@@ -2051,6 +2051,7 @@ function openDetail(r) {
   body.innerHTML = rowHTML(r);
   body.onclick = e => { if (e.target.closest(".g-pick")) return; $("gRows").onclick(e); if (e.target.closest("button")) close(); };
   body.onchange = e => { $("gRows").onchange(e); if (!e.target.matches("[data-act=desc]")) close(); };
+  body.onkeydown = e => { if (e.key === "Enter" && e.target.matches("[data-act=desc]")) { e.preventDefault(); e.target.blur(); close(); } };
 }
 const INFO = {
   gen: ["About this tool", "Turn bank statements into income entries in BlackRoad's own structure, categories and icons. Everything stays on your device."],
