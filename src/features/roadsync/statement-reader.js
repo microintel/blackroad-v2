@@ -1,0 +1,1669 @@
+/* =========================================================
+   STATEMENT READER  (native RoadSync module)
+   Generated from assets/statement-reader.html. Runs inside the
+   RoadSync page (no iframe) in an isolated shadow root, so its
+   styles never touch the rest of BlackRoad and vice versa.
+   Statement parsing, categories and export logic are unchanged;
+   only the DOM/window plumbing below is adapted.
+   ========================================================= */
+
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const CSS = "\n/* =====================================================================\n   Statement Reader \u00b7 minimal design system\n   Flat, pure-black surfaces, one gold accent (matches BlackRoad's tokens).\n   Order: tokens > base > shell > reader states > reader report > generator > dialogs > motion\n   ===================================================================== */\n/* BlackRoad theme tokens (same names and values as src/styles/theme.css). Dark is the default. */\n/* Colours come from BlackRoad's own theme tokens (theme.css / palettes.css), inherited from the page. */\n.sr-root{\n--bg:var(--background);--s1:var(--surface);--s2:var(--br-surface-soft);--s3:var(--br-surface-hover);--bd:var(--border);--bd2:var(--br-border-strong);\n--ink:var(--text-primary);--tm:var(--text-secondary);--tmu:var(--text-muted);\n--gold:var(--br-gold);--gold-b:var(--br-gold-bright);--gold-t:var(--br-gold-text);--gold-s:var(--br-gold-surface);\n--ok:var(--success);--dg:var(--danger);--wn:var(--br-warning);--xf:var(--br-info);\n--hov:var(--hover-background);--act:var(--active-background);--ease:cubic-bezier(.2,.7,.2,1)}\n*{box-sizing:border-box}\n.sr-root{margin:0;background:transparent;color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}\n.sr-root:has(.g-layer){overflow:hidden}\nmain{max-width:1120px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 16px calc(72px + env(safe-area-inset-bottom))}\nbutton,input,select{font:inherit;color:inherit}\nbutton{cursor:pointer}\n:focus-visible{outline:2px solid var(--gold);outline-offset:2px}\n.hide{display:none!important}\n.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}\n.sub{color:var(--tm);font-size:13px}\nsvg{flex:none}\n\n/* ---------- shell ---------- */\n.top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px;margin-bottom:18px}\n.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:16px;letter-spacing:-.01em}\n.brand .mark{width:10px;height:10px;border-radius:3px;background:var(--gold)}\n.tabs{display:flex;width:fit-content;margin:0 auto 28px;padding:3px;gap:2px;border:1px solid var(--bd);border-radius:999px;background:var(--s1)}\n.tabs button{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 20px;border:0;border-radius:999px;background:none;color:var(--tm);font-weight:600;font-size:14px;transition:background .2s,color .2s}\n.tabs button:hover{color:var(--ink)}\n.tabs button[aria-selected=\"true\"]{background:var(--act);color:var(--ink);border:1px solid var(--bd2)}\n.tabs b{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--gold-s);color:var(--gold-t);font-size:12px;line-height:20px;text-align:center}\n\n/* ---------- buttons ---------- */\n.g-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 16px;border:1px solid var(--bd);border-radius:10px;background:var(--s2);color:var(--ink);font-weight:600;font-size:14px;line-height:1.2;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s,opacity .15s}\n.g-btn:hover{background:var(--s3);border-color:var(--bd2)}\n.g-btn:active{transform:scale(.98)}\n.g-btn.pri{background:var(--gold);border-color:var(--gold);color:var(--br-text-inverse)}\n.g-btn.pri:hover{background:var(--gold-b);border-color:var(--gold-b)}\n.g-btn.sm{min-height:34px;padding:0 12px;font-size:13px;border-radius:9px}\n.g-btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}\n.g-btn.done{background:var(--br-success-soft);border-color:var(--ok);color:var(--ok)}\n\n/* ---------- inputs ---------- */\ninput[type=text],input[type=search],input[type=number],input[type=date],input[type=password],select{min-height:42px;min-width:0;padding:0 12px;border:1px solid var(--bd);border-radius:10px;background:var(--s1);color:var(--ink)}\ninput::placeholder{color:var(--tmu)}\ninput:hover,select:hover{border-color:var(--bd2)}\ninput:focus,select:focus{border-color:var(--gold);outline:0}\nselect{padding-right:8px}\n\n/* ---------- reader: empty (idle) ---------- */\n.drop{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:720px;margin:8px auto 0;padding:52px 24px 28px;border:1.5px dashed var(--bd2);border-radius:20px;background:var(--s1);text-align:center;cursor:pointer;transition:border-color .2s,background .2s}\n.drop:hover,.drop.over{border-color:var(--gold);background:var(--hov)}\n.drop-ic{display:grid;place-items:center;width:56px;height:56px;margin-bottom:12px;border-radius:16px;background:var(--gold-s);color:var(--gold-t);transition:transform .25s var(--ease)}\n.drop:hover .drop-ic,.drop.over .drop-ic{transform:translateY(-3px)}\n.drop h1{margin:0;font-size:22px;font-weight:650;letter-spacing:-.015em}\n.drop p{margin:0 0 18px;color:var(--tm)}\n.drop-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;width:100%;margin:26px 0 0;padding:18px 0 0;border-top:1px solid var(--bd);list-style:none;color:var(--tmu);font-size:13px}\n.drop-meta li{display:inline-flex;align-items:center;gap:7px}\n.how{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:720px;margin:20px auto 0;padding:0;list-style:none}\n.how li{display:flex;align-items:center;gap:10px;color:var(--tm);font-size:13.5px}\n.how b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--s3);color:var(--ink);font-size:12px;flex:none}\n.status{max-width:720px;margin:14px auto 0;color:var(--tm);font-size:14px;text-align:center}\n.status:empty{display:none}\n.status.err{padding:11px 14px;border:1px solid var(--dg);border-radius:10px;background:var(--br-danger-soft);color:var(--dg);text-align:left}\n\n/* ---------- reader: processing + error cards ---------- */\n.state{max-width:560px;margin:20px auto 0;padding:28px;border:1px solid var(--bd);border-radius:20px;background:var(--s1)}\n.state.err{text-align:center}\n.state-ic{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 14px;border-radius:16px;background:var(--gold-s);color:var(--gold-t)}\n.state-ic.err{background:var(--br-danger-soft);color:var(--dg)}\n.state h2{margin:0 0 6px;font-size:19px;font-weight:650;letter-spacing:-.01em}\n.state h2:focus{outline:0}\n.state p{margin:0;color:var(--tm)}\n.hints{display:grid;gap:7px;margin:18px 0 0;padding:14px 16px;border-radius:12px;background:var(--s2);list-style:none;color:var(--tm);font-size:14px;text-align:left}\n.hints li{position:relative;padding-left:16px}\n.hints li::before{content:\"\";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--tmu)}\n.state details{margin-top:14px;text-align:left}\n.state summary{cursor:pointer;color:var(--tmu);font-size:13px;font-weight:600}\n.state pre{margin:8px 0 0;padding:10px 12px;max-height:160px;overflow:auto;border:1px solid var(--bd);border-radius:10px;color:var(--tm);font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}\n.state-act{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:22px}\n.proc-head{display:flex;align-items:center;gap:14px}\n.proc-head>div{min-width:0}\n.proc-head b{display:block;overflow:hidden;font-size:16px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}\n.proc-head small{display:block;color:var(--tm);font-size:13.5px}\n.spin{display:inline-block;width:22px;height:22px;flex:none;border:2.5px solid var(--bd2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}\n.spin.sm{width:16px;height:16px;border-width:2px}\n.bar{height:6px;margin:20px 0 14px;overflow:hidden;border-radius:99px;background:var(--s3)}\n.bar i{display:block;width:0;height:100%;border-radius:inherit;background:var(--gold);transition:width .4s var(--ease)}\n.bar.thin{height:3px;margin:0;border-radius:0}\n.steps{display:grid;gap:0;margin:0;padding:0;list-style:none}\n.steps li{display:flex;align-items:center;gap:12px;padding:8px 0;color:var(--tmu);font-size:14px;transition:color .25s}\n.steps li em{margin-left:auto;font-style:normal;color:var(--tmu);font-size:13px}\n.steps .sd{display:grid;place-items:center;width:20px;height:20px;flex:none;border:1.5px solid var(--bd2);border-radius:50%;transition:background .2s,border-color .2s}\n.steps li.on{color:var(--ink)}\n.steps li.on .sd{border-color:var(--gold);border-top-color:transparent;animation:spin .8s linear infinite}\n.steps li.done{color:var(--tm)}\n.steps li.done .sd{border-color:var(--ok);background:var(--ok)}\n.steps li.done .sd::after{content:\"\";width:4px;height:8px;margin-top:-2px;border:solid var(--br-text-inverse);border-width:0 2px 2px 0;transform:rotate(45deg)}\n.proc-note{margin:16px 0 0;padding-top:14px;border-top:1px solid var(--bd);color:var(--tmu);font-size:13px}\n\n/* ---------- reader: report ---------- */\n.okbar{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:14px 16px;border:1px solid var(--ok);border-radius:14px;background:var(--br-success-soft)}\n.okbar.warn{border-color:var(--wn);background:var(--br-warning-soft)}\n.okbar .oi{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:50%;background:var(--ok);color:var(--br-text-inverse)}\n.okbar.warn .oi{background:var(--wn);color:var(--br-text-inverse)}\n.okbar>div{flex:1;min-width:0}\n.okbar b{display:block;font-weight:600}\n.okbar small{display:block;color:var(--tm);font-size:13.5px}\n.hero,.card{border:1px solid var(--bd);border-radius:16px;background:var(--s1)}\n.hero{padding:26px 28px}\n.card{padding:22px}\n.hr{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}\n.hero small{display:block;color:var(--tm);font-size:13px}\n.hero h2{margin:2px 0;font-size:18px;font-weight:600;letter-spacing:-.01em}\n.hr-r{text-align:right}\n.bal{margin-top:2px;font-size:clamp(30px,6vw,40px);font-weight:700;letter-spacing:-.025em;line-height:1.1}\n.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0;margin-top:22px;border-top:1px solid var(--bd)}\n.chip{padding:14px 14px 0 0}\n.chip b{font-size:17px;font-weight:600}\n.chip b.cr{color:var(--ok)}.chip b.dr{color:var(--dg)}\n.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}\n.tile{padding:14px 16px;border:1px solid var(--bd);border-radius:14px;background:var(--s1)}\n.tile small{display:block;color:var(--tm);font-size:13px}\n.tile b{font-size:19px;font-weight:650}\n.masonry{column-count:2;column-gap:16px;margin:16px 0}\n.masonry>.card{display:block;width:100%;margin-bottom:16px;break-inside:avoid;-webkit-column-break-inside:avoid}\n.card h3{margin:0 0 14px;color:var(--tm);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}\n.donut{display:flex;flex-wrap:wrap;align-items:center;gap:18px}\n.donut svg{width:150px;height:150px}\n.leg{display:grid;flex:1;gap:2px;min-width:170px}\n.leg button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:0;border-radius:8px;background:none;text-align:left}\n.leg button:hover{background:var(--hov)}\n.leg i{width:8px;height:8px;flex:none;border-radius:50%}\n.leg span{flex:1}\n.leg em{font-style:normal;font-weight:600}\n.rep>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}\n.rep>div:last-child{border-bottom:0}\n.ok{color:var(--ok);font-weight:600}.bad{color:var(--wn);font-weight:600}\ndetails{margin-top:12px}\nsummary{cursor:pointer;color:var(--wn);font-weight:600}\n.rv{max-height:220px;margin:8px 0 0;padding:10px 12px;overflow:auto;border:1px solid var(--bd);border-radius:10px;color:var(--tm);font-size:13px}\n.rv p{margin:0 0 6px;word-break:break-word}\n.mo{padding:8px 0;border-bottom:1px solid var(--bd)}.mo:last-child{border-bottom:0}\n.ml{margin-bottom:2px;font-size:13px;font-weight:650}\n#months{max-height:340px;padding-right:4px;overflow-y:auto}\n.br{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:10px;padding:4px 0;font-size:13px}\n.br span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.br i{display:block;height:8px;overflow:hidden;border-radius:4px;background:var(--s3)}\n.br b{display:block;height:100%;border-radius:4px}\n.br em{color:var(--tm);font-size:12px;font-style:normal;white-space:nowrap}\n.list>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd);font-size:14px}\n.list>div:last-child{border-bottom:0}\n.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}\n.tools input{flex:1;min-width:180px}\n.wrap{overflow-x:auto}\ntable{width:100%;min-width:640px;border-collapse:collapse}\nth,td{padding:13px 12px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:middle}\nth{color:var(--tm);font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}\nth:hover{color:var(--ink)}\nth[data-sorted]::after{content:\" \u2191\";color:var(--gold-t)}\nth[data-sorted=desc]::after{content:\" \u2193\"}\ntbody tr:hover{background:var(--hov)}\ntr:last-child td{border-bottom:0}\n.r{text-align:right;white-space:nowrap}\n.dr{color:var(--dg);font-weight:600}.cr{color:var(--ok);font-weight:600}\n.ds{display:block}\n.flag{display:inline-block;margin-left:8px;padding:0 6px;border:1px solid var(--wn);border-radius:6px;color:var(--wn);font-size:11px;font-weight:600;cursor:help}\ntr.w td:first-child{box-shadow:inset 2px 0 var(--wn)}\n.dot{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%}\ntr.none td{padding:36px 12px;color:var(--tmu);text-align:center}\n\n/* ---------- generator ---------- */\n#view-gen h2{margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em;text-align:center}\n.g-lead{max-width:620px;margin:6px auto 26px;color:var(--tm);font-size:14.5px;text-align:center}\n.g-card{margin-bottom:16px;padding:22px;border:1px solid var(--bd);border-radius:16px;background:var(--s1)}\n.g-h{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:18px;font-weight:600;letter-spacing:-.01em}\n.g-h i{display:inline-grid;place-items:center;width:26px;height:26px;flex:none;border-radius:50%;background:var(--gold-s);color:var(--gold-t);font-size:13px;font-style:normal;font-weight:700}\n.g-h small{margin-left:auto;color:var(--tmu);font-size:13px;font-weight:500}\n.g-sub{color:var(--tm);font-size:14px}\n.g-help{margin:0 0 14px}\n.g-warn{color:var(--wn)}\n/* drop zone (large when empty, compact once statements exist) */\n.g-drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:40px 20px 30px;border:1.5px dashed var(--bd2);border-radius:16px;color:var(--tm);text-align:center;cursor:pointer;transition:border-color .2s,background .2s}\n.g-drop:hover,.g-drop.over{border-color:var(--gold);background:var(--hov);color:var(--ink)}\n.g-drop-ic{display:grid;place-items:center;width:48px;height:48px;margin-bottom:8px;border-radius:14px;background:var(--gold-s);color:var(--gold-t)}\n.g-drop b{display:block;color:var(--ink);font-size:16px;font-weight:600}\n.g-drop-s{display:block;max-width:420px}\n.g-drop .g-btn{margin-top:14px;pointer-events:none}\n.g-drop.compact{flex-direction:row;gap:14px;padding:12px 14px;text-align:left}\n.g-drop.compact .g-drop-ic{width:36px;height:36px;margin:0;border-radius:10px}\n.g-drop.compact .g-drop-ic svg{width:18px;height:18px}\n.g-drop.compact .g-drop-tx{flex:1;min-width:0}\n.g-drop.compact b{font-size:14.5px}\n.g-drop.compact .g-drop-s{max-width:none;font-size:13px}\n.g-drop.compact .g-btn{margin:0}\n.g-how{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 0;padding:0;list-style:none}\n.g-how li{display:flex;align-items:center;gap:10px;color:var(--tm);font-size:13.5px}\n.g-how b{display:grid;place-items:center;width:24px;height:24px;flex:none;border-radius:50%;background:var(--s3);color:var(--ink);font-size:12px}\n.g-stmts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:12px}\n.g-stmts:empty{display:none}\n.g-st{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd);border-radius:12px;background:var(--s2)}\n.g-st .av{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:11px;background:var(--gold-s);color:var(--gold-t);font-size:14px;font-weight:700}\n.g-st .mt{flex:1;min-width:0}\n.g-st .nm{overflow:hidden;font-size:15px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}\n.g-st .g-sub{font-size:13px;word-break:break-word}\n/* read queue (progress + per-file errors) */\n.gq{margin-bottom:12px;overflow:hidden;border:1px solid var(--bd);border-radius:12px;background:var(--s2)}\n.gq-h{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:14px;font-weight:600}\n.gq-h small{margin-left:auto;color:var(--tmu);font-weight:500}\n.gq-h .gi{display:grid;place-items:center;color:var(--ok)}\n.gq-h .gi.bad{color:var(--dg)}\n.q{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--bd)}\n.q .qi{display:grid;place-items:center;width:20px;height:20px;flex:none;color:var(--tmu)}\n.q .qt{flex:1;min-width:0}\n.q .qn{overflow:hidden;font-size:14px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}\n.q .qs{color:var(--tm);font-size:13px}\n.q[data-s=done] .qi{color:var(--ok)}\n.q[data-s=fail] .qi,.q[data-s=fail] .qs{color:var(--dg)}\n.q[data-s=dup] .qi,.q[data-s=dup] .qs{color:var(--wn)}\n.q[data-s=queued]{opacity:.7}\n.q .g-btn{flex:none}\n.q .x{display:grid;place-items:center;width:32px;height:32px;flex:none;border:0;border-radius:8px;background:none;color:var(--tmu)}\n.q .x:hover{background:var(--hov);color:var(--ink)}\n/* learn from BlackRoad data */\n.g-learn{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--bd)}\n.g-learn .tx{flex:1;min-width:220px}\n.g-learn .tx b{display:block;font-weight:600}\n.g-learn.loaded .tx b::after{content:\"\u2713 Learned\";margin-left:8px;color:var(--ok);font-size:12.5px;font-weight:600}\n.g-learn.err #gLearnTx{color:var(--dg)}\n.g-pill{display:inline-block;padding:0 10px;border:1px solid var(--bd);border-radius:999px;background:var(--s1);color:var(--tm);font-size:12.5px;font-weight:400;line-height:22px}\nbutton.g-pill{background:var(--s1);font-size:12.5px;font-weight:400}\n.g-pill.gold{border-color:var(--br-gold-muted);background:var(--gold-s);color:var(--gold-t)}\n.g-pill.ok{border-color:var(--ok);color:var(--ok)}\n.g-pill.wn{border-color:var(--wn);color:var(--wn)}\n/* review */\n.g-alert{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:12px 14px;border:1px solid var(--wn);border-radius:12px;background:var(--br-warning-soft)}\n.g-alert.ok{border-color:var(--ok);background:var(--br-success-soft)}\n.g-alert .ai{display:grid;place-items:center;color:var(--wn)}\n.g-alert.ok .ai{color:var(--ok)}\n.g-alert>div{flex:1;min-width:0}\n.g-alert b{display:block;font-size:14.5px;font-weight:600}\n.g-alert small{display:block;color:var(--tm);font-size:13px}\n.g-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}\n.g-tile{padding:14px 16px;border:1px solid var(--bd);border-radius:14px;background:var(--s1)}\n.g-tile small{display:block;color:var(--tm);font-size:13.5px}\n.g-tile b{font-size:22px;font-weight:700;letter-spacing:-.01em}\n.g-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}\n.g-tools input{flex:1;min-width:180px}\n.g-list{border-top:1px solid var(--bd)}\n.g-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:2px 12px;padding:16px 10px;border-bottom:1px solid var(--bd);border-radius:12px;transition:background .15s}\n.g-row:hover{background:var(--hov)}\n.g-row.off{opacity:.5}\n.g-row .g-ic{grid-row:span 2;display:grid;padding:0;border:0;border-radius:12px;background:none}\n.g-row .g-desc{width:100%;min-height:40px;margin-left:-8px;padding:4px 8px;border:1px solid transparent;border-radius:8px;background:transparent;font-size:16px;font-weight:600;text-overflow:ellipsis}\n.g-row .g-desc:hover{border-color:var(--bd)}\n.g-row .g-desc:focus{border-color:var(--gold);background:var(--s1)}\n.g-row .g-amt{font-size:18px;font-weight:700;text-align:right;white-space:nowrap}\n.g-row .g-amt.cr{color:var(--ok)}.g-row .g-amt.dr{color:var(--dg)}\n.g-row .g-meta{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;color:var(--tm);font-size:13.5px}\n.g-row .g-inc{grid-column:3;display:flex;align-items:center;justify-self:end;gap:7px;color:var(--tm);font-size:13.5px;cursor:pointer}\n.g-row .g-inc input,.g-sheet input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold);flex:none}\n.g-ctl{grid-column:2/4;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding-top:2px;margin-top:6px}\n.g-seg{display:inline-flex;gap:4px}\n.g-pill.sg{padding:0 13px;background:none;font:inherit;font-size:13px;line-height:26px;cursor:pointer;transition:border-color .15s,color .15s}\n.g-pill.sg:hover{border-color:var(--bd2);color:var(--ink)}\n.g-pill.sg.on.cr{border-color:var(--ok);background:var(--br-success-soft);color:var(--ok)}\n.g-pill.sg.on.dr{border-color:var(--dg);background:var(--br-danger-soft);color:var(--dg)}\n.g-pill.sg.on.xf,.g-pill.xf{border-color:var(--xf);background:var(--br-info-soft);color:var(--xf)}\n.g-ctl select{min-height:36px;max-width:190px;font-size:14px}\n.g-more{display:block;margin:16px auto 0}\n.g-empty{display:grid;justify-items:center;gap:4px;grid-column:1/-1;padding:38px 12px;color:var(--tmu);text-align:center}\n.g-empty svg{margin-bottom:6px}\n.g-empty b{color:var(--tm);font-weight:600}\n.g-empty .g-btn{margin-top:10px}\n/* entries */\n.g-ent{margin-bottom:12px;overflow:hidden;border:1px solid var(--bd);border-radius:14px;background:var(--s1)}\n.g-ent>header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:13px 16px;border-bottom:1px solid var(--bd);background:var(--s2)}\n.g-ent>header h4{margin:0;font-size:17px}\n.g-ent>header .sp{flex:1}\n.g-ent>header label{display:flex;align-items:center;gap:8px;color:var(--tm);font-size:13px}\n.g-ent>header select{min-height:36px;max-width:260px;font-size:14px}\n.g-e{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:2px 12px;padding:13px 16px;border-bottom:1px solid var(--bd)}\n.g-e:last-child{border-bottom:0}\n.g-e .ic{grid-row:span 2}\n.g-e .t{overflow:hidden;font-size:16.5px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}\n.g-e .a{font-size:17px;font-weight:700;text-align:right}\n.g-e .m{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--tm);font-size:13.5px}\n.g-chk{display:grid;max-width:680px;margin:16px auto 0}\n.g-chk>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd);font-size:14px}\n.g-chk>div:last-child{border-bottom:0}\n.g-actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}\n#gOut .g-actions{justify-content:center}\n.g-note{max-width:640px;margin:14px auto 0;color:var(--tm);font-size:13.5px;text-align:center}\n.g-note code{padding:1px 6px;border-radius:5px;background:var(--act);color:var(--ink)}\n#view-gen details{margin-top:14px}\n#view-gen summary{color:var(--tm);font-weight:600}\n.g-json{max-height:320px;margin:10px 0 0;padding:12px;overflow:auto;border:1px solid var(--bd);border-radius:10px;color:var(--tm);font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre}\n.g-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;max-width:90vw;padding:12px 18px;border:1px solid var(--bd2);border-radius:12px;background:var(--act);font-size:14.5px;opacity:0;pointer-events:none;transform:translate(-50%,16px);transition:opacity .2s,transform .2s}\n.g-toast.on{opacity:1;transform:translate(-50%,0)}\n/* BlackRoad category tile (same look as the app) */\n.cat-ico{--cat-hue:220;display:inline-grid;place-items:center;flex:none;border-radius:12px;background:hsl(var(--cat-hue) 75% 52% / .16);box-shadow:inset 0 0 0 1px hsl(var(--cat-hue) 75% 52% / .32);font-family:\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Noto Color Emoji\",sans-serif;line-height:1;user-select:none}\n.cat-ico-sm{width:32px;height:32px;border-radius:9px;font-size:17px}\n.cat-ico-md{width:42px;height:42px;font-size:23px}\n.cat-ico-lg{width:56px;height:56px;border-radius:15px;font-size:29px}\n.cat-ico-xl{width:76px;height:76px;border-radius:20px;font-size:40px}\n.cat-ico-empty{border:1.5px dashed var(--bd2);background:transparent;box-shadow:none;color:var(--tm);font-family:inherit}\n\n/* ---------- dialogs ---------- */\n.g-layer{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:12px;background:var(--overlay);animation:fade .18s ease}\n.g-sheet{width:min(720px,100%);max-height:90vh;padding:24px;overflow:auto;border:1px solid var(--bd2);border-radius:22px;background:var(--s2);color:var(--ink);animation:pop .22s var(--ease)}\n.g-sheet .hd{display:flex;align-items:center;gap:10px;margin-bottom:16px}\n.g-sheet .hd h3{flex:1;margin:0;font-size:20px}\n.g-sheet .x{display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:10px;background:none;color:var(--tm);font-size:18px}\n.g-sheet .x:hover{background:var(--hov);color:var(--ink)}\n.g-sheet input:not([type=checkbox]):not([type=radio]),.g-sheet select{display:block;width:100%;min-height:46px;margin-bottom:6px;font-size:16px;border-radius:12px}\n.g-sheet .lbl{display:block;margin:16px 0 8px;color:var(--tm);font-size:14px;font-weight:600}\n.g-sheet .pv{display:flex;align-items:center;gap:12px;margin-top:6px}\n.g-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}\n.g-sheet .tl{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border:1px solid transparent;border-radius:12px;background:none;font-size:13.5px;text-align:center}\n.g-sheet .tl:hover{background:var(--hov)}\n.g-sheet .tl.sel{border-color:var(--gold);background:var(--gold-s)}\n.g-sheet .tl span:last-child{display:-webkit-box;overflow:hidden;line-height:1.25;-webkit-line-clamp:2;-webkit-box-orient:vertical}\n.g-sheet .pk{display:grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid transparent;border-radius:10px;background:none;font-family:\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Noto Color Emoji\",sans-serif;font-size:21px}\n.g-sheet .pk:hover{background:var(--hov)}\n.g-sheet .pk.sel{border-color:var(--gold);background:var(--gold-s)}\n.g-hues{display:flex;flex-wrap:wrap;gap:8px}\n.g-hues .pk{width:30px;height:30px;border-radius:50%;background:hsl(var(--h) 75% 52%)}\n.g-hues .pk.sel{border-color:transparent;outline:2px solid var(--ink);outline-offset:2px}\n.g-opt{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;margin-bottom:8px;padding:14px 16px;border:1px solid var(--bd);border-radius:14px;background:none;font-size:15.5px;text-align:left}\n.g-opt b{font-weight:600}\n.g-opt:hover,.g-opt.sel{border-color:var(--gold)}\n.g-opt.sel{background:var(--gold-s)}\n.g-sheet.pw{width:min(420px,100%);text-align:center}\n.g-sheet.pw h3{margin:0 0 6px;font-size:20px}\n.g-sheet.pw p{margin:0;color:var(--tm);word-break:break-word}\n.g-sheet.pw .pw-f{display:flex;gap:8px;margin-top:18px}\n.g-sheet.pw .pw-f input{margin:0;flex:1}\n.g-sheet.pw .pw-err{min-height:22px;margin:8px 0 0;color:var(--dg);font-size:13.5px;text-align:left}\n.g-sheet.pw .g-actions{justify-content:center;margin:8px 0 0}\n\n/* ---------- motion ---------- */\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes pulse{50%{opacity:.45}}\n@keyframes fade{from{opacity:0}}\n@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}}\n@keyframes rise{from{opacity:0;transform:translateY(8px)}}\n#view-gen>.g-card{animation:rise .4s var(--ease) both}\n#result>*:not(.masonry),.masonry>.card{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s var(--ease)}\n#result>*:not(.masonry).in,.masonry>.card.in{opacity:1;transform:none}\n#result>.masonry{opacity:1;transform:none}\n.state,.drop,.how{animation:rise .4s var(--ease) both}\n\n/* ---------- laptop ---------- */\n@media(min-width:900px){\n  main{max-width:1180px;padding-left:32px;padding-right:32px;padding-top:36px}\n  .g-card{padding:26px 28px}\n  .g-list{display:grid;grid-template-columns:1fr 1fr;column-gap:36px}\n  #gEnt{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}\n  #gEnt .g-ent{margin:0}\n  .g-tools{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));gap:10px}\n  .g-tools>*{width:100%;min-width:0}\n  .masonry{column-count:3;column-gap:18px}\n  .masonry>.card{margin-bottom:18px}\n  .hero{padding:30px 34px}\n  .tiles{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}\n}\n@media(min-width:900px) and (max-width:1100px){.masonry{column-count:2}}\n@media(min-width:1500px){main{max-width:1320px}}\n\n/* ---------- tablet / phone ---------- */\n@media(max-width:760px){.masonry{column-count:1}}\n@media(max-width:640px){\n  .how,.g-how{grid-template-columns:1fr;gap:8px}\n  .hr-r{text-align:left}\n  table{min-width:0}\n  thead tr{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 10px}\n  th{padding:6px 12px;border:1px solid var(--bd);border-radius:999px}\n  th[data-k=idx]{display:none}\n  tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;border-bottom:1px solid var(--bd)}\n  tbody td{padding:0;border:0}\n  tbody td:nth-child(1){display:none}\n  tbody td:nth-child(3){grid-column:1;grid-row:1}\n  tbody td:nth-child(4){grid-column:2;grid-row:1}\n  tbody td:nth-child(2){grid-column:1;grid-row:2;color:var(--tm);font-size:13px}\n  tbody td:nth-child(5){grid-column:2;grid-row:2;color:var(--tm);font-size:13px}\n  tbody td:nth-child(5):not(:empty)::before{content:\"Bal \"}\n  tbody tr.none{display:block}\n  tbody tr.none td{display:block;grid-column:auto}\n  tr.w td:first-child{box-shadow:none}\n  tr.w{box-shadow:inset 2px 0 var(--wn);padding-left:10px}\n  .tools select,.tools .g-btn{flex:1 1 140px}\n  .g-drop.compact{flex-wrap:wrap}\n  .g-drop.compact .g-btn{width:100%}\n}\n@media(max-width:560px){\n  main{padding:max(16px,env(safe-area-inset-top)) 12px calc(64px + env(safe-area-inset-bottom))}\n  .tabs{display:flex;width:100%}\n  .tabs button{flex:1;justify-content:center;padding:0 8px;font-size:13.5px;white-space:nowrap}\n  .g-card,.card{padding:16px}\n  .hero{padding:20px}\n  .drop{padding:40px 16px 22px}\n  .state{padding:22px 18px}\n  .g-ent>header select{width:100%;max-width:100%}\n  .g-row{grid-template-columns:44px minmax(0,1fr) auto}\n  .g-layer{padding:0;place-items:end center}\n  .g-sheet{width:100%;max-height:92vh;padding:20px;border-radius:22px 22px 0 0}\n  .g-sheet.pw .pw-f{flex-direction:column}\n  .okbar{flex-wrap:wrap}\n  .okbar .g-btn{width:100%}\n  .g-alert{flex-wrap:wrap}\n  .g-alert .g-btn{width:100%}\n  .q{flex-wrap:wrap}\n}\n@media(prefers-reduced-motion:reduce){\n  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}\n  .spin,.steps li.on .sd{animation:spin 1.6s linear infinite!important}\n  #result>*:not(.masonry),.masonry>.card{transform:none}\n}\n\n/* ---------- theme toggle ---------- */\n.top-r{display:flex;align-items:center;gap:8px}\n.ibtn{display:grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid var(--bd);border-radius:10px;background:var(--s1);color:var(--tm)}\n.ibtn:hover{border-color:var(--bd2);color:var(--ink)}\n.sr-root[data-theme=\"light\"] .i-sun,.sr-root:not([data-theme=\"light\"]) .i-moon{display:none}\n\n/* ---------- step-by-step (generator) ---------- */\n.gsteps{display:flex;align-items:center;max-width:760px;margin:0 auto 22px;padding:0;list-style:none}\n.gsteps li{display:flex;flex:1;align-items:center;gap:8px;min-width:0}\n.gsteps li:not(:last-child)::after{content:\"\";flex:1;height:1px;margin:0 10px;background:var(--bd)}\n.gsteps li.done:not(:last-child)::after{background:var(--ok)}\n.gsteps button{display:flex;align-items:center;gap:8px;padding:4px;border:0;border-radius:999px;background:none;color:var(--tmu);font-size:13.5px;font-weight:600;white-space:nowrap}\n.gsteps button:disabled{cursor:not-allowed;opacity:.6}\n.gsteps b{display:grid;place-items:center;width:26px;height:26px;flex:none;border:1px solid var(--bd2);border-radius:50%;font-size:12.5px;color:var(--tm)}\n.gsteps li.on button{color:var(--ink)}\n.gsteps li.on b{border-color:var(--gold);background:var(--gold-s);color:var(--gold-t)}\n.gsteps li.done button{color:var(--tm)}\n.gsteps li.done b{border-color:var(--ok);background:var(--ok);color:var(--br-text-inverse)}\n.step-off{display:none!important}\n.g-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bd)}\n.g-foot .g-btn:only-child{margin-left:auto}\n/* ---------- reader panes ---------- */\n.seg{display:flex;width:fit-content;margin:0 0 16px;padding:3px;gap:2px;border:1px solid var(--bd);border-radius:999px;background:var(--s1)}\n.seg button{min-height:34px;padding:0 16px;border:1px solid transparent;border-radius:999px;background:none;color:var(--tm);font-size:14px;font-weight:600}\n.seg button:hover{color:var(--ink)}\n.seg button[aria-selected=true]{border-color:var(--bd2);background:var(--act);color:var(--ink)}\n.pane-off{display:none!important}\n@media(max-width:560px){.gsteps button span{display:none}.gsteps li.on button span{display:inline}.seg{width:100%}.seg button{flex:1;padding:0 8px}.g-foot .g-btn{flex:1}}\n.ring{stroke:var(--s3)}.dt-s{fill:var(--tm)}.dt-b{fill:var(--ink)}\n.donut svg text{font-family:inherit}\n\n/* ---------- borderless pass: borders only where they separate or signal state ---------- */\n.tabs,.state,.hero,.card,.tile,.g-card,.g-st,.gq,.g-tile,.g-ent,.g-sheet,.seg,.ibtn,.g-btn,.g-opt,.rv,.g-json,.state pre,.g-toast,.g-pill,input[type=text],input[type=search],input[type=number],input[type=date],input[type=password],select{border-color:transparent}\n.hero,.card,.g-card,.state,.tile,.g-tile,.g-ent,.tabs,.seg{background:var(--s2)}\n.g-st,.gq,.g-ent>header,.g-btn,.ibtn,.g-opt,.g-pill,.rv,.g-json,.state pre,input[type=text],input[type=search],input[type=number],input[type=date],input[type=password],select{background:var(--s3)}\n.g-sheet{background:var(--s2)}\n.g-btn:hover,.ibtn:hover,input:hover,select:hover,.g-pill.sg:hover{border-color:transparent;background:var(--act)}\n.g-btn.pri,.g-btn.pri:hover{border-color:transparent}\ninput:focus,select:focus,.g-opt:hover,.g-opt.sel{border-color:var(--gold)}\n.tabs button[aria-selected=\"true\"],.seg button[aria-selected=true]{border-color:transparent}\n.g-list,.g-foot,.g-learn,.drop-meta,.proc-note,.chips,.q,.mo,.rep>div,.list>div,.g-chk>div,.g-ent>header,.g-e,.g-row,th,td{border-color:transparent}\n.g-row{margin-bottom:2px}\n.g-row .g-desc:hover{border-color:transparent;background:var(--act)}\n.g-pill.sg.on.ig{border-color:var(--wn);background:var(--br-warning-soft);color:var(--wn)}\n.g-pill.sg.on{border-color:currentColor}\n/* ---------- read / change animation ---------- */\n.g-row{position:relative}\n.g-row.busy{pointer-events:none;background:linear-gradient(90deg,transparent 0,var(--gold-s) 50%,transparent 100%) 0 0/200% 100%;animation:sweep 1s linear infinite}\n.g-row.busy .g-amt,.g-row.busy .g-meta,.g-row.busy .g-ctl,.g-row.busy .g-desc,.g-row.busy .g-ic{opacity:.4;transition:opacity .2s}\n.g-row.busy::after{content:\"Reading\u2026\";position:absolute;top:8px;right:12px;color:var(--gold-t);font-size:12px;font-weight:600;animation:pulse 1s ease-in-out infinite}\n.g-row.flash{animation:flashbg 1.5s var(--ease)}\n.g-row.flash>*{animation:rise .45s var(--ease) both}\n.g-row.flash>*:nth-child(2){animation-delay:.08s}.g-row.flash>*:nth-child(3){animation-delay:.16s}.g-row.flash>*:nth-child(n+4){animation-delay:.24s}\n@keyframes sweep{to{background-position:-200% 0}}\n@keyframes flashbg{0%{background:var(--gold-s)}100%{background:transparent}}\n\n/* ---------- laptop layout ---------- */\n@media(min-width:1000px){\n  #gStmtCard{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);column-gap:32px;align-items:start}\n  #gStmtCard>h3,#gStmtCard>.g-foot{grid-column:1/-1}\n  #gStmtCard>#gStmts,#gStmtCard>#gQueue,#gStmtCard>#gDrop{grid-column:1}\n  #gStmtCard>#gHow,#gStmtCard>#gLearn{grid-column:2;margin-top:0}\n  #gStmtCard>#gHow{grid-row:2}\n  .g-stmts{display:grid;grid-template-columns:1fr 1fr;gap:10px}\n  .g-tools{position:sticky;top:0;z-index:5;padding:10px 0;background:var(--s2)}\n  .g-tiles{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}\n}\n@media(min-width:1280px){main{max-width:1480px}}\n/* ---------- loading / reveal ---------- */\n.g-card.loading>*:not(h3):not(.g-load){display:none!important}\n.g-load{display:grid;justify-items:center;gap:12px;padding:56px 0;color:var(--tm);text-align:center}\n.g-load b{color:var(--ink);font-weight:600;animation:pulse 1.2s ease-in-out infinite}\n.g-load .bar{width:min(320px,70%)}\n.g-load .bar i{animation:fillbar 1.5s var(--ease) forwards}\n.rv-in{animation:rise .45s var(--ease) both}\n@keyframes fillbar{to{width:100%}}\n\n.g-row.busy[data-stage=\"2\"]::after{content:\"Updating\u2026\"}\n.g-sumbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}\n.g-sumbar .g-sub{margin-left:auto}\n.g-sum{max-height:46vh;margin:12px 0;overflow:auto}\n.g-sumrow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:6px;padding:10px 12px;border-radius:12px;background:var(--s3);cursor:pointer;transition:background .15s}\n.g-sumrow:hover{background:var(--act)}\n\n.g-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 12px}.g-bar .sp{flex:1}\n.g-btn.on{background:var(--gold-s);color:var(--gold-t)}\n.g-bulk{position:sticky;bottom:12px;z-index:8;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0;padding:10px 12px;border-radius:14px;background:var(--act);box-shadow:0 8px 24px rgba(0,0,0,.3)}.g-bulk b{margin-right:auto}\n.g-grp{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:6px 0;padding:4px 8px;border-radius:12px;background:var(--s3)}\n.g-gt{display:flex;flex:1;align-items:center;gap:10px;min-width:0;padding:8px;border:0;background:none;color:var(--ink);text-align:left}\n.g-gt>b:first-of-type{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.g-gt .g-amt{margin-left:auto;font-size:15px;font-weight:700}.g-gt .g-amt.cr{color:var(--ok)}.g-gt .g-amt.dr{color:var(--dg)}\n.g-pick{position:absolute;left:12px;top:50%;width:20px;height:20px;margin-top:-10px;accent-color:var(--gold)}\n.sel-mode .g-row{padding-left:42px}.g-row.picked{background:var(--gold-s)}\n\n.g-sumline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin:4px 0 8px;padding:10px 14px;border-radius:12px;background:var(--gold-s);font-size:14px}\n\n/* clean list: icon, name, amount only; details open in a popup */\n#gRows .g-row{grid-template-columns:48px minmax(0,1fr) auto;padding:10px;cursor:pointer}\n#gRows .g-row .g-meta,#gRows .g-row .g-inc,#gRows .g-row .g-ctl{display:none}\n#gRows .g-row .g-ic{grid-row:auto}\n#gRows .g-row .g-desc{pointer-events:none;text-overflow:ellipsis}\n.g-sheet .g-pick{display:none}\n.g-sheet .g-row{margin:0;padding:0;cursor:default}.g-sheet .g-row:hover{background:none}\n.g-info{display:inline-grid;place-items:center;flex:none;width:22px;height:22px;margin-left:8px;padding:0;border:0;border-radius:50%;background:var(--s3);color:var(--tm);font:italic 700 13px Georgia,serif;cursor:pointer;transition:background .15s,color .15s}\n.g-info:hover{background:var(--act);color:var(--ink)}\n.g-h .g-info{margin-left:0}\n/* skeleton loading */\n.sk-b{display:block;border-radius:8px;background:linear-gradient(90deg,var(--s3) 25%,var(--act) 50%,var(--s3) 75%) 0 0/200% 100%;animation:shim 1.4s ease-in-out infinite}\n.skel{animation:rise .4s var(--ease) both}\n.sk-card{padding:22px;border-radius:16px;background:var(--s2)}\n.sk-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}\n.skel>.sk-grid{margin-top:14px}\n.sk-row{display:flex;align-items:center;gap:14px;padding:12px 0}\n.g-st.sk{pointer-events:none}.g-st.sk .sk-b{border-radius:8px}\n#gSkel{margin-bottom:12px}\n@media(min-width:1000px){#gStmtCard>#gSkel{grid-column:1}}\n@media(max-width:560px){.sk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}\n@keyframes shim{to{background-position:-200% 0}}\n/* drag and drop */\n.g-row.dragging{opacity:.4}\n.g-tray{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));z-index:50;display:flex;gap:10px;padding:10px;border-radius:18px;background:var(--act);box-shadow:0 12px 40px rgba(0,0,0,.4);opacity:0;pointer-events:none;transform:translate(-50%,140%);transition:transform .25s var(--ease),opacity .2s}\n.g-tray.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}\n.g-tz{min-width:104px;padding:18px 14px;border:2px dashed transparent;border-radius:12px;background:var(--s3);color:var(--tm);font-weight:600;text-align:center;transition:transform .15s,background .15s,border-color .15s}\n.g-tz[data-z=income]{color:var(--ok)}.g-tz[data-z=expense]{color:var(--dg)}.g-tz[data-z=ignore]{color:var(--wn)}.g-tz[data-z=transfer]{color:var(--xf)}\n.g-tz.over{border-color:var(--gold);background:var(--gold-s);transform:scale(1.06)}\n.g-over{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .2s}\n.g-over.on{opacity:1}\n.g-over div{padding:40px 56px;border:2px dashed var(--gold);border-radius:24px;background:var(--s2);color:var(--gold-t);font-size:20px;font-weight:650;text-align:center}\n\n/* ---- RoadSync embedding ---- */\n.sr-root{display:block}\n.sr-root main{max-width:none;margin:0;padding:0 0 48px}\n.sr-root .brand,.sr-root #theme{display:none}\n.sr-root .top{min-height:0;margin-bottom:12px}\n.sr-root .top:has(#reset.hide){display:none}\n.sr-root .g-layer{z-index:9000}.sr-root .g-over{z-index:9001}.sr-root .g-toast{z-index:9002}.sr-root .g-tray{z-index:9000}\n\n.sr-root{font-family:var(--br-font,Inter,system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif);color:var(--text-primary)}\n";
+const HTML = "<main>\n  <header class=\"top\">\n    <div class=\"brand\"><span class=\"mark\" aria-hidden=\"true\"></span>Statement Reader</div>\n    <div class=\"top-r\"><button class=\"g-btn sm hide\" id=\"reset\" type=\"button\">Open another PDF</button><button class=\"ibtn\" id=\"theme\" type=\"button\" aria-label=\"Switch theme\"><svg class=\"i-sun\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41\"/></svg><svg class=\"i-moon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"/></svg></button></div>\n  </header>\n  <div class=\"tabs\" id=\"tabs\" role=\"tablist\"><button type=\"button\" role=\"tab\" data-tab=\"reader\" aria-selected=\"true\">Reader</button><button type=\"button\" role=\"tab\" data-tab=\"gen\" aria-selected=\"false\">BlackRoad generator<b class=\"hide\">0</b></button></div>\n\n  <div id=\"view-reader\">\n    <!-- 1. Empty: nothing opened yet -->\n    <div id=\"drop\" class=\"drop\" tabindex=\"0\" role=\"button\" aria-label=\"Choose a PDF statement\">\n      <span class=\"drop-ic\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"/></svg></span>\n      <h1>Drop a bank statement PDF</h1>\n      <p>or click to browse your files</p>\n      <span class=\"g-btn pri\">Choose PDF</span>\n      <ul class=\"drop-meta\">\n        <li><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg>Read on your device, never uploaded</li>\n        <li>HDFC, SBI, ICICI, Axis, Kotak, PNB and more</li>\n        <li>Text PDFs only, not scans</li>\n      </ul>\n      <input id=\"file\" type=\"file\" accept=\"application/pdf\" hidden>\n    </div>\n    <div id=\"status\" class=\"status\" role=\"status\"></div>\n    <ol class=\"how\" id=\"how\"><li><b>1</b>Drop a statement</li><li><b>2</b>Check the report</li><li><b>3</b>Generate BlackRoad data</li></ol>\n\n    <!-- 2. Processing: real progress while the PDF is read -->\n    <section id=\"proc\" class=\"state hide\" aria-live=\"polite\" aria-busy=\"true\">\n      <div class=\"proc-head\"><span class=\"spin\" aria-hidden=\"true\"></span><div><b id=\"procName\">Statement.pdf</b><small id=\"procSub\">Opening your statement\u2026</small></div></div>\n      <div class=\"bar\" role=\"progressbar\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"0\" id=\"procBarWrap\"><i id=\"procBar\"></i></div>\n      <ol class=\"steps\" id=\"procSteps\">\n        <li data-s=\"open\"><span class=\"sd\"></span>Opening the PDF</li>\n        <li data-s=\"read\"><span class=\"sd\"></span>Reading pages<em id=\"procPg\"></em></li>\n        <li data-s=\"parse\"><span class=\"sd\"></span>Finding transactions<em id=\"procTx\"></em></li>\n        <li data-s=\"check\"><span class=\"sd\"></span>Checking balances</li>\n      </ol>\n      <p class=\"proc-note\">This happens in your browser. Nothing leaves your device.</p>\n    </section>\n\n    <div id=\"skelR\" class=\"skel hide\" aria-hidden=\"true\"><div class=\"sk-card\"><span class=\"sk-b\" style=\"width:34%;height:14px;\"></span><span class=\"sk-b\" style=\"width:52%;height:34px;margin-top:14px\"></span><div class=\"sk-grid\"><span class=\"sk-b\" style=\"width:100%;height:48px;\"></span><span class=\"sk-b\" style=\"width:100%;height:48px;\"></span><span class=\"sk-b\" style=\"width:100%;height:48px;\"></span><span class=\"sk-b\" style=\"width:100%;height:48px;\"></span></div></div><div class=\"sk-grid\" style=\"margin:14px 0\"><span class=\"sk-b\" style=\"width:100%;height:78px;\"></span><span class=\"sk-b\" style=\"width:100%;height:78px;\"></span><span class=\"sk-b\" style=\"width:100%;height:78px;\"></span><span class=\"sk-b\" style=\"width:100%;height:78px;\"></span></div><div class=\"sk-card\"><div class=\"sk-row\"><span class=\"sk-b\" style=\"width:34px;height:34px;border-radius:10px;flex:none\"></span><div style=\"flex:1;display:grid;gap:7px\"><span class=\"sk-b\" style=\"width:58%;height:13px;\"></span><span class=\"sk-b\" style=\"width:34%;height:10px;\"></span></div><span class=\"sk-b\" style=\"width:72px;height:16px;\"></span></div><div class=\"sk-row\"><span class=\"sk-b\" style=\"width:34px;height:34px;border-radius:10px;flex:none\"></span><div style=\"flex:1;display:grid;gap:7px\"><span class=\"sk-b\" style=\"width:44%;height:13px;\"></span><span class=\"sk-b\" style=\"width:34%;height:10px;\"></span></div><span class=\"sk-b\" style=\"width:72px;height:16px;\"></span></div><div class=\"sk-row\"><span class=\"sk-b\" style=\"width:34px;height:34px;border-radius:10px;flex:none\"></span><div style=\"flex:1;display:grid;gap:7px\"><span class=\"sk-b\" style=\"width:66%;height:13px;\"></span><span class=\"sk-b\" style=\"width:34%;height:10px;\"></span></div><span class=\"sk-b\" style=\"width:72px;height:16px;\"></span></div><div class=\"sk-row\"><span class=\"sk-b\" style=\"width:34px;height:34px;border-radius:10px;flex:none\"></span><div style=\"flex:1;display:grid;gap:7px\"><span class=\"sk-b\" style=\"width:50%;height:13px;\"></span><span class=\"sk-b\" style=\"width:34%;height:10px;\"></span></div><span class=\"sk-b\" style=\"width:72px;height:16px;\"></span></div><div class=\"sk-row\"><span class=\"sk-b\" style=\"width:34px;height:34px;border-radius:10px;flex:none\"></span><div style=\"flex:1;display:grid;gap:7px\"><span class=\"sk-b\" style=\"width:62%;height:13px;\"></span><span class=\"sk-b\" style=\"width:34%;height:10px;\"></span></div><span class=\"sk-b\" style=\"width:72px;height:16px;\"></span></div><div class=\"sk-row\"><span class=\"sk-b\" style=\"width:34px;height:34px;border-radius:10px;flex:none\"></span><div style=\"flex:1;display:grid;gap:7px\"><span class=\"sk-b\" style=\"width:40%;height:13px;\"></span><span class=\"sk-b\" style=\"width:34%;height:10px;\"></span></div><span class=\"sk-b\" style=\"width:72px;height:16px;\"></span></div></div></div>\n\n    <!-- 3. Error -->\n    <section id=\"fail\" class=\"state err hide\" role=\"alert\">\n      <div class=\"state-ic err\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg></div>\n      <h2 id=\"failT\" tabindex=\"-1\">Couldn't read this file</h2>\n      <p id=\"failM\"></p>\n      <ul class=\"hints\" id=\"failH\"></ul>\n      <details id=\"failD\" class=\"hide\"><summary>Technical details</summary><pre id=\"failP\"></pre></details>\n      <div class=\"state-act\"><button class=\"g-btn pri\" id=\"failRetry\" type=\"button\">Choose another PDF</button><button class=\"g-btn\" id=\"failBack\" type=\"button\">Cancel</button></div>\n    </section>\n\n    <!-- 4. Success: the report -->\n    <section id=\"result\" class=\"hide\">\n      <div class=\"okbar\" id=\"okBar\">\n        <span class=\"oi\" id=\"okIc\"></span>\n        <div><b id=\"okT\"></b><small id=\"okS\"></small></div>\n        <button class=\"g-btn sm\" id=\"okGo\" type=\"button\">Open generator \u2192</button>\n      </div>\n      <div class=\"seg\" id=\"rSeg\" role=\"tablist\"><button type=\"button\" role=\"tab\" data-pane=\"o\" aria-selected=\"true\">Overview</button><button type=\"button\" role=\"tab\" data-pane=\"b\" aria-selected=\"false\">Breakdown</button><button type=\"button\" role=\"tab\" data-pane=\"t\" aria-selected=\"false\">Transactions</button></div>\n      <div class=\"hero\" id=\"hero\" data-p=\"o\"></div>\n      <div id=\"tiles\" class=\"tiles\" data-p=\"o\"></div>\n      <div class=\"masonry\" data-p=\"b\">\n        <div class=\"card\"><h3>Spending by category</h3><div class=\"donut\" id=\"donut\"></div></div>\n        <div class=\"card\"><h3>Reading report</h3><div class=\"rep\" id=\"rep\"></div><div id=\"rv\"></div></div>\n        <div class=\"card\"><h3>Monthly cash flow</h3><div id=\"months\"></div></div>\n        <div class=\"card\"><h3>Payment modes (spent)</h3><div id=\"modes\"></div></div>\n        <div class=\"card\"><h3>Top payees</h3><div id=\"payees\"></div></div>\n        <div class=\"card\"><h3>Recurring payments</h3><div class=\"list\" id=\"recur\"></div><h3 style=\"margin-top:18px\">Biggest expenses</h3><div class=\"list\" id=\"topx\"></div></div>\n      </div>\n      <div class=\"card\" data-p=\"t\">\n        <h3>Transactions</h3>\n        <div class=\"tools\">\n          <input id=\"q\" type=\"search\" placeholder=\"Search descriptions or amounts\" aria-label=\"Search\">\n          <select id=\"type\" aria-label=\"Type\"><option value=\"\">All types</option><option value=\"d\">Money out</option><option value=\"c\">Money in</option></select>\n          <select id=\"catSel\" aria-label=\"Category\"></select>\n          <button class=\"g-btn\" id=\"csv\" type=\"button\">Download CSV</button>\n          <button class=\"g-btn pri\" id=\"toBR\" type=\"button\">Generate BlackRoad data \u2192</button>\n        </div>\n        <div class=\"wrap\"><table>\n          <thead><tr><th data-k=\"idx\">#</th><th data-k=\"ts\">Date</th><th data-k=\"desc\">Description</th><th class=\"r\" data-k=\"amt\">Amount</th><th class=\"r\" data-k=\"bal\">Balance</th></tr></thead>\n          <tbody id=\"rows\"></tbody>\n        </table></div>\n        <p class=\"sub\" id=\"count\"></p>\n      </div>\n    </section>\n  </div>\n\n<div id=\"view-gen\" class=\"hide\">\n  <div class=\"g-tray\" id=\"gTray\" aria-hidden=\"true\"><div class=\"g-tz\" data-z=\"income\">Income</div><div class=\"g-tz\" data-z=\"expense\">Expense</div><div class=\"g-tz\" data-z=\"ignore\">Ignore</div><div class=\"g-tz\" data-z=\"transfer\">Transfer</div></div>\n  <div class=\"g-over\" id=\"gOver\" aria-hidden=\"true\"><div>Drop PDF statements to add them</div></div>\n  <h2>BlackRoad data generator<button type=\"button\" class=\"g-info\" data-info=\"gen\" aria-label=\"More information\">i</button></h2>\n\n  <ol class=\"gsteps\" id=\"gSteps\"><li data-n=\"1\"><button type=\"button\" data-go=\"1\"><b>1</b><span>Statements</span></button></li><li data-n=\"2\"><button type=\"button\" data-go=\"2\"><b>2</b><span>Review</span></button></li><li data-n=\"3\"><button type=\"button\" data-go=\"3\"><b>3</b><span>Entries</span></button></li><li data-n=\"4\"><button type=\"button\" data-go=\"4\"><b>4</b><span>Export</span></button></li></ol>\n\n  <section class=\"g-card\" id=\"gStmtCard\">\n    <h3 class=\"g-h\"><i>1</i>Statements<button type=\"button\" class=\"g-info\" data-info=\"stm\" aria-label=\"More information\">i</button><small id=\"gCount\"></small></h3>\n    <div id=\"gStmts\" class=\"g-stmts\"></div>\n    <div id=\"gQueue\" class=\"gq hide\" aria-live=\"polite\"></div>\n    <div id=\"gSkel\" class=\"g-stmts hide\" aria-hidden=\"true\"><div class=\"g-st sk\"><span class=\"sk-b\" style=\"width:38px;height:38px;border-radius:11px;flex:none\"></span><div style=\"flex:1;display:grid;gap:8px\"><span class=\"sk-b\" style=\"width:55%;height:14px;\"></span><span class=\"sk-b\" style=\"width:80%;height:11px;\"></span></div><span class=\"sk-b\" style=\"width:64px;height:34px;\"></span></div><div class=\"g-st sk\"><span class=\"sk-b\" style=\"width:38px;height:38px;border-radius:11px;flex:none\"></span><div style=\"flex:1;display:grid;gap:8px\"><span class=\"sk-b\" style=\"width:55%;height:14px;\"></span><span class=\"sk-b\" style=\"width:80%;height:11px;\"></span></div><span class=\"sk-b\" style=\"width:64px;height:34px;\"></span></div></div>\n    <div id=\"gDrop\" class=\"g-drop\" tabindex=\"0\" role=\"button\" aria-label=\"Add bank statement PDFs\">\n      <span class=\"g-drop-ic\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" x2=\"12\" y1=\"3\" y2=\"15\"/></svg></span>\n      <div class=\"g-drop-tx\"><b id=\"gDropT\">Add bank statement PDFs</b><span class=\"g-drop-s\" id=\"gDropS\">Add every bank for the month. You can select several files at once.</span></div>\n      <span class=\"g-btn pri sm\" id=\"gDropB\">Choose files</span>\n    </div>\n    <input id=\"gFile\" type=\"file\" accept=\"application/pdf\" multiple hidden>\n    <ol class=\"g-how\" id=\"gHow\"><li><b>1</b>Add statements</li><li><b>2</b>Review categories</li><li><b>3</b>Export for BlackRoad</li></ol>\n    <p id=\"gMsg\" class=\"sr\" role=\"status\"></p>\n    <div class=\"g-learn\" id=\"gLearn\">\n      <div class=\"tx\"><b>Learn from your BlackRoad data <span class=\"g-pill\">optional</span></b><span class=\"g-sub\" id=\"gLearnTx\">Choose a BlackRoad backup or income export so suggestions follow your own categories and habits.</span></div>\n      <button class=\"g-btn\" id=\"gLearnBtn\" type=\"button\">Choose file</button>\n      <input id=\"gLearnFile\" type=\"file\" accept=\"application/json,.json\" hidden>\n    </div>\n    <div class=\"g-foot\"><button class=\"g-btn\" id=\"gClear\" type=\"button\">Clear saved session</button><button class=\"g-btn pri\" id=\"gNext1\" data-go=\"2\" type=\"button\" disabled>Continue to review \u2192</button></div>\n  </section>\n\n  <section class=\"g-card hide step-off\" id=\"gReview\">\n    <h3 class=\"g-h\"><i>2</i>Review transactions<button type=\"button\" class=\"g-info\" data-info=\"rev\" aria-label=\"More information\">i</button><small id=\"gRevCount\"></small></h3>\n    <div class=\"g-tiles\" id=\"gTiles\"></div>\n    <div class=\"g-alert hide\" id=\"gAlert\"></div>\n    <div class=\"g-tools\">\n      <input type=\"search\" id=\"gQ\" placeholder=\"Search description, category or amount\" aria-label=\"Search\">\n      <select id=\"gSt\" aria-label=\"Show\"><option value=\"\">All</option><option value=\"review\">Needs review</option><option value=\"in\">Income</option><option value=\"out\">Expenses</option><option value=\"inv\">Investments</option><option value=\"xfer\">Transfers</option><option value=\"skip\">Skipped</option></select>\n      <select id=\"gBank\" aria-label=\"Statement\"></select>\n      <select id=\"gMon\" aria-label=\"Month\"></select>\n    </div>\n    <div class=\"g-sumline hide\" id=\"gSumLine\" aria-live=\"polite\"></div>\n    <div class=\"g-bar\"><button type=\"button\" class=\"g-btn sm\" id=\"gUndo\" disabled title=\"Undo (Ctrl+Z)\">\u21b6 Undo</button><button type=\"button\" class=\"g-btn sm\" id=\"gRedo\" disabled title=\"Redo (Ctrl+Y or Ctrl+Shift+Z)\">\u21b7 Redo</button><span class=\"sp\"></span><button type=\"button\" class=\"g-btn sm\" id=\"gDupB\" disabled>Duplicates</button><button type=\"button\" class=\"g-btn sm\" id=\"gRefB\" disabled>Refunds</button><button type=\"button\" class=\"g-btn sm\" id=\"gGroupB\" aria-pressed=\"false\">Group by payee</button><button type=\"button\" class=\"g-btn sm\" id=\"gSelB\" aria-pressed=\"false\">Select</button><button type=\"button\" class=\"g-btn sm\" id=\"gRulesB\">Rules</button></div>\n    <div class=\"g-list\" id=\"gRows\"></div>\n    <div class=\"g-bulk hide\" id=\"gBulk\"><b id=\"gBulkN\">0 selected</b><button type=\"button\" class=\"g-btn sm\" data-b=\"income\">Income</button><button type=\"button\" class=\"g-btn sm\" data-b=\"expense\">Expense</button><button type=\"button\" class=\"g-btn sm\" data-b=\"ignore\">Ignore</button><button type=\"button\" class=\"g-btn sm\" data-b=\"cat\">Category\u2026</button><button type=\"button\" class=\"g-btn sm\" data-b=\"all\">All shown</button><button type=\"button\" class=\"g-btn sm\" data-b=\"none\">None</button><button type=\"button\" class=\"g-btn pri sm\" data-b=\"done\">Done</button></div>\n    <button class=\"g-btn g-more hide\" id=\"gMore\" type=\"button\">Show more</button>\n    <div class=\"g-foot\"><button class=\"g-btn\" data-go=\"1\" type=\"button\">\u2190 Statements</button><button class=\"g-btn pri\" data-go=\"3\" type=\"button\">Continue to entries \u2192</button></div>\n  </section>\n\n  <section class=\"g-card hide step-off\" id=\"gEntries\">\n    <h3 class=\"g-h\"><i>3</i>BlackRoad entries<button type=\"button\" class=\"g-info\" data-info=\"ent\" aria-label=\"More information\">i</button><small id=\"gEntCount\"></small></h3>\n    <div id=\"gEnt\"></div>\n    <div class=\"g-chk\" id=\"gChk\"></div>\n    <div class=\"g-foot\"><button class=\"g-btn\" data-go=\"2\" type=\"button\">\u2190 Review</button><button class=\"g-btn pri\" data-go=\"4\" type=\"button\">Continue to export \u2192</button></div>\n  </section>\n\n  <section class=\"g-card hide step-off\" id=\"gOut\">\n    <h3 class=\"g-h\"><i>4</i>Export<button type=\"button\" class=\"g-info\" data-info=\"exp\" aria-label=\"More information\">i</button></h3>\n    <div class=\"g-actions\">\n      <button class=\"g-btn pri\" id=\"gJson\" type=\"button\">Download BlackRoad JSON</button>\n      <button class=\"g-btn\" id=\"gCopy\" type=\"button\">Copy JSON</button>\n      <button class=\"g-btn\" id=\"gCsv\" type=\"button\">Download CSV</button>\n      <button class=\"g-btn pri hide\" id=\"gSave\" type=\"button\">Save to BlackRoad</button>\n    </div>\n    <details id=\"gDet\"><summary>Preview JSON</summary><pre class=\"g-json\" id=\"gPre\"></pre></details>\n    <div class=\"g-foot\"><button class=\"g-btn\" data-go=\"3\" type=\"button\">\u2190 Entries</button></div>\n  </section>\n  <div class=\"g-toast\" id=\"gToast\" role=\"status\"></div>\n</div>\n</main>";
+
+let pdfLoading = null;
+function loadPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (!pdfLoading) {
+        pdfLoading = new Promise((resolve) => {
+            const el = document.createElement("script");
+            el.src = PDFJS;
+            el.onload = () => resolve(window.pdfjsLib || null);
+            el.onerror = () => { pdfLoading = null; resolve(null); };
+            document.head.appendChild(el);
+        });
+    }
+    return pdfLoading;
+}
+
+/* The reader's own code. `document` / `window` are the scoped stand-ins built in mount(). */
+function run(document, window, pdfjsLib) {
+
+"use strict";
+const $ = id => document.getElementById(id);
+const PDF_OK = typeof pdfjsLib !== "undefined";
+if (PDF_OK) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ---- small UI helpers (icons, timing, button feedback) ---- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const tick = () => new Promise(r => setTimeout(r, 0));
+const ICO = {
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  "check-circle": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  circle: '<circle cx="12" cy="12" r="9"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>'
+};
+const ico = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
+function flash(btn, text) {
+  if (!btn || btn._f) return;
+  btn._f = btn.innerHTML; btn.classList.add("done"); btn.innerHTML = ico("check", 16) + " " + text;
+  setTimeout(() => { btn.innerHTML = btn._f; btn._f = null; btn.classList.remove("done"); }, 1800);
+}
+
+/* In-page password dialog (replaces the browser prompt). Resolves to the password, or null if cancelled. */
+function askPassword(name, wrong) {
+  return new Promise(res => {
+    const prev = document.activeElement, layer = document.createElement("div");
+    layer.className = "g-layer";
+    layer.innerHTML = `<form class="g-sheet pw" role="dialog" aria-modal="true" aria-labelledby="pwT">
+      <div class="state-ic">${ico("lock", 24)}</div><h3 id="pwT">Password needed</h3>
+      <p>${esc(name)} is protected. Enter its password to read it.</p>
+      <div class="pw-f"><input type="password" autocomplete="off" aria-label="PDF password" placeholder="Password"><button type="button" class="g-btn" data-show>Show</button></div>
+      <p class="pw-err" role="alert">${wrong ? "That password didn’t work. Try again." : ""}</p>
+      <div class="g-actions"><button type="button" class="g-btn" data-c>Cancel</button><button type="submit" class="g-btn pri">Unlock</button></div></form>`;
+    document.body.appendChild(layer);
+    const form = layer.firstChild, inp = form.querySelector("input"), err = form.querySelector(".pw-err");
+    const done = v => { document.removeEventListener("keydown", onKey, true); layer.remove(); if (prev && prev.focus) prev.focus(); res(v); };
+    const onKey = e => { if (e.key === "Escape") { e.stopPropagation(); done(null); } };
+    document.addEventListener("keydown", onKey, true);
+    form.onsubmit = e => { e.preventDefault(); if (!inp.value) { err.textContent = "Enter the password."; inp.focus(); return; } done(inp.value); };
+    form.querySelector("[data-c]").onclick = () => done(null);
+    form.querySelector("[data-show]").onclick = e => { const on = inp.type === "password"; inp.type = on ? "text" : "password"; e.currentTarget.textContent = on ? "Hide" : "Show"; inp.focus(); };
+    inp.focus();
+  });
+}
+
+const MONS = "jan feb mar apr may jun jul aug sep oct nov dec".split(" ");
+const MR = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?";
+const DATE_RX = new RegExp("^(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/\\-.]\\d{1,2}[\\/\\-.]\\d{2,4}|\\d{1,2}[\\/]\\d{1,2}(?=\\s)|\\d{1,2}[ -]" + MR + "(?:,?[ -]\\d{2,4})?(?=\\s|$)|" + MR + " \\d{1,2}(?:,? \\d{4})?(?=\\s|$))(?:\\s+|$)", "i");
+const AMT_US = /^\(?-?[$€£₹]?-?(?:\d{1,3}(?:,\d{2,3})+|\d+)\.\d{2}\)?-?(?:\(?(?:CR|DR)\.?\)?)?$/i;
+const AMT_EU = /^\(?-?[$€£₹]?-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\)?-?(?:\(?(?:CR|DR)\.?\)?)?$/i;
+const HK = {debit: /^(debit|withdraw|dr\.?$)/i, credit: /^(credit|deposit|cr\.?$)/i, balance: /^bal/i, amount: /^(amount|amt)/i, ref: /^(chq|cheque|ref(erence)?(\.|\/|$|no))/i, desc: /^(narration|particulars|description|remarks|details)/i};
+const DTK = /^\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}$/;
+const SUMMARY = /total|brought forward|carried forward|b\/f|c\/f|opening balance|closing balance|balance forward|statement summary|available balance|credit limit|minimum amount/i;
+const OPENING = /brought forward|b\/f|opening balance|balance forward|previous balance/i;
+const CATS = [
+  ["ATM & Cash", /\batm\b|nwd|cash w(?:dl|ithdrawal)|cash wd|self withdrawal/i],
+  ["Charges", /charges?|chrg|sms alert|\bamc\b|annual fee|\bgst\b|min(?:imum)? bal|penal|processing fee|\bfees?\b/i],
+  ["EMI & Loans", /\bemi\b|loan|\bach d\b|\bnach\b|\becs\b|bajaj fin|home fin/i],
+  ["Investments", /mutual fund|\bsip\b|zerodha|groww|upstox|\bnps\b|\bppf\b|angel one|\bsgb\b|kuvera/i],
+  ["Insurance", /insurance|\blic\b|policy|premium|star health|hdfc life|icici pru/i],
+  ["Food", /swiggy|zomato|restaurant|cafe|dominos|pizza|kfc|mcdonald|bakery|blinkit|zepto|bigbasket|dmart|grocer|instamart|milk|hotel|biryani/i],
+  ["Shopping", /amazon|flipkart|myntra|ajio|meesho|nykaa|reliance|decathlon|\bmall\b|store|shop|lifestyle|croma|tata cliq/i],
+  ["Travel", /irctc|makemytrip|redbus|\buber\b|\bola\b|rapido|indigo|air india|flight|metro|fastag|petrol|fuel|hpcl|bpcl|iocl|indian oil|shell|goibibo|yatra|toll/i],
+  ["Bills & Recharge", /electric|bescom|tneb|\bpower\b|water|\bgas\b|broadband|airtel|\bjio\b|vodafone|\bvi\b|bsnl|recharge|\bdth\b|tata play|postpaid|\bbill|rent|maintenance|society|municipal/i],
+  ["Entertainment", /netflix|spotify|hotstar|prime video|bookmyshow|youtube|google play|apple\.com|itunes|sonyliv|zee5/i],
+  ["Health", /hospital|pharmacy|apollo|medplus|clinic|1mg|pharmeasy|diagnostic|\blab\b|dental|medical/i],
+  ["Education", /school|college|tuition|udemy|coursera|course|university|byju|unacademy/i],
+  ["Tax", /income tax|\btds\b|challan|\bcbdt\b/i],
+  ["Transfers", /neft|imps|rtgs|\bupi\b|transfer|\btrf\b|cheque|\bchq\b|\bclg\b|\bself\b/i]
+];
+const CRC = [["Salary", /salary|payroll|\bsal\b/i], ["Interest", /interest|int\.? ?pd|\bint\b/i], ["Refund", /refund|reversal|cashback|chargeback/i], ["Investment return", /dividend|redemption|maturity/i]];
+const MODES = [["UPI", /\bupi\b/i], ["NEFT", /neft/i], ["IMPS", /imps/i], ["RTGS", /rtgs/i], ["ATM", /\batm\b|nwd|cash w/i], ["Cheque", /chq|cheque|clg|clearing/i], ["Card/POS", /\bpos\b|debit card|\bcard\b|ecom|visa|mastercard|rupay/i], ["Auto-debit", /\bach\b|nach|\becs\b|\bsi\b|standing/i]];
+const CATCOL = {"ATM & Cash": "#f59e0b", "Charges": "#f43f5e", "EMI & Loans": "#a78bfa", "Investments": "#22d3ee", "Insurance": "#818cf8", "Food": "#fb923c", "Shopping": "#f472b6", "Travel": "#38bdf8", "Bills & Recharge": "#facc15", "Entertainment": "#c084fc", "Health": "#34d399", "Education": "#2dd4bf", "Tax": "#ef4444", "Transfers": "#60a5fa", "Other": "#94a3b8", "Salary": "#4ade80", "Interest": "#a3e635", "Refund": "#2dd4bf", "Investment return": "#22d3ee", "Money in": "#4ade80"};
+const MODECOL = {UPI: "#38bdf8", NEFT: "#a78bfa", IMPS: "#f472b6", RTGS: "#fb923c", ATM: "#f59e0b", Cheque: "#facc15", "Card/POS": "#34d399", "Auto-debit": "#f43f5e", Other: "#94a3b8"};
+const COLORS = ["#38bdf8", "#a78bfa", "#f472b6", "#fb923c", "#facc15", "#34d399", "#2dd4bf", "#f87171"];
+const STOP = new Set("upi dr cr neft imps rtgs payment pay to from transfer trf by atm pos ach nach ecs ref no txn id bank ltd limited pvt india the for and mob mobile banking internet inb ibl ybl okhdfcbank okaxis oksbi okicici paytm hdfc icici sbi axis kotak yes yesb wdl salary sal".split(" "));
+function who(d) { for (let s of d.split(/[\/\-:,|]+/)) { s = s.replace(/@.*/, "").replace(/[^A-Za-z .&']/g, " ").replace(/\s+/g, " ").trim(); const w = s.toLowerCase().split(" ").filter(x => x && !STOP.has(x)); if (s.length >= 3 && w.join("").length >= 3) return w.slice(0, 3).map(x => x[0].toUpperCase() + x.slice(1)).join(" "); } return d.slice(0, 24) || "Unknown"; }
+let EU = false, S = {sort: {k: "idx", dir: 1}};
+
+const isAmt = s => (EU ? AMT_EU : AMT_US).test(s);
+function pAmt(s) {
+  const cr = /\(?CR\.?\)?$/i.test(s), dr = /\(?DR\.?\)?$/i.test(s), b = s.replace(/\(?(?:CR|DR)\.?\)?$/i, "");
+  const neg = /^\(.*\)$|^-|-$|^[^\d]*-/.test(b);
+  let n = b.replace(/[^\d.,]/g, ""); n = EU ? n.replace(/\./g, "").replace(",", ".") : n.replace(/,/g, "");
+  return {v: parseFloat(n), neg, cr, dr};
+}
+const money = (v, c = "") => (v < 0 ? "−" : "") + c + Math.abs(v).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+function parseDate(s, year, fmt) {
+  let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})(?:[\/\-.](\d{2,4}))?$/))) {
+    let y = m[3] ? +m[3] : year; if (y < 100) y += 2000;
+    return fmt === "mdy" ? new Date(y, +m[1] - 1, +m[2]) : new Date(y, +m[2] - 1, +m[1]);
+  }
+  if ((m = s.match(new RegExp("^(\\d{1,2})[ -](" + MR + ")(?:,?[ -](\\d{2,4}))?$", "i")))) {
+    let y = m[3] ? +m[3] : year; if (y < 100) y += 2000;
+    return new Date(y, MONS.indexOf(m[2].slice(0, 3).toLowerCase()), +m[1]);
+  }
+  if ((m = s.match(new RegExp("^(" + MR + ") (\\d{1,2})(?:,? (\\d{4}))?$", "i")))) return new Date(m[3] ? +m[3] : year, MONS.indexOf(m[1].slice(0, 3).toLowerCase()), +m[2]);
+  return null;
+}
+
+async function extract(pdf, onPage) {
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const tc = await (await pdf.getPage(p)).getTextContent(), toks = [];
+    for (const it of tc.items) {
+      const len = it.str.length || 1;
+      for (const m of it.str.matchAll(/\S+/g)) toks.push({s: m[0], x: it.transform[4] + it.width * m.index / len, x2: it.transform[4] + it.width * (m.index + m[0].length) / len, y: it.transform[5]});
+    }
+    toks.sort((a, b) => b.y - a.y || a.x - b.x);
+    const lines = []; let cur = null;
+    for (const t of toks) { if (cur && Math.abs(cur.y - t.y) < 3) cur.t.push(t); else { cur = {y: t.y, t: [t], page: p}; lines.push(cur); } }
+    lines.forEach(l => l.t.sort((a, b) => a.x - b.x));
+    pages.push(lines);
+    if (onPage) { await onPage(p, pdf.numPages); await tick(); }
+  }
+  const all = pages.flat(), flat = all.flatMap(l => l.t);
+  const us = flat.filter(t => AMT_US.test(t.s)).length, eu = flat.filter(t => AMT_EU.test(t.s)).length;
+  EU = eu > us;
+  for (const l of all) {
+    const t = [];
+    for (const k of l.t) { const pv = t[t.length - 1]; if (pv && /^\(?(CR|DR)\.?\)?$/i.test(k.s) && isAmt(pv.s)) { pv.s += k.s; pv.x2 = k.x2; } else t.push({...k}); }
+    if (t.length > 2 && /^\d{1,5}$/.test(t[0].s) && DATE_RX.test(t.slice(1).map(k => k.s).join(" ") + " ")) t.shift();
+    let o = 0; t.forEach(k => { k.o = o; o += k.s.length + 1; });
+    l.t = t; l.text = t.map(k => k.s).join(" ");
+  }
+  return all;
+}
+
+function findMeta(text) {
+  const g = rx => { const m = text.match(rx); return m ? m[1].trim() : ""; };
+  const amt = "([\\-\\(]?[$€£₹]?\\s?[\\d.,]+[.,]\\d{2}\\)?(?:\\s?\\(?(?:CR|DR)\\.?\\)?)?)";
+  const D = "\\d{1,2}[\\/\\-. ][A-Za-z0-9]{2,9}[\\/\\-. ]\\d{2,4}";
+  const pm = text.match(new RegExp("(" + D + ")\\s*(?:to|-|–|through)\\s*(" + D + ")", "i"));
+  const bm = text.match(/HDFC|ICICI|STATE BANK|\bSBI\b|AXIS|KOTAK|PUNJAB NATIONAL|\bPNB\b|BANK OF BARODA|CANARA|UNION BANK|YES BANK|IDFC|INDUSIND|IDBI|FEDERAL|BANDHAN|INDIAN BANK|\bUCO\b|CENTRAL BANK|BANK OF INDIA|\bAU SMALL|\bRBL\b|SOUTH INDIAN|KARNATAKA BANK|PAYTM|EQUITAS|\bDBS\b/i);
+  const meta = {
+    bank: bm ? bm[0].toUpperCase() : "",
+    ifsc: g(/IFS[C]?(?: code)?\s*[:\-]?\s*([A-Z]{4}0[A-Z0-9]{6})/i),
+    holder: g(/(?:account (?:holder|name)|customer name|a\/c name|statement for)\s*[:\-]?\s*([A-Za-z.' ]{3,40})/i) || g(/(?:^|\n)\s*name\s*[:\-]\s*([A-Za-z.' ]{3,40})/i),
+    account: g(/(?:account (?:number|no\.?)|a\/c(?: no\.?)?)\s*[:#\-]?\s*([\dXx*\- ]{4,24})/i),
+    period: pm ? pm[1] + " to " + pm[2] : g(/(?:statement period|period)\s*[:\-]?\s*([^\n]{8,60})/i),
+    opening: g(new RegExp("(?:opening|beginning|previous) balance\\s*[:\\-]?\\s*" + amt, "i")),
+    closing: g(new RegExp("(?:closing|ending|new) balance\\s*[:\\-]?\\s*" + amt, "i"))
+  };
+  meta.cur = /₹|\bINR\b|\bRs\b/.test(text) || meta.bank ? "₹" : (text.match(/[$€£]/) || [""])[0];
+  const y = text.match(/\b(20\d{2})\b/); meta.year = y ? +y[1] : new Date().getFullYear();
+  return meta;
+}
+
+const SHORT = k => k && /^(dr|cr)\.?$/i.test(k.s);
+const hkeys = l => {
+  if (l.t.length > 14 || l.t.some(k => isAmt(k.s) || /\d{3,}/.test(k.s)) || DATE_RX.test(l.text)) return null;
+  const c = {};
+  l.t.forEach(k => { for (const n in HK) if (!c[n] && HK[n].test(k.s)) { c[n] = k; break; } });
+  return Object.keys(c).length ? c : null;
+};
+const stripLead = d => { const m = d.map(k => k.s).join(" ").match(DATE_RX); if (!m) return d; let c = 0, i = 0; while (i < d.length && c < m[1].length) { c += d[i].s.length + 1; i++; } return d.slice(i); };
+
+function parse(lines, meta) {
+  const rows = [], review = [], notes = [];
+  let cols = null, acc = {}, pending = null, lastDate = "", last = null;
+  const AC = ["debit", "credit", "balance", "amount"];
+  const colOf = k => { let best = null, bd = 1e9; for (const n of AC) { const c = cols[n]; if (!c) continue; const d = Math.min(Math.abs((k.x + k.x2) / 2 - (c.x + c.x2) / 2), Math.abs(k.x2 - c.x2), Math.abs(k.x - c.x)); if (d < bd) { bd = d; best = n; } } return bd < 80 ? best : null; };
+  const refT = k => cols && cols.ref && k.x >= cols.ref.x - 6 && k.x < (cols.desc && cols.desc.x > cols.ref.x ? cols.desc.x - 2 : 1e9);
+
+  const push = (ds, dt, at, text, inh, rt) => {
+    const r = {dateStr: ds, inherited: inh, ref: rt.map(k => k.s).join(" "), desc: dt.map(k => k.s).join(" ").replace(/\s+/g, " ").trim(), descX: dt.length ? dt[0].x : (cols && cols.desc ? cols.desc.x : last ? last.descX : 0), d: null, c: null, a: null, bal: null, hint: 0, raw: text};
+    if (cols) {
+      for (const k of at) { const n = colOf(k), v = pAmt(k.s); if (n === "debit") r.d = v.v; else if (n === "credit") r.c = v.v; else if (n === "balance") r.bal = v.neg || v.dr ? -v.v : v.v; else if (n === "amount") { r.a = v.v; r.hint = v.neg || v.dr ? -1 : v.cr ? 1 : 0; } else r.desc += " " + k.s; }
+      if (r.d === 0 && r.c > 0) r.d = null; if (r.c === 0 && r.d > 0) r.c = null;
+      if (r.d != null && r.c == null) r.hint = -1; else if (r.c != null && r.d == null) r.hint = 1;
+      if (r.d != null && r.c != null) { r.amt = Math.abs(r.c - r.d); r.hint = r.c >= r.d ? 1 : -1; } else r.amt = r.d != null ? r.d : r.c != null ? r.c : r.a;
+    } else {
+      const vs = at.map(k => pAmt(k.s));
+      if (vs.length >= 2) { const b = vs[vs.length - 1]; r.bal = b.neg || b.dr ? -b.v : b.v; const cand = vs.slice(0, -1), nz = cand.filter(v => v.v > 0), a = nz.length ? nz[nz.length - 1] : cand[cand.length - 1]; r.amt = a.v; r.hint = a.neg || a.dr ? -1 : a.cr ? 1 : 0; }
+      else { r.amt = vs[0].v; r.hint = vs[0].neg || vs[0].dr ? -1 : vs[0].cr ? 1 : 0; }
+    }
+    if (r.amt == null || isNaN(r.amt)) { review.push(text); return; }
+    r.desc = r.desc || "(no description)"; rows.push(r); last = r;
+  };
+
+  for (const l of lines) {
+    const t = l.text; if (!t) continue;
+    const hk = hkeys(l);
+    if (hk && (Object.keys(hk).length >= 2 || Object.keys(acc).length)) {
+      acc = {...hk, ...acc};
+      const c = {...acc};
+      if (c.amount && (SHORT(c.debit) || SHORT(c.credit))) { delete c.debit; delete c.credit; } else if (c.debit || c.credit) delete c.amount;
+      if (c.balance && (c.debit || c.credit || c.amount)) { cols = c; acc = {}; }
+      continue;
+    }
+    acc = {};
+    if (/^page\s*\d|^continued|page \d+ of \d+/i.test(t)) continue;
+    const dm = t.match(DATE_RX), dEnd = dm ? dm[0].length : 0;
+    const body = l.t.filter(k => k.o >= dEnd);
+    const amts = body.filter(k => isAmt(k.s) && (!cols || colOf(k)));
+    let desc = body.filter(k => !amts.includes(k) && !/^[-–]+$/.test(k.s) && !DTK.test(k.s)), ref = [];
+    if (dm) { ref = desc.filter(refT); desc = desc.filter(k => !ref.includes(k)); }
+    if (amts.length && SUMMARY.test(t)) {
+      if (OPENING.test(t) && !meta.openRow) meta.openRow = pAmt(amts[amts.length - 1].s);
+      notes.push(t); continue;
+    }
+    if (dm) {
+      lastDate = dm[1]; desc = stripLead(desc);
+      if (amts.length) { pending = null; push(dm[1], desc, amts, t, false, ref); }
+      else pending = {ds: dm[1], toks: desc, ref, text: t};
+    } else if (amts.length) {
+      if (pending) { const p = pending; pending = null; push(p.ds, p.toks.concat(desc), amts, p.text + " | " + t, false, p.ref); }
+      else if (lastDate && rows.length) push(lastDate, desc, amts, t, true, []);
+      else if (rows.length) review.push(t);
+    } else if (rows.length || pending) {
+      if (pending) pending.toks = pending.toks.concat(desc);
+      else if (last && l.t.length && Math.abs(l.t[0].x - last.descX) < 25 && t.length < 120) last.desc = (last.desc + " " + desc.map(k => k.s).join(" ")).trim();
+      else if (/[A-Za-z]/.test(t) && !/^page|statement|www\.|@|customer|thank|registered|this is|computer|generated|end of/i.test(t)) review.push("Other text: " + t);
+    }
+  }
+  if (pending) review.push("Date line without amount: " + pending.text);
+  return {rows, review, notes, fmt: "dmy"};
+}
+
+function resolve(rows, meta, fmt, openRow) {
+  const eq = (a, b) => Math.abs(a - b) < 0.02;
+  let f = 0, r = 0;
+  rows.forEach((x, i) => { if (x.bal == null) return; const p = rows[i - 1], n = rows[i + 1]; if (p && p.bal != null && eq(Math.abs(x.bal - p.bal), x.amt)) f++; if (n && n.bal != null && eq(Math.abs(x.bal - n.bal), x.amt)) r++; });
+  const rev = r > f;
+  let opening = meta.opening ? pAmt(meta.opening).v * (pAmt(meta.opening).neg ? -1 : 1) : openRow ? openRow.v * (openRow.neg ? -1 : 1) : null;
+  rows.forEach((x, i) => {
+    const pb = rev ? (rows[i + 1] ? rows[i + 1].bal : null) : (i ? rows[i - 1].bal : opening);
+    let sign = x.hint || 0, ok = null;
+    if (x.bal != null && pb != null) {
+      const diff = x.bal - pb;
+      if (eq(Math.abs(diff), x.amt)) { const s = diff >= 0 ? 1 : -1; if (sign && s !== sign) x.fixed = true; sign = s; ok = true; } else ok = false;
+    }
+    if (!sign) sign = /salary|payroll|deposit|refund|interest|cashback|credit|received|transfer from|inward|by transfer|int\.? ?pd/i.test(x.desc) ? 1 : -1;
+    x.amt = sign * x.amt; x.ok = ok;
+  });
+  rows.forEach((x, i) => {
+    x.idx = i + 1; x.ts = (parseDate(x.dateStr, meta.year, fmt) || {getTime: () => i}).getTime();
+    x.date = parseDate(x.dateStr, meta.year, fmt);
+    x.cat = x.amt > 0 ? (CRC.find(c => c[1].test(x.desc)) || ["Money in"])[0] : (CATS.find(c => c[1].test(x.desc)) || ["Other"])[0];
+    x.mode = (MODES.find(m => m[1].test(x.desc)) || ["Other"])[0]; x.who = who(x.desc);
+  });
+  return {rev, opening};
+}
+
+async function parseStatement(file, password, onOpen, onStep) {
+  const step = onStep || (() => {});
+  if (!PDF_OK) { const e = new Error("The PDF engine could not be loaded. Check your internet connection and reload the page."); e.engine = true; throw e; }
+  await step("open", 0, 0);
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await file.arrayBuffer()), password}).promise;
+  if (onOpen) onOpen();
+  await step("read", 0, pdf.numPages);
+  const lines = await extract(pdf, (p, n) => step("read", p, n)), text = lines.map(l => l.text).join("\n");
+  if (!text.trim()) { const e = new Error("This PDF has no selectable text (it may be a scan), so it can’t be read."); e.noText = true; throw e; }
+  await tick(); await step("parse", 0, 0);
+  const meta = findMeta(text); meta.file = file.name; meta.pages = pdf.numPages;
+  const res = parse(lines, meta);
+  await tick(); await step("check", res.rows.length, 0);
+  const info = resolve(res.rows, meta, res.fmt, meta.openRow);
+  return {res, info, meta, text, nLines: lines.filter(l => l.text).length};
+}
+
+/* ---- reader states: idle (empty) / proc (loading) / error / result (success) ---- */
+const RS = {idle: ["drop", "how"], proc: ["proc"], error: ["fail"], result: ["result"]};
+function setReader(s) {
+  $("view-reader").dataset.state = s;
+  ["drop", "how", "proc", "fail", "result"].forEach(id => $(id).classList.toggle("hide", !RS[s].includes(id)));
+  $("proc").setAttribute("aria-busy", String(s === "proc")); $("skelR").classList.toggle("hide", s !== "proc");
+  $("reset").classList.toggle("hide", s !== "result");
+  window.scrollTo(0, 0);
+}
+const STAGE = ["open", "read", "parse", "check"], SPAN = {open: [0, 8], read: [8, 72], parse: [72, 90], check: [90, 99]};
+const STAGE_TX = {open: "Opening your statement…", read: "Reading the pages…", parse: "Finding transactions…", check: "Checking the running balance…"};
+function procSet(stage, frac) {
+  const k = STAGE.indexOf(stage), [a, b] = SPAN[stage], pct = Math.round(a + (b - a) * (frac || 0));
+  document.querySelectorAll("#procSteps li").forEach((li, i) => { li.className = i < k ? "done" : i === k ? "on" : ""; });
+  $("procBar").style.width = pct + "%"; $("procBarWrap").setAttribute("aria-valuenow", pct);
+  $("procSub").textContent = STAGE_TX[stage];
+}
+function procDone(n) {
+  document.querySelectorAll("#procSteps li").forEach(li => { li.className = "done"; });
+  $("procBar").style.width = "100%"; $("procBarWrap").setAttribute("aria-valuenow", 100);
+  $("procSub").textContent = "Done";
+  $("procTx").textContent = n + " found";
+}
+const FAIL = {
+  notext: ["No selectable text found", "This PDF looks like a scan or an image, so there is no text to read.",
+    ["Download the statement again from your bank’s app or net banking. Use the PDF itself, not a photo or a scan.", "A screenshot saved as PDF will not work either."]],
+  norows: ["No transactions recognised", "The PDF opened, but no transaction rows could be recognised. Its layout may not be supported yet.",
+    ["Make sure it is an account statement, not a card bill or a summary page.", "Try the full-period statement PDF from net banking.", "If it still fails, the technical details below show what was read."]],
+  password: ["Password needed", "This statement is protected and could not be opened without its password.",
+    ["Banks often use your customer ID, date of birth, or part of your name and DOB. Check the email the PDF came with."]],
+  other: ["Couldn’t read this file", "Something went wrong while opening the PDF.",
+    ["The file may be damaged. Try downloading it again.", "Make sure it is a PDF statement."]]
+};
+function showFail(kind, o = {}) {
+  const m = FAIL[kind];
+  $("failT").textContent = m[0];
+  $("failM").textContent = o.msg || m[1];
+  $("failH").innerHTML = m[2].map(h => `<li>${esc(h)}</li>`).join("");
+  $("failD").classList.toggle("hide", !o.detail); $("failD").open = false; $("failP").textContent = o.detail || "";
+  setReader("error"); $("failT").focus({preventScroll: true});
+}
+
+async function load(file, password) {
+  const st = $("status"); st.className = "status"; st.textContent = "";
+  $("procName").textContent = file.name; $("procPg").textContent = ""; $("procTx").textContent = "";
+  const t0 = Date.now(); procSet("open", 0); setReader("proc");
+  const dwell = {open: 350, parse: 450, check: 450};   // brief pauses so each stage is readable
+  const onStep = async (stage, i, n) => {
+    procSet(stage, stage === "read" && n ? i / n : 0);
+    if (stage === "read" && n) $("procPg").textContent = Math.min(i + 1, n) + " / " + n;
+    if (stage === "read" && i > 0) $("procPg").textContent = i + " / " + n;
+    if (stage === "check") $("procTx").textContent = i + " found";
+    if (dwell[stage]) await sleep(dwell[stage]);
+    else if (stage === "read" && i > 0) await sleep(Math.min(300, 900 / n));
+  };
+  try {
+    const p = await parseStatement(file, password, null, onStep);
+    const {res, info, meta} = p;
+    S = {...S, rows: res.rows, review: res.review, notes: res.notes, meta, info, raw: p.text, nLines: p.nLines, sort: {k: "idx", dir: 1}};
+    if (!res.rows.length) {
+      return showFail("norows", {detail: ["File: " + file.name, "Pages: " + meta.pages, "Text lines scanned: " + p.nLines, "Lines flagged: " + res.review.length].concat(res.review.slice(0, 8)).join("\n")});
+    }
+    S.added = window.genAdd ? window.genAdd(p, file) : null;   // also available to the BlackRoad generator tab
+    procDone(res.rows.length); await sleep(Math.max(550, 3200 - (Date.now() - t0)));
+    $("result").querySelectorAll(".in").forEach(el => el.classList.remove("in"));
+    render();
+    [...$("result").children].flatMap(el => el.classList.contains("masonry") ? [...el.children] : [el]).forEach((el, i) => setTimeout(() => el.classList.add("in"), 60 + i * 90));
+  } catch (e) {
+    if (e && e.name === "PasswordException") {
+      const pw = await askPassword(file.name, e.code === 2);
+      if (pw) return load(file, pw);
+      return showFail("password");
+    }
+    if (e && e.noText) return showFail("notext");
+    showFail("other", {msg: e && e.engine ? e.message : "", detail: String((e && e.message) || e)});
+  }
+}
+
+const sum = a => a.reduce((t, r) => t + Math.abs(r.amt), 0);
+const group = (arr, fn) => { const m = {}; arr.forEach(r => (m[fn(r)] = m[fn(r)] || []).push(r)); return m; };
+const bar = (l, v, mx, col, right) => `<div class="br"><span title="${esc(l)}">${esc(l)}</span><i><b style="width:${Math.max(2, v / mx * 100)}%;background:${col}"></b></i><em>${right}</em></div>`;
+const NONE = '<p class="sub">Nothing to show.</p>';
+
+function render() {
+  const {rows, meta, info, review} = S, c = meta.cur;
+  setReader("result"); setPane("o");
+  const dr = rows.filter(r => r.amt < 0), cr = rows.filter(r => r.amt > 0), inn = sum(cr), out = sum(dr);
+  const wb = rows.filter(r => r.bal != null), tail = info.rev ? wb[0] : wb[wb.length - 1], head = info.rev ? wb[wb.length - 1] : wb[0];
+  const closing = meta.closing ? pAmt(meta.closing).v : tail ? tail.bal : null;
+  const opening = info.opening != null ? info.opening : head ? head.bal - head.amt : null;
+  $("hero").innerHTML = `<div class="hr"><div><small>${esc([meta.bank, meta.holder].filter(Boolean).join(" · ") || meta.file)}</small><h2>${esc(meta.account ? "A/c " + meta.account : "Bank statement")}</h2><small>${esc([meta.period, meta.ifsc && "IFSC " + meta.ifsc].filter(Boolean).join(" · ") || meta.pages + " pages")}</small></div><div class="hr-r"><small>Closing balance</small><div class="bal">${closing != null ? money(closing, c) : "—"}</div></div></div>
+  <div class="chips"><div class="chip"><small>Opening</small><b>${opening != null ? money(opening, c) : "—"}</b></div><div class="chip"><small>Money in</small><b class="cr">${money(inn, c)}</b></div><div class="chip"><small>Money out</small><b class="dr">${money(out, c)}</b></div><div class="chip"><small>Net</small><b>${money(inn - out, c)}</b></div><div class="chip"><small>Transactions</small><b>${rows.length}</b></div></div>`;
+
+  const ds = rows.filter(r => r.date).map(r => r.date.getTime()), span = ds.length ? Math.max(1, Math.round((Math.max(...ds) - Math.min(...ds)) / 864e5) + 1) : null;
+  const big = dr.slice().sort((a, b) => a.amt - b.amt)[0], bigIn = cr.slice().sort((a, b) => b.amt - a.amt)[0], bals = wb.map(r => r.bal);
+  const tiles = [["Savings rate", inn ? Math.round((inn - out) / inn * 100) + "%" : "—", "#4ade80"], ["Avg daily spend", span ? money(out / span, c) : "—", "#fb923c"], ["Largest expense", big ? money(Math.abs(big.amt), c) : "—", "#f87171"], ["Largest income", bigIn ? money(bigIn.amt, c) : "—", "#34d399"], ["Lowest balance", bals.length ? money(Math.min(...bals), c) : "—", "#facc15"], ["Highest balance", bals.length ? money(Math.max(...bals), c) : "—", "#38bdf8"], ["Debits / credits", dr.length + " / " + cr.length, "#a78bfa"], ["Avg expense", dr.length ? money(out / dr.length, c) : "—", "#f472b6"]];
+  $("tiles").innerHTML = tiles.map(t => `<div class="tile" style="--c:${t[2]}"><small>${t[0]}</small><b>${t[1]}</b></div>`).join("");
+
+  const ents = Object.entries(group(dr, r => r.cat)).map(([k, a]) => [k, sum(a)]).sort((a, b) => b[1] - a[1]), tot = out || 1;
+  let acc = 0; const R = 54, C = 2 * Math.PI * R;
+  const arcs = ents.map(([k, v]) => { const len = v / tot * C, a = `<circle r="${R}" cx="75" cy="75" fill="none" stroke="${CATCOL[k] || "#94a3b8"}" stroke-width="22" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 75 75)"/>`; acc += len; return a; }).join("");
+  $("donut").innerHTML = ents.length ? `<svg viewBox="0 0 150 150" role="img" aria-label="Spending by category"><circle r="${R}" cx="75" cy="75" fill="none" class="ring" stroke="#171717" stroke-width="22"/>${arcs}<text x="75" y="72" text-anchor="middle" font-size="11" class="dt-s" fill="#8a8a8a" font-family="Manrope">Spent</text><text x="75" y="90" text-anchor="middle" font-size="13" font-weight="700" class="dt-b" fill="#f2f2f2" font-family="Manrope">${money(out, c)}</text></svg><div class="leg">${ents.map(([k, v]) => `<button data-cat="${esc(k)}"><i style="background:${CATCOL[k] || "#94a3b8"}"></i><span>${esc(k)}</span><em>${Math.round(v / tot * 100)}%</em></button>`).join("")}</div>` : NONE;
+
+  const mg = group(rows.filter(r => r.date), r => r.date.getFullYear() * 100 + r.date.getMonth()), mk = Object.keys(mg).sort();
+  const mx = Math.max(1, ...mk.map(k => Math.max(sum(mg[k].filter(r => r.amt > 0)), sum(mg[k].filter(r => r.amt < 0)))));
+  $("months").innerHTML = mk.map(k => { const a = mg[k], i = sum(a.filter(r => r.amt > 0)), o = sum(a.filter(r => r.amt < 0)); return `<div class="mo"><div class="ml">${a[0].date.toLocaleDateString("en-IN", {month: "short", year: "2-digit"})}</div>${bar("In", i, mx, "#4ade80", money(i, c))}${bar("Out", o, mx, "#f87171", money(o, c))}</div>`; }).join("") || NONE;
+
+  const me = Object.entries(group(dr, r => r.mode)).map(([k, a]) => [k, sum(a), a.length]).sort((a, b) => b[1] - a[1]);
+  $("modes").innerHTML = me.map(e => bar(e[0], e[1], me[0][1], MODECOL[e[0]] || "#94a3b8", money(e[1], c) + " · " + e[2] + "×")).join("") || NONE;
+  const pg = Object.entries(group(dr, r => r.who)).map(([k, a]) => [k, sum(a), a.length]).sort((a, b) => b[1] - a[1]);
+  $("payees").innerHTML = pg.slice(0, 8).map((e, i) => bar(e[0], e[1], pg[0][1], COLORS[i], money(e[1], c) + " · " + e[2] + "×")).join("") || NONE;
+  const rec = pg.filter(e => e[2] >= 3).slice(0, 6);
+  $("recur").innerHTML = rec.map(e => `<div><span>${esc(e[0])}</span><span class="sub">${e[2]}× · avg ${money(e[1] / e[2], c)}</span></div>`).join("") || '<p class="sub">No repeated payees found.</p>';
+  $("topx").innerHTML = dr.slice().sort((a, b) => a.amt - b.amt).slice(0, 5).map(r => `<div><span>${esc(r.desc.slice(0, 34))}</span><b class="dr">${money(Math.abs(r.amt), c)}</b></div>`).join("") || NONE;
+
+  const bad = rows.filter(r => r.ok === false).length, chk = rows.filter(r => r.ok != null).length, fixed = rows.filter(r => r.fixed).length;
+  const calc = opening != null && closing != null ? Math.abs(opening + inn - out - closing) < 0.02 : null;
+  $("rep").innerHTML = `<div><span>Text lines scanned</span><b>${S.nLines}</b></div><div><span>Transactions captured</span><b>${rows.length}</b></div>
+  <div><span>Running-balance check</span>${chk ? (bad ? `<b class="bad">${bad} of ${chk} need review</b>` : `<b class="ok">All ${chk} match ✓</b>`) : "<b>No balance column</b>"}</div>
+  <div><span>Opening + net = closing</span>${calc === null ? "<b>Not available</b>" : calc ? '<b class="ok">Matches ✓</b>' : '<b class="bad">Does not match</b>'}</div>
+  ${info.rev ? "<div><span>Order</span><b>Newest first</b></div>" : ""}${fixed ? `<div><span>Direction fixed from balance</span><b>${fixed}</b></div>` : ""}`;
+  $("rv").innerHTML = review.length ? `<details open><summary>${review.length} line${review.length > 1 ? "s" : ""} to check, not counted as transactions</summary><div class="rv">${review.map(x => `<p>${esc(x)}</p>`).join("")}</div></details>` : "";
+  const cats = [...new Set(rows.map(r => r.cat))].sort();
+  $("catSel").innerHTML = '<option value="">All categories</option>' + cats.map(k => `<option>${esc(k)}</option>`).join("");
+  renderOk(rows.length, bad, chk, review.length);
+  list();
+}
+
+/* success banner: clean read, or read with items to check */
+function renderOk(n, bad, chk, rl) {
+  const warn = bad > 0 || rl > 0, added = S.added, pl = (k, w) => k + " " + w + (k === 1 ? "" : "s");
+  $("okBar").classList.toggle("warn", warn);
+  $("okIc").innerHTML = ico(warn ? "alert" : "check", 18);
+  $("okT").textContent = pl(n, "transaction") + " read" + (warn ? ", a few to check" : "");
+  const bits = [];
+  if (bad) bits.push(pl(bad, "row") + " did not match the running balance");
+  if (rl) bits.push(pl(rl, "line") + " not counted");
+  if (!warn) bits.push(chk ? "Running balance matches" : "No balance column to verify");
+  bits.push(added ? (added.dup ? "Already in the BlackRoad generator" : "Added to the BlackRoad generator") : "");
+  $("okS").textContent = bits.filter(Boolean).join(" · ") + (warn ? ". See the reading report below." : ".");
+}
+
+function list() {
+  const c = S.meta.cur, q = $("q").value.toLowerCase().trim(), ty = $("type").value, ct = $("catSel").value, {k, dir} = S.sort;
+  const out = S.rows.filter(r => (!q || r.desc.toLowerCase().includes(q) || String(Math.abs(r.amt)).includes(q)) && (!ty || (ty === "d") === (r.amt < 0)) && (!ct || r.cat === ct));
+  out.sort((a, b) => (a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : a.idx - b.idx) * dir);
+  $("rows").innerHTML = out.map(r => `<tr class="${r.ok === false ? "w" : ""}"><td class="sub">${r.idx}</td><td>${esc(r.date ? r.date.toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"}) : r.dateStr)}</td><td><div class="ds">${esc(r.desc)}${r.ok === false ? '<span class="flag" title="Balance does not reconcile with the neighbouring row. Check this row against the PDF.">check</span>' : ""}<div class="sub"><span class="dot" style="background:${CATCOL[r.cat] || "#94a3b8"}"></span>${esc(r.cat)} · ${esc(r.mode)}${r.ref ? " · Ref " + esc(r.ref.slice(0, 22)) : ""}</div></div></td><td class="r ${r.amt < 0 ? "dr" : "cr"}">${money(r.amt, c)}</td><td class="r">${r.bal == null ? "" : money(r.bal, c)}</td></tr>`).join("") || '<tr class="none"><td colspan="5">No transactions match. Try a different search or filter.</td></tr>';
+  $("count").textContent = `Showing ${out.length} of ${S.rows.length} transactions.`;
+  document.querySelectorAll("th[data-k]").forEach(th => { const on = th.dataset.k === k; th.setAttribute("aria-sort", on ? (dir > 0 ? "ascending" : "descending") : "none"); if (on && k !== "idx") th.dataset.sorted = dir > 0 ? "asc" : "desc"; else delete th.dataset.sorted; });
+}
+
+function pick(f) { if (f && (f.type === "application/pdf" || /\.pdf$/i.test(f.name))) load(f); else { $("status").className = "status err"; $("status").textContent = "Please choose a PDF file."; } }
+const drop = $("drop");
+drop.onclick = () => $("file").click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } };
+$("file").onchange = e => { const f = e.target.files[0]; e.target.value = ""; pick(f); };
+["dragover", "dragenter"].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+$("reset").onclick = () => { $("result").querySelectorAll(".in").forEach(el => el.classList.remove("in")); setReader("idle"); $("file").value = ""; $("status").className = "status"; $("status").textContent = ""; $("q").value = ""; $("type").value = ""; };
+$("failRetry").onclick = () => $("file").click();
+$("failBack").onclick = () => { setReader("idle"); $("status").textContent = ""; };
+$("okGo").onclick = () => window.showTab && window.showTab("gen");
+$("toBR").onclick = () => window.showTab && window.showTab("gen");
+["q", "type", "catSel"].forEach(i => $(i).addEventListener("input", list));
+document.querySelectorAll("th[data-k]").forEach(th => { th.tabIndex = 0; th.onclick = () => { const k = th.dataset.k; S.sort = {k, dir: S.sort.k === k ? -S.sort.dir : 1}; list(); }; th.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); th.click(); } }; });
+$("donut").onclick = e => { const b = e.target.closest("[data-cat]"); if (b) { $("catSel").value = b.dataset.cat; list(); } };
+$("csv").onclick = () => {
+  const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+  const csv = ["No,Date,Description,Category,Mode,Payee,Ref,Amount,Balance", ...S.rows.map(r => [r.idx, q(r.dateStr), q(r.desc), q(r.cat), q(r.mode), q(r.who), q(r.ref), r.amt, r.bal == null ? "" : r.bal].join(","))].join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"})); a.download = "transactions.csv"; a.click();
+  flash($("csv"), "Downloaded");
+};
+if (!PDF_OK) { $("status").className = "status err"; $("status").textContent = "The PDF engine could not be loaded. Check your internet connection and reload the page."; }
+
+/* report panes: Overview / Breakdown / Transactions */
+function setPane(p) {
+  document.querySelectorAll("#rSeg [data-pane]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.pane === p)));
+  document.querySelectorAll("#result [data-p]").forEach(el => el.classList.toggle("pane-off", el.dataset.p !== p));
+}
+$("rSeg").onclick = e => { const b = e.target.closest("[data-pane]"); if (b) setPane(b.dataset.pane); };
+/* theme (same storage key as BlackRoad) */
+$("theme").onclick = () => {
+  const r = document.documentElement, t = r.getAttribute("data-theme") === "light" ? "dark" : "light";
+  r.setAttribute("data-theme", t); try { localStorage.setItem("br-theme", t); } catch (e) {}
+};
+
+
+const BR_DATA = {"expense":["Apparel","Baby","Bakery / Pups","Bank","Beauty","Borrow","Bigbasket","Biscuit","Blinkit","Brother / Sister","Car","Clothing","Donate","Dividend","Drink / Juices","Education","Egg","Electronics","Entertainment","Family","FD","Food","Friends","Gift","Health","Help","Home","Housing","Little Heart","Milk / Bread / Curd","Mobile","Mother / Dad","Movie","Mutual Fund","Official Documents","Party","Personal Care","Pet","Penalty","Recharges","Receivable","Repair","Samosa / Outside Food","Self","Service","Shopping","Snacks","SIP","Stock","Social","Sport","Style / Fashion","Swiggy","Tax","Telephone","Tiffin / Lunch / Parlour","Tour","Transportation","Travel","Vehicle","Wine / Cigarette","Zomato","Zepto","Others"],"income":["Salary","Stock Return","MF Return","FD Return","Return","Interest","Profit","Bonus","Business","Freelance","Gift","Investment","Rent","Others"],"expIcons":{"Apparel":["👕",210],"Baby":["🍼",330],"Bakery / Pups":["🥐",32],"Bank":["🏦",215],"Beauty":["💄",335],"Borrow":["🤝",25],"Bigbasket":["🧺",140],"Biscuit":["🍪",30],"Blinkit":["⚡",52],"Brother / Sister":["👫",280],"Car":["🚗",8],"Clothing":["👚",300],"Donate":["🎗️",350],"Dividend":["💹",150],"Drink / Juices":["🧃",28],"Education":["🎓",240],"Egg":["🥚",45],"Electronics":["🔌",200],"Entertainment":["🎭",270],"Family":["👪",20],"FD":["🏛️",45],"Food":["🍽️",18],"Friends":["🧑‍🤝‍🧑",190],"Gift":["🎁",345],"Health":["🩺",165],"Help":["🙌",35],"Home":["🏠",38],"Housing":["🏢",220],"Little Heart":["💖",340],"Milk / Bread / Curd":["🥛",200],"Mobile":["📱",230],"Mother / Dad":["👪",310],"Movie":["🎬",0],"Mutual Fund":["📊",160],"Official Documents":["📄",215],"Party":["🎉",320],"Personal Care":["🧴",175],"Pet":["🐾",28],"Penalty":["⚠️",5],"Recharges":["🔋",120],"Receivable":["🧾",195],"Repair":["🔧",215],"Samosa / Outside Food":["🥟",22],"Self":["🙂",50],"Service":["🛠️",205],"Shopping":["🛍️",325],"Snacks":["🍿",40],"SIP":["🔁",155],"Stock":["📈",145],"Social":["💬",205],"Sport":["⚽",130],"Style / Fashion":["👗",295],"Swiggy":["🛵",24],"Tax":["🧮",10],"Telephone":["☎️",235],"Tiffin / Lunch / Parlour":["🍱",15],"Tour":["🧳",185],"Transportation":["🚌",210],"Travel":["✈️",200],"Vehicle":["🏍️",12],"Wine / Cigarette":["🍷",345],"Zomato":["🍕",4],"Zepto":["🛒",275],"Others":["📦",35]},"incIcons":{"Salary":["💼",150],"Stock Return":["📈",145],"MF Return":["📊",160],"FD Return":["🏛️",45],"Return":["🔁",155],"Interest":["🏦",215],"Profit":["💹",150],"Bonus":["🎯",35],"Business":["🏪",25],"Freelance":["💻",220],"Gift":["🎁",345],"Investment":["📈",145],"Rent":["🏠",38],"Others":["💰",140]},"icons":["🛒","🍽️","☕","🍔","🍕","🍜","🍰","🍎","🥦","🍷","🚗","🏍️","🚌","🚆","✈️","⛽","🚕","🛵","🚲","🧳","🏠","🛋️","💡","🚿","🔧","🧹","📱","💻","🎧","📷","👕","👟","👜","💄","💍","🧴","💊","🩺","🏋️","🧘","🎓","📚","✏️","🎬","🎮","🎵","🎨","🎉","🎁","🐶","🐱","🌱","👶","👪","❤️","💳","🏦","💰","📈","🧾","📄","⚖️","🛡️","🔒","🌐","📦","⭐","🔥","🌍","🏷️"],"hues":[0,20,40,75,145,175,200,225,260,290,320,345]};
+"use strict";
+/* =====================================================================
+   BLACKROAD DATA GENERATOR
+   Turns the statements read above into BlackRoad income entries.
+
+   Output = BlackRoad's "Income & Expenses export":
+     { entries: [ { date, from, category, income,
+                    transactions: [ { id, amount, date, description, category, type } ],
+                    expense, investment, investmentSale, realizedGainLoss, balance } ] }
+   BlackRoad's global Restore already accepts this shape: it ADDS the
+   entries and skips ones it already has. Nothing is replaced.
+
+   WHEN THIS PAGE IS EMBEDDED INTO BLACKROAD, only the "BlackRoad adapter"
+   block below changes:
+     - category lists / icons  -> import from income-service.js and expense-categories.js
+     - BR.learn (history)      -> build from dataService.getIncomeStore().getEntries()
+     - BR.custom               -> store.getCustomExpenseCategories()
+     - exportJSON()            -> store.saveEntry(entry) for each entry
+   ===================================================================== */
+(function () {
+const D = BR_DATA;
+const $$ = (s, r = document) => r.querySelector(s);
+
+/* ---------------------------------------------------------------
+   BlackRoad adapter  (copied from BlackRoad's own source)
+   --------------------------------------------------------------- */
+const BR = {
+  EXP: D.expense, INC: D.income, EXP_ICON: D.expIcons, INC_ICON: D.incIcons, ICONS: D.icons, HUES: D.hues,
+  INVEST: ["Mutual Fund", "SIP", "Stock", "FD"],
+  RETURNS: ["Stock Return", "MF Return", "FD Return", "Mutual Fund Return"],
+  SALE_RX: /\b(sell|sold|sale|redeem|redemption|withdraw|withdrawal|matur(?:e|ity))\b/,
+  custom: [],                                   // [{ name, icon, hue }] same shape BlackRoad stores
+  learn: {dr: new Map(), cr: new Map(), file: "", entries: 0, txns: 0, sigs: new Set()}
+};
+const FALLBACK = {emoji: "🏷️", hue: 220};
+const low = v => String(v || "").trim().toLowerCase();
+const isInv = c => BR.INVEST.includes(String(c || "").trim());
+const isRet = c => BR.RETURNS.includes(String(c || "").trim());
+
+function catMeta(name, kind) {
+  const key = String(name || "").trim();
+  if (!key) return {...FALLBACK};
+  const cu = BR.custom.find(c => low(c.name) === low(key));
+  if (cu) return {emoji: cu.icon || FALLBACK.emoji, hue: Number(cu.hue) || FALLBACK.hue};
+  const h = (kind === "cr" ? BR.INC_ICON : BR.EXP_ICON)[key] || BR.EXP_ICON[key] || BR.INC_ICON[key];
+  return h ? {emoji: h[0], hue: h[1]} : {...FALLBACK};
+}
+function iconHTML(name, size, kind) {
+  const m = catMeta(name, kind);
+  return `<span class="cat-ico cat-ico-${size}" style="--cat-hue:${m.hue}" aria-hidden="true">${esc(m.emoji)}</span>`;
+}
+function catList(kind) {
+  if (kind === "cr") return BR.INC.slice();
+  const custom = BR.custom.map(c => c.name), base = BR.EXP.filter(c => !custom.includes(c)), at = base.indexOf("Others");
+  return at < 0 ? [...base, ...custom] : [...base.slice(0, at), ...custom, ...base.slice(at)];
+}
+
+/* Same arithmetic as BlackRoad's recalcEntry() / isInvestmentSaleIncomeEntry() */
+const RET_LOW = ["stock return", "mf return", "mutual fund return", "fd return"];
+const isSaleEntry = e => BR.SALE_RX.test(low(e.from)) && RET_LOW.includes(low(e.category));
+function recalc(e) {
+  let ex = 0, inv = 0;
+  for (const t of e.transactions) {
+    const a = Math.max(0, Number(t.amount) || 0);
+    if (isInv(t.category)) { inv += a; t.type = "investment"; } else { ex += a; t.type = "expense"; }
+  }
+  const sale = isSaleEntry(e), amount = Math.max(0, Number(e.income) || 0);
+  e.expense = ex; e.investment = inv; e.investmentSale = sale ? amount : 0; e.realizedGainLoss = 0;
+  e.balance = (sale ? 0 : amount) - ex - inv + (sale ? amount : 0);
+  return e;
+}
+/* Embedded in RoadSync, the parent page exposes window.BR_HOST = { incomes: [BlackRoad income entries], save(payload) }.
+   Standalone, there is no host and everything behaves exactly as before. */
+const HOST = () => { try { return window.BR_HOST || null; } catch (e) { return null; } };
+const exIncomes = () => { const h = HOST(); return h && Array.isArray(h.incomes) ? h.incomes.filter(e => e && e.id != null && e.date) : []; };
+const exById = id => exIncomes().find(e => String(e.id) === String(id));
+window.srHostReady = () => { try { refresh(); } catch (e) {} };
+const sigOf = e => {
+  const c = recalc({...e, transactions: (e.transactions || []).map(t => ({...t}))});
+  return JSON.stringify([Number(c.income) || 0, c.date || "", c.from || "", c.category || "",
+    c.transactions.map(t => [Number(t.amount) || 0, t.date || "", t.description || "", t.category || "", t.type || ""])]);
+};
+
+/* ---------------------------------------------------------------
+   Suggestion rules  (statement text -> BlackRoad category)
+   First match wins, so specific rules come first.
+   --------------------------------------------------------------- */
+const RULES_DR = [
+  ["SIP", /\bsip\b|systematic invest/i],
+  ["Mutual Fund", /mutual fund|\bmf\b|bse star|\bmfu\b|nippon|kuvera|\bcoin\b|groww|parag parikh|ppfas|\bamc\b.*fund/i],
+  ["Stock", /zerodha|upstox|angel|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|\bnse\b|\bbse\b|ccil|clearing corp|broking|dhan\b/i],
+  ["FD", /fixed deposit|\bfd\b|\brd\b|recurring deposit|term deposit/i],
+  ["Penalty", /penal|late fee|late payment|dishonou?r|cheque return|chq return|bounce/i],
+  ["Tax", /income tax|\btds\b|challan|\bcbdt\b|advance tax|professional tax/i],
+  ["Bank", /\bemi\b|loan|\bach d\b|\bnach\b|\becs\b|\bcharges?\b|\bchrg\b|sms alert|\bamc\b|annual fee|min(?:imum)? bal|processing fee|credit card|\bcred\b|card payment|interest debit|\bgst\b/i],
+  ["Swiggy", /swiggy|instamart/i],
+  ["Zomato", /zomato/i],
+  ["Blinkit", /blinkit|grofers/i],
+  ["Zepto", /zepto/i],
+  ["Bigbasket", /bigbasket|big basket|dmart|avenue supermarts|grocer|supermarket|jiomart|more retail|nature'?s basket|ratnadeep|spencer/i],
+  ["Milk / Bread / Curd", /milk|dairy|curd|amul|nandini|aavin|mother dairy|\bbread\b/i],
+  ["Egg", /\beggs?\b/i],
+  ["Bakery / Pups", /bakery|\bpups?\b|\bbaker\b|\bcakes?\b|sweets/i],
+  ["Biscuit", /biscuit|parle|britannia|cookies?/i],
+  ["Snacks", /snacks?|chips|namkeen|haldiram|popcorn/i],
+  ["Wine / Cigarette", /wine|liquor|\bbeer\b|\bbar\b|cigarette|tobacco|\bitc\b|paan|vape|spirits/i],
+  ["Drink / Juices", /juice|\btea\b|chai|coffee|starbucks|smoothie|lassi|sugarcane/i],
+  ["Samosa / Outside Food", /samosa|chaat|dhaba|pani ?puri|\bvada\b|\bdosa\b/i],
+  ["Tiffin / Lunch / Parlour", /tiffin|lunch|\bmess\b|canteen|ice ?cream/i],
+  ["Food", /restaurant|cafe|biryani|kfc|mcdonald|burger|pizza|dominos|subway|food court|eatery|kitchen|\bhotel\b|\bfood\b|dining/i],
+  ["Recharges", /recharge|\bjio\b|airtel|vodafone|\bvi\b|bsnl|\bdth\b|tata ?play|tatasky|dish ?tv|\bd2h\b|broadband|fibernet|hathway|postpaid|prepaid/i],
+  ["Telephone", /telephone|landline/i],
+  ["Mobile", /mobile phone|smartphone|handset|oneplus|realme|redmi|xiaomi|iphone/i],
+  ["Housing", /\brent\b|landlord|house rent|\bpg\b|hostel|rental|society|maintenance/i],
+  ["Home", /electric|bescom|tneb|tangedco|msedcl|\bpower\b|\bwater\b|\bgas\b|indane|bharatgas|cylinder|municipal|property tax|plumb|carpenter|furniture|ikea|pepperfry|hardware|paint/i],
+  ["Health", /hospital|pharmacy|apollo|medplus|clinic|1mg|pharmeasy|netmeds|diagnostic|\blab\b|dental|medical|doctor|practo|lenskart|optical|\bhealth\b/i],
+  ["Education", /school|college|tuition|udemy|coursera|course|university|byju|unacademy|\bexam\b|vedantu|physics ?wallah|upgrad|\bbooks?\b|stationery/i],
+  ["Movie", /bookmyshow|\bpvr\b|\binox\b|cinema|movie|theatre|theater|cinepolis/i],
+  ["Entertainment", /netflix|spotify|hotstar|prime video|amazon prime|youtube|google play|apple\.com|itunes|sonyliv|zee5|jiocinema|gaana|wynk|steam|playstation|dream11|\bmpl\b|concert/i],
+  ["Transportation", /\buber\b|\bola\b|rapido|metro|bmtc|ksrtc|tsrtc|\bbus\b|\bauto\b|\bcab\b|namma yatri|blusmart|fastag|\btoll\b|parking/i],
+  ["Travel", /irctc|makemytrip|\bmmt\b|redbus|indigo|air india|vistara|spicejet|akasa|flight|goibibo|yatra|cleartrip|ixigo|abhibus|railway|\btrain\b|airline/i],
+  ["Vehicle", /petrol|fuel|hpcl|bpcl|iocl|indian oil|\bshell\b|bunk|two wheeler|\bbike\b|\bpuc\b/i],
+  ["Car", /\bcar\b|car ?wash|maruti|hyundai|tata motors|mahindra|toyota/i],
+  ["Repair", /repair|mechanic|garage|workshop|urban ?company|urbanclap/i],
+  ["Service", /laundry|dry ?clean|\bmaid\b|courier|dtdc|delhivery|bluedart/i],
+  ["Beauty", /nykaa|sephora|beauty|cosmetic|lakme|purplle/i],
+  ["Personal Care", /salon|barber|\bspa\b|grooming|haircut|parlou?r/i],
+  ["Style / Fashion", /fashion|boutique|tailor|stitch/i],
+  ["Apparel", /myntra|ajio|zudio|trends|lifestyle|pantaloons|max fashion|h&m|zara|uniqlo|westside|shoppers stop|fabindia|clothing|garment|apparel|footwear|\bbata\b|puma|nike|adidas/i],
+  ["Electronics", /croma|vijay sales|reliance digital|electronics|\bboat\b|laptop|charger|earphone|headphone/i],
+  ["Sport", /decathlon|\bgym\b|fitness|cult\.?fit|cricket|football|badminton|\bturf\b|sports|playo|swimming/i],
+  ["Pet", /\bpets?\b|\bvet\b|supertails|heads up for tails|pedigree|whiskas/i],
+  ["Baby", /\bbaby\b|firstcry|diaper|pampers|hopscotch/i],
+  ["Gift", /gift|bouquet|florist|ferns|archies|\bigp\b|\bfnp\b/i],
+  ["Donate", /donat|charity|\bngo\b|temple|mandir|church|mosque|foundation|ketto|milaap|give ?india/i],
+  ["Party", /party|\bclub\b|\bpub\b|lounge|brewery|nightlife/i],
+  ["Tour", /resort|\btrip\b|\btour\b|holiday|trek|airbnb|\boyo\b|booking\.com|agoda|homestay|thrillophilia/i],
+  ["Official Documents", /passport|stamp duty|registration|notary|aadhaar|aadhar|e-?stamp|court fee|licen[cs]e|affidavit|xerox|photocopy/i],
+  ["Borrow", /borrow|loan repay|hand loan|udhar/i],
+  ["Shopping", /amazon|flipkart|meesho|snapdeal|reliance retail|\bmall\b|\bstore\b|\bshop\b|\bmart\b|bazaar|tata cliq|paytm mall/i]
+];
+const RULES_CR = [   // [category, pattern, sale-proceeds?]
+  ["Salary", /salary|payroll|\bsal\b|wages|stipend/i],
+  ["Bonus", /bonus|incentive|ex[- ]?gratia/i],
+  ["Stock Return", /dividend|\bdiv\b/i, false],
+  ["Interest", /interest|int\.? ?pd|\bint\b|int\.? ?cr/i],
+  ["FD Return", /maturity|premature|fixed deposit|\bfd\b|term deposit/i, true],
+  ["MF Return", /redemption|redeem|mutual fund|bse star|\bmfu\b|kuvera|\bcoin\b/i, true],
+  ["Stock Return", /zerodha|upstox|angel|groww|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|\bnse\b|\bbse\b|ccil|broking|dhan\b/i, true],
+  ["Rent", /\brent\b|rental/i],
+  ["Freelance", /freelance|invoice|consult|professional fee/i],
+  ["Business", /business|customer|sales/i],
+  ["Gift", /gift/i]
+];
+const BROKER_RX = /zerodha|upstox|angel|groww|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|ccil|broking|redemption|redeem|maturity|premature/i;
+const defaultSale = r => isRet(r.cat) && (BROKER_RX.test(r.raw) || BR.SALE_RX.test(low(r.desc))) && !/dividend/i.test(r.raw);
+
+const norm = s => String(s || "").toLowerCase().replace(/\d+/g, " ").replace(/[^a-z& ]+/g, " ").replace(/\s+/g, " ").trim();
+function payee(d) {
+  for (let s of String(d).split(/[\/\-:,|]+/)) {
+    s = s.replace(/@.*/, "").split(/\s+/).filter(w => !/\d{4,}/.test(w)).join(" ");
+    s = s.replace(/[^A-Za-z .&']/g, " ").replace(/\s+/g, " ").trim();
+    const w = s.toLowerCase().split(" ").filter(x => x && !STOP.has(x));
+    if (w.join("").length >= 3) return w.slice(0, 3).map(x => x[0].toUpperCase() + x.slice(1)).join(" ");
+  }
+  return String(d).slice(0, 24).trim() || "Unknown";
+}
+function cleanDesc(r) {
+  const p = payee(r.desc);
+  if (["UPI", "NEFT", "IMPS", "RTGS"].includes(r.mode) && p !== "Unknown") return r.mode + " – " + p;
+  const d = r.desc.replace(/\b\d{6,}\b/g, " ").replace(/(?<=\D)[\/|]+(?=\D)|\|/g, " ").replace(/\s+/g, " ").trim();
+  return d.slice(0, 70) || "(no description)";
+}
+/* Credits are named after what BlackRoad shows as the income source; debits keep the cleaned narration. */
+function syncDesc(r) {
+  if (r.edited) return;
+  if (r.kind === "dr") { r.desc = r.base; return; }
+  const p = payee(r.raw);
+  if (r.cat === "Salary") r.desc = "Salary – " + p;
+  else if (r.cat === "Interest") r.desc = "Interest – " + r.bank.replace(/ ?••.*$| #\d+$/, "");
+  else if (isRet(r.cat) && r.sale) r.desc = "Sale – " + p;
+  else r.desc = r.base;
+}
+function suggest(r) {
+  const L = BR.learn[r.kind], list = catList(r.kind);
+  const hit = (norm(r.desc) && L.get(norm(r.desc))) || (r.key.length >= 3 && L.get(r.key));
+  if (hit && list.includes(hit.cat)) return {cat: hit.cat, src: "learned"};
+  const text = r.raw + " " + r.desc;
+  const rule = (r.kind === "cr" ? RULES_CR : RULES_DR).find(x => x[1].test(text));
+  if (rule) return {cat: rule[0], src: "rule", sale: rule[2]};
+  return {cat: "Others", src: "default"};
+}
+
+/* ---------------------------------------------------------------
+   State
+   --------------------------------------------------------------- */
+const G = {step: 1, pool: [], rows: [], host: {}, seq: 0, shown: 150, f: {q: "", st: "", bank: "", mon: ""}, B: null};
+const pad = n => String(n).padStart(2, "0");
+const isoOf = d => d ? d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) : "";
+const monthName = k => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString("en-IN", {month: "long", year: "numeric"});
+const dayLabel = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"});
+const inr = v => "₹" + Math.abs(v).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const needs = r => r.src === "default" && r.cat === "Others";
+const ACR = new Set("HDFC ICICI SBI PNB IDFC IDBI UCO RBL DBS AU".split(" "));
+const bankName = s => s.split(" ").map(w => ACR.has(w) ? w : w[0] + w.slice(1).toLowerCase()).join(" ");
+let toastT = null;
+function toast(t) { const el = $("gToast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2600); }
+function msg(t) { $("gMsg").textContent = t; }
+
+/* ---------------------------------------------------------------
+   Statements -> rows
+   --------------------------------------------------------------- */
+function rowsFrom(p) {
+  return p.rows.map(r => {
+    const row = {id: p.id + ":" + r.idx, sid: p.id, bank: p.label, dateISO: isoOf(r.date), raw: r.desc, desc: "", base: cleanDesc(r), edited: false, mode: r.mode, ref: r.ref || "",
+      kind: r.amt > 0 ? "cr" : "dr", type: r.amt > 0 ? "income" : "expense", xk: "", link: "", amt: Math.abs(r.amt), cat: "Others", src: "default", sale: false, skip: false, why: "", locked: false, warn: r.ok === false, key: payee(r.desc).toLowerCase()};
+    if (!row.dateISO) { row.skip = true; row.locked = true; row.why = "No date found"; }
+    else if (!(row.amt > 0)) { row.skip = true; row.locked = true; row.why = "Zero amount"; }
+    applySuggest(row);
+    return row;
+  });
+}
+function applySuggest(r) {
+  if (r.src === "manual" || r.src === "similar") return;
+  const s = suggest(r);
+  r.cat = s.cat; r.src = s.src;
+  r.sale = r.kind === "cr" && isRet(r.cat) ? (s.sale !== undefined ? s.sale : defaultSale(r)) : false;
+  syncDesc(r);
+}
+/* A debit in one statement that matches a credit in another (same amount, within 3 days) is the user's own money moving. */
+function markTransfers() {
+  G.rows.forEach(r => { if (!r.locked && r.why.startsWith("Own transfer")) { r.skip = false; r.why = ""; r.type = r.kind === "cr" ? "income" : "expense"; r.xk = ""; } });
+  const free = G.rows.filter(r => !r.locked && !r.skip && r.dateISO), used = new Set(), day = r => Date.parse(r.dateISO) / 864e5;
+  const drs = free.filter(r => r.kind === "dr");
+  for (const c of free.filter(r => r.kind === "cr")) {
+    let best = null, bd = 9;
+    for (const d of drs) { if (used.has(d) || d.sid === c.sid || Math.abs(d.amt - c.amt) > 0.005) continue; const gap = Math.abs(day(d) - day(c)); if (gap <= 3 && gap < bd) { best = d; bd = gap; } }
+    if (best) { used.add(best); c.skip = best.skip = true; c.why = "Own transfer from " + best.bank; best.why = "Own transfer to " + c.bank; c.type = best.type = "transfer"; c.xk = best.xk = "bank"; }
+  }
+}
+function addStatement(p, file) {
+  const key = file.name + "|" + file.size;
+  const have = G.pool.find(x => x.key === key);
+  if (have) return {item: have, dup: true};
+  const acct = (p.meta.account || "").replace(/[^\dXx*]/g, "");
+  let label = [p.meta.bank && bankName(p.meta.bank), acct && "••" + acct.slice(-4)].filter(Boolean).join(" ") || file.name.replace(/\.pdf$/i, "");
+  if (G.pool.some(x => x.label === label)) label += " #" + (G.pool.filter(x => x.label.startsWith(label)).length + 1);
+  const item = {id: "s" + (++G.seq), key, label, file: file.name, meta: p.meta, rows: p.res.rows, bad: p.res.rows.filter(r => r.ok === false).length, review: p.res.review.length};
+  G.pool.push(item);
+  G.rows.push(...rowsFrom(item));
+  G.rows.sort((a, b) => (a.dateISO || "9999").localeCompare(b.dateISO || "9999") || a.id.localeCompare(b.id, undefined, {numeric: true}));
+  markTransfers();
+  applyRules(G.rows.filter(r => r.sid === item.id));
+  return {item, dup: false};
+}
+function removeStatement(id) {
+  G.pool = G.pool.filter(x => x.id !== id);
+  G.rows = G.rows.filter(r => r.sid !== id);
+  markTransfers();
+  refresh();
+}
+window.genAdd = function (p, file) { const r = addStatement(p, file); refresh(); return r; };
+
+async function readOne(f, pw, onStep) {
+  try { return await parseStatement(f, pw, null, onStep); }
+  catch (e) {
+    if (e && e.name === "PasswordException") {
+      const x = await askPassword(f.name, e.code === 2);
+      if (x) return readOne(f, x, onStep);
+      const er = new Error("a password is needed"); er.kind = "password"; throw er;
+    }
+    if (e && e.noText) { const er = new Error("no selectable text (it may be a scan)"); er.kind = "notext"; throw er; }
+    throw e;
+  }
+}
+
+/* Read queue: one row per file with live progress; failures stay listed with Retry / Dismiss. */
+const Q = []; let qRun = false, qSeq = 0;
+const qPct = () => {
+  const n = Q.length; if (!n) return 0;
+  const fin = Q.filter(q => q.state !== "queued" && q.state !== "reading").length, cur = Q.find(q => q.state === "reading");
+  return Math.round((fin + (cur ? cur.frac || 0 : 0)) / n * 100);
+};
+function qNote(e) {
+  const m = (e && e.message) || String(e);
+  if (e && e.kind === "password") return "Password needed, so it was not read.";
+  if (e && e.kind === "notext") return "No selectable text. This looks like a scan.";
+  if (e && e.engine) return m;
+  return "Couldn’t read this file. " + m;
+}
+function syncSkel() { $("gSkel").classList.toggle("hide", !(G.skelHold || Q.some(q => q.state === "queued" || q.state === "reading"))); }
+function renderQueue() {
+  syncSkel();
+  const el = $("gQueue");
+  if (!Q.length) { el.classList.add("hide"); el.innerHTML = ""; return; }
+  const busy = Q.some(q => q.state === "queued" || q.state === "reading"), n = Q.length;
+  const fin = Q.filter(q => q.state !== "queued" && q.state !== "reading").length, okN = Q.filter(q => q.state === "done").length, bad = Q.filter(q => q.state === "fail").length;
+  const head = busy
+    ? `<span class="spin sm" aria-hidden="true"></span><span>Reading ${n === 1 ? "statement" : "statements"}</span><small>${fin} of ${n}</small>`
+    : `<span class="gi${bad && !okN ? " bad" : ""}">${ico(bad && !okN ? "alert" : "check-circle", 18)}</span><span>${okN ? okN + (okN === 1 ? " statement added" : " statements added") : "Nothing was added"}${bad ? " · " + bad + (bad === 1 ? " file" : " files") + " couldn’t be read" : ""}</span>`;
+  const icon = {queued: ico("circle", 18), reading: '<span class="spin sm" aria-hidden="true"></span>', done: ico("check-circle", 18), fail: ico("alert", 18), dup: ico("info", 18)};
+  el.classList.remove("hide");
+  el.innerHTML = `<div class="gq-h">${head}</div>${busy ? `<div class="bar thin"><i id="gqBar" style="width:${qPct()}%"></i></div>` : ""}` + Q.map(q => {
+    const act = q.state === "fail" ? (q.file ? `<button type="button" class="g-btn sm" data-qr="${q.id}">Retry</button>` : "") + `<button type="button" class="x" data-qx="${q.id}" aria-label="Dismiss">${ico("x", 16)}</button>`
+      : q.state === "dup" ? `<button type="button" class="x" data-qx="${q.id}" aria-label="Dismiss">${ico("x", 16)}</button>` : "";
+    return `<div class="q" data-q="${q.id}" data-s="${q.state}"><span class="qi">${icon[q.state]}</span><div class="qt"><div class="qn" title="${esc(q.name)}">${esc(q.name)}</div><div class="qs">${esc(q.note)}</div></div>${act}</div>`;
+  }).join("");
+}
+function qProg(q, frac, note) {
+  q.frac = frac; q.note = note;
+  const row = document.querySelector(`[data-q="${q.id}"] .qs`); if (row) row.textContent = note;
+  const b = $("gqBar"); if (b) b.style.width = qPct() + "%";
+}
+async function runQueue() {
+  if (qRun) return;
+  if (!Q.some(q => q.state === "queued")) { renderQueue(); return; }
+  qRun = true;
+  const first = !G.rows.length, t0 = Date.now(); let ok = 0, bad = 0;
+  let q;
+  while ((q = Q.find(x => x.state === "queued"))) {
+    q.state = "reading"; q.frac = 0; q.note = "Opening…"; renderQueue(); msg("Reading " + q.name);
+    try {
+      const p = await readOne(q.file, undefined, (stage, i, n) => {
+        if (stage === "read") qProg(q, 0.1 + 0.65 * (n ? i / n : 0), "Reading page " + Math.min(i + 1, n || 1) + " of " + (n || 1));
+        else if (stage === "parse") qProg(q, 0.78, "Finding transactions…");
+        else if (stage === "check") qProg(q, 0.92, "Checking balances…");
+        else qProg(q, 0.05, "Opening…");
+      });
+      if (!p.res.rows.length) { q.state = "fail"; q.note = "No transactions recognised. The layout may not be supported yet."; bad++; }
+      else {
+        const r = addStatement(p, q.file);
+        if (r.dup) { q.state = "dup"; q.note = "Already added."; }
+        else { q.state = "done"; q.note = "Added · " + p.res.rows.length + " transactions"; ok++; if (first) renderStatements(); else refresh(); }
+      }
+    } catch (e) { q.state = "fail"; q.note = qNote(e); bad++; }
+    q.frac = 1; renderQueue();
+  }
+  { const w = 2800 - (Date.now() - t0); if (w > 0) { G.skelHold = true; syncSkel(); await sleep(w); G.skelHold = false; } }
+  refresh();
+  qRun = false; renderQueue(); syncSkel();
+  msg(ok ? ok + (ok === 1 ? " statement added." : " statements added.") : "No statements were added.");
+  if (ok) toast(ok + (ok === 1 ? " statement" : " statements") + " added");
+  setTimeout(() => { if (!qRun) { Q.splice(0, Q.length, ...Q.filter(x => x.state === "fail" || x.state === "dup")); renderQueue(); } }, 1800);
+}
+function addFiles(files) {
+  const list = [...files]; if (!list.length) return;
+  list.forEach(f => {
+    const pdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+    Q.push({id: "q" + (++qSeq), file: pdf ? f : null, name: f.name, state: pdf ? "queued" : "fail", note: pdf ? "Waiting…" : "Not a PDF file. Only PDF statements can be read.", frac: 0});
+  });
+  renderQueue(); runQueue();
+}
+
+/* ---------------------------------------------------------------
+   Learn from the user's BlackRoad data
+   --------------------------------------------------------------- */
+function extractEntries(p) {
+  if (Array.isArray(p)) return {entries: p, custom: []};
+  if (p && Array.isArray(p.entries) && !p.databases) return {entries: p.entries, custom: Array.isArray(p.customExpenseCategories) ? p.customExpenseCategories : []};
+  if (p && p.databases) {
+    for (const [k, v] of Object.entries(p.databases)) {
+      if (k.split("::")[0] !== "BlackRoad2" || !v || !v.stores) continue;
+      const meta = (v.stores.meta || []).find(m => m && m.key === "customExpenseCategories");
+      return {entries: v.stores.entries || [], custom: meta && Array.isArray(meta.value) ? meta.value : []};
+    }
+  }
+  return null;
+}
+function learnFrom(payload, fileName) {
+  const x = extractEntries(payload);
+  if (!x || !x.entries.length) throw new Error("No BlackRoad income entries found in that file.");
+  const tally = {dr: new Map(), cr: new Map()}, sigs = new Set();
+  const bump = (kind, k, cat) => { if (!k || !cat) return; const m = tally[kind]; if (!m.has(k)) m.set(k, new Map()); const c = m.get(k); c.set(cat, (c.get(cat) || 0) + 1); };
+  const known = new Set([...BR.EXP, ...BR.INC].map(low));
+  let txns = 0;
+  for (const c of x.custom) if (c && c.name && !BR.custom.some(y => low(y.name) === low(c.name))) BR.custom.push({name: String(c.name).trim(), icon: c.icon || FALLBACK.emoji, hue: Number(c.hue) || FALLBACK.hue});
+  for (const e of x.entries) {
+    if (!e || typeof e !== "object") continue;
+    try { sigs.add(sigOf(e)); } catch { /* skip odd record */ }
+    bump("cr", norm(e.from), e.category); bump("cr", payee(e.from || "").toLowerCase(), e.category);
+    for (const t of e.transactions || []) {
+      txns++;
+      bump("dr", norm(t.description), t.category); bump("dr", payee(t.description || "").toLowerCase(), t.category);
+      const cn = String(t.category || "").trim();
+      if (cn && !known.has(low(cn)) && !BR.custom.some(y => low(y.name) === low(cn))) BR.custom.push({name: cn, icon: FALLBACK.emoji, hue: FALLBACK.hue});
+    }
+  }
+  for (const kind of ["dr", "cr"]) {
+    const out = new Map();
+    tally[kind].forEach((c, k) => { let best = null, n = 0, total = 0; c.forEach((v, cat) => { total += v; if (v > n) { n = v; best = cat; } }); out.set(k, {cat: best, n: total}); });
+    BR.learn[kind] = out;
+  }
+  BR.learn.file = fileName; BR.learn.entries = x.entries.length; BR.learn.txns = txns; BR.learn.sigs = sigs;
+  G.rows.forEach(applySuggest);
+  refresh();
+}
+
+/* ---------------------------------------------------------------
+   Rows -> BlackRoad entries
+   --------------------------------------------------------------- */
+const fromText = r => {
+  let f = (r.desc || "").trim() || "Income";
+  if (r.sale && isRet(r.cat) && !BR.SALE_RX.test(low(f))) f = "Sale – " + f;
+  return f;
+};
+const effectiveSale = r => r.kind === "cr" && isRet(r.cat) && BR.SALE_RX.test(low(fromText(r)));
+const side = r => r.as || r.kind;
+function build() {
+  const byMon = {}, ensure = k => byMon[k] || (byMon[k] = {key: k, incomes: [], txns: []});
+  for (const r of G.rows) {
+    if (r.skip || !r.dateISO || !(r.amt > 0)) continue;
+    const m = ensure(r.dateISO.slice(0, 7));
+    (side(r) === "cr" ? m.incomes : m.txns).push(r);
+  }
+  let n = 0;
+  const byId = {}, linkOf = {}, entries = [], exMap = {};
+  const months = Object.keys(byMon).sort().map(k => {
+    const m = byMon[k];
+    const list = m.incomes.map(r => (byId[r.id] = {row: r, e: {date: r.dateISO, from: fromText(r), category: r.cat, income: r.amt, transactions: []}}));
+    return {key: k, m, list, host: null, synthetic: false, txCount: m.txns.length, auto: 0};
+  });
+  for (const M of months) {
+    let def = null, syn = null;
+    for (const r of M.m.txns) {
+      if (r.link && String(r.link).startsWith("e:")) {
+        const ex = exById(String(r.link).slice(2));
+        if (ex) {
+          const X = exMap[ex.id] || (exMap[ex.id] = {ex, added: [], addExp: 0, addInv: 0});
+          const tx = {id: "g" + (++n).toString(36), amount: r.amt, date: r.dateISO, description: r.desc, category: r.cat, type: isInv(r.cat) ? "investment" : "expense"};
+          X.added.push(tx); if (isInv(r.cat)) X.addInv += r.amt; else X.addExp += r.amt;
+          linkOf[r.id] = {label: ex.from || "Income", auto: false, none: false, existing: true};
+          continue;
+        }
+      }
+      let h = r.link && byId[r.link]; const auto = !h;
+      if (auto) {
+        M.auto++;
+        def = def || M.list.find(x => x.row && x.row.id === G.host[M.key]) || M.list.filter(x => x.row).sort((a, b) => (isSaleEntry(a.e) - isSaleEntry(b.e)) || b.row.amt - a.row.amt)[0];
+        if (!def && !syn) { syn = {row: null, e: {date: r.dateISO, from: "Expenses (no income in these statements)", category: "Others", income: 0, transactions: []}}; M.list.push(syn); M.synthetic = true; }
+        h = def || syn; M.host = h;
+      }
+      h.e.transactions.push({id: "g" + (++n).toString(36), amount: r.amt, date: r.dateISO, description: r.desc, category: r.cat, type: "expense"});
+      linkOf[r.id] = {label: h.row ? h.e.from : "No income", auto, none: !h.row};
+    }
+  }
+  months.forEach(M => M.list.forEach(x => { recalc(x.e); entries.push(x.e); }));
+  const existing = Object.values(exMap);
+  return {months, entries, existing, linkOf, custom: BR.custom.filter(c => entries.concat(existing.map(x => ({transactions: x.added}))).some(e => e.transactions.some(t => low(t.category) === low(c.name))))};
+}
+function exportObject(B) {
+  return {
+    app: "BlackRoad", kind: "income-entries", generatedBy: "Statement Reader", generatedAt: new Date().toISOString(),
+    sources: G.pool.map(p => ({statement: p.label, file: p.file, account: p.meta.account || "", period: p.meta.period || "", transactions: p.rows.length})),
+    customExpenseCategories: B.custom.map(c => ({name: c.name, icon: c.icon, hue: c.hue})),
+    entries: B.entries,
+    ...((B.existing || []).length ? {existingIncomeUpdates: B.existing.map(x => ({id: x.ex.id, from: x.ex.from, date: x.ex.date, addTransactions: x.added}))} : {})
+  };
+}
+function fileStem(B) {
+  const k = B.months.map(m => m.key);
+  return "blackroad-income-" + (k.length ? (k.length > 1 ? k[0] + "_to_" + k[k.length - 1] : k[0]) : "empty");
+}
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------------------------------------------------------------
+   Render
+   --------------------------------------------------------------- */
+function renderStatements() {
+  $("gCount").textContent = G.pool.length ? G.pool.length + (G.pool.length === 1 ? " statement" : " statements") + " · " + G.rows.length + " transactions" : "";
+  G.seen = G.seen || new Set();
+  $("gStmts").innerHTML = G.pool.map(p => `<div class="g-st${G.seen.has(p.id) ? "" : " rv-in"}"><span class="av" aria-hidden="true">${esc(p.label.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() || "•")}</span><div class="mt"><div class="nm">${esc(p.label)}</div><div class="g-sub">${esc([p.meta.period, p.rows.length + " transactions", p.file].filter(Boolean).join(" · "))}</div>${p.bad ? `<div class="g-sub g-warn">${p.bad} row${p.bad > 1 ? "s" : ""} did not match the running balance. Check them below.</div>` : ""}</div><button class="g-btn sm" type="button" data-rm="${p.id}" aria-label="Remove ${esc(p.label)}">Remove</button></div>`).join("");
+  G.pool.forEach(p => G.seen.add(p.id));
+  const has = G.pool.length > 0;
+  $("gDrop").classList.toggle("compact", has);
+  $("gDropT").textContent = has ? "Add more statements" : "Add bank statement PDFs";
+  $("gDropS").textContent = has ? "Drop PDFs here or click to browse" : "Add every bank for the month. You can select several files at once.";
+  $("gDropB").textContent = has ? "Add files" : "Choose files";
+  $("gHow").classList.toggle("hide", has);
+  const t = document.querySelector("#tabs [data-tab=gen] b");
+  t.textContent = G.pool.length; t.classList.toggle("hide", !G.pool.length);
+  const L = BR.learn;
+  $("gLearnTx").textContent = L.file ? `Learned from ${L.file}: ${L.entries} entries, ${L.txns} transactions, ${BR.custom.length} custom categor${BR.custom.length === 1 ? "y" : "ies"}.` : "Choose a BlackRoad backup or income export so suggestions follow your own categories and habits.";
+  $("gLearnBtn").textContent = L.file ? "Change file" : "Choose file";
+  $("gLearn").classList.toggle("loaded", !!L.file); $("gLearn").classList.remove("err");
+}
+function renderTiles(B) {
+  let inc = 0, sale = 0, ex = 0, inv = 0;
+  B.entries.forEach(e => { if (e.investmentSale) sale += e.investmentSale; else inc += e.income; ex += e.expense; inv += e.investment; });
+  const sk = G.rows.filter(r => r.skip).length, nr = G.rows.filter(r => !r.skip && needs(r)).length;
+  const T = [["Income", inr(inc), "var(--ok)"], ["Expenses", inr(ex), "var(--dg)"], ["Investments", inr(inv), "#22d3ee"]];
+  if (sale) T.splice(1, 0, ["Sale proceeds", inr(sale), "var(--gold-t)"]);
+  T.push(["Skipped", sk, "var(--tm)"], ["Needs review", nr, nr ? "var(--wn)" : "var(--ok)"]);
+  const xs = G.rows.filter(r => r.type === "transfer" && (r.kind === "dr" || r.xk === "from")).reduce((t, r) => t + r.amt, 0);
+  if (xs) T.splice(T.length - 2, 0, ["Transfers", inr(xs), "#38bdf8"]);
+  $("gTiles").innerHTML = T.map(t => `<div class="g-tile"><small>${t[0]}</small><b style="color:${t[2]}">${t[1]}</b></div>`).join("");
+}
+function fillFilters() {
+  const keep = (id, html) => { const el = $(id), v = el.value; el.innerHTML = html; if ([...el.options].some(o => o.value === v)) el.value = v; else { el.value = ""; } };
+  keep("gBank", '<option value="">All statements</option>' + G.pool.map(p => `<option value="${p.id}">${esc(p.label)}</option>`).join(""));
+  const ms = [...new Set(G.rows.filter(r => r.dateISO).map(r => r.dateISO.slice(0, 7)))].sort();
+  keep("gMon", '<option value="">All months</option>' + ms.map(k => `<option value="${k}">${monthName(k)}</option>`).join(""));
+  G.f.bank = $("gBank").value; G.f.mon = $("gMon").value;
+}
+function visible() {
+  const f = G.f, q = low(f.q);
+  return G.rows.filter(r => {
+    if (q && !(low(r.desc).includes(q) || low(r.raw).includes(q) || low(r.cat).includes(q) || String(r.amt).includes(q))) return false;
+    if (f.bank && r.sid !== f.bank) return false;
+    if (f.mon && r.dateISO.slice(0, 7) !== f.mon) return false;
+    switch (f.st) {
+      case "review": return !r.skip && needs(r);
+      case "in": return r.kind === "cr" && !r.skip;
+      case "out": return r.kind === "dr" && !r.skip && !isInv(r.cat);
+      case "inv": return r.kind === "dr" && !r.skip && isInv(r.cat);
+      case "xfer": return r.type === "transfer";
+      case "skip": return r.skip;
+    }
+    return true;
+  });
+}
+const SRC = {saved: ["Saved rule", "gold"], learned: ["Learned", "gold"], rule: ["Suggested", ""], similar: ["Same payee", "ok"], manual: ["Edited", "ok"], default: ["Review", "wn"]};
+function rowHTML(r) {
+  const [sl, sc] = SRC[r.src], es = effectiveSale(r);
+  const kindPill = r.kind === "dr" ? (isInv(r.cat) ? '<span class="g-pill gold">Investment</span>' : "") : (isRet(r.cat) ? `<button type="button" class="g-pill ${es ? "gold" : ""}" data-act="sale" title="Sale proceeds are not counted as income">${es ? "Sale proceeds" : "Return income"}</button>` : "");
+  return `<div class="g-row${r.skip ? " off" : ""}${G.flash && G.flash.has(r.id) ? " flash" : ""}${G.sel && G.sel.has(r.id) ? " picked" : ""}" data-id="${esc(r.id)}">${G.selMode ? `<input type="checkbox" class="g-pick" data-act="pick" aria-label="Select transaction"${G.sel.has(r.id) ? " checked" : ""}>` : ""}
+    <button type="button" class="g-ic" data-act="cat" aria-label="Category ${esc(r.cat)}. Change" title="Change category">${iconHTML(r.cat, "md", side(r))}</button>
+    <input class="g-desc" type="text" value="${esc(r.desc)}" data-act="desc" aria-label="${r.kind === "cr" ? "Income source" : "Description"}" title="${esc(r.raw)}">
+    <div class="g-amt ${r.kind}">${r.kind === "cr" ? "+" : "−"}${inr(r.amt)}</div>
+    <div class="g-meta"><span>${dayLabel(r.dateISO || "1970-01-01").replace("1 Jan 1970", "No date")}</span><span>${esc(r.bank)}</span><span>${esc(r.cat)}</span>${r.skip ? "" : `<span class="g-pill ${sc}">${sl}</span>`}${kindPill}${r.warn ? '<span class="g-pill wn" title="Running balance did not match. Check this row against the PDF.">check</span>' : ""}${G.dups && G.dups.has(r.id) && !r.skip ? '<span class="g-pill wn" title="Same date, amount and payee as an earlier transaction">Duplicate?</span>' : ""}${G.pairs && G.pairs[r.id] && !r.skip ? '<span class="g-pill ok" title="A debit of the same amount was found earlier">Refund?</span>' : ""}${r.skip && r.why ? `<span class="g-pill ${r.type === "transfer" ? "xf" : "wn"}">${esc(r.why)}</span>` : ""}</div>
+    <label class="g-inc"><input type="checkbox" data-act="inc" ${r.skip ? "" : "checked"} aria-label="Include in BlackRoad file"> Include</label>${ctl(r)}
+  </div>`;
+}
+function renderRows() {
+  const v = visible(); let html, total;
+  const act = G.f.q || G.f.st || G.f.bank || G.f.mon, sl = $("gSumLine");
+  sl.classList.toggle("hide", !act);
+  if (act) { let i = 0, o = 0, sk = 0; v.forEach(r => { if (r.skip) sk++; else if (r.kind === "cr") i += r.amt; else o += r.amt; }); const n = i - o; sl.innerHTML = `<b>${v.length} match${v.length === 1 ? "" : "es"}</b><span>In <b style="color:var(--ok)">${inr(i)}</b></span><span>Out <b style="color:var(--dg)">${inr(o)}</b></span><span>Net <b>${n < 0 ? "−" : ""}${inr(Math.abs(n))}</b></span>${sk ? `<span class="g-sub">${sk} ignored, not counted</span>` : ""}`; }
+  if (G.group) {
+    const gm = G.groups = {}, order = [];
+    v.forEach(r => { const k = r.kind + "|" + (r.key && r.key.length >= 3 ? r.key : r.id); (gm[k] || (gm[k] = (order.push(k), []))).push(r); });
+    order.sort((x, y) => gm[y].reduce((t, r) => t + r.amt, 0) - gm[x].reduce((t, r) => t + r.amt, 0));
+    total = order.length;
+    html = order.slice(0, G.shown).map(k => {
+      const g = gm[k]; if (g.length < 2) return rowHTML(g[0]);
+      const sum = g.reduce((t, r) => t + r.amt, 0), open = G.open.has(k), cr = g[0].kind === "cr";
+      return `<div class="g-grp"><button type="button" class="g-gt" data-gt="${esc(k)}" aria-expanded="${open}"><span>${open ? "▾" : "▸"}</span><b>${esc(g[0].desc)}</b><span class="g-sub">${g.length} transactions</span><b class="g-amt ${g[0].kind}">${cr ? "+" : "−"}${inr(sum)}</b></button><button type="button" class="g-btn sm" data-gs="${esc(k)}">Select all</button></div>` + (open ? g.map(rowHTML).join("") : "");
+    }).join("");
+  } else { total = v.length; html = v.slice(0, G.shown).map(rowHTML).join(""); }
+  $("gRows").classList.toggle("sel-mode", !!G.selMode);
+  $("gRows").innerHTML = html || `<div class="g-empty">${ico("search", 28)}<b>No transactions match</b><span>Try a different search, or clear the filters.</span><button type="button" class="g-btn sm" data-clear>Clear filters</button></div>`;
+  $("gRows").querySelectorAll(".g-row").forEach(el => { el.draggable = true; });
+  $("gMore").classList.toggle("hide", total <= G.shown);
+  $("gMore").textContent = "Show more (" + (total - G.shown) + " left)";
+  $("gRevCount").textContent = v.length === G.rows.length ? G.rows.length + " transactions" : v.length + " of " + G.rows.length;
+}
+function renderEntries(B) {
+  $("gEntCount").textContent = B.entries.length + (B.entries.length === 1 ? " entry" : " entries");
+  const exHTML = (B.existing || []).length ? `<section class="g-ent"><header><h4>Added to existing BlackRoad incomes</h4><span class="g-sub">${B.existing.length} existing income${B.existing.length === 1 ? "" : "s"}</span></header>${B.existing.map(x => `<div class="g-e"><span class="ic">${iconHTML(x.ex.category, "md", "cr")}</span><div class="t" title="${esc(x.ex.from)}">${esc(x.ex.from || "Income")}</div><div class="a" style="color:var(--ok)">${inr(Number(x.ex.income) || 0)}</div><div class="m"><span>${dayLabel(x.ex.date)}</span><span>${esc(x.ex.category || "")}</span><span>Expenses ${inr(x.addExp)}</span>${x.addInv ? `<span>Investments ${inr(x.addInv)}</span>` : ""}<span>${x.added.length} added</span></div></div>`).join("")}</section>` : "";
+  $("gEnt").innerHTML = exHTML + B.months.map(m => {
+    const cands = m.list.filter(x => x.row).sort((a, b) => b.row.amt - a.row.amt);
+    const sel = cands.length > 1 && m.auto ? `<label>Attach expenses to <select data-mon="${m.key}">${cands.map(c => `<option value="${esc(c.row.id)}"${c === m.host ? " selected" : ""}>${esc(c.e.from)} · ${inr(c.row.amt)}</option>`).join("")}</select></label>` : "";
+    return `<section class="g-ent"><header><h4>${monthName(m.key)}</h4><span class="g-sub">${m.list.length} income ${m.list.length === 1 ? "entry" : "entries"} · ${m.txCount} transaction${m.txCount === 1 ? "" : "s"}</span><span class="sp"></span>${sel}<button type="button" class="g-btn sm" data-addinc="${m.key}">＋ Add income</button></header>
+      ${m.synthetic ? '<div class="g-e"><div class="m g-warn" style="grid-column:1/-1">No income found in the statements for this month, so its transactions sit under a ₹0 entry. Add the income statement or edit it after import.</div></div>' : ""}
+      ${m.list.map(x => { const e = x.e, sale = isSaleEntry(e); return `<div class="g-e"><span class="ic">${iconHTML(e.category, "md", "cr")}</span><div class="t" title="${esc(e.from)}">${esc(e.from)}</div><div class="a" style="color:${sale ? "var(--gold-t)" : "var(--ok)"}">${e.income ? "+" + inr(e.income) : inr(0)}</div>
+        <div class="m"><span>${dayLabel(e.date)}</span><span>${esc(e.category)}</span>${sale ? '<span class="g-pill gold">Sale proceeds</span>' : ""}${e.transactions.length ? `<span>Expenses ${inr(e.expense)}</span>${e.investment ? `<span>Investments ${inr(e.investment)}</span>` : ""}<span>${e.transactions.length} linked</span>` : ""}<span>Balance <b style="color:${e.balance < 0 ? "var(--dg)" : "var(--ink)"}">${e.balance < 0 ? "−" : ""}${inr(e.balance)}</b></span></div></div>`; }).join("")}
+    </section>`;
+  }).join("") || `<div class="g-empty">${ico("inbox", 28)}<b>Nothing is included yet</b><span>Include at least one transaction in the review above.</span></div>`;
+}
+function renderChecks(B) {
+  const inAll = G.rows.filter(r => r.kind === "cr").reduce((t, r) => t + r.amt, 0), outAll = G.rows.filter(r => r.kind === "dr").reduce((t, r) => t + r.amt, 0);
+  const inEnt = B.entries.reduce((t, e) => t + e.income, 0) + G.rows.filter(r => r.kind === "cr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
+  const outEnt = B.entries.reduce((t, e) => t + e.expense + e.investment, 0) + (B.existing || []).reduce((t, x) => t + x.addExp + x.addInv, 0) + G.rows.filter(r => r.kind === "dr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
+  const ok = (a, b) => Math.abs(a - b) < 0.02, tag = c => c ? '<b style="color:var(--ok)">Matches ✓</b>' : '<b class="g-warn">Does not match</b>';
+  const transfers = G.rows.filter(r => r.why.startsWith("Own transfer")).length / 2, bad = G.pool.reduce((t, p) => t + p.bad, 0);
+  const dup = B.entries.filter(e => BR.learn.sigs.has(sigOf(e))).length;
+  $("gChk").innerHTML = `<div><span>Money in: statements ${inr(inAll)}</span>${tag(ok(inAll, inEnt))}</div><div><span>Money out: statements ${inr(outAll)}</span>${tag(ok(outAll, outEnt))}</div>
+    <div><span>Own transfers between your banks, left out</span><b>${transfers}</b></div>
+    <div><span>Rows that failed the statement's balance check</span>${bad ? `<b class="g-warn">${bad}</b>` : '<b style="color:var(--ok)">None ✓</b>'}</div>
+    ${BR.learn.file ? `<div><span>Entries already in your BlackRoad data</span><b>${dup ? dup + " (BlackRoad will skip them)" : "None"}</b></div>` : ""}`;
+}
+function renderAlert() {
+  const el = $("gAlert"), nr = G.rows.filter(r => !r.skip && needs(r)).length;
+  if (!G.rows.length) return;
+  if (nr) { el.className = "g-alert" + (G.f.st === "review" ? " hide" : ""); el.innerHTML = `<span class="ai">${ico("alert", 20)}</span><div><b>${nr} transaction${nr === 1 ? "" : "s"} need${nr === 1 ? "s" : ""} a category</b><small>Left as “Others”. Pick a category before exporting.</small></div><button type="button" class="g-btn sm" data-showrev>Show them</button>`; }
+  else { el.className = "g-alert ok"; el.innerHTML = `<span class="ai">${ico("check-circle", 20)}</span><div><b>Every transaction has a category</b><small>Check the entries below, then export.</small></div>`; }
+}
+/* Step-by-step: only the current step is shown. */
+const STEP_ID = {1: "gStmtCard", 2: "gReview", 3: "gEntries", 4: "gOut"};
+function applyStep() {
+  const has = G.rows.length > 0;
+  if (!has && G.step > 1) G.step = 1;
+  Object.entries(STEP_ID).forEach(([n, id]) => $(id).classList.toggle("step-off", +n !== G.step));
+  document.querySelectorAll("#gSteps li").forEach(li => {
+    const n = +li.dataset.n, b = li.querySelector("button");
+    li.className = n === G.step ? "on" : n < G.step ? "done" : "";
+    b.disabled = n > 1 && !has;
+    if (n === G.step) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+  });
+  $("gNext1").disabled = !has;
+}
+function reveal(sec) {
+  const els = [...sec.querySelectorAll(".g-tile,.g-row,.g-ent,.g-e,.g-chk>div")].slice(0, 18);
+  els.forEach((el, i) => { el.style.animationDelay = i * 40 + "ms"; el.classList.add("rv-in"); });
+  setTimeout(() => els.forEach(el => { el.classList.remove("rv-in"); el.style.animationDelay = ""; }), 1600);
+}
+function setStep(n) {
+  if (G.busy) return;
+  const prev = G.step; G.step = n; applyStep(); window.scrollTo(0, 0);
+  const msgs = {2: "Reading your transactions…", 3: "Building BlackRoad entries…", 4: "Preparing your export…"};
+  if (n === prev || !msgs[n]) return;
+  const sec = $(STEP_ID[n]), l = document.createElement("div");
+  l.className = "g-load"; l.setAttribute("role", "status");
+  l.innerHTML = '<span class="spin" aria-hidden="true"></span><b>' + msgs[n] + '</b><div class="bar thin"><i></i></div>';
+  sec.classList.add("loading"); sec.querySelector("h3").after(l); G.busy = true;
+  setTimeout(() => { l.remove(); sec.classList.remove("loading"); G.busy = false; reveal(sec); }, 1500);
+}
+function refresh() {
+  const ps = G.pool.map(p => p.id).join(); if (ps !== G.ps) { G.ps = ps; G.undo = []; G.redo = []; G.sel = new Set(); }
+  G.dups = findDups(); G.pairs = findRefunds();
+  syncBar(); saveSession();
+  G.B = build();
+  renderStatements();
+  const has = G.rows.length > 0;
+  ["gReview", "gEntries", "gOut"].forEach(id => $(id).classList.toggle("hide", !has));
+  applyStep();
+  if (!has) return;
+  fillFilters(); renderTiles(G.B); renderAlert(); renderRows(); renderEntries(G.B); renderChecks(G.B);
+  ["gJson", "gCopy", "gCsv"].forEach(id => { $(id).disabled = !(G.B.entries.length || (G.B.existing || []).length); });
+  const sv = $("gSave"); if (sv) { const h = HOST(); sv.classList.toggle("hide", !(h && typeof h.save === "function")); sv.disabled = !(G.B.entries.length || (G.B.existing || []).length); }
+  $("gPre").textContent = ""; $("gDet").open = false;
+}
+
+/* ---------------------------------------------------------------
+   Category picker  (same look and behaviour as BlackRoad's)
+   --------------------------------------------------------------- */
+function setCategory(row, name) {
+  if (G.busy) return;
+  const others = row.key.length >= 3 ? G.rows.filter(x => x !== row && x.kind === row.kind && x.key === row.key && x.src !== "manual") : [];
+  const go = sel => runDelayed([row, ...sel].map(x => x.id), () => doSetCategory(row, name, new Set(sel)));
+  if (!others.length) return go([]);
+  confirmSimilar({title: "Change similar transactions?", intro: `You are setting <b>${esc(row.desc)}</b> to <b>${esc(name)}</b>. ${others.length} other transaction${others.length > 1 ? "s" : ""} look the same. Choose which to change too.`, others, change: x => x.cat + " → " + name, onApply: go});
+}
+function doSetCategory(row, name, sel) {
+  row.cat = name; row.src = "manual";
+  if (row.kind === "cr") row.sale = isRet(name) && defaultSale(row);
+  syncDesc(row);
+  let n = 0;
+  if (row.key.length >= 3) {
+    G.rows.forEach(x => { if (sel.has(x)) { x.cat = name; x.src = "similar"; if (x.kind === "cr") x.sale = isRet(name) && defaultSale(x); syncDesc(x); n++; } });
+    BR.learn[side(row)].set(row.key, {cat: name, n: 99});
+  }
+  refresh();
+  if (n) toast("“" + name + "” applied to " + n + " similar transaction" + (n > 1 ? "s" : ""));
+}
+function openPicker(row, onPick) {
+  const prev = document.activeElement, kind = side(row);
+  const layer = document.createElement("div");
+  layer.className = "g-layer";
+  layer.innerHTML = '<div class="g-sheet" role="dialog" aria-modal="true" aria-label="Choose category"></div>';
+  document.body.appendChild(layer);
+  const sheet = layer.firstChild; let draft = null;
+  const close = () => { document.removeEventListener("keydown", onKey, true); layer.remove(); if (prev && prev.focus) prev.focus(); };
+  const onKey = e => { if (e.key === "Escape") { e.stopPropagation(); if (draft) { draft = null; listView(); } else close(); } };
+  document.addEventListener("keydown", onKey, true);
+
+  const choose = name => { close(); if (onPick) onPick(name); else setCategory(row, name); };
+
+  function listView() {
+    sheet.innerHTML = `<div class="hd"><h3>${kind === "cr" ? "Income category" : "Choose category"}</h3><button type="button" class="x" data-x aria-label="Close">✕</button></div>
+      <input type="search" placeholder="Search categories" aria-label="Search categories" autocomplete="off"><div class="g-grid"></div>`;
+    const inp = sheet.querySelector("input"), grid = sheet.querySelector(".g-grid");
+    const paint = () => {
+      const q = low(inp.value), all = catList(kind).filter(c => !q || low(c).includes(q));
+      grid.innerHTML = (kind === "dr" && !q ? `<button type="button" class="tl" data-new><span class="cat-ico cat-ico-lg cat-ico-empty">＋</span><span>New category</span></button>` : "") +
+        all.map(c => `<button type="button" class="tl${c === row.cat ? " sel" : ""}" data-pick="${esc(c)}">${iconHTML(c, "lg", kind)}<span>${esc(c)}</span></button>`).join("") +
+        (all.length ? "" : `<p class="g-sub" style="grid-column:1/-1">No category matches “${esc(inp.value)}”.</p>`);
+    };
+    inp.oninput = paint; paint();
+    sheet.onclick = e => {
+      if (e.target.closest("[data-x]")) return close();
+      const p = e.target.closest("[data-pick]"); if (p) return choose(p.dataset.pick);
+      if (e.target.closest("[data-new]")) { draft = {name: "", icon: BR.ICONS[0], hue: BR.HUES[4]}; createView(); }
+    };
+    inp.focus();
+  }
+  function createView() {
+    sheet.innerHTML = `<div class="hd"><button type="button" class="x" data-back aria-label="Back">←</button><h3>New category</h3><button type="button" class="x" data-x aria-label="Close">✕</button></div>
+      <div class="pv"><span id="pvIc"></span><span class="g-sub">Saved in the file as a custom category.</span></div>
+      <span class="lbl">Name</span><input type="text" maxlength="30" placeholder="e.g. Insurance" value="${esc(draft.name)}" aria-label="Category name">
+      <span class="lbl">Icon</span><div class="g-grid" style="grid-template-columns:repeat(auto-fill,minmax(38px,1fr))">${BR.ICONS.map(i => `<button type="button" class="pk${i === draft.icon ? " sel" : ""}" data-icon="${i}">${i}</button>`).join("")}</div>
+      <span class="lbl">Colour</span><div class="g-hues">${BR.HUES.map(h => `<button type="button" class="pk${h === draft.hue ? " sel" : ""}" data-hue="${h}" style="--h:${h}" aria-label="Colour ${h}"></button>`).join("")}</div>
+      <p class="g-warn" id="pvErr" style="min-height:20px;margin:10px 0 0"></p>
+      <div class="g-actions" style="margin:6px 0 0"><button type="button" class="g-btn" data-back>Cancel</button><button type="button" class="g-btn pri" data-save>Save category</button></div>`;
+    const inp = sheet.querySelector("input[type=text]"), pv = () => { $$("#pvIc", sheet).innerHTML = `<span class="cat-ico cat-ico-lg" style="--cat-hue:${draft.hue}">${esc(draft.icon)}</span>`; };
+    pv(); inp.oninput = () => { draft.name = inp.value; };
+    sheet.onclick = e => {
+      if (e.target.closest("[data-x]")) return close();
+      if (e.target.closest("[data-back]")) { draft = null; return listView(); }
+      const i = e.target.closest("[data-icon]"); if (i) { draft.icon = i.dataset.icon; sheet.querySelectorAll("[data-icon]").forEach(b => b.classList.toggle("sel", b === i)); pv(); return; }
+      const h = e.target.closest("[data-hue]"); if (h) { draft.hue = +h.dataset.hue; sheet.querySelectorAll("[data-hue]").forEach(b => b.classList.toggle("sel", b === h)); pv(); return; }
+      if (e.target.closest("[data-save]")) {
+        const name = draft.name.trim();
+        if (!name) { $$("#pvErr", sheet).textContent = "Enter a name."; return; }
+        if (catList("dr").some(c => low(c) === low(name))) { $$("#pvErr", sheet).textContent = "That category already exists."; return; }
+        BR.custom.push({name, icon: draft.icon, hue: draft.hue}); choose(name);
+      }
+    };
+    inp.focus();
+  }
+  listView();
+}
+
+/* ---------------------------------------------------------------
+   Events
+   --------------------------------------------------------------- */
+const XK = {bank: "Bank → Bank", to: "Bank → Demat", from: "Demat → Bank"};
+const DEMAT_RX = /zerodha|upstox|angel|groww|icici ?direct|hdfc sec|kotak sec|5paisa|paytm money|ccil|clearing corp|broking|\bdhan\b|demat/i;
+const sortRows = () => G.rows.sort((a, b) => (a.dateISO || "9999").localeCompare(b.dateISO || "9999") || a.id.localeCompare(b.id, undefined, {numeric: true}));
+function ctl(r) {
+  if (r.manual) return '<div class="g-ctl"><span class="g-pill ok">Income added by you</span><button type="button" class="g-pill sg" data-act="delm">Delete</button></div>';
+  if (!r.dateISO || !(r.amt > 0)) return "";
+  const sd = side(r), xf = r.type === "transfer";
+  const on = t => t === "transfer" ? (xf ? " on xf" : "") : t === "ignore" ? (r.skip && !xf ? " on ig" : "") : (!xf && !r.skip && sd === (t === "income" ? "cr" : "dr") ? " on " + (t === "income" ? "cr" : "dr") : "");
+  let h = `<div class="g-ctl"><span class="g-seg">${[["income", "Income"], ["expense", "Expense"], ["transfer", "Transfer"], ["ignore", "Ignore"]].map(([t, l]) => `<button type="button" class="g-pill sg${on(t)}" data-act="type" data-t="${t}">${l}</button>`).join("")}</span>`;
+  if (r.type === "transfer") h += `<select data-act="xk" aria-label="Transfer type">${Object.keys(XK).map(k => `<option value="${k}"${r.xk === k ? " selected" : ""}>${XK[k]}</option>`).join("")}</select>`;
+  else {
+    if (side(r) === "dr" && !r.skip) { const lk = G.B && G.B.linkOf[r.id]; h += `<button type="button" class="g-pill sg${lk && lk.none ? " wn" : ""}" data-act="link" title="Choose which income this is added to">${lk ? "→ " + esc(lk.label) + (lk.auto ? " (auto)" : "") : "Link to income"}</button>`; }
+    if (DEMAT_RX.test(r.raw)) h += '<button type="button" class="g-pill sg" data-act="demat" title="Marks it as money moved between your bank and demat account, left out of income and expenses">Demat transfer?</button>';
+  }
+  if (r.type !== "transfer" && r.key && r.key.length >= 3) h += `<button type="button" class="g-pill sg" data-act="rule" title="Apply this choice to future statements">${RULES.some(q => q.key === r.key && q.kind === r.kind) ? "Rule ✓" : "Save rule"}</button>`;
+  return h + "</div>";
+}
+const snapNow = () => JSON.stringify({rows: G.rows, host: G.host});
+function snap() { const t = snapNow(); G.undo = G.undo || []; if (G.undo[G.undo.length - 1] === t) return; G.undo.push(t); if (G.undo.length > 40) G.undo.shift(); G.redo = []; }
+function restore(from, to, label) { if (!from.length || G.busy) return; to.push(snapNow()); const o = JSON.parse(from.pop()); G.rows = o.rows; G.host = o.host; G.sel = new Set(); refresh(); toast(label); }
+const undo = () => restore(G.undo = G.undo || [], G.redo = G.redo || [], "Undone");
+const redo = () => restore(G.redo = G.redo || [], G.undo = G.undo || [], "Redone");
+G.sel = new Set(); G.open = new Set(); G.groups = {};
+let RULES = []; try { RULES = JSON.parse(localStorage.getItem("sr-rules")) || []; } catch (e) {}
+const saveRules = () => { try { localStorage.setItem("sr-rules", JSON.stringify(RULES)); } catch (e) {} };
+function applyRules(rows) {
+  let n = 0;
+  rows.forEach(x => {
+    if (x.locked || x.manual || x.type === "transfer" || !x.dateISO || !(x.amt > 0) || !x.key || x.key.length < 3) return;
+    const R = RULES.find(q => q.key === x.key && q.kind === x.kind); if (!R) return;
+    if (R.skip) applyType(x, "ignore"); else { applyType(x, R.side === "cr" ? "income" : "expense"); x.cat = R.cat; if (side(x) === "cr") x.sale = isRet(x.cat) && defaultSale(x); }
+    if (R.desc) { x.desc = R.desc; x.edited = true; } else syncDesc(x);
+    x.src = "saved"; n++;
+  });
+  return n;
+}
+function saveRule(r) {
+  if (!r.key || r.key.length < 3 || r.manual || r.type === "transfer") return toast("This transaction can't become a rule.");
+  const R = {key: r.key, kind: r.kind, label: r.desc, side: side(r), skip: r.skip, cat: r.cat, desc: r.edited ? r.desc : ""};
+  const i = RULES.findIndex(q => q.key === r.key && q.kind === r.kind); if (i > -1) RULES.splice(i, 1, R); else RULES.push(R);
+  saveRules(); refresh(); toast("Rule saved for “" + r.desc + "”. It applies to future statements.");
+}
+function openRules() {
+  const {body, close} = modal("Saved rules");
+  const paint = () => { body.innerHTML = (RULES.length ? `<p class="g-sub" style="margin:0 0 10px">Applied automatically to new statements. Rows you edited yourself are never overwritten.</p><div class="g-sum">${RULES.map((q, i) => `<div class="g-sumrow" style="cursor:default"><span></span><span style="min-width:0"><b>${esc(q.label)}</b><br><span class="g-sub">${q.skip ? "Ignore" : (q.side === "cr" ? "Income" : "Expense") + " · " + esc(q.cat)}</span></span><button type="button" class="g-btn sm" data-del="${i}">Delete</button></div>`).join("")}</div>` : '<p class="g-sub">No rules yet. Use “Save rule” on any transaction.</p>') + `<div class="g-actions" style="margin:6px 0 0"><button type="button" class="g-btn" data-run${RULES.length && G.rows.length ? "" : " disabled"}>Apply to current rows</button><button type="button" class="g-btn pri" data-c>Done</button></div>`; };
+  paint();
+  body.onclick = e => {
+    const d = e.target.closest("[data-del]");
+    if (d) { RULES.splice(+d.dataset.del, 1); saveRules(); paint(); syncBar(); }
+    else if (e.target.closest("[data-run]")) { const ids = G.rows.filter(x => !x.locked && !x.manual && RULES.some(q => q.key === x.key && q.kind === x.kind)).map(x => x.id); close(); runDelayed(ids, () => { const n = applyRules(G.rows); refresh(); toast(n + " transaction" + (n === 1 ? "" : "s") + " updated"); }); }
+    else if (e.target.closest("[data-c]")) close();
+  };
+}
+const REF_RX = /refund|reversal|reversed|chargeback|\brev\b|returned/i;
+function findDups() {
+  const seen = {}, out = new Set();
+  G.rows.forEach(r => { if (r.manual || !r.dateISO || !(r.amt > 0) || r.type === "transfer") return; const k = [r.dateISO, r.amt, r.kind, r.key || low(r.raw)].join("|"); if (seen[k]) out.add(r.id); else seen[k] = r.id; });
+  return out;
+}
+function findRefunds() {
+  const pairs = {}, used = new Set(), day = r => Date.parse(r.dateISO) / 864e5, ok = r => !r.skip && !r.manual && r.dateISO && r.amt > 0 && r.type !== "transfer";
+  const drs = G.rows.filter(r => r.kind === "dr" && ok(r));
+  G.rows.filter(r => r.kind === "cr" && ok(r)).forEach(c => {
+    let best = null;
+    drs.forEach(d => { if (used.has(d.id) || Math.abs(d.amt - c.amt) > 0.005) return; const gap = day(c) - day(d); if (gap < 0 || gap > 45) return; if (!((c.key && c.key.length >= 3 && c.key === d.key) || REF_RX.test(c.raw))) return; if (!best || gap < day(c) - day(best)) best = d; });
+    if (best) { used.add(best.id); pairs[c.id] = best; }
+  });
+  return pairs;
+}
+const dupRows = () => G.rows.filter(r => G.dups && G.dups.has(r.id) && !r.skip);
+let saveT;
+function saveSession() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    try { if (!G.pool.length) localStorage.removeItem("sr-session"); else localStorage.setItem("sr-session", JSON.stringify({v: 1, pool: G.pool, rows: G.rows, host: G.host, seq: G.seq, custom: BR.custom})); }
+    catch (e) { if (!G.saveWarned) { G.saveWarned = true; toast("This session is too large to remember on this device."); } }
+  }, 500);
+}
+function restoreSession() {
+  try {
+    const o = JSON.parse(localStorage.getItem("sr-session"));
+    if (!o || o.v !== 1 || !Array.isArray(o.rows) || !Array.isArray(o.pool) || !o.pool.length) return;
+    G.pool = o.pool; G.rows = o.rows; G.host = o.host || {}; G.seq = o.seq || 0;
+    if (Array.isArray(o.custom)) BR.custom.splice(0, BR.custom.length, ...o.custom);
+    toast("Restored your last session");
+  } catch (e) {}
+}
+function syncBar() {
+  const t = (id, on) => { $(id).classList.toggle("on", on); $(id).setAttribute("aria-pressed", String(on)); };
+  t("gGroupB", !!G.group); t("gSelB", !!G.selMode);
+  $("gUndo").disabled = !(G.undo && G.undo.length); $("gRedo").disabled = !(G.redo && G.redo.length);
+  $("gRulesB").textContent = "Rules" + (RULES.length ? " (" + RULES.length + ")" : "");
+  const net = [...G.sel].reduce((t, id) => { const r = G.rows.find(x => x.id === id); return r ? t + (r.kind === "cr" ? r.amt : -r.amt) : t; }, 0);
+  $("gBulk").classList.toggle("hide", !G.selMode); $("gBulkN").textContent = G.sel.size + " selected" + (G.sel.size ? " · Net " + (net < 0 ? "−" : "") + inr(Math.abs(net)) : "");
+  const nd = dupRows().length, nr = Object.keys(G.pairs || {}).length;
+  $("gDupB").textContent = "Duplicates" + (nd ? " (" + nd + ")" : ""); $("gDupB").disabled = !nd;
+  $("gRefB").textContent = "Refunds" + (nr ? " (" + nr + ")" : ""); $("gRefB").disabled = !nr;
+  $("gBulk").querySelectorAll("[data-b=income],[data-b=expense],[data-b=ignore],[data-b=cat],[data-b=none]").forEach(b => { b.disabled = !G.sel.size; });
+}
+function runDelayed(ids, fn, ms = 1500) {
+  if (G.busy) return false;
+  G.busy = true;
+  const els = ids.map(id => document.querySelector('#gRows [data-id="' + CSS.escape(id) + '"]')).filter(Boolean);
+  els.forEach(el => { el.dataset.stage = "1"; el.classList.add("busy"); });
+  setTimeout(() => els.forEach(el => { el.dataset.stage = "2"; }), ms * 0.5);
+  setTimeout(() => { G.busy = false; G.flash = new Set(ids); snap(); fn(); setTimeout(() => { G.flash = null; document.querySelectorAll("#gRows .flash").forEach(e => e.classList.remove("flash")); }, 1800); }, ms);
+  return true;
+}
+const sameKey = r => r.key && r.key.length >= 3 ? G.rows.filter(x => x !== r && !x.manual && !x.locked && x.kind === r.kind && x.key === r.key && x.type !== "transfer" && x.dateISO && x.amt > 0) : [];
+function applyType(r, t) {
+  if (t === "ignore") { r.skip = true; r.why = "Skipped by you"; r.xk = ""; if (r.type === "transfer") r.type = side(r) === "cr" ? "income" : "expense"; return; }
+  const to = t === "income" ? "cr" : "dr";
+  if (side(r) !== to) { r.cats = r.cats || {}; r.cats[side(r)] = r.cat; r.cat = r.cats[to] || "Others"; r.as = to === r.kind ? "" : to; r.sale = false; if (to === "cr") r.link = ""; syncDesc(r); }
+  r.type = t; r.skip = false; r.why = ""; r.xk = "";
+}
+function setType(r, t) {
+  if (G.busy) return;
+  if (t === "transfer") { snap(); const cr = r.kind === "cr"; r.locked = true; r.type = "transfer"; r.skip = true; r.xk = r.xk || (DEMAT_RX.test(r.raw) ? (cr ? "from" : "to") : "bank"); r.why = "Transfer · " + XK[r.xk]; return refresh(); }
+  if (t !== "ignore" && !r.skip && r.type !== "transfer" && side(r) === (t === "income" ? "cr" : "dr")) return;
+  const tl = {income: "Income", expense: "Expense", ignore: "Ignored"}[t], others = sameKey(r);
+  const go = sel => {
+    r.locked = true;
+    runDelayed([r, ...sel].map(x => x.id), () => {
+      applyType(r, t); r.src = "manual";
+      sel.forEach(x => { applyType(x, t); x.src = "similar"; });
+      refresh();
+      if (sel.length) toast("Also updated " + sel.length + " similar transaction" + (sel.length > 1 ? "s" : ""));
+    });
+  };
+  if (!others.length) return go([]);
+  confirmSimilar({title: "Change similar transactions?", intro: `You are marking <b>${esc(r.desc)}</b> as <b>${tl}</b>. ${others.length} other transaction${others.length > 1 ? "s" : ""} look the same. Choose which to change too.`, others, change: x => (x.skip ? "Ignored" : side(x) === "cr" ? "Income" : "Expense") + " → " + tl, onApply: go});
+}
+function confirmSimilar(O) {
+  const {title, intro, others, change, onApply} = O;
+  const {body, close} = modal(title);
+  body.innerHTML = `<p class="g-sub" style="margin:0 0 12px">${intro}</p><div class="g-sumbar"><button type="button" class="g-btn sm" data-all>Select all</button><button type="button" class="g-btn sm" data-none>Select none</button><span class="g-sub" data-n></span></div>
+    <div class="g-sum">${others.map((x, i) => `<label class="g-sumrow"><input type="checkbox" data-i="${i}" checked><span style="min-width:0"><b>${esc(x.desc)}</b><br><span class="g-sub">${dayLabel(x.dateISO)} · ${esc(x.bank)} · ${esc(change(x))}</span></span><b style="color:var(${x.kind === "cr" ? "--ok" : "--dg"})">${inr(x.amt)}</b></label>`).join("")}</div>
+    <div class="g-actions" style="margin:6px 0 0"><button type="button" class="g-btn" data-c>Cancel</button><button type="button" class="g-btn pri" data-ok></button></div>`;
+  const boxes = () => [...body.querySelectorAll("input[data-i]")], ok = body.querySelector("[data-ok]");
+  const upd = () => { const n = boxes().filter(b => b.checked).length; body.querySelector("[data-n]").textContent = n + " of " + others.length + " selected"; ok.textContent = O.okLabel ? O.okLabel(n) : n ? "Change this + " + n : "Change only this one"; ok.disabled = !!O.okLabel && !n; };
+  body.onchange = upd; upd();
+  body.onclick = e => {
+    if (e.target.closest("[data-all]")) { boxes().forEach(b => { b.checked = true; }); upd(); }
+    else if (e.target.closest("[data-none]")) { boxes().forEach(b => { b.checked = false; }); upd(); }
+    else if (e.target.closest("[data-c]")) close();
+    else if (e.target.closest("[data-ok]")) { const sel = boxes().filter(b => b.checked).map(b => others[+b.dataset.i]); close(); onApply(sel); }
+  };
+}
+function modal(title) {
+  const prev = document.activeElement, layer = document.createElement("div");
+  layer.className = "g-layer";
+  layer.innerHTML = `<div class="g-sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="hd"><h3>${esc(title)}</h3><button type="button" class="x" data-x aria-label="Close">✕</button></div><div class="bd"></div></div>`;
+  document.body.appendChild(layer);
+  const close = () => { document.removeEventListener("keydown", onKey, true); layer.remove(); if (prev && prev.focus) prev.focus(); };
+  const onKey = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
+  document.addEventListener("keydown", onKey, true);
+
+  layer.querySelector("[data-x]").onclick = close;
+  return {body: layer.querySelector(".bd"), close};
+}
+function openDetail(r) {
+  const {body, close} = modal("Transaction details");
+  body.innerHTML = rowHTML(r);
+  body.onclick = e => { if (e.target.closest(".g-pick")) return; $("gRows").onclick(e); if (e.target.closest("button")) close(); };
+  body.onchange = e => { $("gRows").onchange(e); if (!e.target.matches("[data-act=desc]")) close(); };
+  body.onkeydown = e => { if (e.key === "Enter" && e.target.matches("[data-act=desc]")) { e.preventDefault(); e.target.blur(); close(); } };
+}
+const INFO = {
+  gen: ["About this tool", "Turn bank statements into income entries in BlackRoad's own structure, categories and icons. Everything stays on your device."],
+  stm: ["Statements", "Add every bank for the month, and select several PDFs at once. Optionally choose a BlackRoad backup or income export so suggestions follow your own categories and habits."],
+  rev: ["Reviewing transactions", "Click a transaction to open its details. There you can relabel it as <b>Income</b>, <b>Expense</b>, <b>Transfer</b> or <b>Ignore</b>, use <b>→</b> to choose which income an expense is added to, and rename it. Click the icon to change its category. Changes can also be applied to similar transactions. Undo reverses them: press <b>Ctrl+Z</b> (Undo) or <b>Ctrl+Y</b> (Redo); on a Mac use Cmd instead of Ctrl."],
+  ent: ["BlackRoad entries", "BlackRoad stores each income with the transactions linked to it. Each month's expenses and investments are attached to one income entry; change which one below."],
+  exp: ["Using the export", "Use it today: BlackRoad → <b>Data Management</b> → <b>Restore</b> → choose this file. BlackRoad reads it as an <code>Income &amp; Expenses export</code>, adds the entries and skips any already stored. Nothing is replaced."]
+};
+function openInfo(k) {
+  const d = INFO[k]; if (!d) return;
+  const {body, close} = modal(d[0]);
+  body.innerHTML = `<p style="margin:0 0 16px;color:var(--tm);line-height:1.6">${d[1]}</p><div class="g-actions" style="margin:0"><button type="button" class="g-btn pri" data-c>Got it</button></div>`;
+  body.onclick = e => { if (e.target.closest("[data-c]")) close(); };
+  const layer = body.closest(".g-layer"); layer.addEventListener("mousedown", e => { if (e.target === layer) close(); });
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-info]"); if (b) openInfo(b.dataset.info); });
+function openLink(r) {
+  const {body, close} = modal("Add this expense to which income?"), mk = r.dateISO.slice(0, 7), mi = k => +k.slice(0, 4) * 12 + +k.slice(5, 7);
+  const cands = G.rows.filter(x => x.kind === "cr" && !x.skip && x.dateISO && x.amt > 0).sort((a, b) => Math.abs(mi(a.dateISO) - mi(mk)) - Math.abs(mi(b.dateISO) - mi(mk)) || b.amt - a.amt).slice(0, 40);
+  const exs = exIncomes().sort((a, b) => Math.abs(mi(a.date.slice(0, 7)) - mi(mk)) - Math.abs(mi(b.date.slice(0, 7)) - mi(mk)) || (Number(b.income) || 0) - (Number(a.income) || 0)).slice(0, 40);
+  const exHTML = exs.length ? `<div class="g-sub" style="margin:12px 0 6px;font-weight:600">Already in BlackRoad</div>` + exs.map(x => `<button type="button" class="g-opt${"e:" + x.id === r.link ? " sel" : ""}" data-l="${esc("e:" + x.id)}">${iconHTML(x.category, "md", "cr")}<span style="flex:1;min-width:0"><b>${esc(x.from || "Income")}</b><br><span class="g-sub">${dayLabel(x.date)} · ${esc(x.category || "Income")}</span></span><b style="color:var(--ok)">${inr(Number(x.income) || 0)}</b></button>`).join("") : "";
+  body.innerHTML = `<button type="button" class="g-opt${r.link ? "" : " sel"}" data-l="">Automatic <span class="g-sub">main income of ${monthName(mk)}</span></button>` +
+    (cands.length ? `<div class="g-sub" style="margin:12px 0 6px;font-weight:600">From these statements</div>` : "") +
+    cands.map(x => `<button type="button" class="g-opt${x.id === r.link ? " sel" : ""}" data-l="${esc(x.id)}">${iconHTML(x.cat, "md", "cr")}<span style="flex:1;min-width:0"><b>${esc(x.desc)}</b><br><span class="g-sub">${dayLabel(x.dateISO)} · ${esc(x.bank)}</span></span><b style="color:var(--ok)">${inr(x.amt)}</b></button>`).join("") +
+    exHTML + '<button type="button" class="g-opt" data-new>＋ Create new income</button>';
+  body.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-new")) { close(); return openIncome(r); }
+    if (b.dataset.l !== undefined) { const v = b.dataset.l; close(); runDelayed([r.id], () => { r.link = v; refresh(); }, 900); }
+  };
+}
+function openIncome(row, month) {
+  const {body, close} = modal("New income"), mk = row ? row.dateISO.slice(0, 7) : month, err = t => { $$("#niE", body).textContent = t; };
+  body.innerHTML = `<span class="lbl">Income from</span><input type="text" id="niN" maxlength="60" placeholder="e.g. Salary – Acme">
+    <span class="lbl">Amount (₹)</span><input type="number" id="niA" min="0" step="0.01" inputmode="decimal">
+    <span class="lbl">Date</span><input type="date" id="niD" value="${row ? row.dateISO : mk + "-01"}">
+    <span class="lbl">Category</span><select id="niC">${BR.INC.map(c => `<option${c === "Others" ? " selected" : ""}>${esc(c)}</option>`).join("")}</select>
+    ${row ? '<label class="g-sub" style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="niAll"> Also use it for this month\'s other unlinked expenses</label>' : ""}
+    <p class="g-warn" id="niE" style="min-height:20px;margin:10px 0 0"></p>
+    <div class="g-actions" style="margin:6px 0 0"><button type="button" class="g-btn" data-c>Cancel</button><button type="button" class="g-btn pri" data-s>Add income</button></div>`;
+  body.onclick = e => {
+    if (e.target.closest("[data-c]")) return close();
+    if (!e.target.closest("[data-s]")) return;
+    const name = $$("#niN", body).value.trim(), amt = Math.round(parseFloat($$("#niA", body).value) * 100) / 100, d = $$("#niD", body).value;
+    if (!name) return err("Enter the income source.");
+    if (!(amt > 0)) return err("Enter an amount above 0.");
+    if (!d) return err("Choose a date.");
+    const id = "m" + (++G.seq), all = $$("#niAll", body);
+    snap(); G.rows.push({id, sid: "manual", bank: "Added by you", dateISO: d, raw: name, desc: name, base: name, edited: true, mode: "", ref: "", kind: "cr", type: "income", xk: "", link: "", amt, cat: $$("#niC", body).value, src: "manual", sale: false, skip: false, why: "", locked: true, warn: false, key: payee(name).toLowerCase(), manual: true});
+    sortRows();
+    if (row) row.link = id;
+    if (!row || (all && all.checked)) G.rows.forEach(x => { if (x.kind === "dr" && !x.skip && x.dateISO && x.dateISO.slice(0, 7) === mk && !x.link) x.link = id; });
+    close(); refresh(); toast("Income added");
+  };
+  $$("#niN", body).focus();
+}
+const gDrop = $("gDrop");
+gDrop.onclick = () => $("gFile").click();
+gDrop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("gFile").click(); } };
+$("gFile").onchange = e => { const f = [...e.target.files]; e.target.value = ""; addFiles(f); };
+["dragover", "dragenter"].forEach(n => gDrop.addEventListener(n, e => { e.preventDefault(); gDrop.classList.add("over"); }));
+["dragleave", "drop"].forEach(n => gDrop.addEventListener(n, e => { e.preventDefault(); gDrop.classList.remove("over"); }));
+gDrop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+$("gStmts").onclick = e => { const b = e.target.closest("[data-rm]"); if (b) removeStatement(b.dataset.rm); };
+$("gLearnBtn").onclick = () => $("gLearnFile").click();
+$("gLearnFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const b = $("gLearnBtn"); $("gLearn").classList.remove("err"); b.disabled = true; b.textContent = "Reading…";
+  try { learnFrom(JSON.parse(await f.text()), f.name); toast("Learned from " + f.name); }
+  catch (err) { $("gLearn").classList.add("err"); $("gLearnTx").textContent = err instanceof SyntaxError ? "That file is not valid JSON." : err.message; }
+  b.disabled = false; b.textContent = BR.learn.file ? "Change file" : "Choose file";
+};
+$("gQueue").onclick = e => {
+  const r = e.target.closest("[data-qr]"), x = e.target.closest("[data-qx]");
+  if (r) { const q = Q.find(i => i.id === r.dataset.qr); if (q && q.file) { q.state = "queued"; q.note = "Waiting…"; q.frac = 0; renderQueue(); runQueue(); } }
+  else if (x) { const i = Q.findIndex(q => q.id === x.dataset.qx); if (i > -1) { Q.splice(i, 1); renderQueue(); } }
+};
+$("view-gen").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b && !b.disabled) setStep(+b.dataset.go); });
+$("gAlert").onclick = e => {
+  if (!e.target.closest("[data-showrev]")) return;
+  G.f.st = "review"; $("gSt").value = "review"; G.shown = 150; renderRows(); renderAlert();
+  $("gRows").scrollIntoView({behavior: "smooth", block: "start"});
+};
+$("gQ").oninput = e => { G.f.q = e.target.value; G.shown = 150; renderRows(); };
+[["gSt", "st"], ["gBank", "bank"], ["gMon", "mon"]].forEach(([id, k]) => $(id).onchange = e => { G.f[k] = e.target.value; G.shown = 150; renderRows(); renderAlert(); });
+$("gMore").onclick = () => { G.shown += 150; renderRows(); };
+const rowOf = el => { const r = el.closest("[data-id]"); return r && G.rows.find(x => x.id === r.dataset.id); };
+function dropApply(z) {
+  const rows = (G.drag || []).map(id => G.rows.find(x => x.id === id)).filter(x => x && !x.manual && x.dateISO && x.amt > 0);
+  G.drag = null; if (!rows.length) return;
+  if (rows.length === 1) return setType(rows[0], z);
+  if (G.busy) return;
+  if (z === "transfer") { snap(); rows.forEach(r => { const cr = r.kind === "cr"; r.locked = true; r.type = "transfer"; r.skip = true; r.xk = r.xk || (DEMAT_RX.test(r.raw) ? (cr ? "from" : "to") : "bank"); r.why = "Transfer · " + XK[r.xk]; }); refresh(); return toast(rows.length + " transactions marked as transfers"); }
+  runDelayed(rows.map(x => x.id), () => { rows.forEach(x => { applyType(x, z); x.locked = true; x.src = "manual"; }); refresh(); toast(rows.length + " transactions updated"); });
+}
+const tray = $("gTray"), clearZ = () => tray.querySelectorAll(".over").forEach(z => z.classList.remove("over"));
+$("gRows").addEventListener("dragstart", e => {
+  const rw = e.target.closest && e.target.closest(".g-row"); if (!rw || !rw.dataset.id) return;
+  const id = rw.dataset.id; G.drag = G.selMode && G.sel.has(id) ? [...G.sel] : [id];
+  e.dataTransfer.setData("text/plain", G.drag.length + " transaction" + (G.drag.length > 1 ? "s" : "")); e.dataTransfer.effectAllowed = "move";
+  rw.classList.add("dragging"); tray.classList.add("on");
+});
+$("gRows").addEventListener("dragend", () => { tray.classList.remove("on"); clearZ(); G.drag = null; document.querySelectorAll(".g-row.dragging").forEach(x => x.classList.remove("dragging")); });
+tray.addEventListener("dragover", e => { const z = e.target.closest(".g-tz"); if (!z || !G.drag) return; e.preventDefault(); clearZ(); z.classList.add("over"); });
+tray.addEventListener("dragleave", e => { if (!tray.contains(e.relatedTarget)) clearZ(); });
+tray.addEventListener("drop", e => { const z = e.target.closest(".g-tz"); if (!z || !G.drag) return; e.preventDefault(); clearZ(); tray.classList.remove("on"); dropApply(z.dataset.z); });
+let dragN = 0;
+const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes("Files"), genOn = () => !$("view-gen").classList.contains("hide");
+window.addEventListener("dragenter", e => { if (hasFiles(e) && genOn()) { dragN++; $("gOver").classList.add("on"); } });
+window.addEventListener("dragleave", e => { if (hasFiles(e) && genOn() && --dragN <= 0) { dragN = 0; $("gOver").classList.remove("on"); } });
+window.addEventListener("dragover", e => { if (hasFiles(e) && genOn()) e.preventDefault(); });
+window.addEventListener("drop", e => {
+  if (!(hasFiles(e) && genOn())) return;
+  e.preventDefault(); dragN = 0; $("gOver").classList.remove("on");
+  if (!e.target.closest("#gDrop")) { setStep(1); addFiles(e.dataTransfer.files); }
+});
+$("gDupB").onclick = () => {
+  const rows = dupRows(); if (!rows.length) return;
+  confirmSimilar({title: "Possible duplicates", intro: `${rows.length} transaction${rows.length > 1 ? "s" : ""} share the date, amount and payee with an earlier one. Tick the copies to ignore so they are not counted twice.`, others: rows, change: x => "Ignore this copy · " + x.bank, okLabel: n => "Ignore " + n,
+    onApply: sel => runDelayed(sel.map(x => x.id), () => { sel.forEach(x => { applyType(x, "ignore"); x.locked = true; x.why = "Duplicate · ignored"; }); refresh(); toast(sel.length + " duplicate" + (sel.length > 1 ? "s" : "") + " ignored"); })});
+};
+$("gRefB").onclick = () => {
+  const cs = G.rows.filter(c => G.pairs[c.id]); if (!cs.length) return;
+  confirmSimilar({title: "Refunds found", intro: `${cs.length} credit${cs.length > 1 ? "s" : ""} match an earlier debit of the same amount. Ignoring both keeps your income and expenses from being inflated.`, others: cs, change: x => "Refund of " + dayLabel(G.pairs[x.id].dateISO) + " · " + G.pairs[x.id].desc, okLabel: n => "Ignore " + n + (n === 1 ? " pair" : " pairs"),
+    onApply: sel => runDelayed(sel.flatMap(c => [c.id, G.pairs[c.id].id]), () => { sel.forEach(c => { [c, G.pairs[c.id]].forEach(x => { applyType(x, "ignore"); x.locked = true; x.why = "Refund · matched"; }); }); refresh(); toast(sel.length + " refund pair" + (sel.length > 1 ? "s" : "") + " ignored"); })});
+};
+$("gClear").onclick = () => { if (!confirm("Remove all statements and edits saved on this device?")) return; G.pool = []; G.rows = []; G.host = {}; G.undo = []; G.redo = []; G.step = 1; try { localStorage.removeItem("sr-session"); } catch (e) {} refresh(); toast("Session cleared"); };
+$("gUndo").onclick = undo; $("gRedo").onclick = redo; $("gRulesB").onclick = openRules;
+$("gGroupB").onclick = () => { G.group = !G.group; G.shown = 150; syncBar(); renderRows(); };
+$("gSelB").onclick = () => { G.selMode = !G.selMode; if (!G.selMode) G.sel.clear(); syncBar(); renderRows(); };
+document.addEventListener("keydown", e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || $("view-gen").classList.contains("hide") || document.querySelector(".g-layer")) return;
+  const t = e.target, typing = t.isContentEditable || /textarea/i.test(t.tagName) || (/input/i.test(t.tagName) && !/checkbox|radio|button/i.test(t.type));
+  if (typing) return;
+  const z = e.code === "KeyZ" || e.key.toLowerCase() === "z", y = e.code === "KeyY" || e.key.toLowerCase() === "y";
+  if (z && !e.shiftKey) { e.preventDefault(); if (G.undo && G.undo.length) undo(); else toast("Nothing to undo"); }
+  else if (y || (z && e.shiftKey)) { e.preventDefault(); if (G.redo && G.redo.length) redo(); else toast("Nothing to redo"); }
+});
+$("gBulk").onclick = e => {
+  const b = e.target.closest("[data-b]"); if (!b || b.disabled) return; const act = b.dataset.b;
+  if (act === "all") { visible().forEach(r => G.sel.add(r.id)); syncBar(); return renderRows(); }
+  if (act === "none") { G.sel.clear(); syncBar(); return renderRows(); }
+  if (act === "done") { G.selMode = false; G.sel.clear(); syncBar(); return renderRows(); }
+  const rows = [...G.sel].map(id => G.rows.find(x => x.id === id)).filter(x => x && !x.manual && x.dateISO && x.amt > 0 && x.type !== "transfer");
+  if (!rows.length) return toast("Select regular transactions first.");
+  if (act === "cat") {
+    const f = rows[0], same = rows.filter(x => side(x) === side(f));
+    return openPicker(f, name => runDelayed(same.map(x => x.id), () => { same.forEach(x => { x.cat = name; x.src = "manual"; if (side(x) === "cr") x.sale = isRet(name) && defaultSale(x); syncDesc(x); }); refresh(); toast("“" + name + "” applied to " + same.length + " transaction" + (same.length > 1 ? "s" : "") + (same.length < rows.length ? " (others are the other side)" : "")); }));
+  }
+  runDelayed(rows.map(x => x.id), () => { rows.forEach(x => { applyType(x, act); x.locked = true; x.src = "manual"; }); refresh(); toast(rows.length + " transaction" + (rows.length > 1 ? "s" : "") + " updated"); });
+};
+$("gRows").onclick = e => {
+  const gt = e.target.closest("[data-gt]"), gs = e.target.closest("[data-gs]");
+  if (gt) { const k = gt.dataset.gt; if (G.open.has(k)) G.open.delete(k); else G.open.add(k); return renderRows(); }
+  if (gs) { G.selMode = true; (G.groups[gs.dataset.gs] || []).forEach(x => G.sel.add(x.id)); syncBar(); return renderRows(); }
+  const rw = e.target.closest(".g-row");
+  if (rw && rw.closest("#gRows") && !e.target.closest("button,select,label,.g-pick")) {
+    const rr = rowOf(rw);
+    if (rr) { if (G.selMode) { const cb = rw.querySelector(".g-pick"); if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change", {bubbles: true})); } } else openDetail(rr); }
+    return;
+  }
+  if (e.target.closest("[data-clear]")) { G.f = {q: "", st: "", bank: "", mon: ""}; ["gSt", "gBank", "gMon"].forEach(id => { $(id).value = ""; }); $("gQ").value = ""; G.shown = 150; renderRows(); renderAlert(); return; }
+  const r = rowOf(e.target); if (!r) return;
+  if (e.target.closest("[data-act=cat]")) openPicker(r);
+  else if (e.target.closest("[data-act=rule]")) saveRule(r);
+  else if (e.target.closest("[data-act=type]")) setType(r, e.target.closest("[data-act=type]").dataset.t);
+  else if (e.target.closest("[data-act=demat]")) setType(r, "transfer");
+  else if (e.target.closest("[data-act=link]")) openLink(r);
+  else if (e.target.closest("[data-act=delm]")) { snap(); G.rows = G.rows.filter(x => x !== r); refresh(); }
+  else if (e.target.closest("[data-act=sale]")) {
+    snap();
+    if (effectiveSale(r)) { r.sale = false; syncDesc(r); if (BR.SALE_RX.test(low(fromText(r)))) toast("The description contains “sale / withdrawal” wording. Rename it for BlackRoad to count it as income."); }
+    else { r.sale = true; syncDesc(r); }
+    refresh();
+  }
+};
+$("gRows").onchange = e => {
+  const r = rowOf(e.target); if (!r) return;
+  if (e.target.dataset.act === "pick") { if (e.target.checked) G.sel.add(r.id); else G.sel.delete(r.id); e.target.closest(".g-row").classList.toggle("picked", e.target.checked); syncBar(); }
+  else if (e.target.dataset.act === "inc") { if (r.type === "transfer" && e.target.checked) return setType(r, side(r) === "cr" ? "income" : "expense"); const on = e.target.checked; if (!runDelayed([r.id], () => { r.skip = !on; r.locked = true; r.why = r.skip ? "Skipped by you" : ""; refresh(); }, 900)) e.target.checked = !on; }
+  else if (e.target.dataset.act === "xk") { snap(); r.xk = e.target.value; r.locked = true; r.why = "Transfer · " + XK[r.xk]; refresh(); }
+  else if (e.target.dataset.act === "desc") {
+    const nv = e.target.value.trim() || r.desc, old = r.desc, inp = e.target;
+    const others = nv === old || G.busy || !r.key || r.key.length < 3 ? [] : G.rows.filter(x => x !== r && !x.manual && !x.edited && x.kind === r.kind && x.key === r.key);
+    if (!others.length) { snap(); r.desc = nv; r.edited = true; inp.value = nv; G.B = build(); renderEntries(G.B); renderChecks(G.B); return; }
+    inp.value = old;
+    confirmSimilar({title: "Rename similar transactions?", intro: `You renamed this to <b>${esc(nv)}</b>. ${others.length} other transaction${others.length > 1 ? "s" : ""} look the same. Choose which to rename too.`, others, change: x => x.desc + " → " + nv, onApply: sel => runDelayed([r, ...sel].map(x => x.id), () => {
+      r.desc = nv; r.edited = true; sel.forEach(x => { x.desc = nv; x.edited = true; }); refresh();
+      if (sel.length) toast("Renamed " + sel.length + " similar transaction" + (sel.length > 1 ? "s" : "") + " too");
+    })});
+  }
+};
+$("gEnt").onchange = e => { const s = e.target.closest("[data-mon]"); if (s) { snap(); G.host[s.dataset.mon] = s.value; refresh(); } };
+$("gEnt").onclick = e => { const b = e.target.closest("[data-addinc]"); if (b) openIncome(null, b.dataset.addinc); };
+$("gJson").onclick = () => { download(fileStem(G.B) + ".json", JSON.stringify(exportObject(G.B), null, 2), "application/json"); flash($("gJson"), "Downloaded"); toast("Downloaded. Restore it from BlackRoad → Data Management."); };
+$("gCopy").onclick = async () => {
+  const t = JSON.stringify(exportObject(G.B), null, 2);
+  try { await navigator.clipboard.writeText(t); toast("JSON copied"); flash($("gCopy"), "Copied"); }
+  catch { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); toast("JSON copied"); flash($("gCopy"), "Copied"); } catch { toast("Could not copy. Use Download."); } ta.remove(); }
+};
+$("gCsv").onclick = () => {
+  const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+  const out = ["Income date,Income from,Income category,Income amount,Transaction date,Description,Category,Type,Amount"];
+  G.B.entries.forEach(e => {
+    const h = [e.date, q(e.from), q(e.category), e.income];
+    if (!e.transactions.length) out.push([...h, "", "", "", "", ""].join(","));
+    else e.transactions.forEach(t => out.push([...h, t.date, q(t.description), q(t.category), t.type, t.amount].join(",")));
+  });
+  (G.B.existing || []).forEach(x => x.added.forEach(t => out.push([x.ex.date, q(x.ex.from || ""), q(x.ex.category || ""), Number(x.ex.income) || 0, t.date, q(t.description), q(t.category), t.type, t.amount].join(","))));
+  download(fileStem(G.B) + ".csv", out.join("\n"), "text/csv"); flash($("gCsv"), "Downloaded");
+};
+$("gSave").onclick = async () => {
+  const h = HOST(); if (!h || typeof h.save !== "function" || !G.B) return;
+  const b = $("gSave"); b.disabled = true; const t0 = b.textContent; b.textContent = "Saving…";
+  try {
+    const r = await h.save({entries: G.B.entries, customExpenseCategories: G.B.custom.map(c => ({name: c.name, icon: c.icon, hue: c.hue})), existing: (G.B.existing || []).map(x => ({id: x.ex.id, add: x.added}))}) || {};
+    toast(`Saved to BlackRoad: ${r.added || 0} new income${r.added === 1 ? "" : "s"}, ${r.updated || 0} existing updated${r.skipped ? ", " + r.skipped + " already there" : ""}`);
+    b.textContent = "Saved ✓";
+  } catch (err) { toast("Could not save: " + (err && err.message ? err.message : err)); b.textContent = t0; }
+  b.disabled = false;
+};
+$("gDet").ontoggle = () => { if ($("gDet").open) $("gPre").textContent = JSON.stringify(exportObject(G.B), null, 2); };
+
+/* Tabs */
+function showTab(name) {
+  const gen = name === "gen";
+  $("view-reader").classList.toggle("hide", gen);
+  $("view-gen").classList.toggle("hide", !gen);
+  document.body.classList.toggle("gen", gen);
+  document.querySelectorAll("#tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  window.scrollTo(0, 0);
+}
+window.showTab = showTab;
+document.querySelectorAll("#tabs [data-tab]").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+restoreSession();
+refresh();
+})();
+
+}
+
+/*
+ * Mounts the reader into `container`.
+ * host = { incomes: [], save(payload), onReady(fn) }   (see roadsync.js)
+ * Returns { refresh() } so the host can re-read existing incomes.
+ */
+export async function mountStatementReader(container, host) {
+    const shadow = container.attachShadow({ mode: "open" });
+    shadow.innerHTML = `<style>${CSS}</style><div class="sr-root">${HTML}</div>`;
+    const wrap = shadow.querySelector(".sr-root");
+
+    // Follow BlackRoad's theme.
+    const syncTheme = () => wrap.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+    syncTheme();
+    const themeObs = new MutationObserver(syncTheme);
+    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    const pdfjs = await loadPdfJs();
+
+    // `document` limited to the reader's own DOM.
+    const doc = {
+        getElementById: (id) => shadow.getElementById(id),
+        querySelector: (q) => shadow.querySelector(q),
+        querySelectorAll: (q) => shadow.querySelectorAll(q),
+        createElement: (t) => document.createElement(t),
+        get activeElement() { return shadow.activeElement; },
+        body: wrap,
+        documentElement: wrap,
+        addEventListener: (...a) => wrap.addEventListener(...a),
+        removeEventListener: (...a) => wrap.removeEventListener(...a),
+        execCommand: (...a) => document.execCommand(...a)
+    };
+
+    // `window` limited to the reader (listeners live on its own root and go away with it).
+    const win = {
+        BR_HOST: host,
+        addEventListener: (...a) => wrap.addEventListener(...a),
+        removeEventListener: (...a) => wrap.removeEventListener(...a),
+        scrollTo: () => container.scrollIntoView({ block: "start" })
+    };
+
+    run(doc, win, pdfjs || undefined);
+
+    const api = {
+        refresh() { try { win.srHostReady && win.srHostReady(); } catch (e) { /* not ready yet */ } }
+    };
+
+    // Stop watching the theme once the page has been replaced.
+    const gone = new MutationObserver(() => {
+        if (!container.isConnected) { themeObs.disconnect(); gone.disconnect(); }
+    });
+    gone.observe(document.body, { childList: true, subtree: true });
+
+    return api;
+}

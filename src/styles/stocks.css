@@ -799,3 +799,14 @@
         -webkit-overflow-scrolling: touch;
     }
 }
+
+/* ---------- IPO tab ---------- */
+.ipo-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--br-space-3); margin-bottom: var(--br-space-3); }
+.ipo-filters { margin-bottom: var(--br-space-3); }
+.ipo-card .stk-card-top { align-items: center; }
+.ipo-icons { display: flex; gap: 2px; }
+.ipo-hold { padding-top: var(--br-space-3); border-top: 1px solid var(--border); }
+.ipo-notes { margin: var(--br-space-3) 0 0; }
+.ipo-warn { color: var(--br-warning); margin: var(--br-space-3) 0 0; }
+.ipo-actions { display: flex; flex-wrap: wrap; gap: var(--br-space-2); margin-top: var(--br-space-3); }
+.ipo-modal-note { margin: 0 0 var(--br-space-3); }

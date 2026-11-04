@@ -717,6 +717,7 @@ input:focus,select:focus,.g-opt:hover,.g-opt.sel{border-color:var(--gold)}
       <button class="g-btn pri" id="gJson" type="button">Download BlackRoad JSON</button>
       <button class="g-btn" id="gCopy" type="button">Copy JSON</button>
       <button class="g-btn" id="gCsv" type="button">Download CSV</button>
+      <button class="g-btn pri hide" id="gSave" type="button">Save to BlackRoad</button>
     </div>
     <details id="gDet"><summary>Preview JSON</summary><pre class="g-json" id="gPre"></pre></details>
     <div class="g-foot"><button class="g-btn" data-go="3" type="button">← Entries</button></div>
@@ -1257,6 +1258,12 @@ function recalc(e) {
   e.balance = (sale ? 0 : amount) - ex - inv + (sale ? amount : 0);
   return e;
 }
+/* Embedded in RoadSync, the parent page exposes window.BR_HOST = { incomes: [BlackRoad income entries], save(payload) }.
+   Standalone, there is no host and everything behaves exactly as before. */
+const HOST = () => { try { return window.BR_HOST || null; } catch (e) { return null; } };
+const exIncomes = () => { const h = HOST(); return h && Array.isArray(h.incomes) ? h.incomes.filter(e => e && e.id != null && e.date) : []; };
+const exById = id => exIncomes().find(e => String(e.id) === String(id));
+window.srHostReady = () => { try { refresh(); } catch (e) {} };
 const sigOf = e => {
   const c = recalc({...e, transactions: (e.transactions || []).map(t => ({...t}))});
   return JSON.stringify([Number(c.income) || 0, c.date || "", c.from || "", c.category || "",
@@ -1595,7 +1602,7 @@ function build() {
     (side(r) === "cr" ? m.incomes : m.txns).push(r);
   }
   let n = 0;
-  const byId = {}, linkOf = {}, entries = [];
+  const byId = {}, linkOf = {}, entries = [], exMap = {};
   const months = Object.keys(byMon).sort().map(k => {
     const m = byMon[k];
     const list = m.incomes.map(r => (byId[r.id] = {row: r, e: {date: r.dateISO, from: fromText(r), category: r.cat, income: r.amt, transactions: []}}));
@@ -1604,6 +1611,16 @@ function build() {
   for (const M of months) {
     let def = null, syn = null;
     for (const r of M.m.txns) {
+      if (r.link && String(r.link).startsWith("e:")) {
+        const ex = exById(String(r.link).slice(2));
+        if (ex) {
+          const X = exMap[ex.id] || (exMap[ex.id] = {ex, added: [], addExp: 0, addInv: 0});
+          const tx = {id: "g" + (++n).toString(36), amount: r.amt, date: r.dateISO, description: r.desc, category: r.cat, type: isInv(r.cat) ? "investment" : "expense"};
+          X.added.push(tx); if (isInv(r.cat)) X.addInv += r.amt; else X.addExp += r.amt;
+          linkOf[r.id] = {label: ex.from || "Income", auto: false, none: false, existing: true};
+          continue;
+        }
+      }
       let h = r.link && byId[r.link]; const auto = !h;
       if (auto) {
         M.auto++;
@@ -1616,14 +1633,16 @@ function build() {
     }
   }
   months.forEach(M => M.list.forEach(x => { recalc(x.e); entries.push(x.e); }));
-  return {months, entries, linkOf, custom: BR.custom.filter(c => entries.some(e => e.transactions.some(t => low(t.category) === low(c.name))))};
+  const existing = Object.values(exMap);
+  return {months, entries, existing, linkOf, custom: BR.custom.filter(c => entries.concat(existing.map(x => ({transactions: x.added}))).some(e => e.transactions.some(t => low(t.category) === low(c.name))))};
 }
 function exportObject(B) {
   return {
     app: "BlackRoad", kind: "income-entries", generatedBy: "Statement Reader", generatedAt: new Date().toISOString(),
     sources: G.pool.map(p => ({statement: p.label, file: p.file, account: p.meta.account || "", period: p.meta.period || "", transactions: p.rows.length})),
     customExpenseCategories: B.custom.map(c => ({name: c.name, icon: c.icon, hue: c.hue})),
-    entries: B.entries
+    entries: B.entries,
+    ...((B.existing || []).length ? {existingIncomeUpdates: B.existing.map(x => ({id: x.ex.id, from: x.ex.from, date: x.ex.date, addTransactions: x.added}))} : {})
   };
 }
 function fileStem(B) {
@@ -1730,7 +1749,8 @@ function renderRows() {
 }
 function renderEntries(B) {
   $("gEntCount").textContent = B.entries.length + (B.entries.length === 1 ? " entry" : " entries");
-  $("gEnt").innerHTML = B.months.map(m => {
+  const exHTML = (B.existing || []).length ? `<section class="g-ent"><header><h4>Added to existing BlackRoad incomes</h4><span class="g-sub">${B.existing.length} existing income${B.existing.length === 1 ? "" : "s"}</span></header>${B.existing.map(x => `<div class="g-e"><span class="ic">${iconHTML(x.ex.category, "md", "cr")}</span><div class="t" title="${esc(x.ex.from)}">${esc(x.ex.from || "Income")}</div><div class="a" style="color:var(--ok)">${inr(Number(x.ex.income) || 0)}</div><div class="m"><span>${dayLabel(x.ex.date)}</span><span>${esc(x.ex.category || "")}</span><span>Expenses ${inr(x.addExp)}</span>${x.addInv ? `<span>Investments ${inr(x.addInv)}</span>` : ""}<span>${x.added.length} added</span></div></div>`).join("")}</section>` : "";
+  $("gEnt").innerHTML = exHTML + B.months.map(m => {
     const cands = m.list.filter(x => x.row).sort((a, b) => b.row.amt - a.row.amt);
     const sel = cands.length > 1 && m.auto ? `<label>Attach expenses to <select data-mon="${m.key}">${cands.map(c => `<option value="${esc(c.row.id)}"${c === m.host ? " selected" : ""}>${esc(c.e.from)} · ${inr(c.row.amt)}</option>`).join("")}</select></label>` : "";
     return `<section class="g-ent"><header><h4>${monthName(m.key)}</h4><span class="g-sub">${m.list.length} income ${m.list.length === 1 ? "entry" : "entries"} · ${m.txCount} transaction${m.txCount === 1 ? "" : "s"}</span><span class="sp"></span>${sel}<button type="button" class="g-btn sm" data-addinc="${m.key}">＋ Add income</button></header>
@@ -1743,7 +1763,7 @@ function renderEntries(B) {
 function renderChecks(B) {
   const inAll = G.rows.filter(r => r.kind === "cr").reduce((t, r) => t + r.amt, 0), outAll = G.rows.filter(r => r.kind === "dr").reduce((t, r) => t + r.amt, 0);
   const inEnt = B.entries.reduce((t, e) => t + e.income, 0) + G.rows.filter(r => r.kind === "cr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
-  const outEnt = B.entries.reduce((t, e) => t + e.expense + e.investment, 0) + G.rows.filter(r => r.kind === "dr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
+  const outEnt = B.entries.reduce((t, e) => t + e.expense + e.investment, 0) + (B.existing || []).reduce((t, x) => t + x.addExp + x.addInv, 0) + G.rows.filter(r => r.kind === "dr" && (r.skip || !r.dateISO)).reduce((t, r) => t + r.amt, 0);
   const ok = (a, b) => Math.abs(a - b) < 0.02, tag = c => c ? '<b style="color:var(--ok)">Matches ✓</b>' : '<b class="g-warn">Does not match</b>';
   const transfers = G.rows.filter(r => r.why.startsWith("Own transfer")).length / 2, bad = G.pool.reduce((t, p) => t + p.bad, 0);
   const dup = B.entries.filter(e => BR.learn.sigs.has(sigOf(e))).length;
@@ -1799,7 +1819,8 @@ function refresh() {
   applyStep();
   if (!has) return;
   fillFilters(); renderTiles(G.B); renderAlert(); renderRows(); renderEntries(G.B); renderChecks(G.B);
-  ["gJson", "gCopy", "gCsv"].forEach(id => { $(id).disabled = !G.B.entries.length; });
+  ["gJson", "gCopy", "gCsv"].forEach(id => { $(id).disabled = !(G.B.entries.length || (G.B.existing || []).length); });
+  const sv = $("gSave"); if (sv) { const h = HOST(); sv.classList.toggle("hide", !(h && typeof h.save === "function")); sv.disabled = !(G.B.entries.length || (G.B.existing || []).length); }
   $("gPre").textContent = ""; $("gDet").open = false;
 }
 
@@ -2071,9 +2092,12 @@ document.addEventListener("click", e => { const b = e.target.closest("[data-info
 function openLink(r) {
   const {body, close} = modal("Add this expense to which income?"), mk = r.dateISO.slice(0, 7), mi = k => +k.slice(0, 4) * 12 + +k.slice(5, 7);
   const cands = G.rows.filter(x => x.kind === "cr" && !x.skip && x.dateISO && x.amt > 0).sort((a, b) => Math.abs(mi(a.dateISO) - mi(mk)) - Math.abs(mi(b.dateISO) - mi(mk)) || b.amt - a.amt).slice(0, 40);
+  const exs = exIncomes().sort((a, b) => Math.abs(mi(a.date.slice(0, 7)) - mi(mk)) - Math.abs(mi(b.date.slice(0, 7)) - mi(mk)) || (Number(b.income) || 0) - (Number(a.income) || 0)).slice(0, 40);
+  const exHTML = exs.length ? `<div class="g-sub" style="margin:12px 0 6px;font-weight:600">Already in BlackRoad</div>` + exs.map(x => `<button type="button" class="g-opt${"e:" + x.id === r.link ? " sel" : ""}" data-l="${esc("e:" + x.id)}">${iconHTML(x.category, "md", "cr")}<span style="flex:1;min-width:0"><b>${esc(x.from || "Income")}</b><br><span class="g-sub">${dayLabel(x.date)} · ${esc(x.category || "Income")}</span></span><b style="color:var(--ok)">${inr(Number(x.income) || 0)}</b></button>`).join("") : "";
   body.innerHTML = `<button type="button" class="g-opt${r.link ? "" : " sel"}" data-l="">Automatic <span class="g-sub">main income of ${monthName(mk)}</span></button>` +
+    (cands.length ? `<div class="g-sub" style="margin:12px 0 6px;font-weight:600">From these statements</div>` : "") +
     cands.map(x => `<button type="button" class="g-opt${x.id === r.link ? " sel" : ""}" data-l="${esc(x.id)}">${iconHTML(x.cat, "md", "cr")}<span style="flex:1;min-width:0"><b>${esc(x.desc)}</b><br><span class="g-sub">${dayLabel(x.dateISO)} · ${esc(x.bank)}</span></span><b style="color:var(--ok)">${inr(x.amt)}</b></button>`).join("") +
-    '<button type="button" class="g-opt" data-new>＋ Create new income</button>';
+    exHTML + '<button type="button" class="g-opt" data-new>＋ Create new income</button>';
   body.onclick = e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.hasAttribute("data-new")) { close(); return openIncome(r); }
@@ -2257,7 +2281,18 @@ $("gCsv").onclick = () => {
     if (!e.transactions.length) out.push([...h, "", "", "", "", ""].join(","));
     else e.transactions.forEach(t => out.push([...h, t.date, q(t.description), q(t.category), t.type, t.amount].join(",")));
   });
+  (G.B.existing || []).forEach(x => x.added.forEach(t => out.push([x.ex.date, q(x.ex.from || ""), q(x.ex.category || ""), Number(x.ex.income) || 0, t.date, q(t.description), q(t.category), t.type, t.amount].join(","))));
   download(fileStem(G.B) + ".csv", out.join("\n"), "text/csv"); flash($("gCsv"), "Downloaded");
+};
+$("gSave").onclick = async () => {
+  const h = HOST(); if (!h || typeof h.save !== "function" || !G.B) return;
+  const b = $("gSave"); b.disabled = true; const t0 = b.textContent; b.textContent = "Saving…";
+  try {
+    const r = await h.save({entries: G.B.entries, customExpenseCategories: G.B.custom.map(c => ({name: c.name, icon: c.icon, hue: c.hue})), existing: (G.B.existing || []).map(x => ({id: x.ex.id, add: x.added}))}) || {};
+    toast(`Saved to BlackRoad: ${r.added || 0} new income${r.added === 1 ? "" : "s"}, ${r.updated || 0} existing updated${r.skipped ? ", " + r.skipped + " already there" : ""}`);
+    b.textContent = "Saved ✓";
+  } catch (err) { toast("Could not save: " + (err && err.message ? err.message : err)); b.textContent = t0; }
+  b.disabled = false;
 };
 $("gDet").ontoggle = () => { if ($("gDet").open) $("gPre").textContent = JSON.stringify(exportObject(G.B), null, 2); };
 

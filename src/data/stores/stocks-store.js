@@ -2,7 +2,7 @@ import { BaseStore } from "./base-store.js";
 
 /*
  * blackStocks -> "state" (out-of-line keys).
- * Known keys: "transactions", "prices", "seqCounter".
+ * Known keys: "transactions", "prices", "seqCounter", "ipos".
  */
 export class StocksStore extends BaseStore {
     constructor(database) {
@@ -42,6 +42,19 @@ export class StocksStore extends BaseStore {
 
     async saveSeqCounter(seqCounter) {
         return this.put(seqCounter, "seqCounter");
+    }
+
+    /*
+     * IPO applications (separate key, so loadAll/saveAll and every other
+     * module that reads the three core keys are untouched).
+     */
+    async getIpos() {
+        const value = await this.get("ipos");
+        return Array.isArray(value) ? value : [];
+    }
+
+    async saveIpos(ipos) {
+        return this.put(ipos, "ipos");
     }
 
     /*

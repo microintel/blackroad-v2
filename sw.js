@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v235";
+const CACHE_VERSION = "v239";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -38,6 +38,8 @@ const SHELL = [
     "./src/styles/splash.css",
     "./src/styles/roadsync.css",
     "./src/features/roadsync/roadsync.js",
+    "./src/features/roadsync/statement-reader.js",
+    "./assets/statement-reader.html",
     "./src/app/splash.js",
     "./src/styles/brand.css",
     "./src/styles/account.css",
@@ -156,6 +158,7 @@ const SHELL = [
     "./src/features/stepup/stepup-fund.js",
     "./src/features/stepup/stepup-service.js",
     "./src/features/stepup/stepup.js",
+    "./src/features/stocks/stocks-ipo.js",
     "./src/features/stocks/stocks-live.js",
     "./src/features/stocks/stocks-pnl-chart.js",
     "./src/features/stocks/stocks-print.js",
@@ -210,6 +213,7 @@ const SHELL = [
     "./src/styles/dashboard-pro.css",
     "./src/styles/stepup.css",
     "./src/styles/stocks.css",
+    "./src/styles/stocks-minimal.css",
     "./src/styles/time-picker.css",
     "./src/styles/palettes.css",
     "./src/styles/theme.css",

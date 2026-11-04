@@ -40,6 +40,7 @@ import {
 
 import { printStocksReport } from "./stocks-print.js";
 import { createPnlChart } from "./stocks-pnl-chart.js";
+import { initIpo } from "./stocks-ipo.js";
 import { setHTML } from "../../components/dom-patch.js";
 import { enhanceTimeInputs } from "../../components/time-picker.js";
 import { isGuestSync } from "../../services/auth.js";
@@ -75,6 +76,7 @@ let soldStock = "";
 let flashSymbol = null;
 let flashTxnId = null;
 let saving = false;
+let ipoApi = null;
 
 export async function Stocks() {
     store = await dataService.getStocksStore();
@@ -88,6 +90,7 @@ export async function Stocks() {
             <button type="button" class="br-income-tab active" data-stocks-tab="holdings">Holdings <span class="stk-count" data-count="holdings"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="transactions">Transactions <span class="stk-count" data-count="transactions"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="sold">Sold <span class="stk-count" data-count="sold"></span></button>
+            <button type="button" class="br-income-tab" data-stocks-tab="ipo">IPO <span class="stk-count" data-count="ipo"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="analytics">Analytics</button>
             <button type="button" class="br-income-tab" data-stocks-tab="reports">Reports</button>
         </div>
@@ -95,7 +98,7 @@ export async function Stocks() {
         <!-- SUMMARY -->
         <section class="inc-summary" aria-label="Portfolio summary" data-stocks-summary-wrap>
             <div class="inc-metric inc-metric-primary">
-                <span class="inc-label">Current value</span>
+                <span class="inc-label">Market value</span>
                 <div class="inc-total-row">
                     <strong class="inc-amount inc-amount-lg" data-sum-value>${fmtMoney(0, true)}</strong>
                     <div class="stk-actions">
@@ -115,12 +118,12 @@ export async function Stocks() {
             <section class="inc-section">
                 <div class="inc-section-head">
                     <div>
-                        <h3>Active holdings</h3>
+                        <h3>Positions</h3>
                     </div>
                     <div class="br-chip-row" data-hold-filters role="group" aria-label="Filter holdings" hidden>
                         <button type="button" class="br-chip active" data-action="hold-filter" data-filter="all">All</button>
                         <button type="button" class="br-chip" data-action="hold-filter" data-filter="mtf">MTF</button>
-                        <button type="button" class="br-chip" data-action="hold-filter" data-filter="own">My money only</button>
+                        <button type="button" class="br-chip" data-action="hold-filter" data-filter="own">Own only</button>
                     </div>
                 </div>
                 <div data-holdings-list></div>
@@ -136,17 +139,23 @@ export async function Stocks() {
                 <div class="stk-sold-tools">
                     <label class="stk-sold-pick">
                         <span class="br-muted">Stock</span>
-                        <select class="br-select" data-sold-stock aria-label="Show a sold stock"><option value="">All sold stocks</option></select>
+                        <select class="br-select" data-sold-stock aria-label="Show a sold stock"><option value="">All closed</option></select>
                     </label>
                     <div class="br-chip-row" role="group" aria-label="Filter sold stocks">
                         <button type="button" class="br-chip active" data-action="sold-filter" data-filter="all">All</button>
-                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="missed">Rose after sale</button>
-                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="good">Fell after sale</button>
+                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="missed">Above exit</button>
+                        <button type="button" class="br-chip" data-action="sold-filter" data-filter="good">Below exit</button>
                     </div>
                 </div>
                 <div data-sold-list></div>
             </section>
         </div>
+
+        <!-- IPO -->
+        <div class="inc-view" data-stocks-view="ipo" hidden>
+            <div data-ipo-root></div>
+        </div>
+        <div class="br-modal-layer" data-ipo-modal hidden></div>
 
                 <!-- TRANSACTIONS -->
         <div data-stocks-view="transactions" hidden>
@@ -156,7 +165,7 @@ export async function Stocks() {
                         <div class="stk-txn-searchrow">
                             <div class="br-search-box">
                                 <span class="br-search-icon">${icon("search", { size: 16 })}</span>
-                                <input type="search" placeholder="Search stock, symbol or notes..." data-txn-search>
+                                <input type="search" placeholder="Search" data-txn-search>
                             </div>
                             <button type="button" class="br-button stk-icon-btn stk-export-btn" data-action="export-csv" aria-label="Export CSV" title="Export CSV">${icon("download", { size: 18 })}</button>
                         </div>
@@ -184,7 +193,7 @@ export async function Stocks() {
                                 <th>Qty</th>
                                 <th>Price</th>
                                 <th>Amount</th>
-                                <th>Realized P&amp;L</th>
+                                <th>P&amp;L</th>
                                 <th>Return</th>
                                 <th>Held</th>
                                 <th></th>
@@ -430,6 +439,16 @@ export async function Stocks() {
 
     enhanceTimeInputs(page);
     attachEvents(page);
+    ipoApi = initIpo(page, {
+        store,
+        getTransactions: () => transactions,
+        getPrices: () => prices,
+        persist,
+        takeSeq: () => ++seqCounter,
+        giveBackSeq: () => { seqCounter--; },
+        rerender: () => renderAll(page),
+        openTxn: (opts) => openTxnPrefilled(page, opts)
+    });
     bindAddShortcut(page, (p) => clickFirstVisible(p, '[data-action="add-txn"]'));
     realizedChart = createPnlChart(page.querySelector("[data-an-realized-chart]"), { kind: "realized" });
     await loadState(page);
@@ -447,6 +466,11 @@ async function loadState(page) {
     transactions = state.transactions;
     prices = state.prices;
     seqCounter = state.seqCounter;
+    try {
+        await ipoApi.load();
+    } catch (err) {
+        /* IPO list is optional — never block the rest of Stocks */
+    }
 
     renderAll(page);
 }
@@ -469,12 +493,12 @@ async function refreshPrices(page, silent) {
     const status = page.querySelector("[data-live-status]");
 
     if (symbols.length === 0) {
-        if (!silent && status) status.textContent = "No holdings to refresh";
+        if (!silent && status) status.textContent = "no positions";
         return;
     }
 
     refreshing = true;
-    if (!silent && status) status.textContent = "Refreshing prices…";
+    if (!silent && status) status.textContent = "syncing…";
 
     try {
         const { updates, updated, failed } = await fetchLTPs(symbols);
@@ -501,6 +525,7 @@ async function refreshPrices(page, silent) {
                     renderAnalytics(page);
                     renderDetail(page);
                     renderSold(page);
+                    ipoApi?.render();
                 } finally {
                     patching = false;
                 }
@@ -511,9 +536,9 @@ async function refreshPrices(page, silent) {
             status.textContent =
                 failed === 0
                     ? updated > 0
-                        ? "Prices live"
+                        ? "live"
                         : ""
-                    : `Updated ${updated}, ${failed} failed — enter manually`;
+                    : `${updated} ok · ${failed} failed`;
         }
     } finally {
         refreshing = false;
@@ -554,6 +579,7 @@ function renderAll(page) {
     renderAnalytics(page);
     renderSymbolList(page);
     updateCounts(page);
+    ipoApi?.render();
     flashTxnId = null;
     flashSymbol = null;
 }
@@ -588,19 +614,19 @@ function renderSummary(page) {
         <div class="inc-metric">
             <span class="inc-label">${label}</span>
             <strong class="inc-amount${tone ? " br-pnl-" + tone : ""}">${val}</strong>
-            <span class="inc-hint">${hint}</span>
+            ${hint ? `<span class="inc-hint">${hint}</span>` : ""}
         </div>`;
 
     put(page.querySelector("[data-stocks-summary]"), metric(
-            "Invested",
+            "Cost",
             fmtMoney(totals.investedValue, true),
             totals.hasMTF
-                ? `Mine ${fmtMoney(totals.ownInvested, true)} + MTF ${fmtMoney(totals.fundedInvested, true)}`
-                : "Cost of open holdings"
+                ? `Own ${fmtMoney(totals.ownInvested, true)} · MTF ${fmtMoney(totals.fundedInvested, true)}`
+                : ""
         ) +
-        metric("Unrealized P&amp;L", fmtSigned(totals.unrealizedPnL, true), fmtPct(totals.unrealizedPnLPct), pnlClass(totals.unrealizedPnL)) +
-        metric("Realized P&amp;L", fmtSigned(totals.realizedPnL, true), "Booked from sales", pnlClass(totals.realizedPnL)) +
-        metric("Total P&amp;L", fmtSigned(totals.totalPnL, true), fmtPct(totals.totalPnLPct), pnlClass(totals.totalPnL)));
+        metric("Unrealized", fmtSigned(totals.unrealizedPnL, true), fmtPct(totals.unrealizedPnLPct), pnlClass(totals.unrealizedPnL)) +
+        metric("Realized", fmtSigned(totals.realizedPnL, true), "", pnlClass(totals.realizedPnL)) +
+        metric("Net P&amp;L", fmtSigned(totals.totalPnL, true), fmtPct(totals.totalPnLPct), pnlClass(totals.totalPnL)));
 
     renderMtfSummary(page, totals);
 }
@@ -628,7 +654,7 @@ function renderMtfSummary(page, totals) {
         <div class="inc-metric">
             <span class="inc-label">${label}</span>
             <strong class="inc-amount${tone ? " br-pnl-" + tone : ""}">${val}</strong>
-            <span class="inc-hint">${hint}</span>
+            ${hint ? `<span class="inc-hint">${hint}</span>` : ""}
         </div>`;
 
     box.hidden = false;
@@ -640,15 +666,15 @@ function renderMtfSummary(page, totals) {
         </div>
         ${splitBar(totals.ownInvested, totals.fundedInvested)}
         <div class="stk-split-legend">
-            <span><i class="own"></i>My amount</span>
+            <span><i class="own"></i>Own</span>
             <span><i class="mtf"></i>MTF funded</span>
         </div>
         <div class="stk-mtf-metrics">
-            ${m("My amount", fmtMoney(totals.ownInvested, true), "Paid from my funds")}
-            ${m("MTF funded", fmtMoney(totals.fundedInvested, true), "Funded by the broker")}
-            ${m("Leverage", totals.leverage.toFixed(2) + "×", "Position ÷ my amount")}
-            ${m("Net equity", fmtMoney(totals.netEquity, true), "Value after repaying MTF")}
-            ${m("Return on my amount", fmtPct(totals.returnOnOwnPct), "Unrealized P&amp;L ÷ my amount", pnlClass(totals.returnOnOwnPct))}
+            ${m("Own capital", fmtMoney(totals.ownInvested, true), "")}
+            ${m("MTF funded", fmtMoney(totals.fundedInvested, true), "")}
+            ${m("Leverage", totals.leverage.toFixed(2) + "×", "")}
+            ${m("Net equity", fmtMoney(totals.netEquity, true), "")}
+            ${m("Return on own", fmtPct(totals.returnOnOwnPct), "", pnlClass(totals.returnOnOwnPct))}
         </div>
     `);
 }
@@ -689,15 +715,14 @@ function renderHoldings(page) {
         put(container, `
             <div class="inc-empty">
                 ${icon("chart-candlestick", { size: 22 })}
-                <h4>No active holdings yet</h4>
-                <p>Add your first buy and your portfolio, P&amp;L and allocation will appear here.</p>
+                <h4>No open positions</h4>
                 <button type="button" class="br-button br-button-primary" data-action="add-txn">${icon("plus", { size: 18 })} Add transaction</button>
             </div>`);
         return;
     }
 
     if (holdings.length === 0) {
-        put(container, `<div class="inc-empty"><h4>No holdings in this filter</h4><p>Switch to “All” to see everything.</p></div>`);
+        put(container, `<div class="inc-empty"><h4>No results</h4></div>`);
         return;
     }
 
@@ -710,17 +735,17 @@ function renderHoldings(page) {
             const badge = h.hasMargin
                 ? `<span class="br-badge br-badge-warning">MTF ${h.leverage.toFixed(1)}×</span>`
                 : h.isMTF
-                ? `<span class="br-badge br-badge-warning" title="Margin not recorded — edit the MTF buy to add it">MTF · margin not set</span>`
+                ? `<span class="br-badge br-badge-warning" title="Margin not recorded — edit the MTF buy to add it">MTF · no margin</span>`
                 : "";
 
             const mtfBlock = h.hasMargin
                 ? `<div class="stk-card-mtf">
                         ${splitBar(h.ownInvested, h.fundedInvested)}
                         <div class="stk-card-mtf-line">
-                            <span><i class="own"></i>Mine <strong>${fmtMoney(h.ownInvested, true)}</strong></span>
+                            <span><i class="own"></i>Own <strong>${fmtMoney(h.ownInvested, true)}</strong></span>
                             <span><i class="mtf"></i>MTF <strong>${fmtMoney(h.fundedInvested, true)}</strong></span>
-                            <span>Net equity <strong>${fmtMoney(h.netEquity, true)}</strong></span>
-                            <span>On my amount <strong class="br-pnl-${pnlClass(h.returnOnOwnPct)}">${fmtPct(h.returnOnOwnPct)}</strong></span>
+                            <span>Net eq <strong>${fmtMoney(h.netEquity, true)}</strong></span>
+                            <span>RoE <strong class="br-pnl-${pnlClass(h.returnOnOwnPct)}">${fmtPct(h.returnOnOwnPct)}</strong></span>
                         </div>
                    </div>`
                 : "";
@@ -740,11 +765,11 @@ function renderHoldings(page) {
                     </div>
                     <dl class="stk-stats">
                         ${stat("Qty", h.quantity)}
-                        ${stat("Avg price", fmtMoney(h.avgPrice))}
-                        ${stat("Invested", fmtMoney(h.investedValue, true))}
-                        ${stat("Weight", weight.toFixed(1) + "%")}
+                        ${stat("Avg", fmtMoney(h.avgPrice))}
+                        ${stat("Cost", fmtMoney(h.investedValue, true))}
+                        ${stat("Wt", weight.toFixed(1) + "%")}
                         <div class="stk-price">
-                            <dt>Current price</dt>
+                            <dt>LTP</dt>
                             <dd><input type="number" inputmode="decimal" step="0.01" min="0" class="br-input" value="${h.currentPrice}" aria-label="Current price of ${escapeAttribute(h.symbol)}" data-price-input="${escapeAttribute(h.symbol)}"></dd>
                         </div>
                     </dl>
@@ -780,7 +805,7 @@ function renderSold(page) {
         if (pick.dataset.sig !== sig) {
             pick.dataset.sig = sig;
             pick.innerHTML =
-                '<option value="">All sold stocks</option>' +
+                '<option value="">All closed</option>' +
                 all
                     .slice()
                     .sort((a, b) => String(a.name).localeCompare(String(b.name)))
@@ -793,7 +818,7 @@ function renderSold(page) {
 
     if (all.length === 0) {
         summary.innerHTML = "";
-        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}<h4>No fully sold stocks yet</h4><p>Stocks you sell completely will appear here with how their price moved since.</p></div>`;
+        list.innerHTML = `<div class="inc-empty">${icon("gem", { size: 22 })}<h4>No closed positions</h4></div>`;
         return;
     }
 
@@ -802,9 +827,9 @@ function renderSold(page) {
     const downTotal = all.filter((x) => !up(x)).reduce((n, x) => n + Math.abs(x.impact), 0);
 
     put(summary, `
-        <div class="stk-sold-stat"><span>Sold stocks</span><strong>${all.length}</strong></div>
-        <div class="stk-sold-stat pos"><span>Rose after sale</span><strong>${fmtMoney(upTotal, true)}</strong></div>
-        <div class="stk-sold-stat neg"><span>Fell after sale</span><strong>${fmtMoney(downTotal, true)}</strong></div>`);
+        <div class="stk-sold-stat"><span>Closed</span><strong>${all.length}</strong></div>
+        <div class="stk-sold-stat pos"><span>Above exit</span><strong>${fmtMoney(upTotal, true)}</strong></div>
+        <div class="stk-sold-stat neg"><span>Below exit</span><strong>${fmtMoney(downTotal, true)}</strong></div>`);
 
     const shown = all.filter((x) =>
         (!soldStock || x.symbol === soldStock) &&
@@ -812,7 +837,7 @@ function renderSold(page) {
     );
 
     if (shown.length === 0) {
-        put(list, `<div class="inc-empty">${icon("gem", { size: 22 })}<h4>Nothing matches</h4><p>Try another stock or filter.</p></div>`);
+        put(list, `<div class="inc-empty">${icon("gem", { size: 22 })}<h4>No results</h4></div>`);
         return;
     }
 
@@ -833,11 +858,11 @@ function renderSold(page) {
                         <span class="stk-sold-pct">${icon(grew ? "arrow-up-right" : "arrow-down-right", { size: 12 })}${Math.abs(x.diffPct).toFixed(2)}%</span>
                     </div>
                     <dl class="stk-sold-grid">
-                        <div><dt>Sold at</dt><dd>${fmtMoney(x.lastSoldPrice)}</dd></div>
-                        <div><dt>Price now</dt><dd>${fmtMoney(x.ltp)}</dd></div>
-                        <div><dt>Sold on</dt><dd>${fmtDate(x.lastSoldDate)}</dd></div>
-                        <div><dt>Quantity</dt><dd>${x.lastSoldQty}</dd></div>
-                        <div class="stk-sold-result-row"><dt>${grew ? "Gain missed after selling" : "Loss avoided by selling"}</dt><dd>${sign}${fmtMoney(Math.abs(x.impact), true)}</dd></div>
+                        <div><dt>Exit</dt><dd>${fmtMoney(x.lastSoldPrice)}</dd></div>
+                        <div><dt>LTP</dt><dd>${fmtMoney(x.ltp)}</dd></div>
+                        <div><dt>Date</dt><dd>${fmtDate(x.lastSoldDate)}</dd></div>
+                        <div><dt>Qty</dt><dd>${x.lastSoldQty}</dd></div>
+                        <div class="stk-sold-result-row"><dt>${grew ? "Missed" : "Avoided"}</dt><dd>${sign}${fmtMoney(Math.abs(x.impact), true)}</dd></div>
                     </dl>
                 </article>`;
         })
@@ -1229,7 +1254,7 @@ function renderTransactions(page) {
     const list = getFilteredTransactions(page);
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No matching transactions" : "No transactions yet"}</h4><p>${transactions.length ? "Try a different search or filter." : "Your buys and sells will be listed here."}</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10"><div class="inc-empty">${icon(transactions.length ? "search" : "arrow-left-right", { size: 22 })}<h4>${transactions.length ? "No results" : "No records"}</h4></div></td></tr>`;
         return;
     }
 
@@ -1283,10 +1308,10 @@ function renderTransactions(page) {
 function txnSplitNote(t) {
     if (t.type !== "BUY" || !t.isMTF) return "";
     if (t.mtfOwn === undefined || t.mtfOwn === null) {
-        return '<div class="br-muted stk-sub">MTF · margin not set</div>';
+        return '<div class="br-muted stk-sub">MTF · no margin</div>';
     }
     const sp = mtfSplit(t);
-    return `<div class="br-muted stk-sub">Mine ${fmtMoney(sp.own, true)} · MTF ${fmtMoney(sp.funded, true)}</div>`;
+    return `<div class="br-muted stk-sub">Own ${fmtMoney(sp.own, true)} · MTF ${fmtMoney(sp.funded, true)}</div>`;
 }
 
 function renderTagFilter(page) {
@@ -1548,6 +1573,18 @@ function openTxnModal(page, id, duplicate) {
 
     // Land the cursor where typing is most likely to start
     setTimeout(() => (id ? form.quantity : form.symbol).focus(), 30);
+}
+
+// Opens the normal Add transaction form with a stock pre-filled (used by the IPO tab)
+function openTxnPrefilled(page, { type, symbol, name }) {
+    openTxnModal(page);
+    const form = page.querySelector("[data-txn-form]");
+    form.type.value = type;
+    form.symbol.value = symbol;
+    form.name.value = name;
+    updateTxnForm(page);
+    lookupSymbol(page);
+    setTimeout(() => form.quantity.focus(), 60);
 }
 
 function closeTxnModal(page) {
@@ -1862,6 +1899,7 @@ async function confirmClear(page) {
 
     try {
         await persist();
+        await ipoApi?.reset();
     } catch (err) {
         errorEl.textContent = err?.message || "Could not clear data.";
         errorEl.style.display = "block";

@@ -245,56 +245,7 @@ html.rs-lock, html.rs-lock body { overflow: hidden; }
 .rs-page-card .rs-head { padding: 18px 20px 12px; }
 .rs-page-card .rs-body { overflow: visible; padding: 4px 20px 20px; }
 
-/* ---------- Roadmap ---------- */
-.rs-road { position: relative; height: calc(var(--rows) * var(--row)); margin-top: 8px; }
-.rs-road-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.rs-road-svg path { fill: none; stroke-linecap: round; }
-.rs-road-bed { stroke: var(--br-surface-active); stroke-width: 22; }
-.rs-road-line {
-    stroke: var(--br-border-strong); stroke-width: 2.5; stroke-dasharray: 0.006 0.012;
-    animation: rs-road-in 1.6s ease both;
-}
-@keyframes rs-road-in { from { stroke-dashoffset: 1; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
-
-.rs-stops { list-style: none; margin: 0; padding: 0; }
-.rs-stop {
-    position: absolute; left: 0; right: 0; height: var(--row);
-    top: calc(var(--i) * var(--row));
-    opacity: 0; animation: rs-item .5s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 90ms + 100ms) forwards;
-}
-.rs-node {
-    position: absolute; left: var(--x); top: 50%;
-    width: 84px; height: 84px; transform: translate(-50%, -50%);
-    display: grid; place-items: center; border-radius: 50%;
-    background: var(--br-surface); color: var(--br-text);
-    border: 3px solid var(--br-bg, var(--br-surface-soft));
-    box-shadow: 0 0 0 2px var(--br-border-strong);
-}
-.rs-stop.who-ai .rs-node { background: var(--br-gold); color: #000; box-shadow: 0 0 0 2px var(--br-gold); }
-.rs-stop.who-br .rs-node { background: color-mix(in srgb, var(--br-success) 18%, var(--br-surface)); color: var(--br-success); box-shadow: 0 0 0 2px var(--br-success); }
-.rs-node em {
-    position: absolute; top: -4px; right: -4px; width: 26px; height: 26px; border-radius: 50%;
-    display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 700;
-    background: var(--br-text); color: var(--br-surface-soft);
-}
-.rs-stop-text {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: calc(100% - var(--x) - 70px); display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
-}
-.rs-stop.is-left .rs-stop-text { left: calc(var(--x) + 56px); }
-.rs-stop.is-right .rs-stop-text { right: calc(100% - var(--x) + 56px); width: calc(var(--x) - 70px); align-items: flex-end; text-align: right; }
-.rs-stop-text b { font-size: 16px; font-weight: 700; }
-.rs-stop-text small { color: var(--br-text-secondary); font-size: 13px; line-height: 1.4; }
-
-@media (max-width: 640px) {
-    .rs-node { width: 64px; height: 64px; }
-    .rs-node svg { width: 28px; height: 28px; }
-    .rs-road-bed { stroke-width: 16; }
-    .rs-stop-text { width: calc(100% - var(--x) - 50px); }
-    .rs-stop.is-left .rs-stop-text { left: calc(var(--x) + 44px); }
-    .rs-stop.is-right .rs-stop-text { right: calc(100% - var(--x) + 44px); width: calc(var(--x) - 50px); }
-    .rs-stop-text b { font-size: 14px; }
-    .rs-stop-text small { font-size: 12px; }
-    .rs-page-card .rs-body { padding: 4px 8px 16px; }
-}
-@media (prefers-reduced-motion: reduce) { .rs-stop, .rs-road-line { animation-duration: .01s; animation-delay: 0s; } }
+/* ---------- RoadSync tabs ---------- */
+.rs-view[hidden] { display: none; }
+.rs-reader { display: block; }
+.rs-soon { padding: var(--br-space-5); }
