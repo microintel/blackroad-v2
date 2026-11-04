@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v239";
+const CACHE_VERSION = "v240";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -214,6 +214,7 @@ const SHELL = [
     "./src/styles/stepup.css",
     "./src/styles/stocks.css",
     "./src/styles/stocks-minimal.css",
+    "./src/styles/stocks-ui.css",
     "./src/styles/time-picker.css",
     "./src/styles/palettes.css",
     "./src/styles/theme.css",

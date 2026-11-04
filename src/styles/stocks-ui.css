@@ -1,0 +1,697 @@
+/* =========================================================
+   STOCKS — clean card UI
+   Scope: the Stocks page only (.br-stocks). Presentation only: no markup,
+   data-attribute or behaviour is changed. Flat surfaces, hairline borders,
+   no gradients, no shadows. Colours come from the theme tokens, so Light and
+   Dark both work. Loaded last so it wins over stocks.css / stocks-minimal.css.
+   ========================================================= */
+
+.br-stocks {
+    --stk-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --stk-card: var(--surface-secondary, var(--surface));
+    --stk-line: var(--border);
+    --stk-r: 14px;
+    --stk-gain: var(--success);
+    --stk-loss: var(--danger);
+    --stk-gain-bg: color-mix(in srgb, var(--success) 12%, transparent);
+    --stk-loss-bg: color-mix(in srgb, var(--danger) 12%, transparent);
+    --stk-chip-bg: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+/* ---------- Tabs: same tabs, tidier spacing --------------------------------- */
+
+:root:root:root:root:root .br-stocks .br-income-tabs {
+    gap: 4px;
+    margin-bottom: 18px;
+    scrollbar-width: none;
+}
+:root:root:root:root:root .br-stocks .br-income-tabs::-webkit-scrollbar { display: none; }
+:root:root:root:root:root .br-stocks .br-income-tab {
+    flex: 0 0 auto;
+    padding: 12px 12px;
+    white-space: nowrap;
+}
+:root:root:root:root:root .br-stocks .stk-count {
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--stk-chip-bg);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+:root:root:root:root:root .br-stocks .stk-count:empty { display: none; }
+
+/* ---------- Summary: hero value + separate stat tiles --------------------- */
+
+:root:root:root:root:root .br-stocks .inc-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin: 0 0 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+}
+
+:root:root:root:root:root .br-stocks .inc-summary .inc-metric-primary {
+    gap: 6px;
+    padding: 18px 20px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metric-primary > .inc-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .02em;
+    color: var(--text-secondary);
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-amount-lg {
+    font-size: clamp(28px, 7vw, 38px);
+    font-weight: 600;
+    letter-spacing: -.025em;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+/* the live-price status line becomes a small status chip */
+:root:root:root:root:root .br-stocks .inc-summary .inc-metric-primary > .inc-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 3px 10px 3px 8px;
+    border-radius: 999px;
+    background: var(--stk-chip-bg);
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--text-secondary);
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metric-primary > .inc-hint::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+/* search + add buttons */
+:root:root:root:root:root .br-stocks .stk-actions { gap: 8px; }
+:root:root:root:root:root .br-stocks .stk-actions .br-button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+:root:root:root:root:root .br-stocks .stk-actions .br-button:not(.br-button-primary) {
+    background: var(--stk-card);
+    border: 1px solid var(--stk-line);
+    color: var(--text-primary);
+}
+
+/* four stat tiles */
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    border: 0;
+    background: none;
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-metric {
+    gap: 4px;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+    box-shadow: none;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-amount {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    overflow-wrap: anywhere;
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-hint {
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--stk-chip-bg);
+    font-family: var(--stk-mono);
+    font-size: 11px;
+    line-height: 17px;
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-metric:has(.br-pnl-pos) .inc-hint {
+    background: var(--stk-gain-bg);
+    color: var(--stk-gain);
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-metric:has(.br-pnl-neg) .inc-hint {
+    background: var(--stk-loss-bg);
+    color: var(--stk-loss);
+}
+:root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-hint:empty { display: none; }
+
+/* ---------- Section heads, chips, empty states ---------------------------- */
+
+:root:root:root:root:root .br-stocks .inc-section { padding: 0; border: 0; background: none; }
+:root:root:root:root:root .br-stocks .inc-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+:root:root:root:root:root .br-stocks .inc-section-head h3 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+    color: var(--text-primary);
+}
+:root:root:root:root:root .br-stocks .br-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+:root:root:root:root:root .br-stocks .br-chip {
+    padding: 6px 12px;
+    border: 1px solid var(--stk-line);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+:root:root:root:root:root .br-stocks .br-chip.active {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--background);
+}
+:root:root:root:root:root .br-stocks .inc-empty {
+    padding: 36px 16px;
+    border: 1px dashed var(--stk-line);
+    border-radius: var(--stk-r);
+    text-align: center;
+}
+
+/* ---------- Holdings: position cards -------------------------------------- */
+
+:root:root:root:root:root .br-stocks .stk-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border: 0;
+}
+
+:root:root:root:root:root .br-stocks .stk-card {
+    position: relative;
+    padding: 16px 18px 16px 20px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+    overflow: hidden;
+}
+/* thin colour rail: green when in profit, red when in loss */
+:root:root:root:root:root .br-stocks .stk-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--stk-line);
+}
+:root:root:root:root:root .br-stocks .stk-card:has(.stk-value .br-pnl-pos)::before { background: var(--stk-gain); }
+:root:root:root:root:root .br-stocks .stk-card:has(.stk-value .br-pnl-neg)::before { background: var(--stk-loss); }
+@media (hover: hover) {
+    :root:root:root:root:root .br-stocks .stk-card:hover {
+        border-color: color-mix(in srgb, var(--text-primary) 24%, var(--stk-line));
+        background: var(--stk-card);
+    }
+}
+
+:root:root:root:root:root .br-stocks .stk-card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--stk-line);
+}
+:root:root:root:root:root .br-stocks .stk-card .stk-logo-lg {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    flex: 0 0 auto;
+}
+:root:root:root:root:root .br-stocks .stk-card .stk-id { flex: 1 1 auto; min-width: 0; }
+:root:root:root:root:root .br-stocks .stk-card .stk-name {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+}
+:root:root:root:root:root .br-stocks .stk-card .inc-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+    font-family: var(--stk-mono);
+    font-size: 11px;
+    letter-spacing: .02em;
+    color: var(--text-secondary);
+}
+
+/* value + P&L chip, right aligned */
+:root:root:root:root:root .br-stocks .stk-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    flex: 0 0 auto;
+    text-align: right;
+}
+:root:root:root:root:root .br-stocks .stk-value strong {
+    font-family: var(--stk-mono);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+:root:root:root:root:root .br-stocks .stk-value span {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--stk-chip-bg);
+    font-family: var(--stk-mono);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 17px;
+    white-space: nowrap;
+}
+:root:root:root:root:root .br-stocks .stk-value span.br-pnl-pos { background: var(--stk-gain-bg); color: var(--stk-gain); }
+:root:root:root:root:root .br-stocks .stk-value span.br-pnl-neg { background: var(--stk-loss-bg); color: var(--stk-loss); }
+
+/* Qty / Avg / Cost / Wt / LTP as labelled cells */
+:root:root:root:root:root .br-stocks .stk-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px 14px;
+    margin: 0;
+    padding: 0;
+}
+:root:root:root:root:root .br-stocks .stk-stats > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+    margin: 0;
+}
+:root:root:root:root:root .br-stocks .stk-stats dt {
+    margin: 0;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+:root:root:root:root:root .br-stocks .stk-stats dd {
+    margin: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--stk-mono);
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+:root:root:root:root:root .br-stocks .stk-stats .stk-price { margin-left: 0; }
+:root:root:root:root:root .br-stocks .stk-price .br-input {
+    width: 100%;
+    max-width: 112px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    background: var(--input-background);
+    font-family: var(--stk-mono);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-primary);
+    -moz-appearance: textfield;
+}
+:root:root:root:root:root .br-stocks .stk-price .br-input::-webkit-outer-spin-button,
+:root:root:root:root:root .br-stocks .stk-price .br-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+:root:root:root:root:root .br-stocks .stk-price .br-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* MTF block inside a card */
+:root:root:root:root:root .br-stocks .stk-card-mtf {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--stk-line);
+}
+:root:root:root:root:root .br-stocks .stk-card-mtf .stk-split { height: 6px; border-radius: 999px; overflow: hidden; }
+:root:root:root:root:root .br-stocks .stk-card-mtf-line { gap: 4px 16px; margin-top: 8px; }
+
+/* MTF summary panel above the list */
+:root:root:root:root:root .br-stocks .stk-mtf {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+}
+
+/* ---------- Transactions ---------------------------------------------------- */
+
+:root:root:root:root:root .br-stocks [data-stocks-view="transactions"] > .br-card {
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+:root:root:root:root:root .br-stocks .br-toolbar { display: block; padding: 0; }
+:root:root:root:root:root .br-stocks .br-toolbar-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+:root:root:root:root:root .br-stocks .stk-txn-searchrow {
+    display: flex;
+    flex: 1 1 260px;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+:root:root:root:root:root .br-stocks .stk-txn-searchrow .br-search-box { flex: 1 1 auto; min-width: 0; }
+:root:root:root:root:root .br-stocks .br-toolbar .br-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 128px;
+    height: 40px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    background-color: var(--stk-card);
+    font-size: 13px;
+}
+:root:root:root:root:root .br-stocks .stk-export-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--stk-line);
+    border-radius: 12px;
+    background: var(--stk-card);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* table lives in a bordered card */
+:root:root:root:root:root .br-stocks .br-table-wrap {
+    margin-top: 14px !important;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+    overflow-x: auto;
+}
+:root:root:root:root:root .br-stocks .br-table { width: 100%; border-collapse: collapse; }
+:root:root:root:root:root .br-stocks .br-table th {
+    padding: 12px 14px;
+    background: var(--stk-chip-bg);
+    border-bottom: 1px solid var(--stk-line);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+:root:root:root:root:root .br-stocks .br-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--stk-line);
+    vertical-align: middle;
+}
+:root:root:root:root:root .br-stocks .br-table tbody tr:last-child td { border-bottom: 0; }
+:root:root:root:root:root .br-stocks .br-table td:not(:nth-child(3)) { white-space: nowrap; }
+:root:root:root:root:root .br-stocks .br-table td:nth-child(3) { min-width: 180px; }
+@media (hover: hover) {
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row:hover td { background: var(--hover-background); }
+}
+
+/* BUY / SELL / MTF as flat tinted chips */
+:root:root:root:root:root .br-stocks .br-table .br-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .05em;
+}
+:root:root:root:root:root .br-stocks .br-table .br-badge::before { display: none; }
+:root:root:root:root:root .br-stocks .br-table .br-badge-success { background: var(--stk-gain-bg); color: var(--stk-gain); }
+:root:root:root:root:root .br-stocks .br-table .br-badge-danger  { background: var(--stk-loss-bg); color: var(--stk-loss); }
+:root:root:root:root:root .br-stocks .br-table .br-badge-warning {
+    background: color-mix(in srgb, var(--br-warning, #D97706) 14%, transparent);
+    color: var(--br-warning, #D97706);
+}
+
+:root:root:root:root:root .br-stocks .stk-row-actions { white-space: nowrap; text-align: right; }
+
+/* ---------- Sold + IPO cards ---------------------------------------------- */
+
+:root:root:root:root:root .br-stocks .stk-sold-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+    border: 0;
+}
+:root:root:root:root:root .br-stocks .stk-sold-stat {
+    padding: 14px 16px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+}
+:root:root:root:root:root .br-stocks .stk-sold-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    margin-bottom: 14px;
+}
+:root:root:root:root:root .br-stocks .stk-sold-pick { display: flex; align-items: center; gap: 8px; }
+:root:root:root:root:root .br-stocks .stk-sold-pick .br-select {
+    min-width: 160px;
+    height: 40px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    background-color: var(--stk-card);
+    font-size: 13px;
+}
+:root:root:root:root:root .br-stocks .stk-sold-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border: 0;
+}
+:root:root:root:root:root .br-stocks .stk-sold-card {
+    padding: 16px 18px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+}
+:root:root:root:root:root .br-stocks .stk-sold-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px 14px;
+}
+
+:root:root:root:root:root .br-stocks .ipo-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    border: 0;
+    background: none;
+}
+:root:root:root:root:root .br-stocks .ipo-metrics .inc-metric {
+    padding: 14px 16px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+}
+
+/* ---------- Analytics / Reports cards ------------------------------------- */
+
+:root:root:root:root:root .br-stocks .br-card {
+    margin-bottom: 12px;
+    border: 1px solid var(--stk-line);
+    border-radius: var(--stk-r);
+    background: var(--stk-card);
+}
+:root:root:root:root:root .br-stocks [data-stocks-view="transactions"] > .br-card { margin-bottom: 0; }
+:root:root:root:root:root .br-stocks .br-grid { gap: 12px; margin-bottom: 12px; }
+:root:root:root:root:root .br-stocks .br-grid > .br-card { margin-bottom: 0; }
+:root:root:root:root:root .br-stocks .br-card-heading h3 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+}
+
+/* flat: no leaked hairline shadows from older layered rules */
+:root:root:root:root:root .br-stocks .inc-summary .inc-metric,
+:root:root:root:root:root .br-stocks .stk-card,
+:root:root:root:root:root .br-stocks .stk-sold-card,
+:root:root:root:root:root .br-stocks .stk-sold-stat,
+:root:root:root:root:root .br-stocks .ipo-metrics .inc-metric,
+:root:root:root:root:root .br-stocks .stk-mtf,
+:root:root:root:root:root .br-stocks .br-card { box-shadow: none; }
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 900px) {
+    :root:root:root:root:root .br-stocks .inc-summary .inc-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+    :root:root:root:root:root .br-stocks .br-income-tabs { margin: 0 -4px 14px; }
+    :root:root:root:root:root .br-stocks .inc-summary { gap: 8px; margin-bottom: 18px; }
+    :root:root:root:root:root .br-stocks .inc-summary .inc-metric-primary { padding: 16px; }
+    :root:root:root:root:root .br-stocks .inc-summary .inc-metrics { gap: 8px; }
+    :root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-metric { padding: 12px 14px; }
+    :root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-amount { font-size: 15px; }
+
+    /* holdings: 2x2 stats, LTP gets its own full-width row */
+    :root:root:root:root:root .br-stocks .stk-card { padding: 14px 14px 14px 18px; }
+    :root:root:root:root:root .br-stocks .stk-card-top { gap: 10px; padding-bottom: 12px; margin-bottom: 12px; }
+    :root:root:root:root:root .br-stocks .stk-card .stk-logo-lg { width: 36px; height: 36px; border-radius: 10px; }
+    :root:root:root:root:root .br-stocks .stk-value strong { font-size: 16px; }
+    :root:root:root:root:root .br-stocks .stk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    :root:root:root:root:root .br-stocks .stk-stats .stk-price {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 12px;
+        border-top: 1px dashed var(--stk-line);
+    }
+    :root:root:root:root:root .br-stocks .stk-price .br-input { max-width: 140px; height: 36px; font-size: 14px; }
+
+    /* transactions toolbar */
+    :root:root:root:root:root .br-stocks .br-toolbar .br-select { flex: 1 1 calc(50% - 4px); min-width: 0; }
+
+    /* transactions table → stacked cards (all figures visible, no sideways scroll) */
+    :root:root:root:root:root .br-stocks .br-table-wrap { border: 0; background: none; overflow: visible; }
+    :root:root:root:root:root .br-stocks .br-table-wrap { width: 100%; max-width: 100%; }
+    :root:root:root:root:root .br-stocks .br-table,
+    :root:root:root:root:root .br-stocks .br-table tbody { display: block; width: 100%; min-width: 0; max-width: 100%; }
+    :root:root:root:root:root .br-stocks .br-table thead { display: none; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-areas:
+            "stock stock type"
+            "qty   price amount"
+            "pnl   ret   held"
+            "date  date  act";
+        gap: 10px 12px;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 10px;
+        padding: 14px;
+        border: 1px solid var(--stk-line);
+        border-radius: var(--stk-r);
+        background: var(--stk-card);
+    }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td {
+        display: block;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        font-size: 13px;
+        white-space: normal;
+    }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(1) { grid-area: date; align-self: center; color: var(--text-secondary); font-size: 12px; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(2) { grid-area: type; justify-self: end; text-align: right; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(3) { grid-area: stock; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(4) { grid-area: qty; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(5) { grid-area: price; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(6) { grid-area: amount; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(7) { grid-area: pnl; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(8) { grid-area: ret; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(9) { grid-area: held; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(10) { grid-area: act; justify-self: end; }
+
+    /* small labels above each figure */
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(n+4):nth-child(-n+9)::before {
+        display: block;
+        margin-bottom: 2px;
+        font-family: inherit;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(4)::before { content: "Qty"; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(5)::before { content: "Price"; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(6)::before { content: "Amount"; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(7)::before { content: "P&L"; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(8)::before { content: "Return"; }
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td:nth-child(9)::before { content: "Held"; }
+
+    /* buys have no P&L / return / held: drop that row instead of showing dashes */
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td[class=""]:nth-child(n+7):nth-child(-n+9) { display: none; }
+
+    :root:root:root:root:root .br-stocks .br-table tbody tr.stk-row td.stk-row-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 2px;
+    }
+    :root:root:root:root:root .br-stocks .stk-row-actions .inc-icon-button { opacity: .75; }
+
+    /* the empty-state row is a plain cell, not a card */
+    :root:root:root:root:root .br-stocks .br-table tbody tr:not(.stk-row) td { display: block; padding: 0; border: 0; }
+}
+
+@media (max-width: 380px) {
+    :root:root:root:root:root .br-stocks .inc-summary .inc-metrics .inc-amount { font-size: 14px; }
+    :root:root:root:root:root .br-stocks .stk-stats { gap: 10px 8px; }
+}
