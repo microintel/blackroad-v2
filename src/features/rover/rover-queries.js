@@ -551,6 +551,112 @@ export function visualsFor(name, d, view = null, type = null) {
     return selectBlocks(blocks, view, type);
 }
 
+/* ---------- helpers for the name-list questions (sources, FD banks, lenders, spending pace) ---------- */
+
+/* "Salary, Freelance and Interest" */
+const joinNames = (names) => names.length <= 1 ? (names[0] || "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+
+/* The first `max` rows as bullets, then "...and N more". */
+const bullets = (rows, max = 8) => rows.slice(0, max).join("\n") + (rows.length > max ? `\n…and ${rows.length - max} more` : "");
+
+/* Every income source by name, with amount and share. Used by both income-source questions. */
+function sourceNamesReply(d) {
+    const list = d.incomeSources || [];
+    if (!list.length) return empty("income entries", PAGE.income);
+    const total = list.reduce((x, y) => x + y.amount, 0);
+    const rows = list.map((x) => `• **${x.label}**: ${money(x.amount)} (${total > 0 ? ((x.amount / total) * 100).toFixed(0) : 0}%)`);
+    return {
+        text: `You have **${list.length}** income source${list.length === 1 ? "" : "s"}: ${joinNames(list.slice(0, 8).map((x) => x.label))}${list.length > 8 ? ` and ${list.length - 8} more` : ""}.\n${bullets(rows)}`,
+        actions: [PAGE.income]
+    };
+}
+
+/* Active fixed deposits grouped by bank name. */
+function fdByBank(d) {
+    const map = new Map();
+    (d.fds || []).forEach((f) => {
+        const row = map.get(f.name) || { name: f.name, count: 0, principal: 0, value: 0, next: "" };
+        row.count += 1;
+        row.principal += f.principal || 0;
+        row.value += f.value || 0;
+        if (f.maturityDate && (!row.next || f.maturityDate < row.next)) row.next = f.maturityDate;
+        map.set(f.name, row);
+    });
+    return [...map.values()].sort((a, b) => b.value - a.value);
+}
+
+/* Loans that still have something to pay, grouped by lender. */
+function loansByLender(d) {
+    const map = new Map();
+    (d.loans || []).filter((l) => l.outstanding > 0.5).forEach((l) => {
+        const row = map.get(l.lender) || { name: l.lender, count: 0, outstanding: 0, emi: 0 };
+        row.count += 1;
+        row.outstanding += l.outstanding || 0;
+        row.emi += l.emi || 0;
+        map.set(l.lender, row);
+    });
+    return [...map.values()].sort((a, b) => b.outstanding - a.outstanding);
+}
+
+/* This month's spending so far, projected to month end, against the usual month. */
+function spendPace(d) {
+    const m = metrics(d);
+    const spent = m.month.expense || 0;
+    if (spent <= 0) return null;
+
+    const now = new Date();
+    const day = now.getDate();
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const perDay = spent / day;
+    const projected = perDay * days;
+
+    return { spent, day, days, perDay, projected, usual: m.avgExpense, income: m.month.income || 0 };
+}
+
+Object.assign(VISUALS, {
+    sourcenames: (d) => VISUALS.sources(d),
+
+    sourcerisk: (d) => {
+        const list = d.incomeSources || [];
+        const total = list.reduce((x, y) => x + y.amount, 0);
+        if (!list.length || total <= 0) return [];
+        const share = (list[0].amount / total) * 100;
+        return [
+            { kind: "gauge", title: "Biggest income source", value: share, min: 0, max: 100, fmt: "pct", display: `${share.toFixed(0)}%`,
+              zones: [{ to: 50, tone: "success", label: "Well spread" }, { to: 75, tone: "warning", label: "Leaning" }, { to: 100, tone: "danger", label: "One source" }],
+              caption: `${list[0].label} brings in the largest share of your income. Having more than one source makes your income safer.` },
+            list.length > 1 ? { kind: "chart", alt: true, type: "donut", title: "Share of income by source", centerLabel: "Income", items: list.slice(0, 6).map((x) => ({ label: x.label, value: x.amount })) } : null
+        ];
+    },
+
+    fdbanks: (d) => {
+        const rows = fdByBank(d);
+        if (!rows.length) return [];
+        return [
+            rows.length > 1 ? { kind: "chart", type: "donut", title: "FD value by bank", centerLabel: "FDs", items: rows.slice(0, 6).map((r) => ({ label: r.name, value: r.value })) } : null,
+            { kind: "table", title: "Fixed deposits by bank", columns: [{ label: "Bank", fmt: "text" }, { label: "FDs", fmt: "num" }, { label: "Invested", fmt: "money" }, { label: "Value now", fmt: "money" }, { label: "Next maturity", fmt: "text" }], rows: rows.map((r) => [r.name, r.count, r.principal, r.value, r.next || "–"]) }
+        ];
+    },
+
+    lenders: (d) => {
+        const rows = loansByLender(d);
+        if (!rows.length) return [];
+        return [
+            rows.length > 1 ? { kind: "chart", type: "bar", title: "Still to pay, by lender", items: rows.slice(0, 8).map((r) => ({ label: r.name, value: r.outstanding })) } : null,
+            { kind: "table", title: "Loans by lender", columns: [{ label: "Lender", fmt: "text" }, { label: "Loans", fmt: "num" }, { label: "EMI / month", fmt: "money" }, { label: "Outstanding", fmt: "money" }], rows: rows.map((r) => [r.name, r.count, r.emi, r.outstanding]) }
+        ];
+    },
+
+    spendpace: (d) => {
+        const p = spendPace(d);
+        if (!p) return [];
+        return [
+            { kind: "compare", title: "Month-end spending vs a usual month", aLabel: "Projected", bLabel: "Usual", rows: [{ label: "Spending", a: p.projected, b: p.usual || p.spent, better: "low" }] },
+            { kind: "kpi", items: [{ label: "Spent so far", value: p.spent }, { label: "Per day", value: p.perDay }, { label: "Projected month end", value: p.projected }] }
+        ];
+    }
+});
+
 /* ---------- extra intents (same shape as the ones in rover-engine.js) ---------- */
 
 export const EXTRA_INTENTS = [
@@ -595,11 +701,7 @@ export const EXTRA_INTENTS = [
     {
         name: "sources",
         keys: ["income source", "income sources", "where does my income come from", "source of income", "sources of income", "who pays me"],
-        reply: (d) => {
-            if (!d.incomeSources?.length) return empty("income entries", PAGE.income);
-            const s = d.incomeSources[0];
-            return { text: `Most of your income, **${money(s.amount)}**, comes from **${s.label}**.`, actions: [PAGE.income] };
-        }
+        reply: (d) => sourceNamesReply(d)
     },
     {
         name: "savings",
@@ -699,6 +801,80 @@ export const EXTRA_INTENTS = [
                 actions: [PAGE.networth]
             };
         }
+    },
+
+    /* ----- name-list and pace questions ----- */
+    {
+        name: "sourcenames",
+        keys: ["income source names", "income sources names", "income source name", "sources names", "source names", "names of income sources", "names of my income sources", "my income sources", "what are my income sources", "income sources list", "list income sources", "list of income sources", "all income sources", "how many income sources", "income streams", "my income streams"],
+        reply: (d) => sourceNamesReply(d)
+    },
+    {
+        name: "sourcerisk",
+        keys: ["income dependency", "income concentration", "income diversification", "income diversified", "diversified income", "depend on one income source", "dependent on one income source", "depend on one source", "rely on one source", "one income source", "single income source", "single source of income", "only source of income"],
+        reply: (d) => {
+            const list = d.incomeSources || [];
+            const total = list.reduce((x, y) => x + y.amount, 0);
+            if (!list.length || total <= 0) return empty("income entries", PAGE.income);
+            const top = list[0];
+            const share = (top.amount / total) * 100;
+            if (list.length === 1) {
+                return { text: `All of your income comes from one source, **${top.label}**.\nIf it stops, your income stops, so a second source would make you safer.`, actions: [PAGE.income] };
+            }
+            const verdict = share >= 75 ? "That is a heavy dependence on one source."
+                : share >= 50 ? "You lean on one source, but you have others."
+                : "Your income is well spread.";
+            return {
+                text: `**${top.label}** brings in **${share.toFixed(0)}%** of your income, out of **${list.length}** sources.\n${verdict}`,
+                actions: [PAGE.income]
+            };
+        }
+    },
+    {
+        name: "fdbanks",
+        keys: ["fd banks", "fd bank names", "fd bank name", "my fd banks", "fd bank wise", "bank wise fd", "fixed deposit banks", "banks of my fixed deposits", "which banks are my fds in", "which bank are my fds in", "which banks do i have fds in", "where are my fds", "where are my fixed deposits", "banks for my fds"],
+        reply: (d) => {
+            const rows = fdByBank(d);
+            if (!rows.length) return empty("active fixed deposits", { label: "Open Fixed Deposits", path: "/deposits" });
+            const lines = rows.map((r) => `• **${r.name}**: ${money(r.value)} (${r.count} FD${r.count === 1 ? "" : "s"})`);
+            return {
+                text: `Your fixed deposits are with **${rows.length}** bank${rows.length === 1 ? "" : "s"}: ${joinNames(rows.slice(0, 8).map((r) => r.name))}${rows.length > 8 ? ` and ${rows.length - 8} more` : ""}.\n${bullets(lines)}`,
+                actions: [{ label: "Open Fixed Deposits", path: "/deposits" }]
+            };
+        }
+    },
+    {
+        name: "lenders",
+        keys: ["who are my lenders", "my lenders", "lender names", "lenders list", "list of lenders", "list lenders", "loan lenders", "who did i borrow from", "who have i borrowed from", "which banks gave me loans", "where did i take loans", "loan providers"],
+        reply: (d) => {
+            const rows = loansByLender(d);
+            if (!rows.length) return { text: "You have **no loans** with anything left to pay right now.", actions: [PAGE.lending] };
+            const total = rows.reduce((x, y) => x + y.outstanding, 0);
+            const lines = rows.map((r) => `• **${r.name}**: ${money(r.outstanding)} left${r.emi > 0 ? `, EMI ${money(r.emi)}` : ""}`);
+            return {
+                text: `You owe **${rows.length}** lender${rows.length === 1 ? "" : "s"}: ${joinNames(rows.slice(0, 8).map((r) => r.name))}${rows.length > 8 ? ` and ${rows.length - 8} more` : ""}.\nIn total **${money(total)}** is still to pay.\n${bullets(lines)}`,
+                actions: [PAGE.lending]
+            };
+        }
+    },
+    {
+        name: "spendpace",
+        keys: ["will i overspend", "am i overspending", "overspend this month", "overspending", "spending pace", "spend pace", "month end spending", "projected spending", "spending projection", "daily spending", "daily spend", "spend per day", "spending per day", "per day spending", "burn rate", "on track this month"],
+        reply: (d) => {
+            const p = spendPace(d);
+            if (!p) return empty("expenses this month", PAGE.income);
+            const line = `So far this month you've spent **${money(p.spent)}** in ${p.day} day${p.day === 1 ? "" : "s"}, about **${money(p.perDay)}** a day.\nAt this pace you'll reach about **${money(p.projected)}** by month end.`;
+            let verdict = "";
+            if (p.usual > 0) {
+                const diff = ((p.projected - p.usual) / p.usual) * 100;
+                verdict = Math.abs(diff) < 10 ? `\nThat is close to your usual **${money(p.usual)}** a month.`
+                    : diff > 0 ? `\nThat is **${diff.toFixed(0)}% above** your usual ${money(p.usual)} a month, so you may overspend.`
+                    : `\nThat is **${Math.abs(diff).toFixed(0)}% below** your usual ${money(p.usual)} a month. You're on track.`;
+            }
+            if (p.income > 0 && p.projected > p.income) verdict += `\nIt would also be more than this month's income of ${money(p.income)}.`;
+            if (p.day < 7) verdict += "\nIt's early in the month, so this estimate can change a lot.";
+            return { text: line + verdict, actions: [PAGE.income] };
+        }
     }
 ];
 
@@ -730,5 +906,10 @@ export const EXTRA_SUGGESTIONS = [
     "Show my money health as rings",
     "Show all chart types for my stocks",
     "Show my income sources as a treemap",
-    "Show my investments as a bubble chart"
+    "Show my investments as a bubble chart",
+    "Income source names",
+    "Am I dependent on one income source?",
+    "Which banks are my FDs in?",
+    "Who are my lenders?",
+    "Will I overspend this month?"
 ];

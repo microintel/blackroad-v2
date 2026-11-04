@@ -54,7 +54,7 @@ const TOPICS = [
 ];
 
 /* "income statement" / "expense statement" are statement questions, not lists of income. */
-const NOT_LIST = /\b(income|expense|profit and loss)s? statement\b/;
+const NOT_LIST = /\b(income|expense|profit and loss)s? statement\b|\b(income|earning|salary) sources?\b|\bsources? of (income|earnings?)\b|\bsources? names?\b|\bnames? of (my )?(income )?sources?\b/;
 
 function topicsOf(text) {
     let hits = TOPICS.filter(([, re]) => re.test(text)).map(([name]) => name);
