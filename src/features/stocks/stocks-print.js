@@ -111,7 +111,7 @@ function buildReport(ym, transactions, prices, logoSrc) {
 
 }
 
-function openPrint() {
+export function openPrint() {
     document.body.classList.add("br-printing");
     const done = () => {
         document.body.classList.remove("br-printing");
@@ -125,7 +125,7 @@ function openPrint() {
 /* Logos are fetched live, so make sure they have loaded (or failed) before
    the print dialog opens — otherwise the PDF would be missing them.
    A failed logo is removed so the initials fallback shows. Max wait: 6s. */
-function waitForLogos() {
+export function waitForLogos() {
     const host = document.getElementById("br-print-report");
     if (!host) return Promise.resolve();
     const imgs = Array.from(host.querySelectorAll("img[data-pr-logo]"));

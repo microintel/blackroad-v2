@@ -41,6 +41,7 @@ import {
 import { printStocksReport } from "./stocks-print.js";
 import { createPnlChart } from "./stocks-pnl-chart.js";
 import { initIpo } from "./stocks-ipo.js";
+import { initDream } from "./stocks-dream.js";
 import { setHTML } from "../../components/dom-patch.js";
 import { enhanceTimeInputs } from "../../components/time-picker.js";
 import { isGuestSync } from "../../services/auth.js";
@@ -77,6 +78,7 @@ let flashSymbol = null;
 let flashTxnId = null;
 let saving = false;
 let ipoApi = null;
+let dreamApi = null;
 
 export async function Stocks() {
     store = await dataService.getStocksStore();
@@ -91,6 +93,7 @@ export async function Stocks() {
             <button type="button" class="br-income-tab" data-stocks-tab="transactions">Transactions <span class="stk-count" data-count="transactions"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="sold">Sold <span class="stk-count" data-count="sold"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="ipo">IPO <span class="stk-count" data-count="ipo"></span></button>
+            <button type="button" class="br-income-tab" data-stocks-tab="dream">Dream <span class="stk-count" data-count="dream"></span></button>
             <button type="button" class="br-income-tab" data-stocks-tab="analytics">Analytics</button>
             <button type="button" class="br-income-tab" data-stocks-tab="reports">Reports</button>
         </div>
@@ -155,7 +158,11 @@ export async function Stocks() {
         <div class="inc-view" data-stocks-view="ipo" hidden>
             <div data-ipo-root></div>
         </div>
+        <div class="inc-view" data-stocks-view="dream" hidden>
+            <div data-dream-root></div>
+        </div>
         <div class="br-modal-layer" data-ipo-modal hidden></div>
+        <div class="br-modal-layer" data-dream-modal hidden></div>
 
                 <!-- TRANSACTIONS -->
         <div data-stocks-view="transactions" hidden>
@@ -449,6 +456,11 @@ export async function Stocks() {
         rerender: () => renderAll(page),
         openTxn: (opts) => openTxnPrefilled(page, opts)
     });
+    dreamApi = initDream(page, {
+        store,
+        getTransactions: () => transactions,
+        getPrices: () => prices
+    });
     bindAddShortcut(page, (p) => clickFirstVisible(p, '[data-action="add-txn"]'));
     realizedChart = createPnlChart(page.querySelector("[data-an-realized-chart]"), { kind: "realized" });
     await loadState(page);
@@ -470,6 +482,13 @@ async function loadState(page) {
         await ipoApi.load();
     } catch (err) {
         /* IPO list is optional — never block the rest of Stocks */
+    }
+
+    try {
+        await dreamApi.load();
+        dreamApi.render();
+    } catch (err) {
+        /* Dream list is optional — never block the rest of Stocks */
     }
 
     renderAll(page);
@@ -1900,6 +1919,7 @@ async function confirmClear(page) {
     try {
         await persist();
         await ipoApi?.reset();
+        await dreamApi?.reset();
     } catch (err) {
         errorEl.textContent = err?.message || "Could not clear data.";
         errorEl.style.display = "block";
@@ -2200,7 +2220,11 @@ function switchTab(page, tab) {
     });
 
     const sumWrap = page.querySelector("[data-stocks-summary-wrap]");
-    if (sumWrap) sumWrap.hidden = tab === "sold";
+    if (sumWrap) sumWrap.hidden = tab === "sold" || tab === "dream";
+
+    // Dream tab keeps its own live prices — only while it is open
+    if (tab === "dream") dreamApi?.start();
+    else dreamApi?.stop();
 }
 
 /* =========================================

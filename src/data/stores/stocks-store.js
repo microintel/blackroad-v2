@@ -2,7 +2,7 @@ import { BaseStore } from "./base-store.js";
 
 /*
  * blackStocks -> "state" (out-of-line keys).
- * Known keys: "transactions", "prices", "seqCounter", "ipos".
+ * Known keys: "transactions", "prices", "seqCounter", "ipos", "dreams".
  */
 export class StocksStore extends BaseStore {
     constructor(database) {
@@ -55,6 +55,18 @@ export class StocksStore extends BaseStore {
 
     async saveIpos(ipos) {
         return this.put(ipos, "ipos");
+    }
+
+    /*
+     * Dream stocks wishlist (separate key; never part of the portfolio).
+     */
+    async getDreams() {
+        const value = await this.get("dreams");
+        return Array.isArray(value) ? value : [];
+    }
+
+    async saveDreams(dreams) {
+        return this.put(dreams, "dreams");
     }
 
     /*
