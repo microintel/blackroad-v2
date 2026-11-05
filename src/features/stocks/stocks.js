@@ -1132,10 +1132,10 @@ function renderAnalytics(page) {
     const largest = holdings.slice().sort((a, b) => b.currentValue - a.currentValue)[0];
 
     const insight = (label, h, value, cls) => `
-        <div class="br-card">
-            <div class="br-muted">${label}</div>
-            <div style="font-weight:600;margin:4px 0;display:flex;align-items:center;gap:8px;">${stockMiniLogoHTML(h.symbol, 24)}<span>${escapeHTML(h.name)}</span></div>
-            <div class="${cls}">${value}</div>
+        <div class="stk-an-insight">
+            <div class="stk-an-label">${label}</div>
+            <div class="stk-an-name">${stockMiniLogoHTML(h.symbol, 22)}<span>${escapeHTML(h.name)}</span></div>
+            <div class="stk-an-figure ${cls}">${value}</div>
         </div>`;
 
     put(page.querySelector("[data-an-insights]"), insight("Best performer", best, fmtPct(best.unrealizedPnLPct), "br-pnl-" + pnlClass(best.unrealizedPnLPct)) +
@@ -1150,42 +1150,40 @@ function renderAnalytics(page) {
     }));
 
     put(page.querySelector("[data-an-alloc]"), `
-        <div style="display:flex;justify-content:center;position:relative;margin-bottom:16px;">
+        <div class="stk-an-donut">
             ${buildDonut(weighted, totals.currentValue)}
         </div>
+        <div class="stk-an-rows">
         ${weighted
             .map(
                 (h, i) => `
-            <div style="display:grid;grid-template-columns:116px 1fr minmax(52px,auto);gap:10px;align-items:center;margin:8px 0;">
-                <span style="display:flex;align-items:center;gap:6px;min-width:0;">${stockMiniLogoHTML(h.symbol, 20)}<span style="color:${chartColor(i)};font-weight:600;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(h.symbol)}</span></span>
-                <div style="height:8px;background:var(--br-border);border-radius:4px;overflow:hidden;">
-                    <div style="height:100%;width:${Math.min(100, h.weight)}%;background:${chartColor(i)};"></div>
-                </div>
-                <span style="text-align:right;">${h.weight.toFixed(1)}%</span>
+            <div class="stk-an-row">
+                <span class="stk-an-sym">${stockMiniLogoHTML(h.symbol, 20)}<span>${escapeHTML(h.symbol)}</span></span>
+                <div class="stk-an-bar"><i style="width:${Math.min(100, h.weight)}%;background:${chartColor(i)};"></i></div>
+                <span class="stk-an-val">${h.weight.toFixed(1)}%</span>
             </div>`
             )
             .join("")}
+        </div>
     `);
 
     // Performance bars
     const sorted = holdings.slice().sort((a, b) => b.unrealizedPnLPct - a.unrealizedPnLPct);
     const maxAbs = Math.max(1, ...sorted.map((h) => Math.abs(h.unrealizedPnLPct)));
 
-    put(page.querySelector("[data-an-perf]"), sorted
+    put(page.querySelector("[data-an-perf]"), `<div class="stk-an-rows">` + sorted
         .map((h) => {
             const cls = pnlClass(h.unrealizedPnLPct);
             const w = Math.min(100, (Math.abs(h.unrealizedPnLPct) / maxAbs) * 100);
             const color = cls === "pos" ? "var(--br-success)" : "var(--br-danger)";
             return `
-            <div style="display:grid;grid-template-columns:116px 1fr minmax(70px,auto);gap:10px;align-items:center;margin:8px 0;" title="${escapeAttribute(h.name)}">
-                <span style="display:flex;align-items:center;gap:6px;min-width:0;">${stockMiniLogoHTML(h.symbol, 20)}<span style="overflow:hidden;text-overflow:ellipsis;">${escapeHTML(h.symbol)}</span></span>
-                <div style="height:8px;background:var(--br-border);border-radius:4px;overflow:hidden;">
-                    <div style="height:100%;width:${w}%;background:${color};"></div>
-                </div>
-                <span class="br-pnl-${cls}" style="text-align:right;">${fmtPct(h.unrealizedPnLPct)}</span>
+            <div class="stk-an-row" title="${escapeAttribute(h.name)}">
+                <span class="stk-an-sym">${stockMiniLogoHTML(h.symbol, 20)}<span>${escapeHTML(h.symbol)}</span></span>
+                <div class="stk-an-bar"><i style="width:${w}%;background:${color};"></i></div>
+                <span class="stk-an-val br-pnl-${cls}">${fmtPct(h.unrealizedPnLPct)}</span>
             </div>`;
         })
-        .join(""));
+        .join("") + `</div>`);
 
     // Portfolio health
     const profitable = holdings.filter((h) => h.unrealizedPnL >= 0).length;
@@ -1205,12 +1203,12 @@ function renderAnalytics(page) {
             ${totals.hasMTF ? statCard("MTF funded", fmtMoney(totals.fundedInvested, true)) : ""}
             ${totals.hasMTF ? statCard("Net equity (after MTF)", fmtMoney(totals.netEquity, true)) : ""}
         </div>
-        <p class="br-muted" style="margin-top:12px;">${escapeHTML(weighted[0].name)} makes up ${largestPct.toFixed(1)}% of your portfolio.</p>
+        <p class="br-muted stk-an-note">${escapeHTML(weighted[0].name)} makes up ${largestPct.toFixed(1)}% of your portfolio.</p>
     `);
 }
 
 function buildDonut(weighted, totalValue) {
-    const size = 168, c = size / 2, r = 58, sw = 24;
+    const size = 168, c = size / 2, r = 62, sw = 14;
     const circ = 2 * Math.PI * r;
     let offset = 0;
 

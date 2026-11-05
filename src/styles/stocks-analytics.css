@@ -1,0 +1,81 @@
+/* =========================================================
+   STOCKS: Analytics tab, clean and minimal.
+   Presentation only (no behaviour or data is touched here).
+   One idea: flat sections separated by a single hairline.
+   No card inside a card, no fills, no heavy borders.
+   Loaded last, after stocks-pnl-summary.css.
+   ========================================================= */
+
+/* ---------- Sections ---------- */
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] > .br-card:not(.br-stat),
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-grid > .br-card:not(.br-stat) {
+    margin: 0;
+    padding: 26px 0 28px;
+    border: 0;
+    border-top: 1px solid var(--br-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-card-heading { margin: 0 0 18px; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-card-heading h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--br-text); }
+
+/* Two-up row (allocation | performance) */
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; margin: 0; }
+
+/* ---------- Best / worst / biggest ---------- */
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-insights] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0 0 26px; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-insights]:empty { display: none; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-insight { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 2px 24px; border-left: 1px solid var(--br-border); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-insight:first-child { padding-left: 0; border-left: 0; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-label { font-size: 12px; color: var(--br-text-muted); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-name { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-figure { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---------- Stat blocks (overall + health): flat label / value ---------- */
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-card.br-stat {
+    gap: 4px; min-width: 0; padding: 14px 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-card.br-stat .br-stat-label { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--br-text-muted); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-card.br-stat .br-stat-value { font-size: 20px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-grid { gap: 0; margin: 0; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-card.br-stat { padding: 2px 24px; border-left: 1px solid var(--br-border); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-card.br-stat:first-child { padding-left: 0; border-left: 0; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-card.br-stat .br-stat-value { font-size: 24px; letter-spacing: -.01em; }
+
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-health] .br-grid { gap: 0 40px; margin: 0; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-health] .br-card.br-stat { padding: 14px 0; border-top: 1px solid var(--br-border); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-health] .br-grid > .br-card.br-stat:nth-child(-n+3) { border-top: 0; padding-top: 2px; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-note { margin: 16px 0 0; font-size: 13px; }
+
+/* ---------- Allocation + performance rows ---------- */
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-donut { display: flex; justify-content: center; margin: 4px 0 24px; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-rows { display: flex; flex-direction: column; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-row { display: grid; grid-template-columns: minmax(96px, 124px) 1fr minmax(56px, auto); gap: 16px; align-items: center; padding: 8px 0; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-sym { display: flex; align-items: center; gap: 9px; min-width: 0; font-size: 13px; font-weight: 500; color: var(--br-text); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-sym > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-bar { height: 4px; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, var(--br-text) 9%, transparent); }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-bar > i { display: block; height: 100%; border-radius: 4px; }
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-val { text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- Realized P&L per sale chart: keep, just quieter ---------- */
+:root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-pnl-foot { color: var(--br-text-muted); }
+
+@media (max-width: 760px) {
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-grid-2 { grid-template-columns: 1fr; gap: 0; }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-health] .br-grid { gap: 0 28px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-health] .br-grid > .br-card.br-stat:nth-child(3) { border-top: 1px solid var(--br-border); padding-top: 14px; }
+}
+@media (max-width: 560px) {
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-insights] { grid-template-columns: 1fr; margin-bottom: 18px; }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-insight { padding: 14px 0; border-left: 0; border-top: 1px solid var(--br-border); }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-insight:first-child { padding-top: 2px; border-top: 0; }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-grid { grid-template-columns: 1fr; }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-card.br-stat { padding: 14px 0; border-left: 0; border-top: 1px solid var(--br-border); }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] [data-an-overall] .br-card.br-stat:first-child { padding-top: 2px; border-top: 0; }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .stk-an-row { grid-template-columns: minmax(84px, 108px) 1fr auto; gap: 12px; }
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] > .br-card:not(.br-stat),
+    :root:root:root:root:root:root:root .br-stocks [data-stocks-view="analytics"] .br-grid > .br-card:not(.br-stat) { padding: 22px 0 24px; }
+}

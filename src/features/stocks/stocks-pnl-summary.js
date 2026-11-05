@@ -3,8 +3,9 @@
  *
  * "Profit & Loss summary" for the Stocks Analytics tab: realized P&L
  * grouped month by month or year by year over a date range, a monthly
- * strip (one dot per sale: green = profit, red = loss) and a table
- * underneath with Month-wise / Year-wise / Scrip-wise views.
+ * dot calendar (one column per month, one dot per weekday: green = profit
+ * day, red = loss day, grey = no sale) and a table underneath, for the
+ * months in the selected range, with Month-wise / Year-wise / Scrip-wise views.
  *
  *  - Uses the same realized P&L the rest of the module uses
  *    (getTxnPnLMap, average-cost method), counted on the SELL date.
@@ -27,9 +28,6 @@ import { tipAttr } from "../../components/chart-tooltip.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const PLOT_H = 250;      // height of the bar area (px)
-const LABEL_PAD = 24;    // room for the value label above / below a bar (px)
-const NF = new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 });
 
 const RANGES = [
     { key: "3m", label: "3 Months", months: 3 },
@@ -69,11 +67,11 @@ function monthLabel(ym, long) {
     return long ? `${MONTHS_LONG[m - 1]} ${y}` : `${MONTHS[m - 1]} ${String(y).slice(2)}`;
 }
 
-/* 1.2L, 45K ... with the app's currency symbol. Full amounts are in the tooltip. */
-function short(n) {
-    const sym = fmtMoney(0, true).replace(/[0-9.,\s-]/g, "");
+/* Amount under a month: full amount with paise, whole amount once it gets long. */
+function monthAmount(n) {
     const v = Math.abs(n);
-    return (n < 0 ? "-" : "") + sym + (v < 1000 ? Math.round(v).toString() : NF.format(v));
+    const text = fmtMoney(v, v >= 100000);
+    return n < 0 ? "-" + text : text;
 }
 
 /* =========================================
@@ -166,6 +164,38 @@ function monthsBetween(from, to) {
     return out;
 }
 
+/* date -> { pnl, trades, value } for every day that has a sale. */
+function groupByDay(sales) {
+    const map = new Map();
+    for (const s of sales) {
+        const d = map.get(s.date) || { pnl: 0, trades: 0, value: 0 };
+        d.pnl = round2(d.pnl + s.pnl);
+        d.trades++;
+        d.value = round2(d.value + s.value);
+        map.set(s.date, d);
+    }
+    return map;
+}
+
+/* One month as rows of weekday cells (Mon-Fri, or Mon-Sun when `cols` is 7).
+   A cell is { date, day } or null (blank space before the 1st / after the 30th). */
+function monthRows(ym, cols) {
+    const [y, m] = ym.split("-").map(Number);
+    const days = new Date(y, m, 0).getDate();
+    const firstDow = (new Date(y, m - 1, 1).getDay() + 6) % 7; // Mon = 0
+    const weeks = new Map();
+
+    for (let d = 1; d <= days; d++) {
+        const dow = (firstDow + d - 1) % 7;
+        if (dow >= cols) continue;
+        const week = Math.floor((firstDow + d - 1) / 7);
+        if (!weeks.has(week)) weeks.set(week, new Array(cols).fill(null));
+        weeks.get(week)[dow] = { date: `${y}-${pad(m)}-${pad(d)}`, day: d };
+    }
+
+    return [...weeks.keys()].sort((a, b) => a - b).map((k) => weeks.get(k));
+}
+
 /* =========================================
    COMPONENT
 ========================================= */
@@ -206,7 +236,7 @@ export function createPnlSummary(container) {
 
         // Keep the chart where the person scrolled it (first time: the newest months).
         const old = container.querySelector(".stk-ps-scroll");
-        if (old) chartScroll = old.scrollLeft;
+        if (old && old.clientWidth > 0) chartScroll = old.scrollLeft;
 
         container.innerHTML = `
             ${renderControls(from, to)}
@@ -220,12 +250,29 @@ export function createPnlSummary(container) {
                 ${tile("Worst month", worst ? fmtSigned(worst.pnl, true) : "–", worst ? pnlClass(worst.pnl) : "", worst ? monthLabel(worst.key, true) : "")}
                 ${tile("Sale value", fmtMoney(sold, true), "", "")}
             </div>
-            ${renderChart(byMonth, from, to)}
+            ${renderChart(byMonth, sales, from, to)}
             ${renderTable(sales, byMonth, from, to)}
         `;
 
         const sc = container.querySelector(".stk-ps-scroll");
-        if (sc) sc.scrollLeft = chartScroll === null ? sc.scrollWidth : chartScroll;
+        if (sc) {
+            if (chartScroll !== null) {
+                sc.scrollLeft = chartScroll;
+            } else if (sc.clientWidth > 0) {
+                sc.scrollLeft = sc.scrollWidth;
+                chartScroll = sc.scrollLeft;
+            } else if (typeof ResizeObserver === "function") {
+                // The Analytics tab is hidden while it first renders (no width yet):
+                // jump to the newest months the moment it becomes visible.
+                const ro = new ResizeObserver(() => {
+                    if (sc.clientWidth > 0) {
+                        ro.disconnect();
+                        if (chartScroll === null) sc.scrollLeft = sc.scrollWidth;
+                    }
+                });
+                ro.observe(sc);
+            }
+        }
     }
 
     function tile(label, value, tone, sub) {
@@ -248,56 +295,72 @@ export function createPnlSummary(container) {
                     <label>From <input type="date" class="br-input" data-ps-from value="${esc(state.from || from)}"></label>
                     <label>To <input type="date" class="br-input" data-ps-to value="${esc(state.to || to)}"></label>
                 </div>` : ""}
-            </div>
-            <div class="br-muted stk-ps-period">Showing P&amp;L summary for <b>${from ? fmtDate(from) : "start"}</b> – <b>${to ? fmtDate(to) : "today"}</b></div>`;
+            </div>`;
     }
 
-    /* Monthly bar chart: green up for profit, red down for loss, one column per month. */
-    function renderChart(byMonth, from, to) {
+    /* Monthly dot calendar: one column per month in the range, one dot per weekday.
+       Green dot = a day with a net profit, red = a net loss, grey = no sale. */
+    function renderChart(byMonth, sales, from, to) {
         const lookup = new Map(byMonth.map((b) => [b.key, b]));
         const months = monthsBetween(from, to);
         if (!months.length) return "";
 
-        const vals = months.map((k) => lookup.get(k)?.pnl || 0);
-        const maxPos = Math.max(0, ...vals);
-        const maxNeg = Math.max(0, ...vals.map((v) => -v));
-        const span = maxPos + maxNeg || 1;
-        const usable = PLOT_H - (maxPos > 0 ? LABEL_PAD : 0) - (maxNeg > 0 ? LABEL_PAD : 0);
-        const upH = (maxPos > 0 ? LABEL_PAD : 0) + (usable * maxPos) / span;
-        const downH = (maxNeg > 0 ? LABEL_PAD : 0) + (usable * maxNeg) / span;
-        const barH = (v) => (v === 0 ? 0 : Math.max(6, Math.round((usable * Math.abs(v)) / span)));
+        const byDay = groupByDay(sales);
+        // Mon-Fri normally; Sat/Sun columns appear only if a sale was entered on a weekend.
+        const cols = sales.some((s) => {
+            const dow = new Date(s.date + "T00:00:00").getDay();
+            return dow === 0 || dow === 6;
+        }) ? 7 : 5;
 
-        const cols = months.map((k) => {
+        const grids = months.map((k) => monthRows(k, cols));
+        const rowCount = Math.max(1, ...grids.map((g) => g.length));
+
+        const cols_html = months.map((k, i) => {
             const b = lookup.get(k);
             const v = b ? b.pnl : 0;
-            const up = v > 0;
-            const down = v < 0;
+            const tone = b ? (v < 0 ? "neg" : "pos") : "";
             const tip = b
                 ? tipAttr(monthLabel(k, true), [
-                    ["Realized P&L", fmtSigned(v), up || v === 0 ? "var(--br-success)" : "var(--br-danger)"],
+                    ["Realized P&L", fmtSigned(v), v < 0 ? "var(--br-danger)" : "var(--br-success)"],
                     ["Sales", `${b.trades} (${b.wins} profit / ${b.losses} loss)`],
                     ["Sale value", fmtMoney(b.sold, true)]
                 ])
                 : "";
 
+            const dots = grids[i].map((row) => row.map((c) => {
+                if (!c) return `<i class="stk-ps-dot gap"></i>`;
+                const day = byDay.get(c.date);
+                const off = (from && c.date < from) || (to && c.date > to);
+                if (!day) return `<i class="stk-ps-dot${off ? " off" : ""}"></i>`;
+                const cls = day.pnl > 0 ? "pos" : day.pnl < 0 ? "neg" : "flat";
+                const dTip = tipAttr(fmtDate(c.date), [
+                    ["Realized P&L", fmtSigned(day.pnl), day.pnl < 0 ? "var(--br-danger)" : "var(--br-success)"],
+                    ["Sales", String(day.trades)],
+                    ["Sale value", fmtMoney(day.value, true)]
+                ]);
+                return `<i class="stk-ps-dot ${cls}" ${dTip}></i>`;
+            }).join("")).join("");
+
             return `
-                <div class="stk-ps-col${b ? " has" : ""}" ${tip}>
-                    <div class="stk-ps-up" style="height:${upH}px">
-                        ${up ? `<span class="stk-ps-val pos">${short(v)}</span><i class="stk-ps-bar pos" style="height:${barH(v)}px"></i>` : ""}
-                    </div>
-                    <div class="stk-ps-down" style="height:${downH}px">
-                        ${down ? `<i class="stk-ps-bar neg" style="height:${barH(v)}px"></i><span class="stk-ps-val neg">${short(v)}</span>` : ""}
-                        ${!b ? `<i class="stk-ps-stub"></i>` : ""}
-                    </div>
-                    <div class="stk-ps-month">${monthLabel(k)}</div>
-                    <div class="stk-ps-count">${b ? plural(b.trades, "sale") : "–"}</div>
+                <div class="stk-ps-mcol${b ? " has " + tone : ""}" ${tip}>
+                    <div class="stk-ps-mname">${monthLabel(k)}</div>
+                    <div class="stk-ps-days" style="--cols:${cols}">${dots}</div>
+                    <div class="stk-ps-mnet ${tone}">${b ? monthAmount(v) : ""}</div>
                 </div>`;
         });
 
         return `
-            <div class="stk-ps-chart">
+            <div class="stk-ps-cal">
+                <div class="stk-ps-period" aria-label="Selected period">
+                    <span>${from ? fmtDate(from) : "Start"}</span><i></i><span>${to ? fmtDate(to) : "Today"}</span>
+                </div>
                 <div class="stk-ps-scroll">
-                    <div class="stk-ps-bars" style="min-width:${months.length * 64}px">${cols.join("")}</div>
+                    <div class="stk-ps-months" style="--rows:${rowCount}">${cols_html.join("")}</div>
+                </div>
+                <div class="stk-ps-legend">
+                    <span><i class="stk-ps-dot pos"></i>Profit day</span>
+                    <span><i class="stk-ps-dot neg"></i>Loss day</span>
+                    <span><i class="stk-ps-dot"></i>No sale</span>
                 </div>
             </div>`;
     }
@@ -326,7 +389,7 @@ export function createPnlSummary(container) {
         return `
             <div class="stk-ps-table-card">
                 <div class="stk-ps-table-head">
-                    <h3>${first}-wise profit &amp; loss</h3>
+                    <p class="stk-ps-showing">Showing P&amp;L summary for <b>${from ? fmtDate(from) : "start"}</b> – <b>${to ? fmtDate(to) : "today"}</b></p>
                     <div class="br-chip-row" role="group" aria-label="Table view">
                         ${VIEWS.map((v) => `<button type="button" class="br-chip${state.view === v.key ? " active" : ""}" data-ps-view="${v.key}">${v.label}</button>`).join("")}
                     </div>

@@ -1,64 +1,78 @@
 /* Stocks Analytics: Profit & Loss summary.
    Flat on purpose: no card-in-card borders. A line is used only where it
-   separates something (the zero baseline, the table header). */
+   separates something (between months, the table header and rows).
+   The monthly view is a dot calendar: one column per month, one dot per
+   weekday (green = profit day, red = loss day, grey = no sale). */
 
-:root:root:root:root:root:root .br-stocks .stk-ps-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 10px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; }
 :root:root:root:root:root:root .br-stocks .stk-ps-custom { display: flex; flex-wrap: wrap; gap: 10px; }
 :root:root:root:root:root:root .br-stocks .stk-ps-custom label { display: flex; align-items: center; gap: 6px; font-size: var(--br-font-size-sm); color: var(--br-text-muted); }
-:root:root:root:root:root:root .br-stocks .stk-ps-period { font-size: var(--br-font-size-sm); margin-bottom: 16px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-period b { color: var(--br-text); font-weight: 600; }
 
-/* ---------- Tiles: soft fill, no border ---------- */
-:root:root:root:root:root:root .br-stocks .stk-ps-tiles { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-tile {
-    display: flex; flex-direction: column; gap: 4px; min-width: 0;
-    padding: 16px 18px; border: 0; border-radius: 14px; background: var(--br-surface-soft);
-}
+/* ---------- Summary strip: one flat row, hairline dividers ---------- */
+:root:root:root:root:root:root .br-stocks .stk-ps-tiles { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 0; margin-bottom: 4px; padding-bottom: 20px; border-bottom: 1px solid var(--br-border); }
+:root:root:root:root:root:root .br-stocks .stk-ps-tile { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 2px 22px; border: 0; border-left: 1px solid var(--br-border); border-radius: 0; background: transparent; }
+:root:root:root:root:root:root .br-stocks .stk-ps-tile:first-child { padding-left: 0; border-left: 0; }
 :root:root:root:root:root:root .br-stocks .stk-ps-tile-label { font-size: var(--br-font-size-xs); color: var(--br-text-muted); font-weight: 500; }
-:root:root:root:root:root:root .br-stocks .stk-ps-tile-value { font-size: 20px; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+:root:root:root:root:root:root .br-stocks .stk-ps-tile-value { font-size: 19px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 :root:root:root:root:root:root .br-stocks .stk-ps-tile-main .stk-ps-tile-value { font-size: 28px; letter-spacing: -.01em; }
 :root:root:root:root:root:root .br-stocks .stk-ps-tile-sub { font-size: 12px; color: var(--br-text-muted); }
 
-/* ---------- Monthly bar chart ---------- */
-:root:root:root:root:root:root .br-stocks .stk-ps-chart { margin-bottom: 22px; padding: 18px 8px 10px; border: 0; border-radius: 14px; background: var(--br-surface-soft); }
-:root:root:root:root:root:root .br-stocks .stk-ps-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-bars { display: flex; width: 100%; }
-:root:root:root:root:root:root .br-stocks .stk-ps-col { flex: 1 1 0; min-width: 64px; display: flex; flex-direction: column; align-items: center; border-radius: 10px; cursor: default; transition: background .15s; }
-:root:root:root:root:root:root .br-stocks .stk-ps-col.has:hover { background: color-mix(in srgb, var(--br-text) 5%, transparent); }
+/* ---------- Monthly dot calendar ---------- */
+:root:root:root:root:root:root .br-stocks .stk-ps-cal { --dot: 13px; --dot-gap: 9px; margin: 0 0 24px; padding: 22px 0 6px; border: 0; background: transparent; }
 
-:root:root:root:root:root:root .br-stocks .stk-ps-up,
-:root:root:root:root:root:root .br-stocks .stk-ps-down { width: 100%; display: flex; flex-direction: column; align-items: center; }
-:root:root:root:root:root:root .br-stocks .stk-ps-up { justify-content: flex-end; }
-:root:root:root:root:root:root .br-stocks .stk-ps-down { justify-content: flex-start; border-top: 1px solid var(--br-border); } /* the zero line */
+:root:root:root:root:root:root .br-stocks .stk-ps-period { display: flex; width: fit-content; align-items: center; gap: 12px; margin: 0 auto 26px; padding: 7px 18px; border: 1px solid var(--br-border); border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--br-text); font-variant-numeric: tabular-nums; }
+:root:root:root:root:root:root .br-stocks .stk-ps-period i { width: 10px; height: 1px; background: var(--br-text-muted); opacity: .6; }
 
-:root:root:root:root:root:root .br-stocks .stk-ps-bar { display: block; width: min(60%, 44px); min-width: 26px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-bar.pos { background: var(--stk-gain, var(--br-success)); border-radius: 8px 8px 0 0; }
-:root:root:root:root:root:root .br-stocks .stk-ps-bar.neg { background: var(--stk-loss, var(--br-danger)); border-radius: 0 0 8px 8px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-val { font-size: 12px; font-weight: 650; line-height: 24px; white-space: nowrap; }
-:root:root:root:root:root:root .br-stocks .stk-ps-val.pos { color: var(--stk-gain, var(--br-success)); }
-:root:root:root:root:root:root .br-stocks .stk-ps-val.neg { color: var(--stk-loss, var(--br-danger)); }
-:root:root:root:root:root:root .br-stocks .stk-ps-stub { display: block; width: 14px; height: 3px; margin-top: 0; border-radius: 2px; background: var(--br-border); opacity: .6; }
+:root:root:root:root:root:root .br-stocks .stk-ps-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-months { display: flex; width: 100%; }
+:root:root:root:root:root:root .br-stocks .stk-ps-mcol { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; padding: 0 20px; border-left: 1px solid var(--br-border); transition: background .15s; }
+:root:root:root:root:root:root .br-stocks .stk-ps-mcol:first-child { border-left: 0; }
 
-:root:root:root:root:root:root .br-stocks .stk-ps-month { margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--br-text); }
-:root:root:root:root:root:root .br-stocks .stk-ps-count { font-size: 11px; color: var(--br-text-muted); padding-bottom: 4px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-mname { align-self: stretch; padding-bottom: 9px; margin-bottom: 18px; border-bottom: 2px solid var(--br-border); text-align: center; font-size: 12.5px; font-weight: 600; color: var(--br-text-muted); white-space: nowrap; }
+:root:root:root:root:root:root .br-stocks .stk-ps-mcol.has .stk-ps-mname { color: var(--br-text); }
+:root:root:root:root:root:root .br-stocks .stk-ps-mcol.pos .stk-ps-mname { border-bottom-color: var(--stk-gain, var(--br-success)); }
+:root:root:root:root:root:root .br-stocks .stk-ps-mcol.neg .stk-ps-mname { border-bottom-color: var(--stk-loss, var(--br-danger)); }
 
-/* ---------- Table: no cell borders, just spacing and hover ---------- */
+:root:root:root:root:root:root .br-stocks .stk-ps-days { display: grid; grid-template-columns: repeat(var(--cols, 5), var(--dot)); grid-auto-rows: var(--dot); gap: var(--dot-gap); align-content: start; min-height: calc(var(--rows, 5) * var(--dot) + (var(--rows, 5) - 1) * var(--dot-gap)); }
+
+:root:root:root:root:root:root .br-stocks .stk-ps-dot { display: block; width: var(--dot); height: var(--dot); border-radius: 50%; background: color-mix(in srgb, var(--br-text) 13%, transparent); }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.off { background: color-mix(in srgb, var(--br-text) 6%, transparent); }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.gap { background: transparent; }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.pos { background: var(--stk-gain, var(--br-success)); cursor: default; }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.neg { background: var(--stk-loss, var(--br-danger)); cursor: default; }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.flat { background: var(--br-text-muted); cursor: default; }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.pos:hover,
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.neg:hover,
+:root:root:root:root:root:root .br-stocks .stk-ps-dot.flat:hover { transform: scale(1.25); }
+:root:root:root:root:root:root .br-stocks .stk-ps-dot { transition: transform .12s; }
+
+:root:root:root:root:root:root .br-stocks .stk-ps-mnet { min-height: 20px; margin-top: 18px; font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+:root:root:root:root:root:root .br-stocks .stk-ps-mnet.pos { color: var(--stk-gain, var(--br-success)); }
+:root:root:root:root:root:root .br-stocks .stk-ps-mnet.neg { color: var(--stk-loss, var(--br-danger)); }
+
+:root:root:root:root:root:root .br-stocks .stk-ps-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 18px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--br-border); font-size: 12px; color: var(--br-text-muted); }
+:root:root:root:root:root:root .br-stocks .stk-ps-legend span { display: inline-flex; align-items: center; gap: 7px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-legend .stk-ps-dot { --dot: 9px; transform: none; }
+
+/* ---------- Table: header band, hairline rows ---------- */
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card { margin: 0; padding: 0; border: 0; background: transparent; }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-head h3 { margin: 0; font-size: 15px; font-weight: 600; }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-showing { margin: 0; font-size: var(--br-font-size-sm); color: var(--br-text-muted); }
+:root:root:root:root:root:root .br-stocks .stk-ps-showing b { color: var(--br-text); font-weight: 600; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .br-table-wrap { background: transparent; border: 0; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table { min-width: 560px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table th { background: transparent; border-bottom: 1px solid var(--br-border); } /* separates header from rows */
-:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table td { border: 0; padding: 14px var(--br-space-4); }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table th { background: var(--br-surface-soft); border: 0; }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table th:first-child { border-radius: 10px 0 0 10px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table th:last-child { border-radius: 0 10px 10px 0; }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table td { border: 0; border-bottom: 1px solid var(--br-border); padding: 15px var(--br-space-4); }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table tbody tr:last-child > td { border-bottom: 0; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table th.num,
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-table td.num { text-align: right; white-space: nowrap; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-row { cursor: pointer; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-row:hover td,
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-row.open td { background: var(--br-surface-soft); }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-row td:first-child { border-radius: 10px 0 0 10px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-row td:last-child { border-radius: 0 10px 10px 0; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-row:focus-visible { outline: 2px solid var(--br-primary, currentColor); outline-offset: -2px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-link { font-weight: 500; }
+:root:root:root:root:root:root .br-stocks .stk-ps-link { font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--br-text) 35%, transparent); text-underline-offset: 3px; }
 :root:root:root:root:root:root .br-stocks .stk-ps-short { display: none; }
 :root:root:root:root:root:root .br-stocks .stk-ps-link { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 :root:root:root:root:root:root .br-stocks .stk-ps-caret { display: inline-block; width: 12px; color: var(--br-text-muted); }
@@ -68,8 +82,8 @@
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-detail:hover td { background: transparent; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-detail .br-table-wrap { background: transparent; }
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-inner { min-width: 480px; background: transparent; }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-inner th { border-bottom: 0; padding-top: 4px; padding-bottom: 6px; }
-:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-inner td { padding-top: 8px; padding-bottom: 8px; }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-inner th { background: transparent; border-bottom: 0; padding-top: 4px; padding-bottom: 6px; border-radius: 0; }
+:root:root:root:root:root:root .br-stocks .stk-ps-table-card .stk-ps-inner td { padding-top: 8px; padding-bottom: 8px; border-bottom: 0; }
 
 /* The stocks skin turns every .br-table into stacked cards on phones (made for the transactions list).
    These two stay real tables. */
@@ -83,14 +97,19 @@
 :root:root:root:root:root:root .br-stocks .stk-ps-table-card .br-table td::before { display: none; content: none; }
 
 @media (max-width: 760px) {
-    :root:root:root:root:root:root .br-stocks .stk-ps-tiles { grid-template-columns: 1fr 1fr; }
-    :root:root:root:root:root:root .br-stocks .stk-ps-tile-main,
-    :root:root:root:root:root:root .br-stocks .stk-ps-tiles .stk-ps-tile:last-child { grid-column: 1 / -1; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-tiles { grid-template-columns: 1fr 1fr; row-gap: 16px; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-tile { padding: 0 0 0 16px; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-tile:first-child { grid-column: 1 / -1; padding-left: 0; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-tile:nth-child(2) { border-left: 0; padding-left: 0; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-tile:nth-child(4) { grid-column: 1 / -1; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--br-border); }
     :root:root:root:root:root:root .br-stocks .stk-ps-tile-main .stk-ps-tile-value { font-size: 26px; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-cal { --dot: 12px; --dot-gap: 8px; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-mcol { padding: 0 16px; }
 }
 @media (max-width: 560px) {
     :root:root:root:root:root:root .br-stocks .stk-ps-table-head { flex-direction: column; align-items: flex-start; }
-    :root:root:root:root:root:root .br-stocks .stk-ps-col { min-width: 58px; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-period { margin-bottom: 20px; }
+    :root:root:root:root:root:root .br-stocks .stk-ps-mcol { padding: 0 14px; }
     :root:root:root:root:root:root .br-stocks .stk-ps-long { display: none; }
     :root:root:root:root:root:root .br-stocks .stk-ps-short { display: inline; }
     :root:root:root:root:root:root .br-stocks .stk-ps-link { max-width: 110px; }
