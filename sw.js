@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v245";
+const CACHE_VERSION = "v248";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -141,6 +141,7 @@ const SHELL = [
     "./src/components/chat/chat-suggestions.js",
     "./src/components/layout/rover-header.js",
     "./src/features/rover/rover-data.js",
+    "./src/features/rover/rover-dynamic.js",
     "./src/features/rover/rover-engine.js",
     "./src/features/rover/rover-match.js",
     "./src/features/rover/rover-history.js",
@@ -163,6 +164,7 @@ const SHELL = [
     "./src/features/stocks/stocks-ipo.js",
     "./src/features/stocks/stocks-live.js",
     "./src/features/stocks/stocks-pnl-chart.js",
+    "./src/features/stocks/stocks-pnl-summary.js",
     "./src/features/stocks/stocks-print.js",
     "./src/features/stocks/stocks-service.js",
     "./src/features/stocks/stocks-universe.js",
@@ -219,6 +221,7 @@ const SHELL = [
     "./src/styles/stocks-minimal.css",
     "./src/styles/stocks-ui.css",
     "./src/styles/stocks-dream.css",
+    "./src/styles/stocks-pnl-summary.css",
     "./src/styles/time-picker.css",
     "./src/styles/palettes.css",
     "./src/styles/theme.css",

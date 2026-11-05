@@ -6,6 +6,7 @@ import { greeting, esc } from "../../components/chat/chat-format.js";
 import { respond, needsData, SUGGESTIONS, TOP_SUGGESTIONS } from "./rover-engine.js";
 import { getSnapshot } from "./rover-data.js";
 import { rankSuggestions, tokenize } from "./rover-match.js";
+import { buildEntities, rankEntities } from "./rover-dynamic.js";
 import { runReport } from "./rover-reports.js";
 import { progressIn } from "./rover-progress.js";
 import { flowFromText, flowLabel, flowReply, readFiles, downloadBrokerPdf, session as brokerSession, resetSession, resolveRequest, pickText, PICKS, ACCEPT } from "./rover-brokers.js";
@@ -103,6 +104,10 @@ export function RoverView({ hrefFor, name = "" }) {
 
     let messages = loadHistory();
     let draft = "";
+    // Names from the person's own data (income sources, people, FDs, loans...), offered as questions while typing.
+    let entities = [];
+    let builtKey = "";
+    let loadedAt = 0;
     let busy = false;
     let showingPicks = false;
     let epoch = 0; // bumps on "New chat" so a late answer never lands in the new conversation
@@ -146,9 +151,12 @@ export function RoverView({ hrefFor, name = "" }) {
     function applyFilter() {
         // With files attached the list is the brokers' reports ("Angel One · Profit & Loss"...).
         const forFiles = composer.files().length > 0;
-        if (forFiles !== showingPicks) {
+        const dynQuestions = forFiles ? [] : entities.map((e) => e.question);
+        const key = (forFiles ? "files:" : "all:") + dynQuestions.join("|");
+        if (key !== builtKey) {
+            builtKey = key;
             showingPicks = forFiles;
-            chips.setItems(forFiles ? PICKS : SUGGESTIONS, forFiles ? "Which report is this?" : "Suggested for you");
+            chips.setItems(forFiles ? PICKS : [...new Set([...SUGGESTIONS, ...dynQuestions])], forFiles ? "Which report is this?" : "Suggested for you");
         }
         const asked = new Set(messages.filter((m) => m.role === "user").map((m) => m.text.toLowerCase()));
         const typed = tokenize(draft).length > 0;
@@ -156,17 +164,20 @@ export function RoverView({ hrefFor, name = "" }) {
         const fresh = forFiles ? PICKS : source.filter((q) => !asked.has(q.toLowerCase()));
         const ranked = typed ? rankSuggestions(draft, fresh) : [];
         const matched = ranked.length > 0;
+        // Questions built from the person's own data ("Income from Dad") lead while typing.
+        const dyn = typed && !forFiles ? rankEntities(draft, entities).map((e) => e.question).filter((q) => !asked.has(q.toLowerCase())) : [];
+        const useful = matched || dyn.length > 0;
         // Typed something that matches nothing: show everything rather than an empty menu.
-        const shown = typed && matched ? ranked.map((r) => r.item) : fresh;
+        const shown = typed && useful ? [...new Set([...dyn, ...ranked.map((r) => r.item)])] : fresh;
         const rank = new Map(shown.map((q, i) => [q, i]));
 
         // Typing: only the best few, so the list stays short above the keyboard.
         // Nothing typed: just the first few (the most useful ones), never the whole list.
-        const cap = typed && matched ? (hasMouse() ? 8 : 5) : START_COUNT;
+        const cap = typed && useful ? (hasMouse() ? 8 : 5) : START_COUNT;
         chips.querySelectorAll(".rv-chip").forEach((chip) => {
             const q = chip.querySelector("span").textContent;
             chip.hidden = !rank.has(q) || rank.get(q) >= cap;
-            chip.style.order = String(typed && matched ? rank.get(q) : 0);
+            chip.style.order = String(typed && useful ? rank.get(q) : 0);
         });
         chips.sync();
         // While typing, the best matches drop down on their own; clearing the box closes them.
@@ -177,6 +188,20 @@ export function RoverView({ hrefFor, name = "" }) {
         const inList = new Set(!forFiles && typed && matched ? shown.slice(0, START_COUNT) : SUGGESTIONS.slice(0, START_COUNT));
         suggestions.querySelectorAll("li").forEach((li) => { li.hidden = !inList.has(li.textContent); });
     }
+
+    /* Read the person's data once (and again when they come back to the tab) to offer names from it. */
+    async function loadEntities() {
+        if (Date.now() - loadedAt < 15000) return;
+        loadedAt = Date.now();
+        try {
+            entities = buildEntities(await getSnapshot());
+            applyFilter();
+        } catch (error) {
+            console.error("Rover suggestions:", error);
+        }
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) loadEntities(); });
+    window.addEventListener("focus", loadEntities);
 
     function render() {
         unpin();
@@ -382,6 +407,7 @@ export function RoverView({ hrefFor, name = "" }) {
     });
 
     render();
+    loadEntities();
     if (hasMouse()) composer.focus();
 
     return {

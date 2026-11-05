@@ -1,5 +1,6 @@
 import { formatINR } from "../dashboard/dashboard-service.js";
 import { visualsFor, selectBlocks } from "./rover-queries.js";
+import { entityReply } from "./rover-dynamic.js";
 
 /*
  * Rover, more questions (pure logic, no DOM, no storage).
@@ -899,6 +900,10 @@ export function lookupReply(raw, text, d) {
         const spent = categoryReply(text, d || {});
         if (spent) return spent;
         const found = findHoldings(text, d || {});
+        // A name from your own data (income source, person, FD bank, lender): "Income from Dad", "dad".
+        // A bare name that is also a stock still opens the stock.
+        const named = entityReply(raw, text, d || {});
+        if (named && !(named.nameOnly && found.length)) return named;
         return found.length ? stockReply(found, d) : null;
     } catch (error) {
         console.error("Rover lookup:", error);

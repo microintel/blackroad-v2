@@ -40,6 +40,7 @@ import {
 
 import { printStocksReport } from "./stocks-print.js";
 import { createPnlChart } from "./stocks-pnl-chart.js";
+import { createPnlSummary } from "./stocks-pnl-summary.js";
 import { initIpo } from "./stocks-ipo.js";
 import { initDream } from "./stocks-dream.js";
 import { setHTML } from "../../components/dom-patch.js";
@@ -56,6 +57,7 @@ function stockLogoHTML(symbol, size) {
 
 let store = null;
 let realizedChart = null;
+let pnlSummary = null;
 /* true while a live price update redraws: only changed values are touched */
 let patching = false;
 const put = (el, html) => setHTML(el, html, { patch: patching });
@@ -219,6 +221,11 @@ export async function Stocks() {
             <section class="br-card">
                 <div class="br-card-heading"><h3>How you're doing overall</h3></div>
                 <div data-an-overall></div>
+            </section>
+
+            <section class="br-card">
+                <div class="br-card-heading"><h3>Profit &amp; Loss summary</h3></div>
+                <div data-an-pnl-summary></div>
             </section>
 
             <section class="br-card">
@@ -463,6 +470,7 @@ export async function Stocks() {
     });
     bindAddShortcut(page, (p) => clickFirstVisible(p, '[data-action="add-txn"]'));
     realizedChart = createPnlChart(page.querySelector("[data-an-realized-chart]"), { kind: "realized" });
+    pnlSummary = createPnlSummary(page.querySelector("[data-an-pnl-summary]"));
     await loadState(page);
 
     // Live prices: fetch once now, then keep fresh in the background.
@@ -1099,6 +1107,7 @@ function renderAnalytics(page) {
     const none = "No active holdings yet.";
 
     realizedChart?.update(transactions, prices);
+    pnlSummary?.update(transactions, prices);
 
     // Overall performance
     put(page.querySelector("[data-an-overall]"), `
