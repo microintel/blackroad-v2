@@ -1,6 +1,6 @@
 import { formatINR } from "../dashboard/dashboard-service.js";
 import { visualsFor, selectBlocks } from "./rover-queries.js";
-import { entityReply } from "./rover-dynamic.js";
+import { entityReply, multiReply } from "./rover-dynamic.js";
 
 /*
  * Rover, more questions (pure logic, no DOM, no storage).
@@ -889,6 +889,23 @@ export function fundReply(raw, text, d) {
         };
     } catch (error) {
         console.error("Rover fund lookup:", error);
+        return null;
+    }
+}
+
+/* Several names in one message ("income dad, salary, profit", "lend friend 1, friend 2", "reliance, hdfc flexi cap"):
+   each one is answered, then a short summary. Returns null unless two or more names are found. */
+const piecePad = (piece) => ` ${String(piece).toLowerCase().replace(/[^a-z0-9&\s]/g, " ").replace(/\s+/g, " ").trim()} `;
+
+export function namesReply(raw, d) {
+    try {
+        const data = d || {};
+        return multiReply(raw, data, {
+            stock: (piece) => findHoldings(piecePad(piece), data),
+            fund: (piece) => findFunds(piece, piecePad(piece), data)
+        });
+    } catch (error) {
+        console.error("Rover names:", error);
         return null;
     }
 }

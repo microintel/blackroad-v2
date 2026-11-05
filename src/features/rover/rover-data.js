@@ -6,7 +6,7 @@ import { loadDues } from "../notifications/notifications-service.js";
 import { computeMetrics } from "../deposits/deposits-service.js";
 import { getSession, currentUser } from "../../services/auth.js";
 import { EMPTY_MANUAL, loadManual, loadLive, calculate } from "../accounting/accounting-service.js";
-import { summarizePeople, outstanding as loanOutstanding, nextDue as loanNextDue, loanStatus } from "../lending/lending-service.js";
+import { summarizePeople, computeBalance, outstanding as loanOutstanding, nextDue as loanNextDue, loanStatus } from "../lending/lending-service.js";
 
 /*
  * Rover data adapter (read-only).
@@ -118,6 +118,17 @@ async function loadExtras() {
             .map((r) => ({ name: r.party.name || r.party.fullName || "Person", balance: r.balance }))
             .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
 
+        // Everyone you have lent to / borrowed from (settled people too), with their history, so Rover can answer about one person in detail.
+        const lendingPeople = (lending.people || []).map((party) => {
+            const own = (lending.entries || []).filter((e) => e.partyId === party.id);
+            const { totalGave, totalGot, balance } = computeBalance(own);
+            const recent = [...own]
+                .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+                .slice(0, 5)
+                .map((e) => ({ date: e.date || "", type: e.type === "gave" ? "gave" : "got", amount: Number(e.amount) || 0, note: e.note || "" }));
+            return { name: party.name || party.fullName || "Person", balance, totalGave, totalGot, entryCount: own.length, lastDate: recent[0]?.date || "", recent };
+        }).sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
+
         let ledger = null;
         try { ledger = calculateLedgerSummary(entries); } catch (error) { console.error("Rover: ledger summary unavailable:", error); }
 
@@ -146,7 +157,8 @@ async function loadExtras() {
             })).sort((a, b) => b.outstanding - a.outstanding),
             topExpenses: expenses.sort((a, b) => b.amount - a.amount).slice(0, 8),
             fds,
-            people
+            people,
+            lendingPeople
         };
     } catch (error) {
         console.error("Rover: extra detail unavailable:", error);

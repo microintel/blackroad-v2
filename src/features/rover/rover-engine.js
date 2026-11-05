@@ -3,7 +3,7 @@ import { REPORTS } from "./rover-reports.js";
 import { EXTRA_INTENTS, EXTRA_SUGGESTIONS, visualsFor, compareReply, isCompare, pickView, pickChartType } from "./rover-queries.js";
 import { listReply, isListRequest, LIST_SUGGESTIONS } from "./rover-lists.js";
 import { commandReply, commandKind, COMMAND_SUGGESTIONS } from "./rover-commands.js";
-import { MORE_INTENTS, MORE_SUGGESTIONS, NO_DATA_INTENTS, moreVisualsFor, lookupReply, fundReply } from "./rover-more.js";
+import { MORE_INTENTS, MORE_SUGGESTIONS, NO_DATA_INTENTS, moreVisualsFor, lookupReply, fundReply, namesReply } from "./rover-more.js";
 
 /*
  * Rover engine (pure logic, no DOM, no storage).
@@ -112,6 +112,7 @@ const INTENTS = [
                 "• **Income statement**, last month, averages and latest expenses 🧾\n" +
                 "• **Reminders**: what's due, overdue payments, next EMI, FD maturities 🔔\n" +
                 "• **A single stock**: try \"How is Reliance doing?\" 📈\n" +
+                "• **Several names at once**: try \"Income Dad, Salary, Profit\" or \"Lend Friend 1, Friend 2\". I answer each one, then add a summary 📋\n" +
                 "• **Highest and lowest**: who owes you the most, your lowest lending, biggest loan, FD, stock or expense\n" +
                 "• **Account details** and the **last data entry date**\n" +
                 "• **About BlackRoad**: how to add things, backup, calculators and more\n" +
@@ -362,6 +363,10 @@ export const SUGGESTIONS = [...new Set([
 export function respond(input, snapshot) {
     const raw = String(input || "").trim();
     const text = normalize(raw);
+
+    // Several names at once ("income dad, salary, profit", "lend friend 1, friend 2"): each answered, then a summary.
+    const names = namesReply(raw, snapshot || {});
+    if (names) return names;
 
     // A pasted / typed fund name: that fund's summary; two or more: a comparison.
     const fund = fundReply(raw, text, snapshot || {});
