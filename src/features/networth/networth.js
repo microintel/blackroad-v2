@@ -2,6 +2,8 @@ import { isUSD, usdShort } from "../../services/currency.js";
 import { tipAttr } from "../../components/chart-tooltip.js";
 import { icon, FEATURE_ICON } from "../../components/icons.js";
 import { formatINR } from "../dashboard/dashboard-service.js";
+import { setHTML } from "../../components/dom-patch.js";
+import { LIVE_EVENT } from "../../services/live-sync.js";
 
 import {
     loadNetWorthSource,
@@ -223,7 +225,7 @@ function emptyState() {
 /* ---------------- page ---------------- */
 
 export async function NetWorth() {
-    const source = await loadNetWorthSource();
+    let source = await loadNetWorthSource();
     const today = localTodayISO();
     const years = getAvailableYears(source, today);
 
@@ -274,7 +276,7 @@ export async function NetWorth() {
 
     let lastSeries = [];
 
-    const draw = () => {
+    const draw = (patch = false) => {
         const first = years.length ? years[0] : Number(today.slice(0, 4));
 
         const series =
@@ -297,9 +299,10 @@ export async function NetWorth() {
             return;
         }
 
-        summaryEl.innerHTML = buildSummary(summary, state.view, state.year, today);
+        // A live refresh patches the numbers in place (no flicker, hover kept).
+        setHTML(summaryEl, buildSummary(summary, state.view, state.year, today), { patch });
 
-        chartEl.innerHTML = buildChart(series, chartEl.clientWidth || 640);
+        setHTML(chartEl, buildChart(series, chartEl.clientWidth || 640), { patch });
     };
 
     page.querySelectorAll("[data-view]").forEach((button) => {
@@ -320,6 +323,34 @@ export async function NetWorth() {
     });
 
     draw();
+
+    /* Live prices / NAV: reload the records and redraw in place. */
+    let liveBusy = false;
+
+    const onLive = async () => {
+        if (!page.isConnected) {
+            window.removeEventListener(LIVE_EVENT, onLive);
+            return;
+        }
+
+        if (liveBusy) return;
+        liveBusy = true;
+
+        try {
+            const fresh = await loadNetWorthSource();
+
+            if (page.isConnected) {
+                source = fresh;
+                draw(true);
+            }
+        } catch (error) {
+            console.warn("BlackRoad net worth live update:", error);
+        } finally {
+            liveBusy = false;
+        }
+    };
+
+    window.addEventListener(LIVE_EVENT, onLive);
 
     /* Keep text crisp: redraw at the real width once attached and on resize. */
     if (typeof ResizeObserver !== "undefined") {

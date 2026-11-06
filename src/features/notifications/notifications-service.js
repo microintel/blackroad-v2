@@ -10,6 +10,7 @@ import { dataService } from "../../data/data-service.js";
 
 import { getActiveHoldings } from "../stocks/stocks-service.js";
 import { fetchLTP } from "../stocks/stocks-live.js";
+import { getLivePrice } from "../../services/live-sync.js";
 import { computeMetrics, daysUntil } from "../deposits/deposits-service.js";
 import { outstanding, nextDue } from "../lending/lending-service.js";
 
@@ -38,7 +39,8 @@ export async function loadStocks() {
             let live = false;
 
             try {
-                const value = await fetchLTP(h.symbol);
+                // The background updater already has a fresh price: no second request.
+                const value = getLivePrice(h.symbol) ?? (await fetchLTP(h.symbol));
 
                 if (value !== null && value !== undefined) {
                     ltp = value;

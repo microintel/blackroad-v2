@@ -267,6 +267,9 @@ async function renderApp() {
         // Rover: a button that opens the separate rover.html page. A failure never affects the app.
         import("../features/rover/rover-link.js").then((m) => m.mountRoverLink(shell)).catch(() => {});
         import("../features/rover/rover-shortcut.js").then((m) => m.initRoverShortcut()).catch(() => {});
+
+        // Live stock prices and fund NAVs, kept fresh on every page. A failure never affects the app.
+        import("../services/live-sync.js").then((m) => m.startLiveSync()).catch(() => {});
     }
 
     // Start loading the page now; this runs alongside the fade-out above.

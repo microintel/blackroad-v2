@@ -6,6 +6,8 @@ import { avatarMarkup, avatarImg } from "../../components/avatars.js";
 import { loadGuestAvatar } from "../../services/guest-avatar.js";
 import { loadAvatarUrl } from "../../services/avatar-service.js";
 import { dataService } from "../../data/data-service.js";
+import { setHTML } from "../../components/dom-patch.js";
+import { LIVE_EVENT } from "../../services/live-sync.js";
 
 import {
     getDashboardData,
@@ -454,9 +456,7 @@ function buildOnboarding() {
 /* ---------------- Page ---------------- */
 
 export async function Dashboard() {
-    const data = await getDashboardData();
-
-    const tiles = buildTiles(data);
+    let data = await getDashboardData();
 
     const page = document.createElement("section");
 
@@ -492,6 +492,10 @@ export async function Dashboard() {
         ? `<span class="br-dash-tier" style="--tier:${TIER_COLORS[tierId]}"><i aria-hidden="true"></i><b>${GUEST_PROFILES[tierId].label}</b><small>${GUEST_PROFILES[tierId].range}</small></span>`
         : "";
 
+    /* The page markup for the current data. Built again (not shown again) by live updates. */
+    const buildHTML = () => {
+    const tiles = buildTiles(data);
+
     const showMF = data.mutualFunds.hasData && data.series.length > 0;
 
     const grossTotal = data.totalAssets + data.totalLiabilities;
@@ -505,7 +509,7 @@ export async function Dashboard() {
 
     const allocView = savedAllocView();
 
-    page.innerHTML = `
+    return `
         <div class="br-dash-heading dash-reveal">
             <div class="br-dash-hello">
                 <p class="br-dash-date">${longDate()}</p>
@@ -627,6 +631,9 @@ export async function Dashboard() {
 
         ${updatedText ? `<p class="br-dash-updated" title="Change this in Settings">Data updated: ${escapeText(updatedText)}</p>` : ""}
     `;
+    };
+
+    page.innerHTML = buildHTML();
 
     /* Open a section */
     page.querySelectorAll("[data-path]").forEach((tile) => {
@@ -642,7 +649,10 @@ export async function Dashboard() {
     const centerLabel = alloc.querySelector(".br-dash-donut-center small");
     const centerValue = alloc.querySelector(".br-dash-donut-center b");
     const centerBase = centerLabel && centerValue
-        ? { label: centerLabel.textContent, value: centerValue.textContent }
+        ? {
+            label: centerLabel.textContent,
+            get value() { return formatINR(data.chartTotal); }
+        }
         : null;
 
     const highlight = (key) => {
@@ -793,6 +803,88 @@ export async function Dashboard() {
     });
 
     countUp(page.querySelector("[data-networth]"), data.netWorth);
+
+    /* Live prices / NAV: redraw only the numbers that depend on stocks and
+       funds, in place, so hover, the chosen range and the open view stay. */
+    let liveBusy = false;
+    let liveAgain = false;
+
+    const onLive = async () => {
+        if (!page.isConnected) {
+            window.removeEventListener(LIVE_EVENT, onLive);
+            return;
+        }
+
+        if (liveBusy) {
+            liveAgain = true;
+            return;
+        }
+
+        liveBusy = true;
+
+        try {
+            const fresh = await getDashboardData();
+
+            if (!page.isConnected) return;
+
+            data = fresh;
+
+            const next = document.createElement("div");
+            next.innerHTML = buildHTML();
+
+            // Same stagger index the page was given, so no style is lost in the patch.
+            next.querySelectorAll(".dash-reveal").forEach((el, i) => {
+                el.style.setProperty("--dash-i", String(Math.min(i, 9)));
+            });
+
+            const sync = (selector) => {
+                const from = page.querySelector(selector);
+                const to = next.querySelector(selector);
+
+                if (from && to) setHTML(from, to.innerHTML, { patch: true });
+            };
+
+            const heroNow = page.querySelector("[data-networth]");
+            const heroNext = next.querySelector("[data-networth]");
+
+            if (heroNow && heroNext) {
+                heroNow.textContent = heroNext.textContent;
+                heroNow.className = heroNext.className;
+            }
+
+            [".br-dash-chips", ".br-dash-ratio", ".br-dash-foot", "[data-alloc]",
+             "[data-alloc-bars]", ".br-dash-lanes", ".br-dash-pnl-card .br-card-heading",
+             ".br-dash-pnl-card .br-dash-mini"].forEach(sync);
+
+            // The hero chips are the only part of the ratio bar that changes width.
+            const barNow = page.querySelector(".br-dash-ratio-bar span");
+            const barNext = next.querySelector(".br-dash-ratio-bar span");
+            if (barNow && barNext) barNow.style.width = barNext.style.width;
+
+            // Fund graph: keep the range the person picked.
+            const chartNow = page.querySelector("[data-pnl-chart]");
+
+            if (chartNow) {
+                const active = page.querySelector("[data-range].active");
+                setHTML(
+                    chartNow,
+                    buildPnlChart(filterSeries(data.series, active ? active.dataset.range : "all")),
+                    { patch: true }
+                );
+            }
+        } catch (error) {
+            console.warn("BlackRoad dashboard live update:", error);
+        } finally {
+            liveBusy = false;
+
+            if (liveAgain) {
+                liveAgain = false;
+                onLive();
+            }
+        }
+    };
+
+    window.addEventListener(LIVE_EVENT, onLive);
 
     return page;
 }

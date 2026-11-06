@@ -7,6 +7,8 @@ import {
 } from "./notifications-service.js";
 
 import { navigate } from "../../app/router.js";
+import { setHTML } from "../../components/dom-patch.js";
+import { LIVE_EVENT } from "../../services/live-sync.js";
 import { stockMiniLogoHTML, watchStockLogos } from "../stocks/stocks-live.js";
 
 const DUE_META = {
@@ -70,6 +72,9 @@ export async function Notifications() {
     // Renders immediately; live prices fill in as they arrive.
     refresh(page);
 
+    page.__onLive = (event) => onLiveData(page, event.detail || {});
+    window.addEventListener(LIVE_EVENT, page.__onLive);
+
     return page;
 }
 
@@ -85,11 +90,8 @@ async function refresh(page) {
         section(page, "due", loadDues, renderDues)
     ]);
 
-    renderTiles(page, {
-        stocks: stocks ? stocks.totalPnl : 0,
-        mf: mf ? mf.totalDayPnl : 0,
-        overdue: dues ? dues.filter((d) => d.status === "overdue").length : 0
-    });
+    page.__last = { stocks, mf, dues };
+    drawTiles(page);
 
     page.querySelector("[data-updated]").textContent =
         "Updated " +
@@ -97,6 +99,36 @@ async function refresh(page) {
             hour: "2-digit",
             minute: "2-digit"
         });
+}
+
+function drawTiles(page) {
+    const { stocks, mf, dues } = page.__last || {};
+
+    renderTiles(page, {
+        stocks: stocks ? stocks.totalPnl : 0,
+        mf: mf ? mf.totalDayPnl : 0,
+        overdue: dues ? dues.filter((d) => d.status === "overdue").length : 0
+    });
+}
+
+/* Live prices / NAV: redraw only the stocks and fund lists, in place. */
+async function onLiveData(page, detail) {
+    if (!page.isConnected) {
+        window.removeEventListener(LIVE_EVENT, page.__onLive);
+        return;
+    }
+
+    if (!page.__last || page.__liveBusy) return;
+    page.__liveBusy = true;
+
+    try {
+        if (detail.stocks) page.__last.stocks = await section(page, "stocks", loadStocks, renderStocks) || page.__last.stocks;
+        if (detail.mf) page.__last.mf = await section(page, "mf", loadMutualFunds, renderMF) || page.__last.mf;
+
+        if (page.isConnected) drawTiles(page);
+    } finally {
+        page.__liveBusy = false;
+    }
 }
 
 async function section(page, name, load, render) {
@@ -144,7 +176,7 @@ function renderStocks(page, body, data) {
     total.textContent = formatINR(totalPnl);
     total.className = tone(totalPnl);
 
-    body.innerHTML = rows
+    setHTML(body, rows
         .map((r) => `
             <div class="nf-item" data-path="/stocks">
                 <div class="nf-main">
@@ -157,7 +189,7 @@ function renderStocks(page, body, data) {
                     <span>${formatPct(r.pnlPct)}</span>
                 </div>
             </div>`)
-        .join("");
+        .join(""), { patch: true });
 }
 
 function renderMF(page, body, data) {
@@ -176,7 +208,7 @@ function renderMF(page, body, data) {
     total.textContent = formatINR(totalDayPnl);
     total.className = tone(totalDayPnl);
 
-    body.innerHTML = rows
+    setHTML(body, rows
         .map((r) => `
             <div class="nf-item" data-path="/mutualfund">
                 <div class="nf-main">
@@ -190,7 +222,7 @@ function renderMF(page, body, data) {
                         : "<b>—</b>"}
                 </div>
             </div>`)
-        .join("");
+        .join(""), { patch: true });
 }
 
 function renderDues(page, body, items) {
@@ -241,7 +273,7 @@ function renderTiles(page, { stocks, mf, overdue }) {
         ["Dues needing attention", String(overdue), overdue === 0]
     ];
 
-    page.querySelector("[data-tiles]").innerHTML = tiles
+    setHTML(page.querySelector("[data-tiles]"), tiles
         .map(
             ([label, value, good]) => `
             <div class="br-card br-stat">
@@ -249,7 +281,7 @@ function renderTiles(page, { stocks, mf, overdue }) {
                 <div class="br-stat-value ${good ? "nf-pos" : "nf-neg"}">${value}</div>
             </div>`
         )
-        .join("");
+        .join(""), { patch: true });
 }
 
 function escapeHTML(s) {

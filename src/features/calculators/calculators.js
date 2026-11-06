@@ -98,6 +98,9 @@ const safely = async (fn) => {
     try { return await fn(); } catch (e) { console.error("BlackRoad calculators:", e); return null; }
 };
 
+/* New live prices / NAV: the next load of "my data" reads the fresh values. */
+window.addEventListener("br:live-data", () => { dataPromise = null; });
+
 /* Read-only: current values already stored in the app. */
 function loadMyData() {
     if (!dataPromise) {

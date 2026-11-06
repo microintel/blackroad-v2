@@ -1,6 +1,12 @@
 import { BaseStore } from "./base-store.js";
 
 /*
+ * Live prices for guests (read-only accounts can't save them), filled by
+ * services/live-sync.js and layered over the stored prices when reading.
+ */
+export const livePriceOverlay = {};
+
+/*
  * blackStocks -> "state" (out-of-line keys).
  * Known keys: "transactions", "prices", "seqCounter", "ipos", "dreams".
  */
@@ -10,7 +16,13 @@ export class StocksStore extends BaseStore {
     }
 
     async getState(key) {
-        return this.get(key);
+        const value = await this.get(key);
+
+        if (key === "prices" && Object.keys(livePriceOverlay).length) {
+            return { ...(value || {}), ...livePriceOverlay };
+        }
+
+        return value;
     }
 
     async getAllState() {
@@ -28,7 +40,7 @@ export class StocksStore extends BaseStore {
 
     async getPrices() {
         const value = await this.get("prices");
-        return value || {};
+        return { ...(value || {}), ...livePriceOverlay };
     }
 
     async savePrices(prices) {
