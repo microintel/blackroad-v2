@@ -249,3 +249,9 @@ html.rs-lock, html.rs-lock body { overflow: hidden; }
 .rs-view[hidden] { display: none; }
 .rs-reader { display: block; }
 .rs-soon { padding: var(--br-space-5); }
+
+
+/* ---------- Stocks History > Angel One > Stock Reader ---------- */
+.rs-angel-title { display: flex; align-items: center; gap: var(--br-space-3, 12px); }
+.rs-angel-title h2 { margin: 0; }
+.rs-angel .rs-reader { margin-top: var(--br-space-4, 16px); }

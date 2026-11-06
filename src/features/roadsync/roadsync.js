@@ -2,7 +2,10 @@
    ROADSYNC  (own page under Overview)
    Tabs, same pattern as Income / Stocks / MF:
      Statement Reader  - the Statement Reader, running natively here
-     Stocks History    - placeholder tab (content comes later)
+     Stocks History    - broker list (Angel One) > Angel One opens the
+                         Stock Reader, running natively here like the
+                         Statement Reader, with its session kept on
+                         this device
      MF History        - placeholder tab (content comes later)
    The reader gets BlackRoad's existing income entries so expenses
    and investments can be added to them, and can save its result
@@ -13,6 +16,8 @@ import { dataService } from "../../data/data-service.js";
 import { recalcEntry, uid, todayISO } from "../income/income-service.js";
 import { emptyState } from "../../components/states.js";
 import { mountStatementReader } from "./statement-reader.js";
+import { icon } from "../../components/icons.js";
+import { BROKERS, logoSrc } from "../brokers/brokers.js";
 
 const TABS = [
     ["reader", "Statement Reader"],
@@ -132,6 +137,91 @@ function createHost() {
     return host;
 }
 
+/* ---------- Stocks History: Angel One > Stock Reader ---------- */
+
+const escHtml = (v) =>
+    String(v ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+
+const ANGEL = BROKERS.find((b) => b.name === "Angel One") || { name: "Angel One", domain: "angelone.in" };
+
+const angelLogo = () =>
+    `<span class="bk-logo" data-letter="${escHtml(ANGEL.name.charAt(0))}"><img class="bk-img" src="${escHtml(logoSrc(ANGEL))}" alt="${escHtml(ANGEL.name)} logo" loading="lazy" referrerpolicy="no-referrer"></span>`;
+
+function stocksView() {
+    return `
+        <div class="bk-grid" data-rs-brokers>
+            <button type="button" class="br-card bk-card" data-rs-open="angel">
+                ${angelLogo()}
+                <span class="bk-body">
+                    <strong class="bk-name">${escHtml(ANGEL.name)}</strong>
+                    <span class="bk-note br-muted">Order report reader</span>
+                </span>
+                <span class="bk-cta">Open ${icon("chevron-right", { size: 16 })}</span>
+            </button>
+        </div>
+
+        <div class="rs-angel" data-rs-angel hidden>
+            <div class="br-page-heading">
+                <div class="rs-angel-title">
+                    ${angelLogo()}
+                    <h2>${escHtml(ANGEL.name)}</h2>
+                </div>
+                <button type="button" class="br-button" data-rs-back>
+                    ${icon("arrow-left", { size: 16 })} All brokers
+                </button>
+            </div>
+            <div class="rs-reader" data-rs-stock-reader></div>
+        </div>`;
+}
+
+/* The Stock Reader is created the first time Angel One is opened, then kept,
+   so what was read is still there when going back and forth. */
+function wireStocks(root) {
+    const list = root.querySelector("[data-rs-brokers]");
+    const angel = root.querySelector("[data-rs-angel]");
+    const mount = root.querySelector("[data-rs-stock-reader]");
+    let mounted = false;
+
+    async function openAngel() {
+        list.hidden = true;
+        angel.hidden = false;
+        window.scrollTo(0, 0);
+        if (mounted) return;
+        mounted = true;
+
+        try {
+            const { mountStockReader } = await import("./stock-reader.js");
+            await mountStockReader(mount);
+        } catch (error) {
+            mounted = false;
+            console.error("RoadSync: Stock Reader failed to load", error);
+            mount.innerHTML = placeholder("Could not load the Stock Reader", "Please check your connection and try again.");
+        }
+    }
+
+    root.addEventListener("click", (event) => {
+        if (event.target.closest("[data-rs-open]")) { openAngel(); return; }
+        if (event.target.closest("[data-rs-back]")) {
+            angel.hidden = true;
+            list.hidden = false;
+            window.scrollTo(0, 0);
+        }
+    });
+
+    // A logo that cannot load (offline, blocked) falls back to the letter.
+    root.addEventListener("error", (event) => {
+        const img = event.target;
+        if (!(img instanceof HTMLImageElement) || !img.classList.contains("bk-img")) return;
+        const box = img.parentElement;
+        box.textContent = box.dataset.letter || "";
+        box.classList.add("is-letter");
+    }, true);
+}
+
 function placeholder(title, text) {
     return `<section class="br-card rs-soon">${emptyState({ icon: "empty", title, text })}</section>`;
 }
@@ -150,7 +240,7 @@ export async function RoadSync() {
             <div class="rs-reader" data-rs-reader></div>
         </div>
         <div class="rs-view" data-rs-view="stocks" hidden>
-            ${placeholder("Stocks History", "This tab is coming soon.")}
+            ${stocksView()}
         </div>
         <div class="rs-view" data-rs-view="mf" hidden>
             ${placeholder("MF History", "This tab is coming soon.")}
@@ -170,6 +260,8 @@ export async function RoadSync() {
             v.hidden = v.dataset.rsView !== tab;
         });
     });
+
+    wireStocks(page.querySelector('[data-rs-view="stocks"]'));
 
     // The reader runs right here on the page (no iframe).
     const host = createHost();

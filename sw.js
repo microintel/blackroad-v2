@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v249";
+const CACHE_VERSION = "v250";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -39,6 +39,7 @@ const SHELL = [
     "./src/styles/roadsync.css",
     "./src/features/roadsync/roadsync.js",
     "./src/features/roadsync/statement-reader.js",
+    "./src/features/roadsync/stock-reader.js",
     "./assets/statement-reader.html",
     "./src/app/splash.js",
     "./src/styles/brand.css",
