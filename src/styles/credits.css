@@ -118,3 +118,23 @@
     .br-header-links { display: none; }
     .br-site-links { display: flex; }
 }
+
+/* ---------- About BlackRoad page ---------- */
+.ab-hero { display: flex; align-items: center; gap: var(--br-space-4); }
+.ab-hero .br-brand-logo { flex: 0 0 auto; width: 56px; height: 56px; }
+.ab-hero h3 { margin: 0 0 4px; font-size: 22px; }
+.ab-hero p { margin: 0; }
+.ab-text { margin: 0; line-height: 1.6; color: var(--br-text-secondary); }
+.ab-card h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 var(--br-space-3); font-size: 16px; }
+.ab-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
+    background: color-mix(in srgb, var(--ab-color, var(--br-gold)) 16%, transparent); color: var(--ab-color, var(--br-gold)); }
+.ab-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.ab-list li { display: flex; justify-content: space-between; gap: var(--br-space-3); padding-bottom: 8px;
+    border-bottom: 1px solid var(--br-border); line-height: 1.4; }
+.ab-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.ab-list span { color: var(--br-text-secondary); text-align: right; font-size: 14px; }
+.ab-credit { text-align: center; color: var(--br-text-secondary); font-size: 14px; padding: var(--br-space-3) 0; }
+
+/* Home / Download links inside the phone menu */
+.br-nav-site-mobile { display: none; }
+@media (max-width: 768px) { .br-nav-site-mobile { display: flex; } }

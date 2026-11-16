@@ -8,7 +8,7 @@ export const livePriceOverlay = {};
 
 /*
  * blackStocks -> "state" (out-of-line keys).
- * Known keys: "transactions", "prices", "seqCounter", "ipos", "dreams".
+ * Known keys: "transactions", "prices", "seqCounter", "ipos", "dreams", "dreamBook".
  */
 export class StocksStore extends BaseStore {
     constructor(database) {
@@ -79,6 +79,21 @@ export class StocksStore extends BaseStore {
 
     async saveDreams(dreams) {
         return this.put(dreams, "dreams");
+    }
+
+    /*
+     * Dream paper trading (pretend buys / sells, optional virtual funds).
+     * Separate key; never part of the portfolio.
+     */
+    async getDreamBook() {
+        const value = await this.get("dreamBook");
+        return value && typeof value === "object" && !Array.isArray(value)
+            ? value
+            : { trades: [], funds: null };
+    }
+
+    async saveDreamBook(book) {
+        return this.put(book, "dreamBook");
     }
 
     /*

@@ -6,24 +6,6 @@
 
 /* ---------- search + suggestions ------------------------------------------- */
 
-.br-stocks .dr-title { display: flex; align-items: center; gap: 6px; position: relative; }
-.br-stocks .dr-info { position: relative; display: inline-flex; }
-.br-stocks .dr-info-btn {
-    display: inline-flex; padding: 4px; border: 0; border-radius: 50%;
-    background: none; color: var(--text-secondary); cursor: pointer;
-}
-.br-stocks .dr-info-btn:hover { color: var(--text-primary); background: var(--hover-background); }
-.br-stocks .dr-info-pop {
-    position: absolute; z-index: 40; left: 0; top: calc(100% + 6px);
-    width: max-content; max-width: min(260px, 70vw);
-    padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--surface-secondary, var(--surface)); color: var(--text-secondary);
-    font-size: 12px; line-height: 1.4;
-    animation: dr-pop .16s ease-out;
-}
-.br-stocks .dr-info-pop[hidden] { display: none; }
-@keyframes dr-pop { from { opacity: 0; transform: translateY(-4px); } }
-
 .br-stocks .dr-search { position: relative; margin: 4px 0 16px; }
 
 .br-stocks .dr-search-box {
@@ -230,7 +212,7 @@
 .br-stocks .dr-suggest mark { background: none; color: inherit; font-weight: 700; }
 
 @media (prefers-reduced-motion: reduce) {
-    .br-stocks .dr-suggest, .br-stocks .dr-suggest-row, .br-stocks .dr-info-pop,
+    .br-stocks .dr-suggest, .br-stocks .dr-suggest-row,
     .br-stocks .dr-search-box.is-searching .dr-spin { animation: none; }
 }
 
@@ -259,3 +241,319 @@
 
 .br-stocks .dr-download { display: inline-flex; align-items: center; gap: 6px; }
 .br-stocks .dr-download:disabled { opacity: .45; cursor: default; }
+
+/* =========================================================
+   Dream — views, paper trading, export / import
+   ========================================================= */
+
+/* ---------- top bar: Wishlist | Paper trading + Export / Import ------------- */
+
+.br-stocks .dr-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 2px 0 16px; }
+.br-stocks .dr-seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 11px; }
+.br-stocks .dr-seg-btn {
+    padding: 7px 14px; border: 0; border-radius: 8px; background: none;
+    color: var(--text-secondary); font: inherit; font-size: 13px; cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.br-stocks .dr-seg-btn:hover { color: var(--text-primary); }
+.br-stocks .dr-seg-btn.active { background: var(--hover-background); color: var(--text-primary); font-weight: 500; }
+.br-stocks .dr-data-btn { display: inline-flex; align-items: center; gap: 6px; }
+.br-stocks .dr-data { position: relative; flex: none; }
+.br-stocks .dr-data .dr-menu-pop { min-width: 210px; }
+
+.br-stocks .dr-zone {
+    display: inline-block; padding: 1px 7px; border-radius: 999px;
+    font-family: inherit; font-size: 10.5px; font-weight: 600;
+    color: var(--stk-gain); background: color-mix(in srgb, var(--stk-gain) 14%, transparent);
+}
+
+/* ---------- paper trading ----------------------------------------------------- */
+
+.br-stocks .dp-caption { font-size: 12px; align-self: center; }
+
+.br-stocks .dp-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 4px 0 14px; }
+.br-stocks .dp-funds { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px; font-size: 13px; }
+.br-stocks .dp-funds strong { font-family: var(--stk-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.br-stocks .dp-bar-actions { display: flex; gap: 8px; }
+.br-stocks .dp-bar-actions .br-button { display: inline-flex; align-items: center; gap: 6px; }
+.br-stocks .dp-bar-actions .br-button:disabled { opacity: .45; cursor: default; }
+
+.br-stocks .dp-link {
+    padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px;
+    color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.br-stocks .dp-link:hover { color: var(--text-primary); }
+.br-stocks .dp-link.is-danger { color: var(--danger); }
+
+.br-stocks .dp-metrics {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 14px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.br-stocks .dp-metrics .dr-metric { border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+.br-stocks .dp-metrics .dr-metric:nth-child(3n + 1) { border-left: 0; }
+.br-stocks .dp-metrics .dr-metric:nth-child(-n + 3) { border-top: 0; }
+@media (max-width: 600px) {
+    .br-stocks .dp-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .br-stocks .dp-metrics .dr-metric:nth-child(3n + 1) { border-left: 1px solid var(--border); }
+    .br-stocks .dp-metrics .dr-metric:nth-child(-n + 3) { border-top: 1px solid var(--border); }
+    .br-stocks .dp-metrics .dr-metric:nth-child(2n + 1) { border-left: 0; }
+    .br-stocks .dp-metrics .dr-metric:nth-child(-n + 2) { border-top: 0; }
+    .br-stocks .dr-top { align-items: stretch; }
+    .br-stocks .dr-seg { flex: 1 1 auto; }
+    .br-stocks .dr-seg-btn { flex: 1; padding-left: 8px; padding-right: 8px; }
+}
+
+.br-stocks .dp-subtabs { margin: 0 0 12px; }
+.br-stocks .dp-filters { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.br-stocks .dp-filters .br-select { max-width: 170px; }
+
+.br-stocks .dp-tag {
+    display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: .04em; vertical-align: 1px;
+}
+.br-stocks .dp-tag-buy { color: var(--stk-gain); background: color-mix(in srgb, var(--stk-gain) 14%, transparent); }
+.br-stocks .dp-tag-sell { color: var(--stk-loss); background: color-mix(in srgb, var(--stk-loss) 14%, transparent); }
+:root:root:root:root:root .br-stocks .dp-trade::before { background: transparent; }
+:root:root:root:root:root .br-stocks .dp-trade:has(.dr-growth.br-pnl-pos)::before { background: var(--stk-gain); }
+:root:root:root:root:root .br-stocks .dp-trade:has(.dr-growth.br-pnl-neg)::before { background: var(--stk-loss); }
+
+.br-stocks .dp-note { margin: 0 0 12px; font-size: 13px; }
+.br-stocks .dp-search { margin: 0 0 14px; }
+.br-stocks .dp-sub { font-size: 11px; }
+
+/* summary */
+.br-stocks .dp-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-bottom: 18px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--border); }
+.br-stocks .dp-sum-cell { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; background: var(--surface, var(--br-surface, transparent)); }
+.br-stocks .dp-sum-cell span { font-size: 11px; color: var(--text-secondary); }
+.br-stocks .dp-sum-cell strong { font-family: var(--stk-mono); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.br-stocks .dp-h { margin: 18px 0 8px; font-size: 13px; font-weight: 600; }
+.br-stocks .dp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.br-stocks .dp-table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 13px; }
+.br-stocks .dp-table th { padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 500; color: var(--text-secondary); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.br-stocks .dp-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.br-stocks .dp-table .num { text-align: right; font-family: var(--stk-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.br-stocks .dp-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.br-stocks .dp-months > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; }
+.br-stocks .dp-months span { font-size: 11px; color: var(--text-secondary); }
+.br-stocks .dp-months strong { font-family: var(--stk-mono); font-size: 13px; font-weight: 500; }
+.br-stocks .dp-reset { margin-top: 22px; text-align: center; }
+
+/* ---------- import dialog ------------------------------------------------------- */
+
+.br-stocks .dr-imp-file { margin: 0 0 8px; font-size: 12.5px; word-break: break-all; }
+.br-stocks .dr-imp-list { margin: 0 0 12px; padding: 0; list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.br-stocks .dr-imp-rej { margin: 0 0 12px; font-size: 12.5px; color: var(--text-secondary); }
+.br-stocks .dr-imp-rej summary { cursor: pointer; }
+.br-stocks .dr-imp-rej ul { margin: 6px 0 0; padding-left: 18px; }
+.br-stocks .dr-imp-modes { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.br-stocks .dr-imp-modes label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.br-stocks .dr-imp-modes label:has(input:checked) { border-color: var(--text-primary); }
+.br-stocks .dr-imp-modes input { margin-top: 3px; }
+.br-stocks .dr-imp-modes span { display: flex; flex-direction: column; gap: 1px; font-size: 13.5px; }
+.br-stocks .dr-imp-modes em { font-style: normal; font-size: 12px; color: var(--text-secondary); }
+
+@media (prefers-reduced-motion: reduce) {
+    .br-stocks .dr-seg-btn { transition: none; }
+}
+
+.br-stocks .dr-seg-btn { white-space: nowrap; }
+@media (max-width: 420px) {
+    .br-stocks .dr-data-btn span { display: none; }
+    .br-stocks .dr-data-btn { padding-left: 12px; padding-right: 12px; }
+}
+
+
+/* =========================================================
+   Dream — clean, roomy layout with open / close sections
+   (last in the file so it wins over the earlier rules)
+   ========================================================= */
+
+/* One comfortable reading column; nothing stretches edge to edge on desktop */
+/* width:100% matters: the parent is a flex column, where auto margins alone would shrink this to its content */
+.br-stocks [data-dream-root] { width: 100%; max-width: 720px; margin-left: auto; margin-right: auto; padding-bottom: 32px; box-sizing: border-box; }
+.br-stocks [data-dream-root] .inc-section { padding: 0; background: none; border: 0; box-shadow: none; }
+
+/* ---------- open / close mechanics ------------------------------------------ */
+
+.br-stocks .dr-more {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition: grid-template-rows .24s ease, visibility 0s linear .24s;
+}
+.br-stocks .dr-more > div { min-height: 0; overflow: hidden; }
+.br-stocks .is-open > .dr-more {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition: grid-template-rows .24s ease, visibility 0s;
+}
+.br-stocks .dr-chev { display: inline-flex; flex: none; color: var(--text-secondary); transition: transform .2s ease; }
+.br-stocks [data-fold-host].is-open .dr-chev { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+    .br-stocks .dr-seg-btn::after { transition: none; }
+    .br-stocks .dr-more, .br-stocks .is-open > .dr-more, .br-stocks .dr-chev { transition: none; }
+}
+
+/* ---------- top bar ---------------------------------------------------------- */
+
+.br-stocks .dr-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 12px; margin: 4px 0 20px; }
+.br-stocks .dr-seg { display: inline-flex; gap: 20px; padding: 0; border: 0; border-radius: 0; background: none; }
+.br-stocks .dr-seg-btn {
+    position: relative; flex: none; padding: 8px 0; border-radius: 0; background: none;
+    color: var(--text-secondary); font-size: 14px; font-weight: 500;
+}
+.br-stocks .dr-seg-btn::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px;
+    background: var(--text-primary); transform: scaleX(0); transition: transform .18s ease;
+}
+.br-stocks .dr-seg-btn:hover { color: var(--text-primary); }
+.br-stocks .dr-seg-btn.active { background: none; color: var(--text-primary); font-weight: 600; }
+.br-stocks .dr-seg-btn.active::after { transform: scaleX(1); }
+.br-stocks .dr-data-btn { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+.br-stocks .dr-data .dr-menu-pop { min-width: 200px; }
+.br-stocks .dr-menu-pop { padding: 6px; border-radius: 14px; box-shadow: 0 8px 28px rgba(0, 0, 0, .18); }
+.br-stocks .dr-menu-pop button { padding: 11px 12px; border-radius: 9px; font-size: 14px; }
+.br-stocks .dr-menu-pop button:disabled { opacity: .4; cursor: default; }
+.br-stocks .dr-menu-pop { min-width: 190px; z-index: 50; }
+.br-stocks .dr-menu-pop.is-up { top: auto; bottom: calc(100% + 6px); transform-origin: bottom right; }
+
+/* ---------- search ----------------------------------------------------------- */
+
+.br-stocks .dr-search { margin: 0 0 20px; }
+.br-stocks .dr-search-box { min-height: 48px; padding: 0 16px; border-color: transparent; border-radius: 14px; background: var(--hover-background); }
+.br-stocks .dr-search-box:focus-within { border-color: var(--border); background: transparent; }
+.br-stocks .dr-search-input { height: 46px; font-size: 15px; }
+
+/* ---------- summary: one line that opens into the full set ------------------- */
+
+.br-stocks .dr-sum {
+    margin: 0 0 20px; border: 1px solid var(--border); border-radius: 16px; background: none;
+}
+.br-stocks .dr-sum-head, .br-stocks .dp-fold-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    width: 100%; padding: 16px 18px; border: 0; background: none;
+    color: var(--text-primary); font: inherit; text-align: left; cursor: pointer;
+}
+.br-stocks .dr-sum-head:focus-visible, .br-stocks .dp-fold-head:focus-visible, .br-stocks .dr-row:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--text-primary) 40%, transparent); outline-offset: -2px; border-radius: 12px;
+}
+.br-stocks .dr-sum-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.br-stocks .dr-sum-label { font-size: 13px; color: var(--text-secondary); }
+.br-stocks .dr-sum-val { font-family: var(--stk-mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.br-stocks .dr-sum-sub { font-family: var(--stk-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+:root:root .br-stocks .dr-metrics,
+:root:root .br-stocks .dp-metrics {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px;
+    margin: 0; padding: 4px 18px 20px; border: 0; border-radius: 0; overflow: visible;
+}
+@media (min-width: 640px) {
+    :root:root .br-stocks .dr-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    :root:root .br-stocks .dp-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+:root:root .br-stocks .dr-sum .dr-metric { padding: 0; border: 0; gap: 4px; }
+.br-stocks .dr-sum .dr-metric-label { font-size: 12px; }
+.br-stocks .dr-sum .dr-metric-val { font-size: 16px; }
+.br-stocks .dr-sum .dr-metric-hint { font-size: 12px; }
+
+/* ---------- list rows -------------------------------------------------------- */
+
+.br-stocks .dr-listbar { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 8px; min-height: 32px; }
+.br-stocks .dr-count { font-size: 13px; color: var(--text-secondary); }
+.br-stocks .dr-textbtn {
+    padding: 8px 4px; border: 0; background: none; color: var(--text-secondary);
+    font: inherit; font-size: 13px; cursor: pointer;
+}
+.br-stocks .dr-textbtn:hover { color: var(--text-primary); }
+
+:root:root:root:root:root:root .br-stocks .dr-list { display: block; gap: 0; border-top: 1px solid var(--border); }
+:root:root:root:root:root:root .br-stocks .dr-card {
+    position: relative; margin: 0; padding: 0; border: 0; border-bottom: 1px solid var(--border);
+    border-radius: 0; background: none; box-shadow: none; overflow: visible;
+    /* The shared entry style clips anything outside the row (it hid the ⋯ menu) */
+    content-visibility: visible; contain: none;
+}
+:root:root:root:root:root:root .br-stocks .dr-card::before { display: none; }
+/* the row whose menu is open sits above the rows after it */
+:root:root:root:root:root:root .br-stocks .dr-card:has(.dr-menu-pop:not([hidden])) { z-index: 30; }
+:root:root:root:root:root:root .br-stocks .dr-card .stk-card-top {
+    display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0;
+}
+@media (hover: hover) {
+    :root:root:root:root:root:root .br-stocks .dr-card:hover { background: none; }
+    .br-stocks .dr-row:hover .stk-name { text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+}
+
+.br-stocks .dr-row {
+    display: flex; align-items: center; gap: 14px; flex: 1 1 0; min-width: 0;
+    padding: 18px 4px; border: 0; background: none;
+    color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.br-stocks .dr-row .stk-id { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; gap: 4px; }
+.br-stocks .dr-row .stk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 500; }
+.br-stocks .dr-row .inc-meta { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.br-stocks .dr-row .dr-growth { flex: 0 0 auto; gap: 3px; margin-left: 4px; }
+.br-stocks .dr-row .dr-growth strong { font-size: 15px; }
+.br-stocks .dr-row .dr-growth span { font-size: 12px; }
+.br-stocks .dr-card .dr-menu-btn { width: 40px; height: 40px; }
+
+/* opened details */
+.br-stocks .dr-more > div > .stk-stats,
+.br-stocks .dr-more > div > .ipo-notes { margin-left: 50px; margin-right: 12px; }
+:root:root:root:root:root:root .br-stocks .dr-card .stk-stats {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 20px; margin-top: 0; padding: 2px 0 22px;
+}
+.br-stocks .dr-more > div > .ipo-notes { margin-top: -6px; margin-bottom: 20px; font-size: 13px; }
+
+/* ---------- paper trading ---------------------------------------------------- */
+
+.br-stocks .dp-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin: 0 0 20px; }
+.br-stocks .dp-funds { font-size: 14px; gap: 6px 10px; }
+.br-stocks .dp-bar-actions { gap: 10px; }
+.br-stocks .dp-bar-actions .br-button { min-height: 42px; padding: 0 20px; }
+.br-stocks .dp-subtabs { display: flex; gap: 8px; margin: 0 0 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.br-stocks .dp-subtabs::-webkit-scrollbar { display: none; }
+.br-stocks .dp-subtabs .br-chip { flex: none; min-height: 38px; padding: 0 16px; }
+.br-stocks .dp-filters { margin: 4px 0 12px; gap: 12px; }
+
+.br-stocks .dp-fold { margin: 0 0 12px; border: 1px solid var(--border); border-radius: 16px; }
+.br-stocks .dp-fold-head { font-size: 14px; font-weight: 500; }
+.br-stocks .dp-fold .dr-more > div { padding: 0 18px; }
+:root:root .br-stocks .dp-fold .dp-sum { margin: 0; padding: 2px 0 20px; gap: 18px 20px; border: 0; border-radius: 0; background: none; }
+:root:root .br-stocks .dp-fold .dp-sum-cell { padding: 0; gap: 4px; background: none; }
+.br-stocks .dp-fold .dp-table-wrap, .br-stocks .dp-fold .dp-months { padding-bottom: 20px; }
+.br-stocks .dp-reset { margin-top: 24px; }
+
+/* ---------- empty, dialogs --------------------------------------------------- */
+
+.br-stocks .dr-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 56px 16px; color: var(--text-secondary); font-size: 14px;
+}
+.br-stocks .dr-confirm-name { margin: 0; font-size: 15px; color: var(--text-primary); }
+.br-stocks .dr-imp-modes label { align-items: center; padding: 14px; }
+.br-stocks .dr-imp-modes input { margin-top: 0; }
+
+/* ---------- phone ------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+    .br-stocks [data-dream-root] { padding-bottom: 24px; }
+    .br-stocks .dr-top { margin-bottom: 16px; }
+    .br-stocks .dr-seg { flex: 0 1 auto; gap: 18px; }
+    .br-stocks .dr-seg-btn { flex: none; padding: 8px 0; font-size: 14px; }
+
+    .br-stocks .dr-search { margin-bottom: 16px; }
+    .br-stocks .dr-sum { margin-bottom: 16px; border-radius: 14px; }
+    .br-stocks .dr-sum-head { padding: 14px 16px; }
+    :root:root .br-stocks .dr-metrics, :root:root .br-stocks .dp-metrics { padding: 2px 16px 18px; }
+
+    .br-stocks .dr-row { gap: 12px; padding: 16px 2px; }
+    .br-stocks .dr-more > div > .stk-stats,
+    .br-stocks .dr-more > div > .ipo-notes { margin-left: 2px; margin-right: 2px; }
+    :root:root:root:root:root:root .br-stocks .dr-card .stk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; padding-bottom: 20px; }
+
+    .br-stocks .dp-bar { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+    .br-stocks .dp-bar-actions { width: 100%; }
+    .br-stocks .dp-bar-actions .br-button { flex: 1; justify-content: center; min-height: 46px; }
+    .br-stocks .dp-fold .dr-more > div { padding: 0 16px; }
+}

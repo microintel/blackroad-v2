@@ -86,6 +86,11 @@ const routes = {
         module: "account"
     },
 
+    "/about": {
+        title: "About BlackRoad",
+        module: "about"
+    },
+
     "/login": {
         title: "Sign in",
         module: "login"

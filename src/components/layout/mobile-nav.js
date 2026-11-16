@@ -1,5 +1,5 @@
 import { navigate, currentPath, hrefFor } from "../../app/router.js";
-import { icon } from "../icons.js";
+import { icon, roverMark } from "../icons.js";
 
 /* Mobile navigation: slide-in drawer + bottom tab bar.
    The desktop sidebar is reused as the drawer (CSS decides which). */
@@ -11,20 +11,27 @@ const TABS = [
     { label: "Lending", path: "/lending", icon: "arrow-left-right" }
 ];
 
+/* Floating bottom nav (phones): every tab shows as an icon; the selected
+   one also shows its name. Home is selected when nothing else is. */
 export function BottomNav(route) {
     const nav = document.createElement("nav");
     nav.className = "br-bottom-nav";
     nav.setAttribute("aria-label", "Quick navigation");
 
-    const here = currentPath() === "/" ? "/dashboard" : currentPath();
+    const cur = currentPath() === "/" ? "/dashboard" : currentPath();
+    const here = TABS.some((t) => t.path === cur) ? cur : "/dashboard";
 
     nav.innerHTML =
         TABS.map((t) => `
-            <a href="${hrefFor(t.path)}" class="br-bottom-item${here === t.path ? " is-active" : ""}" data-path="${t.path}">
+            <a href="${hrefFor(t.path)}" class="br-bottom-item${here === t.path ? " is-active" : ""}" data-path="${t.path}" aria-label="${t.label}">
                 <span class="br-bottom-icon">${icon(t.icon, { size: 22 })}</span>
                 <span class="br-bottom-label">${t.label}</span>
             </a>`).join("") +
-        `<button type="button" class="br-bottom-item" data-more>
+        `<a href="${new URL("../../../rover.html", import.meta.url).href}" target="_blank" rel="noopener" class="br-bottom-item br-bottom-rover" aria-label="Open Rover" title="Open Rover">
+            <span class="br-bottom-icon">${roverMark(22)}</span>
+            <span class="br-bottom-label">Rover</span>
+        </a>
+        <button type="button" class="br-bottom-item" data-more aria-label="More">
             <span class="br-bottom-icon">${icon("menu", { size: 22 })}</span>
             <span class="br-bottom-label">More</span>
         </button>`;
@@ -84,7 +91,11 @@ export function setupDrawer(shell, sidebar, backdrop, menuButton) {
     };
 
     menuButton?.addEventListener("click", open);
-    shell.querySelector("[data-more]")?.addEventListener("click", open);
+    // More toggles the menu; any other bottom-nav tap closes it (the page then changes).
+    shell.querySelector("[data-more]")?.addEventListener("click", () => (isOpen ? close() : open()));
+    shell.querySelector(".br-bottom-nav")?.addEventListener("click", (e) => {
+        if (e.target.closest("a")) close();
+    });
     backdrop.addEventListener("click", close);
 
     // Tapping any sidebar link closes the drawer (page then re-renders).

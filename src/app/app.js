@@ -123,8 +123,11 @@ function updateShell(shell, route) {
         else link.removeAttribute("aria-current");
     });
 
-    shell.querySelectorAll(".br-bottom-item[data-path]").forEach((item) => {
-        item.classList.toggle("is-active", item.dataset.path === path);
+    const tabs = [...shell.querySelectorAll(".br-bottom-item[data-path]")];
+    const known = tabs.some((item) => item.dataset.path === path);
+    tabs.forEach((item) => {
+        // Pages that are not a tab (settings, etc.) keep Home selected.
+        item.classList.toggle("is-active", known ? item.dataset.path === path : item.dataset.path === "/dashboard");
     });
 }
 
@@ -187,10 +190,6 @@ function buildShell(route) {
     main.appendChild(topbar);
     main.appendChild(content);
 
-    const footer = document.createElement("footer");
-    footer.className = "br-footer";
-    footer.innerHTML = 'Developed by <strong>Microintel</strong>';
-    main.appendChild(footer);
 
     const backdrop = document.createElement("div");
     backdrop.className = "br-drawer-backdrop";

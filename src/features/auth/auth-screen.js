@@ -206,7 +206,6 @@ export function AuthScreen(mode) {
                 <button type="button" class="br-button br-auth-guest" data-guest aria-label="Continue as guest (read-only)">${GUEST_ICON}<span>Guest</span></button>
             </div>
 
-            <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
         </div>
 
         <div class="br-auth-landing">
@@ -216,7 +215,6 @@ export function AuthScreen(mode) {
                 <button type="button" class="br-auth-google" data-l-google>${GOOGLE_ICON}<span>Continue with Google</span></button>
                 <button type="button" class="br-button br-auth-landing-alt" data-l-guest>Guest login</button>
             </div>
-            <div class="br-auth-credit">Developed by <strong>Microintel</strong></div>
         </div>
         </div>
     `;

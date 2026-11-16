@@ -13,7 +13,7 @@
    Bump CACHE_VERSION whenever shell files change.
    ========================================================= */
 
-const CACHE_VERSION = "v250";
+const CACHE_VERSION = "v263";
 const CACHE_NAME = "blackroad-v2-" + CACHE_VERSION;
 
 const SHELL = [
@@ -156,10 +156,15 @@ const SHELL = [
     "./src/features/networth/networth.js",
     "./src/features/notifications/notifications-service.js",
     "./src/features/notifications/notifications.js",
+    "./src/features/about/about.js",
     "./src/features/stepup/stepup-charts.js",
     "./src/features/stepup/stepup-fund.js",
     "./src/features/stepup/stepup-service.js",
     "./src/features/stepup/stepup.js",
+    "./src/features/stocks/stocks-dream-book.js",
+    "./src/features/stocks/stocks-dream-fold.js",
+    "./src/features/stocks/stocks-dream-io.js",
+    "./src/features/stocks/stocks-dream-paper.js",
     "./src/features/stocks/stocks-dream-print.js",
     "./src/features/stocks/stocks-dream.js",
     "./src/features/stocks/stocks-ipo.js",
@@ -224,6 +229,7 @@ const SHELL = [
     "./src/styles/stocks-dream.css",
     "./src/styles/stocks-pnl-summary.css",
     "./src/styles/stocks-analytics.css",
+    "./src/styles/bottom-nav-float.css",
     "./src/styles/time-picker.css",
     "./src/styles/palettes.css",
     "./src/styles/theme.css",

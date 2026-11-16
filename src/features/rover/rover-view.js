@@ -81,7 +81,7 @@ export function RoverView({ hrefFor, name = "" }) {
     el.appendChild(morePicker);
     const note = document.createElement("div");
     note.className = "rv-note";
-    note.innerHTML = `<p>Rover is a financial intelligence bot and can make mistakes, so double-check it.</p><p class="rv-credit">Developed by <strong>Microintel</strong></p>`;
+    note.innerHTML = `<p>Rover is a financial intelligence bot and can make mistakes, so double-check it.</p>`;
     dock.append(chips, composer.el, note);
 
     /* Side panel with every ready-made question (a drawer on phones, opened by the header menu button). */

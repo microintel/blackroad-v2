@@ -1,0 +1,92 @@
+/* =========================================================
+   FLOATING BOTTOM NAV (phones only)
+   All tabs show as icons; the selected one also shows its name.
+   Loaded last so it wins.
+   ========================================================= */
+@media (max-width: 768px) {
+    :root { --br-bottom-nav-height: 76px; }
+
+    .br-app-shell .br-bottom-nav {
+        display: flex; align-items: center; justify-content: center; gap: 2px;
+        position: fixed; left: 50%; right: auto; bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        width: max-content; max-width: calc(100vw - 24px); height: 56px; padding: 6px;
+        border-radius: 28px;
+        background: color-mix(in srgb, var(--br-surface) 88%, transparent);
+        backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+        border: 1px solid var(--br-border);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .2);
+        z-index: 200;
+    }
+    :root[data-theme="light"] .br-app-shell .br-bottom-nav { box-shadow: 0 10px 28px rgba(0, 0, 0, .14), 0 2px 6px rgba(0, 0, 0, .08); }
+
+    .br-app-shell .br-bottom-item {
+        flex: 0 0 auto; flex-direction: row; justify-content: center; gap: 0;
+        height: 44px; padding: 0 10px; border-radius: 22px; white-space: nowrap;
+        transition: padding .4s cubic-bezier(.32, .72, 0, 1), background-color .25s, color .2s;
+    }
+    .br-app-shell .br-bottom-item::before { display: none; }
+    .br-app-shell .br-bottom-item .br-bottom-icon { flex: 0 0 auto; }
+    .br-app-shell .br-bottom-item .br-bottom-icon svg { flex-shrink: 0; }
+
+    /* name: hidden until the tab is selected, then eases open */
+    .br-app-shell .br-bottom-label {
+        display: inline-block; overflow: hidden; max-width: 0; opacity: 0;
+        font-size: 13px; font-weight: 600;
+        transition: max-width .4s cubic-bezier(.32, .72, 0, 1), opacity .25s ease, margin .4s cubic-bezier(.32, .72, 0, 1);
+    }
+    .br-app-shell .br-bottom-item.is-active {
+        padding: 0 14px; background: color-mix(in srgb, var(--br-gold) 16%, transparent);
+    }
+    .br-app-shell .br-bottom-item.is-active .br-bottom-label { max-width: 90px; opacity: 1; margin-left: 8px; }
+
+    /* Short landscape: keep the name on the selected tab */
+    .br-app-shell .br-bottom-label { display: inline-block; }
+}
+/* Rover lives in the bottom nav on phones, so the floating button is hidden there */
+@media (max-width: 768px) {
+    .br-rover-link { display: none !important; }
+    .br-app-shell .br-bottom-rover { color: var(--br-gold); }
+}
+@media (max-width: 768px) and (max-height: 430px) {
+    :root { --br-bottom-nav-height: 64px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .br-app-shell .br-bottom-item, .br-app-shell .br-bottom-label { transition: none; }
+}
+
+/* =========================================================
+   MOBILE MENU (three-lines button): full-width panel, smooth open / close
+   ========================================================= */
+@media (max-width: 768px) {
+    :root:root .br-sidebar {
+        width: 100vw; max-width: 100vw; border-radius: 0;
+        opacity: 0;
+        transform: translate3d(-12%, 0, 0);
+        transition: transform 600ms cubic-bezier(0.25, 0.8, 0.25, 1),
+                    opacity 450ms ease,
+                    visibility 0s linear 600ms;
+    }
+    :root:root .br-sidebar.is-open {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        box-shadow: none;
+        transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1),
+                    opacity 450ms ease,
+                    visibility 0s;
+    }
+    :root:root .br-drawer-backdrop {
+        transition: opacity 600ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+}
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    :root:root .br-sidebar, :root:root .br-sidebar.is-open, :root:root .br-drawer-backdrop { transition-duration: 1ms !important; }
+}
+
+/* The bottom nav stays visible (and tappable) above the open menu */
+@media (max-width: 768px) {
+    body.br-no-scroll .br-app-shell .br-bottom-nav { z-index: 320; }
+    :root:root .br-sidebar .br-sidebar-nav {
+        padding-bottom: calc(var(--br-bottom-nav-height) + env(safe-area-inset-bottom) + var(--br-space-4));
+    }
+}

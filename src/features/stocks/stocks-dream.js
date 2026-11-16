@@ -12,13 +12,22 @@
  *  - saved under its own "dreams" key in the stocks state store
  *  - never touches transactions, prices, holdings, totals or net worth
  *  - live prices are fetched into a private map, not the portfolio prices
+ *
+ * Paper trading (pretend buys / sells), Excel/JSON export and import for
+ * this tab live in stocks-dream-paper.js, stocks-dream-book.js and
+ * stocks-dream-io.js. Everything is Dream-only — separate from the global
+ * Data Management backup.
  */
 
 import { icon } from "../../components/icons.js";
-import { genId, round2, fmtMoney, fmtSigned, fmtPct, pnlClass, fmtDate } from "./stocks-service.js";
+import { enhanceTimeInputs } from "../../components/time-picker.js";
+import { genId, round2, fmtMoney, fmtSigned, fmtPct, pnlClass, fmtDate, fmtTime } from "./stocks-service.js";
 import { stockMiniLogoHTML, fetchStockDetails, fetchLTPs } from "./stocks-live.js";
 import { printDreamReport } from "./stocks-dream-print.js";
 import { STOCK_UNIVERSE } from "./stocks-universe.js";
+import { initDreamPaper } from "./stocks-dream-paper.js";
+import { isOpen, openClass, chevron, allButton, bindFold } from "./stocks-dream-fold.js";
+import { exportDreamExcel, exportDreamJSON, parseDreamFile, applyDreamImport } from "./stocks-dream-io.js";
 
 const esc = (s) =>
     String(s ?? "")
@@ -30,7 +39,11 @@ const esc = (s) =>
 
 const POLL_MS = 20000;
 
-const INFO_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+function nowTime() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
 
 function todayStr() {
     const d = new Date();
@@ -69,6 +82,39 @@ export function initDream(page, ctx) {
     let lastUpdated = 0;
     let suggestIdx = -1;
     let lookupReq = 0;
+    let view = "wishlist"; // "wishlist" | "paper"
+    let pendingImport = null; // parsed file while the import dialog is open
+    let toastEl = null;
+    let toastTimer = 0;
+
+    /* Same toast element style as Data Management (.br-toast) */
+    function toast(message) {
+        if (!toastEl || !toastEl.isConnected) {
+            toastEl = document.createElement("div");
+            toastEl.className = "br-toast";
+            page.appendChild(toastEl);
+        }
+        toastEl.textContent = message;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl && toastEl.classList.remove("show"), 3200);
+    }
+
+    bindFold(page);
+
+    const paper = initDreamPaper(page, {
+        store: ctx.store,
+        price: (sym) => livePrice(sym),
+        setPrice: (sym, p) => { ltps[sym] = p; },
+        suggest: (raw) => suggestions(raw),
+        toast,
+        changed: () => { refresh(); updateCount(); }
+    });
+
+    function updateCount() {
+        const count = page.querySelector('[data-count="dream"]');
+        if (count) count.textContent = dreams.length + paper.getBook().trades.length > 0 ? dreams.length : "";
+    }
 
     /* =========================================
        LOAD / PERSIST
@@ -76,12 +122,20 @@ export function initDream(page, ctx) {
 
     async function load() {
         dreams = await ctx.store.getDreams();
+        try {
+            await paper.load();
+        } catch (err) {
+            /* Paper trading is optional — never block the wishlist */
+        }
     }
 
     async function reset() {
         dreams = [];
         ltps = {};
         await ctx.store.saveDreams(dreams);
+        try {
+            await paper.reset();
+        } catch (err) { /* ignore */ }
         render();
     }
 
@@ -97,7 +151,7 @@ export function initDream(page, ctx) {
 
     async function refresh() {
         if (fetching) return;
-        const syms = [...new Set(dreams.map((d) => d.symbol))];
+        const syms = [...new Set([...dreams.map((d) => d.symbol), ...paper.symbols()])];
         if (!syms.length) return;
         fetching = true;
         try {
@@ -111,6 +165,7 @@ export function initDream(page, ctx) {
         }
         if (page.isConnected && modal.hidden) renderList();
         else if (page.isConnected) renderSummary();
+        if (page.isConnected) paper.tick();
     }
 
     function start() {
@@ -134,22 +189,27 @@ export function initDream(page, ctx) {
     function render() {
         if (!root) return;
 
-        const count = page.querySelector('[data-count="dream"]');
-        if (count) count.textContent = dreams.length > 0 ? dreams.length : "";
+        updateCount();
 
         root.innerHTML = `
-            <section class="inc-section dr-section">
-                <div class="inc-section-head">
-                    <div class="dr-title">
-                        <h3>Dream stocks</h3>
-                        <span class="dr-info">
-                            <button type="button" class="dr-info-btn" data-dream-act="info" aria-label="About Dream stocks" aria-expanded="false" title="About Dream stocks">${INFO_SVG}</button>
-                            <span class="dr-info-pop" role="tooltip" hidden>Your wishlist. Not counted in holdings, totals or net worth.</span>
-                        </span>
-                    </div>
-                    <button type="button" class="br-button dr-download" data-dream-act="download" aria-label="Download PDF report" title="Download PDF report" ${dreams.length ? "" : "disabled"}>${icon("download", { size: 16 })}<span>Report</span></button>
+            <div class="dr-top">
+                <div class="dr-seg" role="group" aria-label="Dream views">
+                    <button type="button" class="dr-seg-btn${view === "wishlist" ? " active" : ""}" data-dream-act="view" data-view="wishlist">Wishlist</button>
+                    <button type="button" class="dr-seg-btn${view === "paper" ? " active" : ""}" data-dream-act="view" data-view="paper">Paper trading</button>
                 </div>
+                <div class="dr-menu dr-data">
+                    <button type="button" class="inc-icon-button dr-menu-btn dr-data-btn" data-dream-act="menu" aria-haspopup="menu" aria-expanded="false" aria-label="Export, import and report" title="Export, import and report">${icon("ellipsis", { size: 18 })}</button>
+                    <div class="dr-menu-pop" role="menu" hidden>
+                        <button type="button" role="menuitem" data-dream-act="export-xlsx">${icon("download", { size: 15 })}<span>Export to Excel</span></button>
+                        <button type="button" role="menuitem" data-dream-act="export-json">${icon("file-text", { size: 15 })}<span>Export backup (JSON)</span></button>
+                        <button type="button" role="menuitem" data-dream-act="import">${icon("upload", { size: 15 })}<span>Import file</span></button>
+                        <button type="button" role="menuitem" data-dream-act="download" ${dreams.length ? "" : "disabled"}>${icon("file-up", { size: 15 })}<span>PDF report</span></button>
+                    </div>
+                </div>
+            </div>
 
+            <div data-dream-pane="wishlist" ${view === "wishlist" ? "" : "hidden"}>
+            <section class="inc-section dr-section">
                 <div class="dr-search" data-dream-search-wrap>
                     <div class="dr-search-box">
                         <span class="dr-search-icon" aria-hidden="true">${icon("search", { size: 18 })}<i class="dr-spin"></i></span>
@@ -161,10 +221,22 @@ export function initDream(page, ctx) {
 
                 <div data-dream-summary></div>
                 <div data-dream-list></div>
-            </section>`;
+            </section>
+            </div>
+            <div data-dream-pane="paper" data-paper-root ${view === "paper" ? "" : "hidden"}></div>`;
 
         renderSummary();
         renderList();
+        paper.render();
+    }
+
+    function setView(next) {
+        if (next === view) return;
+        view = next;
+        root.querySelectorAll("[data-dream-pane]").forEach((p) => { p.hidden = p.dataset.dreamPane !== view; });
+        root.querySelectorAll(".dr-seg-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+        closeMenus();
+        if (view === "paper") paper.render();
     }
 
     function renderSummary() {
@@ -198,12 +270,28 @@ export function initDream(page, ctx) {
                 ${hint ? `<span class="dr-metric-hint ${cls}">${hint}</span>` : ""}
             </div>`;
 
+        const cls = tone ? "br-pnl-" + tone : "";
+        const key = "sum:wish";
+        const open = isOpen(key);
+
         box.innerHTML = `
-            <div class="dr-metrics">
-                ${metric("Wishlist", String(dreams.length), "")}
-                ${metric("If bought", priced ? fmtMoney(invested, true) : "–", "")}
-                ${metric("Value now", priced ? fmtMoney(value, true) : "–", "")}
-                ${metric("Growth", priced ? fmtSigned(gain, true) : "–", priced ? fmtPct(pct) : "", tone ? "br-pnl-" + tone : "")}
+            <div class="dr-sum${open ? " is-open" : ""}" data-fold-host>
+                <button type="button" class="dr-sum-head" data-fold="${key}" aria-expanded="${open}">
+                    <span class="dr-sum-main">
+                        <span class="dr-sum-label">Growth</span>
+                        <strong class="dr-sum-val ${cls}">${priced ? fmtPct(pct) : "–"}</strong>
+                        ${priced ? `<span class="dr-sum-sub ${cls}">${fmtSigned(gain, true)}</span>` : ""}
+                    </span>
+                    ${chevron()}
+                </button>
+                <div class="dr-more"><div>
+                    <div class="dr-metrics">
+                        ${metric("Wishlist", String(dreams.length), "")}
+                        ${metric("If bought", priced ? fmtMoney(invested, true) : "–", "")}
+                        ${metric("Value now", priced ? fmtMoney(value, true) : "–", "")}
+                        ${metric("Growth", priced ? fmtSigned(gain, true) : "–", priced ? fmtPct(pct) : "", cls)}
+                    </div>
+                </div></div>
             </div>`;
     }
 
@@ -214,10 +302,7 @@ export function initDream(page, ctx) {
 
         if (!dreams.length) {
             box.innerHTML = `
-                <div class="inc-empty dr-empty">
-                    ${icon("sparkles", { size: 22 })}
-                    <h4>No dream stocks yet</h4>
-                </div>`;
+                <div class="dr-empty">${icon("sparkles", { size: 20 })}<span>No dream stocks yet</span></div>`;
             return;
         }
 
@@ -225,7 +310,14 @@ export function initDream(page, ctx) {
             .map((d) => ({ d, c: calc(d, livePrice(d.symbol)) }))
             .sort((a, b) => (b.d.createdAt || 0) - (a.d.createdAt || 0));
 
-        box.innerHTML = `<div class="stk-list dr-list">${rows.map(({ d, c }) => cardHTML(d, c)).join("")}</div>`;
+        box.innerHTML = `
+            <div data-fold-scope>
+                <div class="dr-listbar">
+                    <span class="dr-count">${rows.length} ${rows.length === 1 ? "stock" : "stocks"}</span>
+                    ${allButton(rows.map(({ d }) => "w:" + d.id))}
+                </div>
+                <div class="stk-list dr-list">${rows.map(({ d, c }) => cardHTML(d, c)).join("")}</div>
+            </div>`;
     }
 
     function cardHTML(d, c) {
@@ -234,37 +326,48 @@ export function initDream(page, ctx) {
         const tone = has ? pnlClass(c.gain) : "";
 
         const right = has
-            ? `<div class="dr-growth br-pnl-${tone}">
+            ? `<span class="dr-growth br-pnl-${tone}">
                     <strong>${fmtPct(c.pct)}</strong>
                     <span>${fmtSigned(c.gain, true)}</span>
-               </div>`
-            : `<div class="dr-growth dr-growth-na"><strong>–</strong><span>no live price</span></div>`;
+               </span>`
+            : `<span class="dr-growth dr-growth-na"><strong>–</strong></span>`;
+
+        const key = "w:" + d.id;
+        const open = isOpen(key);
 
         return `
-            <article class="inc-entry stk-card dr-card" data-key="${esc(d.id)}">
+            <article class="inc-entry stk-card dr-card${open ? " is-open" : ""}" data-key="${esc(d.id)}" data-fold-host>
                 <div class="stk-card-top">
-                    ${stockMiniLogoHTML(d.symbol, 32)}
-                    <div class="stk-id">
-                        <span class="stk-name">${esc(d.name)}</span>
-                        <div class="inc-meta">${esc(d.symbol)} · ${esc(fmtDate(d.date))}</div>
-                    </div>
-                    ${right}
+                    <button type="button" class="dr-row" data-fold="${esc(key)}" aria-expanded="${open}">
+                        ${stockMiniLogoHTML(d.symbol, 32)}
+                        <span class="stk-id">
+                            <span class="stk-name">${esc(d.name)}</span>
+                            <span class="inc-meta">${esc(d.symbol)}</span>
+                        </span>
+                        ${right}
+                        ${chevron()}
+                    </button>
                     <div class="dr-menu">
                         <button type="button" class="inc-icon-button dr-menu-btn" data-dream-act="menu" aria-haspopup="menu" aria-expanded="false" aria-label="More options" title="More">${icon("ellipsis", { size: 18 })}</button>
                         <div class="dr-menu-pop" role="menu" hidden>
+                            <button type="button" role="menuitem" data-dream-act="paper-buy" data-id="${esc(d.id)}">${icon("plus", { size: 15 })}<span>Paper buy</span></button>
                             <button type="button" role="menuitem" data-dream-act="edit" data-id="${esc(d.id)}">${icon("pencil", { size: 15 })}<span>Edit</span></button>
                             <button type="button" role="menuitem" class="is-danger" data-dream-act="delete" data-id="${esc(d.id)}">${icon("trash-2", { size: 15 })}<span>Remove</span></button>
                         </div>
                     </div>
                 </div>
-                <dl class="stk-stats">
-                    ${stat("Saw at", fmtMoney(d.seenPrice))}
-                    ${stat("Now", has ? fmtMoney(c.ltp) : "–")}
-                    ${stat("Amount", fmtMoney(d.amount, true))}
-                    ${stat("Shares", fmtQty(c.qty))}
-                    ${stat("Worth", has ? `<span class="br-pnl-${tone}">${fmtMoney(c.value, true)}</span>` : "–")}
-                </dl>
-                ${d.notes ? `<p class="inc-hint ipo-notes">${esc(d.notes)}</p>` : ""}
+                <div class="dr-more"><div>
+                    <dl class="stk-stats">
+                        ${stat("Saw at", fmtMoney(d.seenPrice))}
+                        ${stat("Now", has ? fmtMoney(c.ltp) : "–")}
+                        ${stat("Amount", fmtMoney(d.amount, true))}
+                        ${stat("Shares", fmtQty(c.qty))}
+                        ${stat("Worth", has ? `<span class="br-pnl-${tone}">${fmtMoney(c.value, true)}</span>` : "–")}
+                        ${stat("Seen", esc(fmtDate(d.date)) + (d.time ? " · " + esc(fmtTime(d.time)) : ""))}
+                        ${d.target > 0 ? stat("Target", fmtMoney(d.target) + (has && c.ltp <= d.target ? ` <span class="dr-zone">In buy zone</span>` : "")) : ""}
+                    </dl>
+                    ${d.notes ? `<p class="inc-hint ipo-notes">${esc(d.notes)}</p>` : ""}
+                </div></div>
             </article>`;
     }
 
@@ -356,7 +459,7 @@ export function initDream(page, ctx) {
         suggestIdx = list.length ? 0 : -1;
 
         if (!list.length) {
-            box.innerHTML = `<div class="dr-suggest-empty">No match. Try the NSE symbol, e.g. RELIANCE.</div>`;
+            box.innerHTML = `<div class="dr-suggest-empty">No match</div>`;
         } else {
             const added = new Set(dreams.map((d) => d.symbol));
             box.innerHTML =
@@ -425,6 +528,7 @@ export function initDream(page, ctx) {
                 </form>
             </div>`;
         modal.hidden = false;
+        enhanceTimeInputs(modal);
         return modal.querySelector("[data-dream-form]");
     }
 
@@ -471,6 +575,8 @@ export function initDream(page, ctx) {
             ${field("Price I saw", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="price" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></span>`)}
             ${field("Amount", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></span>`)}
             ${field("Date seen", `<input name="date" type="date" required>`)}
+            ${field("Time seen", `<input name="time" type="time" step="1">`)}
+            ${field("Target price", `<span class="inc-money"><span class="inc-money-prefix" aria-hidden="true">₹</span><input name="target" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Optional"></span>`)}
             ${field("Note", `<input name="notes" type="text" autocomplete="off" placeholder="Optional">`)}
         </div>
         <div class="stk-total dr-preview" data-dream-preview></div>`;
@@ -482,6 +588,7 @@ export function initDream(page, ctx) {
 
         const form = shell("Add to wishlist", headBlock(symbol, name) + formFields, "Add to wishlist");
         form.date.value = todayStr();
+        form.time.value = nowTime();
         updatePreview(form);
         setTimeout(() => form.price.focus(), 30);
 
@@ -529,6 +636,8 @@ export function initDream(page, ctx) {
         form.price.value = d.seenPrice;
         form.amount.value = d.amount;
         form.date.value = d.date;
+        form.time.value = d.time || "";
+        form.target.value = d.target > 0 ? d.target : "";
         form.notes.value = d.notes || "";
         const ltp = livePrice(d.symbol);
         const ltpEl = modal.querySelector("[data-dream-pick-ltp]");
@@ -544,7 +653,7 @@ export function initDream(page, ctx) {
         activeId = id;
         shell(
             "Remove from wishlist?",
-            `<p class="br-muted">${esc(d.name)} will be removed from your Dream stocks. Your holdings are not affected.</p>`,
+            `<p class="dr-confirm-name">${esc(d.name)}</p>`,
             "Remove",
             true
         );
@@ -576,15 +685,18 @@ export function initDream(page, ctx) {
         const price = Number(form.price.value);
         const amount = Number(form.amount.value);
         const date = form.date.value;
+        const time = form.time.value || "";
+        const target = form.target.value === "" ? null : Number(form.target.value);
         const notes = form.notes.value.trim();
 
         let ok = true;
         const bad = (el, msg) => { showError(el, msg); if (ok) el.focus(); ok = false; };
-        [form.price, form.amount, form.date].forEach((el) => showError(el, ""));
+        [form.price, form.amount, form.date, form.target].forEach((el) => showError(el, ""));
 
         if (form.price.value === "" || isNaN(price) || price <= 0) bad(form.price, "Enter the price you saw.");
         if (form.amount.value === "" || isNaN(amount) || amount <= 0) bad(form.amount, "Enter the amount.");
         if (!date) bad(form.date, "Pick the date you saw it.");
+        if (target !== null && (isNaN(target) || target <= 0)) bad(form.target, "Enter a valid target price or leave it empty.");
         if (!ok) return;
 
         let next;
@@ -592,7 +704,7 @@ export function initDream(page, ctx) {
         if (mode === "edit") {
             previous = dreams.find((x) => x.id === activeId);
             if (!previous) return;
-            next = { ...previous, seenPrice: round2(price), amount: round2(amount), date, notes };
+            next = { ...previous, seenPrice: round2(price), amount: round2(amount), date, time, target: target === null ? null : round2(target), notes };
         } else {
             next = {
                 id: "dream_" + genId().slice(4),
@@ -602,6 +714,8 @@ export function initDream(page, ctx) {
                 seenPrice: round2(price),
                 amount: round2(amount),
                 date,
+                time,
+                target: target === null ? null : round2(target),
                 notes
             };
         }
@@ -642,6 +756,114 @@ export function initDream(page, ctx) {
     }
 
     /* =========================================
+       EXPORT / IMPORT (Dream only)
+    ========================================= */
+
+    async function doExport(kind) {
+        const book = paper.getBook();
+        if (!dreams.length && !book.trades.length) {
+            toast("Nothing to export yet");
+            return;
+        }
+        try {
+            if (kind === "json") {
+                exportDreamJSON({ dreams, book });
+                toast("Backup exported");
+            } else {
+                const rows = dreams.map((d) => ({ d, c: calc(d, livePrice(d.symbol)) }));
+                await exportDreamExcel({ rows, book, prices: paper.prices() });
+                toast("Excel exported");
+            }
+        } catch (err) {
+            toast(err?.message || "Export failed");
+        }
+    }
+
+    function pickImportFile() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".xlsx,.xls,.csv,.json,application/json,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        input.addEventListener("change", async () => {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            try {
+                openImport(await parseDreamFile(file));
+            } catch (err) {
+                toast(err?.message || "Could not read this file.");
+            }
+        });
+        input.click();
+    }
+
+    function openImport(parsed) {
+        pendingImport = parsed;
+        mode = "import";
+        const line = (label, n) => (n === null ? "" : `<li><strong>${n}</strong> ${label}</li>`);
+        const rej = parsed.rejected.length
+            ? `<details class="dr-imp-rej"><summary>${parsed.rejected.length} row${parsed.rejected.length === 1 ? "" : "s"} can't be imported</summary><ul>${parsed.rejected.slice(0, 8).map((r) => `<li>${esc(r)}</li>`).join("")}${parsed.rejected.length > 8 ? `<li>…and ${parsed.rejected.length - 8} more</li>` : ""}</ul></details>`
+            : "";
+        shell(
+            "Import Dream data",
+            `<p class="br-muted dr-imp-file">${esc(parsed.fileName)}</p>
+             <ul class="dr-imp-list">
+                ${line("wishlist stocks found", parsed.dreams ? parsed.dreams.length : null)}
+                ${line("paper trades found", parsed.trades ? parsed.trades.length : null)}
+                ${parsed.funds !== undefined ? `<li>Virtual funds: <strong>${parsed.funds === null ? "No limit" : fmtMoney(parsed.funds, true)}</strong></li>` : ""}
+             </ul>
+             ${rej}
+             <div class="dr-imp-modes" role="radiogroup" aria-label="Import mode">
+                <label><input type="radio" name="impmode" value="merge" checked><span><strong>Add to what I have</strong></span></label>
+                <label><input type="radio" name="impmode" value="replace"><span><strong>Replace</strong></span></label>
+             </div>`,
+            "Import"
+        );
+    }
+
+    async function runImport(form) {
+        if (!pendingImport || saving) return;
+        saving = true;
+        const submit = modal.querySelector('[type="submit"]');
+        if (submit) submit.disabled = true;
+        try {
+            const pick = form.querySelector('input[name="impmode"]:checked');
+            const result = applyDreamImport(pendingImport, { dreams, book: paper.getBook() }, pick ? pick.value : "merge");
+            const parsed = pendingImport;
+
+            if (parsed.dreams) {
+                await ctx.store.saveDreams(result.dreams);
+                dreams = result.dreams;
+            }
+            if (parsed.trades || parsed.funds !== undefined) await paper.setBook(result.book);
+
+            const r = result.report;
+            pendingImport = null;
+            closeModal();
+            render();
+            refresh();
+
+            const skipped = r.wishSkipped + r.tradesSkipped;
+            const parts = [];
+            if (parsed.dreams) parts.push(`${r.wishAdded} wishlist`);
+            if (parsed.trades) parts.push(`${r.tradesAdded} trade${r.tradesAdded === 1 ? "" : "s"}`);
+            mode = "done";
+            shell(
+                "Import complete",
+                `<p>Imported <strong>${esc(parts.join(" · ") || "settings")}</strong>${skipped ? ` · ${skipped} skipped (duplicates or invalid)` : ""}.</p>
+                 ${r.notes.length ? `<details class="dr-imp-rej" open><summary>Why some trades were skipped</summary><ul>${r.notes.slice(0, 8).map((n) => `<li>${esc(n)}</li>`).join("")}${r.notes.length > 8 ? `<li>…and ${r.notes.length - 8} more</li>` : ""}</ul></details>` : ""}`,
+                "Done"
+            );
+            modal.querySelectorAll('[data-dream-act="close"]').forEach((b) => b.remove());
+            toast("Imported ✓");
+        } catch (err) {
+            formError(err?.message || "Import failed. Nothing was changed.");
+        } finally {
+            saving = false;
+            const sb = modal.querySelector('[type="submit"]');
+            if (sb) sb.disabled = false;
+        }
+    }
+
+    /* =========================================
        EVENTS
     ========================================= */
 
@@ -660,15 +882,13 @@ export function initDream(page, ctx) {
         closeMenus(pop);
         pop.hidden = !pop.hidden;
         btn.setAttribute("aria-expanded", String(!pop.hidden));
-    }
-
-    function toggleInfo(btn) {
-        const pop = root && root.querySelector(".dr-info-pop");
-        const b = root && root.querySelector(".dr-info-btn");
-        if (!pop || !b) return;
-        const open = !!btn && pop.hidden;
-        pop.hidden = !open;
-        b.setAttribute("aria-expanded", String(open));
+        if (!pop.hidden) {
+            // open upward when there is no room below the button
+            pop.classList.remove("is-up");
+            const r = pop.getBoundingClientRect();
+            const room = btn.getBoundingClientRect().top;
+            if (r.bottom > window.innerHeight - 8 && room > r.height + 12) pop.classList.add("is-up");
+        }
     }
 
     page.addEventListener("click", (event) => {
@@ -687,7 +907,27 @@ export function initDream(page, ctx) {
             else if (act === "edit") openEdit(el.dataset.id);
             else if (act === "delete") openDelete(el.dataset.id);
             else if (act === "close") closeModal();
-            else if (act === "info") toggleInfo(el);
+            else if (act === "view") setView(el.dataset.view);
+            else if (act === "export-xlsx") doExport("xlsx");
+            else if (act === "export-json") doExport("json");
+            else if (act === "import") pickImportFile();
+            else if (act === "paper-buy") {
+                const d = dreams.find((x) => x.id === el.dataset.id);
+                if (d) {
+                    setView("paper");
+                    const raw = d.seenPrice > 0 ? d.amount / d.seenPrice : 0;
+                    paper.openTrade({
+                        type: "BUY",
+                        symbol: d.symbol,
+                        name: d.name,
+                        price: d.seenPrice,
+                        quantity: Math.floor(raw) || Math.round(raw * 1e4) / 1e4 || "",
+                        date: d.date,
+                        time: d.time || "",
+                        notes: d.notes || ""
+                    });
+                }
+            }
             else if (act === "download") {
                 if (dreams.length) printDreamReport(dreams.map((d) => ({ d, c: calc(d, livePrice(d.symbol)) })));
             }
@@ -700,7 +940,6 @@ export function initDream(page, ctx) {
             return;
         }
 
-        if (root && !event.target.closest(".dr-info")) toggleInfo(null);
         if (root && !event.target.closest(".dr-menu")) closeMenus();
 
         // click outside the search box closes the suggestions
@@ -716,6 +955,8 @@ export function initDream(page, ctx) {
         event.preventDefault();
         formError("");
         if (mode === "add" || mode === "edit") await saveForm(event.target);
+        else if (mode === "import") await runImport(event.target);
+        else if (mode === "done") closeModal();
         else if (mode === "delete") {
             const d = dreams.find((x) => x.id === activeId);
             if (d) await commit(null, d);

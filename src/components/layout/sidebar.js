@@ -37,14 +37,6 @@ export function Sidebar() {
             aria-label="Main navigation"
         ></nav>
 
-        <div class="br-sidebar-credit">
-            <div class="br-site-links">
-                <a href="./home.html">${icon("house", { size: 18 })}<span>Home</span></a>
-                <a href="./download.html">${icon("download", { size: 18 })}<span>Download BlackRoad</span></a>
-            </div>
-            Developed by <strong>Microintel</strong>
-        </div>
-
     `;
 
 
@@ -150,6 +142,33 @@ export function Sidebar() {
 
     });
 
+
+    // Home / Download show in the phone menu only (on desktop they live in the top bar); About shows everywhere.
+    const site = document.createElement("div");
+    site.className = "br-nav-section br-nav-site";
+    site.innerHTML = `
+        <div class="br-nav-section-title">BlackRoad</div>
+        <a class="br-nav-item br-nav-site-mobile" href="./home.html">
+            <span class="br-nav-icon" style="--nav-color:#3B82F6">${icon("house", { size: 20 })}</span>
+            <span class="br-nav-label">Home</span>
+        </a>
+        <a class="br-nav-item br-nav-site-mobile" href="./download.html">
+            <span class="br-nav-icon" style="--nav-color:#10B981">${icon("download", { size: 20 })}</span>
+            <span class="br-nav-label">Download BlackRoad</span>
+        </a>
+        <a class="br-nav-item br-nav-about" href="${hrefFor("/about")}">
+            <span class="br-nav-label">About BlackRoad</span>
+        </a>`;
+    const about = site.querySelector(".br-nav-about");
+    if (currentPath() === "/about") {
+        about.classList.add("is-active");
+        about.setAttribute("aria-current", "page");
+    }
+    about.addEventListener("click", (event) => {
+        event.preventDefault();
+        navigate("/about");
+    });
+    nav.appendChild(site);
 
     return sidebar;
 }

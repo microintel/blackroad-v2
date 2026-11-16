@@ -21,7 +21,8 @@ const loaders = {
     brokers: () => import("../features/brokers/brokers.js").then((m) => m.Brokers),
     data: () => import("../features/data/data-management.js").then((m) => m.DataManagement),
     notifications: () => import("../features/notifications/notifications.js").then((m) => m.Notifications),
-    account: () => import("../features/account/account.js").then((m) => m.Account)
+    account: () => import("../features/account/account.js").then((m) => m.Account),
+    about: () => import("../features/about/about.js").then((m) => m.About)
 };
 
 /* Start loading a page's code ahead of time. Never throws. */
