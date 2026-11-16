@@ -17,6 +17,8 @@
    On error:  progress.fail("message")
    ========================================================= */
 
+import { brandSymbolSVG } from "../services/brand.js";
+
 const MIN_DURATION = 3200;   // ms the bar takes at the very least
 const HOLD_CAP = 92;         // bar waits here while real work is still running
 const RING_R = 52;
@@ -46,7 +48,7 @@ export function startReportProgress({
     root.setAttribute("aria-label", title);
     root.innerHTML = `
         <div class="br-rp-card">
-            <span class="br-logo br-rp-logo" aria-hidden="true"></span>
+            ${brandSymbolSVG("br-rp-logo")}
             <div class="br-rp-ring" aria-hidden="true">
                 <svg viewBox="0 0 120 120">
                     <circle class="br-rp-track" cx="60" cy="60" r="${RING_R}"/>

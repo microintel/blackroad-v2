@@ -1,22 +1,32 @@
 /* =========================================================
-   BRAND LOGO  (blackroad.png in the project root)
+   BRAND LOGO  (assets/brand/blackroad-app-icon.png)
    jsPDF and the print layout cannot use CSS backgrounds, so this
-   turns blackroad.png into a small, tightly cropped PNG data URL.
-   Purely presentational: it never touches app data. If the image
-   cannot be read, every function resolves to null and the report
-   is simply produced without the logo.
+   turns the BlackRoad app icon (black rounded tile, white bar,
+   green up arrow, red down arrow) into a PNG data URL of the
+   size asked for. Purely presentational: it never touches app
+   data. If the image cannot be read, every function resolves to
+   null and the report is simply produced without the logo.
 
        const logo = await brandLogoPNG({ size: 192, tile: true });
        if (logo) doc.addImage(logo.dataUrl, "PNG", x, y, w, h);
 
-   tile: true   -> square, black rounded tile (use on white pages)
-   tile: false  -> transparent, tight crop (use on dark banners)
+   The icon already carries its own black tile, so it reads on
+   white pages and on dark banners alike. `tile` is kept so
+   existing callers keep working; the result is always square.
+
+   brandSymbolSVG() returns the inline symbol used by the loading
+   animations (the bar follows the theme text colour so it shows
+   on both light and dark surfaces).
    ========================================================= */
 
-export const BRAND_LOGO_SRC = new URL("../../blackroad.png", import.meta.url).href;
+export const BRAND_LOGO_SRC = new URL("../../assets/brand/blackroad-app-icon.png", import.meta.url).href;
+
+/* The full logo (symbol + "BlackRoad" wordmark), trimmed, transparent background.
+   light = dark wordmark for white pages; dark = white wordmark for dark banners. */
+export const BRAND_LOCKUP_LIGHT_SRC = new URL("../../assets/brand/blackroad-lockup-light.png", import.meta.url).href;
+export const BRAND_LOCKUP_DARK_SRC = new URL("../../assets/brand/blackroad-lockup-dark.png", import.meta.url).href;
 
 let imagePromise = null;
-let boxPromise = null;
 const cache = new Map();
 
 function loadImage() {
@@ -31,75 +41,23 @@ function loadImage() {
     return imagePromise;
 }
 
-/* The PNG has empty margin around the mark: find where the mark really is. */
-function markBox(img) {
-    if (!boxPromise) {
-        boxPromise = Promise.resolve().then(() => {
-            const w = img.naturalWidth, h = img.naturalHeight;
-            const full = { x: 0, y: 0, w, h };
-            try {
-                const c = document.createElement("canvas");
-                c.width = w; c.height = h;
-                const ctx = c.getContext("2d", { willReadFrequently: true });
-                ctx.drawImage(img, 0, 0);
-                const data = ctx.getImageData(0, 0, w, h).data;
-                let x0 = w, y0 = h, x1 = -1, y1 = -1;
-                for (let y = 0; y < h; y++) {
-                    for (let x = 0; x < w; x++) {
-                        if (data[(y * w + x) * 4 + 3] > 8) {
-                            if (x < x0) x0 = x;
-                            if (x > x1) x1 = x;
-                            if (y < y0) y0 = y;
-                            if (y > y1) y1 = y;
-                        }
-                    }
-                }
-                return x1 < 0 ? full : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
-            } catch (e) {
-                return full;   /* canvas blocked: use the whole image */
-            }
-        });
-    }
-    return boxPromise;
-}
-
 /* Resolves { dataUrl, width, height } (pixels) or null. */
 export async function brandLogoPNG({ size = 192, tile = true } = {}) {
-    const key = size + (tile ? "t" : "n");
+    const key = String(size) + (tile ? "t" : "n");
     if (cache.has(key)) return cache.get(key);
 
     const job = (async () => {
         try {
             const img = await loadImage();
             if (!img) return null;
-            const box = await markBox(img);
-
-            const fill = tile ? 0.66 : 1;                 /* share of the tile the mark fills */
-            const scale = (size * fill) / Math.max(box.w, box.h);
-            const dw = Math.round(box.w * scale), dh = Math.round(box.h * scale);
-            const cw = tile ? size : dw, ch = tile ? size : dh;
 
             const c = document.createElement("canvas");
-            c.width = cw; c.height = ch;
+            c.width = size; c.height = size;
             const ctx = c.getContext("2d");
             ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(img, 0, 0, size, size);
 
-            if (tile) {
-                const r = size * 0.22;
-                ctx.fillStyle = "#000000";
-                ctx.beginPath();
-                ctx.moveTo(r, 0);
-                ctx.arcTo(size, 0, size, size, r);
-                ctx.arcTo(size, size, 0, size, r);
-                ctx.arcTo(0, size, 0, 0, r);
-                ctx.arcTo(0, 0, size, 0, r);
-                ctx.closePath();
-                ctx.fill();
-            }
-            ctx.drawImage(img, box.x, box.y, box.w, box.h,
-                (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-
-            return { dataUrl: c.toDataURL("image/png"), width: cw, height: ch };
+            return { dataUrl: c.toDataURL("image/png"), width: size, height: size };
         } catch (e) {
             return null;
         }
@@ -107,4 +65,51 @@ export async function brandLogoPNG({ size = 192, tile = true } = {}) {
 
     cache.set(key, job);
     return job;
+}
+
+/* Resolves { dataUrl, width, height } (pixels) or null.
+   The lockup is wide (about 4.6 : 1); use width/height to keep its proportions:
+       const lk = await brandLockupPNG({ onDark: true, width: 900 });
+       if (lk) doc.addImage(lk.dataUrl, "PNG", x, y, h * lk.width / lk.height, h);
+   onDark: false -> dark wordmark (white pages); true -> white wordmark (dark banners). */
+export async function brandLockupPNG({ onDark = false, width = 800 } = {}) {
+    const key = "lockup" + (onDark ? "d" : "l") + width;
+    if (cache.has(key)) return cache.get(key);
+
+    const job = (async () => {
+        try {
+            const img = await new Promise((resolve) => {
+                const i = new Image();
+                i.onload = () => resolve(i);
+                i.onerror = () => resolve(null);
+                i.src = onDark ? BRAND_LOCKUP_DARK_SRC : BRAND_LOCKUP_LIGHT_SRC;
+            });
+            if (!img) return null;
+
+            const w = width;
+            const h = Math.round(width * (img.naturalHeight / img.naturalWidth));
+            const c = document.createElement("canvas");
+            c.width = w; c.height = h;
+            const ctx = c.getContext("2d");
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(img, 0, 0, w, h);
+
+            return { dataUrl: c.toDataURL("image/png"), width: w, height: h };
+        } catch (e) {
+            return null;
+        }
+    })();
+
+    cache.set(key, job);
+    return job;
+}
+
+/* The BlackRoad symbol as inline SVG (same geometry as assets/brand/blackroad-symbol.svg).
+   Classes let brand.css colour the bar and animate the two arrows. */
+export function brandSymbolSVG(cls = "") {
+    return `<svg class="br-symbol ${cls}" viewBox="0 0 56 56" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" aria-hidden="true" focusable="false">
+        <path class="br-sym-base" d="M2 28H18"/>
+        <g class="br-sym-up"><path d="M18 28L40 12" stroke="#12A150"/><polygon points="52,4 36,6 50,20" fill="#12A150" stroke="#12A150" stroke-width="2"/></g>
+        <g class="br-sym-down"><path d="M18 28L40 44" stroke="#E02D3C"/><polygon points="52,52 36,50 50,36" fill="#E02D3C" stroke="#E02D3C" stroke-width="2"/></g>
+    </svg>`;
 }

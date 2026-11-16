@@ -1,32 +1,19 @@
 /* =========================================================
-   BRAND MARK  (blackroad.png in the project root)
-   One logo used everywhere: sidebar, login, loaders, report
-   progress, icons and PDFs. This file only changes how the
-   mark LOOKS. It loads last, so it replaces the old gold "BR"
-   tile without touching any layout or behaviour.
+   BRAND MARK  (assets/brand/)
+   One logo used everywhere: sidebar, login, about, loaders,
+   report progress, icons and PDFs. This file only changes how
+   the mark LOOKS. It loads last, so it replaces the old tile
+   without touching any layout or behaviour.
 
-   The PNG is transparent with a white/green mark that has
-   about 25% empty margin around it, so it is zoomed in a bit
-   (background-size) to fill its box.
-     Dark theme   : the mark sits straight on the black surface.
-     Light theme  : the mark sits on a black rounded tile, because
-                    a white mark would vanish on a light page.
+   Tiles use blackroad-app-icon.png: a black rounded tile with a
+   white bar, a green up arrow and a red down arrow. It reads on
+   both the dark and the light theme, so no per-theme tinting.
+   Loaders use the inline symbol (brandSymbolSVG in brand.js),
+   whose two arrows animate; its bar follows the text colour.
    ========================================================= */
 
-:root {
-    --br-logo-zoom: 176%;
-    --br-logo-tile: transparent;
-    --br-logo-glow: rgba(16, 227, 154, .35);
-}
-
-:root[data-theme="light"] {
-    --br-logo-zoom: 142%;
-    --br-logo-tile: #000000;
-    --br-logo-glow: rgba(16, 180, 120, .30);
-}
-
-/* The existing gold tiles (.br-brand-logo / .br-brand-mark) plus the
-   new generic .br-logo. !important is deliberate: theme.css, auth.css
+/* The existing tiles (.br-brand-logo / .br-brand-mark) plus the
+   generic .br-logo. !important is deliberate: theme.css, auth.css
    and palettes.css each paint these gold, and the logo must win in
    every theme and colour variant. */
 .br-brand-logo,
@@ -35,16 +22,17 @@
 :root .br-auth .br-brand-logo,
 :root:root[data-theme][data-variant] .br-brand-logo,
 :root:root[data-theme][data-variant] .br-brand-mark {
-    background-color: var(--br-logo-tile) !important;
-    background-image: url("../../blackroad.png") !important;
+    background-color: transparent !important;
+    background-image: url("../../assets/brand/blackroad-app-icon.png") !important;
     background-repeat: no-repeat !important;
     background-position: center !important;
-    background-size: var(--br-logo-zoom) auto !important;
+    background-size: 100% 100% !important;
     color: transparent !important;
     font-size: 0 !important;
     text-indent: 0;
     box-shadow: none !important;
     border: 0 !important;
+    border-radius: 22% !important;
     overflow: hidden;
 }
 
@@ -54,11 +42,46 @@
     width: var(--s, 40px);
     height: var(--s, 40px);
     flex: none;
-    border-radius: calc(var(--s, 40px) * .26);
     vertical-align: middle;
 }
 
-/* ---------- loaders: the logo replaces the candlestick chart ---------- */
+/* ---------- the animated symbol (loaders, report progress) ---------- */
+
+.br-symbol {
+    display: block;
+    width: var(--s, 64px);
+    height: var(--s, 64px);
+    flex: none;
+    overflow: visible;
+}
+
+.br-symbol .br-sym-base {
+    stroke: var(--br-text, #111111);
+    animation: br-sym-base 1.8s ease-in-out infinite;
+}
+
+.br-symbol .br-sym-up,
+.br-symbol .br-sym-down {
+    transform-box: view-box;
+    transform-origin: 18px 28px;      /* the junction where the bar splits */
+    animation: br-sym-shoot 1.8s cubic-bezier(.3, .1, .2, 1) infinite;
+}
+
+.br-symbol .br-sym-down { animation-delay: .2s; }
+
+@keyframes br-sym-shoot {
+    0%   { transform: scale(.25); opacity: 0; }
+    35%  { transform: scale(1);   opacity: 1; }
+    80%  { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(1);   opacity: 0; }
+}
+
+@keyframes br-sym-base {
+    0%, 100% { opacity: .55; }
+    35%, 80% { opacity: 1; }
+}
+
+/* ---------- loaders: the symbol replaces the candlestick chart ---------- */
 
 .br-tl-logo-wrap {
     position: relative;
@@ -69,48 +92,11 @@
     margin-bottom: 2px;
 }
 
-.br-tl-logo-wrap::before {
-    content: "";
-    position: absolute;
-    inset: 4px;
-    border-radius: 50%;
-    background: var(--br-logo-glow);
-    filter: blur(14px);
-    opacity: .0;
-    animation: br-logo-glow 2.2s ease-in-out infinite;
-}
+.br-tl-logo-wrap .br-symbol { --s: 64px; }
 
-.br-tl-logo-wrap .br-logo {
-    position: relative;
-    --s: 64px;
-    animation: br-logo-breathe 2.2s ease-in-out infinite;
-}
-
-/* a thin ring that sweeps around the mark while the job runs */
-.br-tl-logo-wrap::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    border-top-color: #10E39A;
-    border-right-color: rgba(16, 227, 154, .25);
-    animation: br-logo-spin 1.4s linear infinite;
-}
-
-@keyframes br-logo-breathe {
-    0%, 100% { transform: scale(.94); }
-    50%      { transform: scale(1.04); }
-}
-
-@keyframes br-logo-glow {
-    0%, 100% { opacity: .15; }
-    50%      { opacity: .85; }
-}
-
-@keyframes br-logo-spin {
-    to { transform: rotate(360deg); }
-}
+/* no ring, no glow: the symbol itself is the animation */
+.br-tl-logo-wrap::before,
+.br-tl-logo-wrap::after { display: none; }
 
 /* ---------- report progress card ---------- */
 
@@ -121,39 +107,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .br-tl-logo-wrap .br-logo,
-    .br-tl-logo-wrap::before,
-    .br-tl-logo-wrap::after { animation: none; }
-    .br-tl-logo-wrap::before { opacity: .4; }
-    .br-tl-logo-wrap::after { border-top-color: rgba(16, 227, 154, .6); }
-}
-
-
-/* =========================================================
-   LOADING STATES: flat logo
-   The loader and report-progress cards show the mark as one
-   flat colour (the theme's text colour): no gradient, no glow,
-   no coloured ring. The PNG is used only as a silhouette mask.
-   ========================================================= */
-
-:root:root .br-tl-logo-wrap .br-logo,
-:root:root .br-rp-logo {
-    background-color: var(--br-text, #fff) !important;
-    background-image: none !important;
-    -webkit-mask: url("../../blackroad.png") center / var(--br-logo-zoom) auto no-repeat;
-    mask: url("../../blackroad.png") center / var(--br-logo-zoom) auto no-repeat;
-    border-radius: 0;
-}
-
-/* no blurred green glow */
-.br-tl-logo-wrap::before { display: none; }
-
-/* one-colour ring instead of a green fading one */
-.br-tl-logo-wrap::after {
-    border-color: var(--br-border, rgba(255, 255, 255, .14));
-    border-top-color: var(--br-text, #fff);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .br-tl-logo-wrap::after { border-top-color: var(--br-text-muted, #999); }
+    .br-symbol .br-sym-base,
+    .br-symbol .br-sym-up,
+    .br-symbol .br-sym-down { animation: none; opacity: 1; transform: none; }
 }

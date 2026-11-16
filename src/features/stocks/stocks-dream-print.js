@@ -1,7 +1,7 @@
 import { fmtMoney, fmtSigned, fmtPct, fmtDate } from "./stocks-service.js";
 import { startReportProgress } from "../../components/report-progress.js";
 import { stockLogoUrl } from "./stocks-live.js";
-import { brandLogoPNG, BRAND_LOGO_SRC } from "../../services/brand.js";
+import { brandLockupPNG, BRAND_LOCKUP_DARK_SRC } from "../../services/brand.js";
 import { openPrint, waitForLogos } from "./stocks-print.js";
 
 /* Print / Save-as-PDF summary of the Dream stocks wishlist.
@@ -24,8 +24,8 @@ export async function printDreamReport(rows) {
         doneText: "Opening the print dialog…"
     });
     try {
-        const logo = await brandLogoPNG({ size: 160, tile: true });
-        buildReport(rows, logo ? logo.dataUrl : BRAND_LOGO_SRC);
+        const logo = await brandLockupPNG({ onDark: true, width: 700 });
+        buildReport(rows, logo ? logo.dataUrl : BRAND_LOCKUP_DARK_SRC);
         await Promise.all([progress.ready(), waitForLogos()]);
     } catch (err) {
         console.error("Dream report failed:", err);
@@ -78,9 +78,9 @@ function buildReport(rows, logoSrc) {
 
     host.innerHTML = `
         <div class="pr-header">
-            <img class="pr-logo-mark" src="${esc(logoSrc)}" alt="BlackRoad" data-pr-logo>
             <div class="pr-header-text">
-                <div class="pr-brand">BlackRoad's Dream Stocks Report</div>
+                <img class="pr-lockup" src="${esc(logoSrc)}" alt="BlackRoad" data-pr-logo>
+                <div class="pr-brand">Dream Stocks Report</div>
                 <div class="pr-title">Wishlist summary</div>
                 <div class="pr-sub">Generated ${generated}</div>
             </div>

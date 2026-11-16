@@ -15,7 +15,7 @@
  * jsPDF loads on demand, same as the Accounting PDF.
  */
 import { isUSD, usd } from "../../services/currency.js";
-import { brandLogoPNG } from "../../services/brand.js";
+import { brandLogoPNG, brandLockupPNG } from "../../services/brand.js";
 
 const JSPDF_LOCAL = new URL("../../../assets/vendor/jspdf.umd.min.js", import.meta.url).href;
 const JSPDF_CDN = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
@@ -130,6 +130,7 @@ export async function exportSearchPDF(items, filters = {}, { userName = "", befo
     const JsPDF = await loadJsPDF();
     const doc = new JsPDF({ unit: "mm", format: "a4" });
     const brandLogo = await brandLogoPNG({ size: 192, tile: true });   /* null = no logo drawn */
+    const brandLockup = await brandLockupPNG({ onDark: false, width: 900 });   /* full logo for the letterhead; null = fall back to icon + text */
 
     const PAGE_W = 210;
     const PAGE_H = 297;
@@ -202,15 +203,24 @@ export async function exportSearchPDF(items, filters = {}, { userName = "", befo
     /* ---------- letterhead ---------- */
     function letterhead() {
         const HX = brandLogo ? L + 17 : L;
-        if (brandLogo) doc.addImage(brandLogo.dataUrl, "PNG", L, 10, 14, 14);
 
-        font("bold", 17);
-        ink(INK);
-        doc.text("BLACKROAD", HX, 18);
+        if (brandLockup) {
+            const lh = 11;
+            doc.addImage(brandLockup.dataUrl, "PNG", L, 9.5, lh * (brandLockup.width / brandLockup.height), lh);
+            font("normal", 8.5);
+            ink(MUTED);
+            doc.text("Personal Finance Ledger", L, 25);
+        } else {
+            if (brandLogo) doc.addImage(brandLogo.dataUrl, "PNG", L, 10, 14, 14);
 
-        font("normal", 8.5);
-        ink(MUTED);
-        doc.text("Personal Finance Ledger", HX, 23);
+            font("bold", 17);
+            ink(INK);
+            doc.text("BLACKROAD", HX, 18);
+
+            font("normal", 8.5);
+            ink(MUTED);
+            doc.text("Personal Finance Ledger", HX, 23);
+        }
 
         font("bold", 13);
         ink(INK);
@@ -228,10 +238,19 @@ export async function exportSearchPDF(items, filters = {}, { userName = "", befo
     }
 
     function contHeader() {
-        if (brandLogo) doc.addImage(brandLogo.dataUrl, "PNG", L, 7.5, 7, 7);
-        font("bold", 9);
-        ink(INK);
-        doc.text("BLACKROAD  -  Statement of Account (continued)", brandLogo ? L + 9 : L, 14);
+        if (brandLockup) {
+            const lh = 5.5;
+            const lw = lh * (brandLockup.width / brandLockup.height);
+            doc.addImage(brandLockup.dataUrl, "PNG", L, 8.5, lw, lh);
+            font("bold", 9);
+            ink(INK);
+            doc.text("Statement of Account (continued)", L + lw + 4, 13.4);
+        } else {
+            if (brandLogo) doc.addImage(brandLogo.dataUrl, "PNG", L, 7.5, 7, 7);
+            font("bold", 9);
+            ink(INK);
+            doc.text("BLACKROAD  -  Statement of Account (continued)", brandLogo ? L + 9 : L, 14);
+        }
         font("normal", 8);
         ink(MUTED);
         draw(INK);

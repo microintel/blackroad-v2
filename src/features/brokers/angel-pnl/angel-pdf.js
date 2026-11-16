@@ -7,7 +7,7 @@
    ========================================================= */
 
 import { loadPdfLibs } from "./angel-libs.js";
-import { brandLogoPNG } from "../../../services/brand.js";
+import { brandLogoPNG, brandLockupPNG } from "../../../services/brand.js";
 import { PDF_FONT_REGULAR_B64, PDF_FONT_BOLD_B64 } from "./angel-fonts.js";
 import {
     CHARGE_LABELS, BAR_COLORS,
@@ -21,7 +21,8 @@ function fmtCell(header, n){
 }
 
 let PDF_BRAND = 'BlackRoad · Equity P&L Report';
-let PDF_LOGO = null;   // BlackRoad logo (blackroad.png) for the header, set per download
+let PDF_LOCKUP = null; // full BlackRoad logo (white wordmark) for the dark banner, set per download
+let PDF_LOGO = null;   // BlackRoad app icon (assets/brand) for the header, set per download
 
 function ensurePdfFonts(doc){
   doc.addFileToVFS('DejaVuSans.ttf', PDF_FONT_REGULAR_B64);
@@ -116,9 +117,15 @@ function pdfDrawHeader(doc, { title, subLines, clientBits }){
 
   doc.setFont('DejaVuSans','bold'); doc.setFontSize(8);
   doc.setTextColor(...PDF_THEME.subText);
-  doc.text(PDF_BRAND.toUpperCase(), x+4, y+7);
-
-  if(PDF_LOGO) doc.addImage(PDF_LOGO.dataUrl, 'PNG', x+w-17, y+2.5, 12, 12);
+  if(PDF_LOCKUP){
+    /* full logo at the left, report type at the right */
+    const lh = 7, lw = lh * (PDF_LOCKUP.width / PDF_LOCKUP.height);
+    doc.addImage(PDF_LOCKUP.dataUrl, 'PNG', x+4, y+3, lw, lh);
+    doc.text(PDF_BRAND.replace(/^BlackRoad\s*[·-]\s*/i,'').toUpperCase(), x+w-4, y+8, {align:'right'});
+  } else {
+    doc.text(PDF_BRAND.toUpperCase(), x+4, y+7);
+    if(PDF_LOGO) doc.addImage(PDF_LOGO.dataUrl, 'PNG', x+w-17, y+2.5, 12, 12);
+  }
 
   doc.setFont('DejaVuSans','bold'); doc.setFontSize(15);
   doc.setTextColor(255,255,255);
@@ -416,6 +423,7 @@ export async function downloadAngelPdf(years, hooks = {}){
   doc.setFont('DejaVuSans','normal');
   PDF_BRAND = 'BlackRoad · Equity P&L Report';
   PDF_LOGO = await brandLogoPNG({ size: 192, tile: true });
+  PDF_LOCKUP = await brandLockupPNG({ onDark: true, width: 900 });
 
   const generatedAt = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   const firstClient = years[0].sheets[0] ? years[0].sheets[0].client : {};

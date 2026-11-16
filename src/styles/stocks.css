@@ -61,6 +61,7 @@
     }
     .pr-header { background: #1f3a93; color: #fff; padding: 22px 26px; margin-bottom: 18px; display: flex; align-items: center; gap: 18px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .pr-logo-mark { flex: none; width: 54px; height: 54px; border-radius: 13px; display: block; }
+    .pr-lockup { display: block; height: 30px; width: auto; margin-bottom: 12px; }
     .pr-header-text { min-width: 0; }
     .pr-brand { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .8; margin-bottom: 6px; }
     .pr-title { font-size: 24px; font-weight: 700; }

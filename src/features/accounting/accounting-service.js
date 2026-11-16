@@ -10,7 +10,7 @@ import { isUSD, usd } from "../../services/currency.js";
 import { dataService } from "../../data/data-service.js";
 import { loadLogoDataURL } from "../../services/bank-logos.js";
 import { iconSvg } from "../../components/icons.js";
-import { brandLogoPNG } from "../../services/brand.js";
+import { brandLogoPNG, brandLockupPNG } from "../../services/brand.js";
 
 import {
     getMutualFundSummary,
@@ -240,6 +240,7 @@ export async function exportPDF(result, extras = {}) {
 
     /* BlackRoad logo for the header band (null if it cannot be read: no logo is drawn). */
     const brandLogo = await brandLogoPNG({ size: 256, tile: false });
+    const brandLockup = await brandLockupPNG({ onDark: true, width: 1000 });   /* full logo for the dark band; null = icon + title text */
 
     const now = new Date();
     const dateText = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -282,25 +283,38 @@ export async function exportPDF(result, extras = {}) {
     fill(GOLD);
     doc.rect(0, 38, PAGE_W, 1.4, "F");
 
-    /* logo at the left of the band; the title moves right to make room */
+    /* full BlackRoad logo at the left of the band (falls back to icon + title text) */
     let HX = L;
-    if (brandLogo) {
-        const lh = 24;
-        const lw = lh * (brandLogo.width / brandLogo.height);
-        doc.addImage(brandLogo.dataUrl, "PNG", L, 7, lw, lh);
-        HX = L + lw + 5;
+    let titleW;
+    if (brandLockup) {
+        const lh = 13;
+        const lw = lh * (brandLockup.width / brandLockup.height);
+        doc.addImage(brandLockup.dataUrl, "PNG", L, 8, lw, lh);
+        titleW = lw;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        doc.text("ACCOUNTING  -  NET WORTH STATEMENT", HX, 29);
+    } else {
+        if (brandLogo) {
+            const lh = 24;
+            const lw = lh * (brandLogo.width / brandLogo.height);
+            doc.addImage(brandLogo.dataUrl, "PNG", L, 7, lw, lh);
+            HX = L + lw + 5;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(23);
+        doc.setTextColor(255, 255, 255);
+        doc.text("BlackRoad Accounting", HX, 19);
+        titleW = doc.getTextWidth("BlackRoad Accounting");
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+        doc.text("NET WORTH STATEMENT", HX, 27);
     }
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(23);
-    doc.setTextColor(255, 255, 255);
-    doc.text("BlackRoad Accounting", HX, 19);
-    const titleW = doc.getTextWidth("BlackRoad Accounting");
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
-    doc.text("NET WORTH STATEMENT", HX, 27);
 
     if (userName) {
         doc.setFont("helvetica", "bold");

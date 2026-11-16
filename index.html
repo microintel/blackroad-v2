@@ -27,6 +27,16 @@
     <title>BlackRoad</title>
 
     <script>
+        /* Splash screen plays once per session (each cold launch of the
+           installed app). If it already played, hide it before first paint. */
+        try {
+            if (sessionStorage.getItem("br-splash") === "1") {
+                document.documentElement.classList.add("br-splash-skip");
+            }
+        } catch (e) { /* storage blocked: just show it */ }
+    </script>
+
+    <script>
         /* Routing is hash-based (index.html#/income) so any static server works.
            Convert older URL shapes before the app starts:
              /income            (server fell back to index.html)  ->  /#/income
@@ -313,7 +323,7 @@
         href="./src/styles/palettes.css"
     >
 
-    <!-- BlackRoad logo (blackroad.png). Keep last so it overrides the old gold tile. -->
+    <!-- BlackRoad logo (assets/brand). Keep last so it overrides the old gold tile. -->
     <link
         rel="stylesheet"
         href="./src/styles/brand.css"
@@ -370,10 +380,35 @@
     >
 
 
+    <!-- Splash screen (markup at the top of the body, behaviour in src/app/splash.js) -->
+    <link
+        rel="stylesheet"
+        href="./src/styles/splash.css"
+    >
+
 </head>
 
 
 <body>
+
+    <!-- BlackRoad splash: plays once per session, then the app opens. -->
+    <div id="br-splash" role="status" aria-label="Loading BlackRoad">
+        <svg class="mark" viewBox="0 0 56 56" fill="none" aria-hidden="true" focusable="false">
+            <path class="shaft base" pathLength="1" d="M2 28H18"/>
+            <g class="arrows">
+                <path class="shaft up"   pathLength="1" d="M18 28L40 12"/>
+                <polygon class="head up"   points="52,4 36,6 50,20"/>
+                <path class="shaft down" pathLength="1" d="M18 28L40 44"/>
+                <polygon class="head down" points="52,52 36,50 50,36"/>
+            </g>
+        </svg>
+        <div class="name">BlackRoad</div>
+        <div class="tag">Personal finance</div>
+        <div class="bar-load" aria-hidden="true"></div>
+        <div class="credit">Developed by <strong>Microintel</strong></div>
+    </div>
+    <script src="./src/app/splash.js"></script>
+
 
     <div id="app"></div>
 

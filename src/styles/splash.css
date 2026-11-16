@@ -3,11 +3,21 @@
    Markup lives at the top of <body> in index.html; behaviour in
    src/app/splash.js. Everything is scoped under #br-splash so it
    cannot affect the app's own styles.
+
+   Timeline (about 3.4s, then the app fades in):
+     0.15s  white bar draws in from the left
+     0.60s  green and red arrows grow out of the split point
+     1.15s  arrow heads pop
+     1.50s  "BlackRoad" rises, then the tagline
+     1.90s  loading bar fills (its end opens the app)
+   Always black, to match manifest.json background_color so the
+   OS launch screen flows straight into this one.
    ========================================================= */
 
 #br-splash {
     --sp-bg: #000000;
-    --sp-green: #14E096;
+    --sp-green: #12A150;
+    --sp-red: #E02D3C;
     --sp-white: #FFFFFF;
     --sp-muted: #8A8F98;
     --sp-ease: cubic-bezier(.2, .8, .2, 1);
@@ -37,32 +47,79 @@ html.br-splash-skip #br-splash,
 
 #br-splash * { box-sizing: border-box; }
 
-#br-splash .mark { width: min(46vw, 190px); height: auto; overflow: visible; display: block; }
+/* soft light behind the mark, fades in with the arrows */
+#br-splash::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(90vw, 460px);
+    aspect-ratio: 1;
+    transform: translate(-50%, -62%) scale(.7);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 62% 30%, rgba(18, 161, 80, .22), transparent 55%),
+        radial-gradient(circle at 62% 72%, rgba(224, 45, 60, .18), transparent 55%);
+    filter: blur(28px);
+    opacity: 0;
+    animation: brsp-glow 1.4s ease .6s forwards;
+}
 
-#br-splash .stroke {
-    fill: none;
-    stroke: var(--sp-white);
-    stroke-width: 6;
+/* ---------- the symbol ---------- */
+
+#br-splash .mark {
+    position: relative;
+    width: min(42vw, 168px);
+    height: auto;
+    display: block;
+    overflow: visible;
+}
+
+#br-splash .mark path,
+#br-splash .mark polygon {
+    stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+#br-splash .mark .shaft {
+    fill: none;
+    stroke-width: 6;
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    animation:
-        brsp-draw 1.25s cubic-bezier(.45, .05, .25, 1) var(--d, .15s) forwards,
-        brsp-strokeout .55s ease 1.85s forwards;
 }
-#br-splash .stroke.hole { --d: .6s; animation-duration: 1s, .55s; }
-#br-splash .stroke.bar  { stroke: var(--sp-green); stroke-width: 5; animation-duration: .7s, .55s; }
 
-#br-splash .art { opacity: 0; animation: brsp-fade .6s ease 1.75s forwards; }
+#br-splash .mark .base { stroke: var(--sp-white); animation: brsp-draw .5s cubic-bezier(.45, .05, .25, 1) .15s forwards; }
+#br-splash .mark .up   { stroke: var(--sp-green); animation: brsp-draw .55s cubic-bezier(.45, .05, .25, 1) .6s forwards; }
+#br-splash .mark .down { stroke: var(--sp-red);   animation: brsp-draw .55s cubic-bezier(.45, .05, .25, 1) .75s forwards; }
+
+#br-splash .mark .head {
+    stroke-width: 2;
+    transform-box: fill-box;
+    transform-origin: 30% 50%;
+    transform: scale(0);
+    opacity: 0;
+}
+
+#br-splash .mark .head.up   { fill: var(--sp-green); stroke: var(--sp-green); animation: brsp-pop .45s cubic-bezier(.2, 1.4, .4, 1) 1.1s forwards; }
+#br-splash .mark .head.down { fill: var(--sp-red);   stroke: var(--sp-red);   animation: brsp-pop .45s cubic-bezier(.2, 1.4, .4, 1) 1.25s forwards; }
+
+/* once drawn, the arrows breathe very gently while the app loads */
+#br-splash .mark .arrows {
+    transform-box: view-box;
+    transform-origin: 18px 28px;
+    animation: brsp-breathe 2.2s ease-in-out 1.8s infinite;
+}
+
+/* ---------- text ---------- */
 
 #br-splash .name {
-    margin-top: 22px;
-    font-size: clamp(26px, 6.5vw, 34px);
+    margin-top: 26px;
+    font-size: clamp(28px, 7vw, 36px);
     font-weight: 700;
     letter-spacing: -0.02em;
     opacity: 0;
-    transform: translateY(6px);
-    animation: brsp-rise .6s var(--sp-ease) 2.2s forwards;
+    transform: translateY(8px);
+    animation: brsp-rise .6s var(--sp-ease) 1.5s forwards;
 }
 
 #br-splash .tag {
@@ -70,8 +127,11 @@ html.br-splash-skip #br-splash,
     font-size: 14px;
     color: var(--sp-muted);
     opacity: 0;
-    animation: brsp-rise .6s var(--sp-ease) 2.4s forwards;
+    transform: translateY(6px);
+    animation: brsp-rise .6s var(--sp-ease) 1.7s forwards;
 }
+
+/* ---------- loading bar (its end opens the app: see splash.js) ---------- */
 
 #br-splash .bar-load {
     position: absolute;
@@ -84,7 +144,7 @@ html.br-splash-skip #br-splash,
     background: #1C1C1C;
     overflow: hidden;
     opacity: 0;
-    animation: brsp-fade .4s ease 2.5s forwards;
+    animation: brsp-fade .4s ease 1.8s forwards;
 }
 
 #br-splash .bar-load::after {
@@ -93,9 +153,9 @@ html.br-splash-skip #br-splash,
     height: 100%;
     width: 100%;
     border-radius: 3px;
-    background: var(--sp-green);
+    background: linear-gradient(90deg, var(--sp-green), var(--sp-red));
     transform: translateX(-100%);
-    animation: brsp-load 1.4s var(--sp-ease) 2.6s forwards;
+    animation: brsp-load 1.5s var(--sp-ease) 1.9s forwards;
 }
 
 #br-splash .credit {
@@ -107,20 +167,28 @@ html.br-splash-skip #br-splash,
     font-size: 12px;
     color: var(--sp-muted);
     opacity: 0;
-    animation: brsp-fade .6s ease 2.5s forwards;
+    animation: brsp-fade .6s ease 1.9s forwards;
 }
 
 #br-splash .credit strong { color: var(--sp-white); font-weight: 600; }
 
-@keyframes brsp-draw      { to { stroke-dashoffset: 0; } }
-@keyframes brsp-strokeout { to { stroke-opacity: 0; } }
-@keyframes brsp-rise      { to { opacity: 1; transform: none; } }
-@keyframes brsp-fade      { to { opacity: 1; } }
-@keyframes brsp-load      { to { transform: translateX(0); } }
+/* ---------- keyframes ---------- */
 
+@keyframes brsp-draw    { to { stroke-dashoffset: 0; } }
+@keyframes brsp-pop     { to { opacity: 1; transform: scale(1); } }
+@keyframes brsp-rise    { to { opacity: 1; transform: none; } }
+@keyframes brsp-fade    { to { opacity: 1; } }
+@keyframes brsp-load    { to { transform: translateX(0); } }
+@keyframes brsp-glow    { to { opacity: 1; transform: translate(-50%, -62%) scale(1); } }
+@keyframes brsp-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+
+/* Reduced motion: no drawing, everything simply appears, then the app opens. */
 @media (prefers-reduced-motion: reduce) {
-    #br-splash .stroke { display: none; }
-    #br-splash .art, #br-splash .name, #br-splash .tag,
+    #br-splash .mark .shaft { stroke-dashoffset: 0; animation: none; }
+    #br-splash .mark .head  { transform: none; opacity: 1; animation: none; }
+    #br-splash .mark .arrows { animation: none; }
+    #br-splash::before { animation: none; opacity: 1; transform: translate(-50%, -62%); }
+    #br-splash .name, #br-splash .tag,
     #br-splash .bar-load, #br-splash .credit,
     #br-splash .bar-load::after { animation-duration: .01s; animation-delay: 0s; }
     #br-splash { transition-duration: .01s; }

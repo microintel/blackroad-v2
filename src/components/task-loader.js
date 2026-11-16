@@ -21,6 +21,8 @@
    untouched, so existing error handling keeps working.
    ========================================================= */
 
+import { brandSymbolSVG } from "../services/brand.js";
+
 const KINDS = {
     download:  { title: "Downloading",          sub: "Getting your file ready" },
     export:    { title: "Exporting",            sub: "Packing your data into a file" },
@@ -41,7 +43,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 export function loaderChartHTML() {
     return `
         <span class="br-tl-logo-wrap" aria-hidden="true">
-            <span class="br-logo"></span>
+            ${brandSymbolSVG()}
         </span>`;
 }
 
