@@ -6,7 +6,7 @@
 
    Timeline (about 3.4s, then the app fades in):
      0.15s  white bar draws in from the left
-     0.60s  green and red arrows grow out of the split point
+     0.60s  green and red arrows grow out of the split point (flat colours, no gradients)
      1.15s  arrow heads pop
      1.50s  "BlackRoad" rises, then the tagline
      1.90s  loading bar fills (its end opens the app)
@@ -46,24 +46,6 @@ html.br-splash-skip #br-splash,
 #br-splash[hidden] { display: none !important; }
 
 #br-splash * { box-sizing: border-box; }
-
-/* soft light behind the mark, fades in with the arrows */
-#br-splash::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: min(90vw, 460px);
-    aspect-ratio: 1;
-    transform: translate(-50%, -62%) scale(.7);
-    border-radius: 50%;
-    background:
-        radial-gradient(circle at 62% 30%, rgba(18, 161, 80, .22), transparent 55%),
-        radial-gradient(circle at 62% 72%, rgba(224, 45, 60, .18), transparent 55%);
-    filter: blur(28px);
-    opacity: 0;
-    animation: brsp-glow 1.4s ease .6s forwards;
-}
 
 /* ---------- the symbol ---------- */
 
@@ -153,7 +135,7 @@ html.br-splash-skip #br-splash,
     height: 100%;
     width: 100%;
     border-radius: 3px;
-    background: linear-gradient(90deg, var(--sp-green), var(--sp-red));
+    background: var(--sp-white);
     transform: translateX(-100%);
     animation: brsp-load 1.5s var(--sp-ease) 1.9s forwards;
 }
@@ -179,7 +161,6 @@ html.br-splash-skip #br-splash,
 @keyframes brsp-rise    { to { opacity: 1; transform: none; } }
 @keyframes brsp-fade    { to { opacity: 1; } }
 @keyframes brsp-load    { to { transform: translateX(0); } }
-@keyframes brsp-glow    { to { opacity: 1; transform: translate(-50%, -62%) scale(1); } }
 @keyframes brsp-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
 
 /* Reduced motion: no drawing, everything simply appears, then the app opens. */
@@ -187,7 +168,6 @@ html.br-splash-skip #br-splash,
     #br-splash .mark .shaft { stroke-dashoffset: 0; animation: none; }
     #br-splash .mark .head  { transform: none; opacity: 1; animation: none; }
     #br-splash .mark .arrows { animation: none; }
-    #br-splash::before { animation: none; opacity: 1; transform: translate(-50%, -62%); }
     #br-splash .name, #br-splash .tag,
     #br-splash .bar-load, #br-splash .credit,
     #br-splash .bar-load::after { animation-duration: .01s; animation-delay: 0s; }
